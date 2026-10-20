@@ -20,9 +20,9 @@ Los archivos van en la carpeta `docs/` del repositorio:
 
 | Archivo | Qué contiene | Manda en… |
 |---|---|---|
-| `docs/PROPUESTA_v6.md` (convertido de `Propuesta_SIGEP_Codaini_v6.docx`) | Reglas de negocio, los 3 paneles, matriz de permisos, Kanban, PR, modelo de datos, datos simulados | Todo lo funcional |
-| `docs/ESPECIFICACION_VISUAL.md` | Colores, tipografía, tokens, estados, estructura de interfaz | Todo lo visual |
-| `docs/METODOLOGIA.md` | Cómo trabajamos | La forma de trabajar |
+| `docs/Propuesta_SIGEP_Codaini_v6.md` (convertido de `Propuesta_SIGEP_Codaini_v6.docx`) | Reglas de negocio, los 3 paneles, matriz de permisos, Kanban, PR, modelo de datos, datos simulados | Todo lo funcional |
+| `docs/Especificacion_visual_SIGEP (1).md` | Colores, tipografía, tokens, estados, estructura de interfaz | Todo lo visual |
+| `docs/METODOLOGÍA DE TRABAJO.md` | Cómo trabajamos | La forma de trabajar |
 | Este archivo | Plan por fases y reglas del proyecto | El orden y el alcance |
 
 **Orden de precedencia si algo se contradice:** propuesta v6 > especificación visual > este archivo > lo que el agente "cree" que es mejor.
