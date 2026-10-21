@@ -317,10 +317,10 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
 ### Estado de la Fase 0
 
 - **Commits registrados:** pasos 8 (`35e9fb7`), 9 (`14a79ea`) y la actualización de `docs/` con los ajustes de contraste (`56d755a`).
-- **Repositorio:** `main` `0709f42`, `development` `3f2177b`; `chore/fase0-base-tecnica` en `56d755a` con **1 commit sin publicar** (`ahead 1`). Se corrige en `PROGRESO.md` la afirmación anterior de que la rama estaba al día con `origin`.
+- **Repositorio:** `main` `0709f42`, `development` `3f2177b`; `chore/fase0-base-tecnica` en `0d5420d` con **1 commit sin publicar** (`ahead 1`; `origin` en `56d755a`). Se corrige en `PROGRESO.md` la afirmación anterior de que la rama estaba al día con `origin`.
 - **Revisión visual** de la página temporal: aprobada por los autores.
 - **Criterio de «Listo»:** código, tema, tokens, prueba de ejemplo y contraste cumplidos. Falta comprobar la instalación y ejecución en el equipo de la otra persona y cerrar en Git (PR a `development`, luego `development` → `main` con etiqueta `fase-0-completa`), que requieren el OK de ambos.
-- **Sin commit ni push** en este paso: el commit único se propone a los autores.
+- **Commit:** `0d5420d` (`docs: agrega README y cierra la documentación de la Fase 0 (pasos 10 y 11)`), pendiente de publicar en `origin/chore/fase0-base-tecnica` al redactar esto.
 
 ### Verificación
 

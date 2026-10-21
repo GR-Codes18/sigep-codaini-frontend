@@ -3,7 +3,7 @@
 ## Estado actual
 
 - **Fase:** 0 — Base técnica y tema
-- **Paso actual:** 11 de 11 completado (README y cierre documentado). Siguiente: publicar el commit, PR a `development` y, con el OK de ambos, unir `development` a `main` con la etiqueta de cierre.
+- **Paso actual:** 11 de 11 completado (README y cierre documentado). Siguiente: registrar el hash en `PROGRESO.md`, publicar la rama, PR a `development` y, con el OK de ambos, unir `development` a `main` con la etiqueta de cierre.
 - **Fecha:** 2026-10-21
 - **Rama:** `chore/fase0-base-tecnica` (creada desde `development`)
 
@@ -21,8 +21,8 @@
 | 2026-10-21 | 0 | 8. Página temporal de prueba (botón, tarjeta, badges, tabla, tema) | `35e9fb7` |
 | 2026-10-21 | 0 | 9. Contraste verificado en ambos temas (`#137A4A`, `--danger-text`) | `14a79ea` |
 | 2026-10-21 | 0 | — Actualización de `docs/` con los ajustes de contraste (especificación visual y propuesta §13) | `56d755a` |
-| 2026-10-21 | 0 | 10. `README.md` y estado del repositorio | este commit |
-| 2026-10-21 | 0 | 11. `PROGRESO.md` y `DECISIONES.md` al día para el cierre | este commit |
+| 2026-10-21 | 0 | 10. `README.md` y estado del repositorio | `0d5420d` |
+| 2026-10-21 | 0 | 11. `PROGRESO.md` y `DECISIONES.md` al día para el cierre | `0d5420d` |
 
 ## Pendientes de la Fase 0
 
@@ -40,7 +40,8 @@
 
 ## Cierre de la Fase 0
 
-- [ ] Revisar y ejecutar el commit único propuesto (solo `README.md`, `PROGRESO.md` y `DECISIONES.md`) y publicarlo en `origin/chore/fase0-base-tecnica`.
+- [x] Commit con `README.md`, `PROGRESO.md` y `DECISIONES.md` (`0d5420d`).
+- [ ] Registrar el hash de ese commit en `PROGRESO.md` (este commit) y publicar la rama en `origin/chore/fase0-base-tecnica`.
 - [ ] Abrir el PR de `chore/fase0-base-tecnica` a `development` y revisarlo entre las dos personas.
 - [ ] Confirmar que el proyecto instala y corre en el equipo de la otra persona (criterio de "Listo" de la fase).
 - [ ] Unir `development` a `main` con el OK de ambos y etiquetar `fase-0-completa` en `main`.
@@ -49,8 +50,8 @@
 
 - `main` en `0709f42` (documentos iniciales) y `development` en `3f2177b` (actualización del plan); ambas también en `origin`.
 - `main` y `development` **solo contienen `docs/`** hoy. El `.gitignore` nació en la rama de trabajo (`0b6de05`) y todavía no está en `main`; llegará junto con el `README.md` en el PR de cierre (regla de no commitear directo en `main`).
-- `chore/fase0-base-tecnica` en `56d755a`, **1 commit por delante de `origin`** (`ahead 1`): incluye los pasos 4 y 5 (`7f8b494`, `44a3e85`), su documentación (`6a7c25a`), la regla de no commitear sin confirmación (`995b3a3`), los pasos 6 y 7 (`111af6e`), la página temporal (`35e9fb7`), el ajuste de contraste (`14a79ea`) y la actualización de `docs/` con esos valores (`56d755a`). Ese último commit **todavía no está publicado**.
-- Cambios locales sin commitear al redactar esto: `README.md` (nuevo), `PROGRESO.md` y `DECISIONES.md`. `docs/` no se tocó (`git diff -- docs` vacío).
+- `chore/fase0-base-tecnica` en `0d5420d`, **1 commit por delante de `origin`** (`ahead 1`, con `origin` en `56d755a`): incluye los pasos 4 y 5 (`7f8b494`, `44a3e85`), su documentación (`6a7c25a`), la regla de no commitear sin confirmación (`995b3a3`), los pasos 6 y 7 (`111af6e`), la página temporal (`35e9fb7`), el ajuste de contraste (`14a79ea`), la actualización de `docs/` (`56d755a`, ya publicada) y el README con el cierre documentado (`0d5420d`, pendiente de publicar).
+- Cambios locales sin commitear al redactar esto: `PROGRESO.md` (este commit, que anota el hash `0d5420d`). `docs/` no se tocó (`git diff -- docs` vacío).
 - `docs/` ya está versionado y **no se debe borrar ni sobrescribir**.
 - `AGENTS.md` está versionado (entró en `2d35e5b`).
 - Código de aplicación: base mínima, estructura de la sección 4.3 del plan (`src/app/`, `auth/`, `domain/`, `services/`, `data/`, `compartido/` y `paneles/{administrador,supervisor,practicante}/`); `src/compartido/` (`utils.ts` y `ui/button.tsx` de prueba), `src/app/tema/` (tokens, proveedor y alternador) y las fuentes Inter/Montserrat con la escala tipográfica. Incluye la página temporal (`src/app/pagina-prueba/PaginaPrueba.tsx`, se elimina al final de la Fase 3) y los ajustes de contraste del paso 9. Vitest + Testing Library configurados con una prueba de ejemplo. Sin módulos de negocio todavía.
@@ -132,7 +133,7 @@
 - **Archivos de seguimiento:** `PROGRESO.md` registra los pasos 8 (`35e9fb7`), 9 (`14a79ea`), la actualización de `docs/` (`56d755a`), el estado real del repositorio (`ahead 1`) y la revisión visual aprobada; `DECISIONES.md` cierra la divergencia con `docs/` y añade las decisiones de los pasos 10 y 11.
 - `npm.cmd run format:check`: pasa (Prettier ignora `docs/` y todos los `.md`). `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25.62 kB, JS 261.85 kB).
 - Colores escritos a mano: solo en `src/index.css` (tokens); ningún `#hex`, `rgb()` ni `hsl()` en `.ts`/`.tsx`.
-- `git diff -- docs`: vacío; `docs/` intacto. Cambios locales: `README.md` (nuevo), `PROGRESO.md` y `DECISIONES.md`. Sin commit ni push.
+- `git diff -- docs`: vacío; `docs/` intacto. Todo quedó en el commit `0d5420d` (sin push); después solo se modificó este archivo para anotar ese hash.
 
 ## Decisiones recientes
 
