@@ -185,3 +185,41 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
   - Al recargar con `dark` guardado, `data-theme="dark"` ya está aplicado en `DOMContentLoaded` (no se pinta el tema claro primero).
   - Un valor inválido en `localStorage` deja el tema claro sin errores.
 - El contraste de ambos temas sigue pendiente para el paso 9.
+
+---
+
+## 2026-10-20 — Tipografía (Fase 0, paso 5)
+
+### Versiones y carga
+
+- **`@fontsource/inter` 5.3.0** y **`@fontsource/montserrat` 5.3.0**, verificados con `npm.cmd view` y coincidentes con la decisión de la Fase 0, paso 1. Quedan fijados sin `^` en `dependencies`.
+- Se importan solo los pesos y el subconjunto necesarios:
+  - Inter `latin-400`, `latin-500`, `latin-600`.
+  - Montserrat `latin-600`, `latin-700`.
+- El subconjunto `latin` cubre tildes y ñ. Fontsource declara `font-display: swap` y ofrece `.woff2` con `.woff` de respaldo; el navegador carga solo los `.woff2`. No hay peticiones a Google Fonts y funciona sin conexión.
+- Los paquetes variables de Fontsource también están en 5.3.0, pero no se usan: la decisión cerrada era Fontsource no variable.
+
+### Escala
+
+- **H1: 24 px, Montserrat 700** (especificación visual §4; propuesta §13.3).
+- **H2: 18 px, Montserrat 600** (especificación visual §4).
+- **H3: 16 px, Montserrat 600** (especificación visual §4).
+- **Cuerpo: 14 px, Inter 400** (especificación visual §4; propuesta §13.3).
+- **Tablas: 13 px, Inter con números tabulares** (especificación visual §4 permite 13–14 px; propuesta §13.3 pide números en columna).
+- **Auxiliar: 12 px, Inter 400** (especificación visual §4; nada menor a 12).
+- Pesos disponibles: Inter 400/500/600 y Montserrat SemiBold/Bold (especificación visual §4).
+- Se crean los tokens `--text-h1`, `--text-h2`, `--text-h3` y `--text-tabla`; el cuerpo usa `text-sm` (14 px de Tailwind) y el auxiliar `text-xs` (12 px).
+- `h1`, `h2` y `h3` reciben Montserrat desde la capa base. `strong`/`b` usan 600 para no sintetizar una negrita inexistente. Las tablas usan `font-variant-numeric: tabular-nums`.
+- **Interlineado:** la especificación visual y la propuesta §13 no definen un valor de `line-height`. Para no inventarlo, no se crean tokens de interlineado; se conserva el que aporta Tailwind (20 px para el cuerpo de 14 px) y el navegador. Si los autores quieren fijar uno, se decide y se añade como token.
+
+### Verificación
+
+- `npm.cmd run build`: emite 5 `.woff2` (Inter 400/500/600 y Montserrat 600/700), más los `.woff` de respaldo.
+- Comprobado en Edge headless sobre el build de producción:
+  - Cuerpo: `font-family: Inter`, `font-size: 14px`.
+  - H1: `Montserrat`, `24px`, peso 700; H2: `18px`, peso 600; H3: `16px`, peso 600.
+  - Tabla: `13px`, `font-variant-numeric: tabular-nums`.
+  - `document.fonts.check` confirma Inter 400/500/600 y Montserrat 600/700 cargadas.
+  - Los recursos de fuente son todos locales (`/assets/...woff2`), sin dominios externos.
+  - El color de enlace es `rgb(20, 128, 78)` en claro y `rgb(127, 217, 163)` en oscuro (`--link`).
+- El contraste sigue pendiente para el paso 9.

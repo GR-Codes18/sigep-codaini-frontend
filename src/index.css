@@ -1,6 +1,11 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
+@import '@fontsource/inter/latin-400.css';
+@import '@fontsource/inter/latin-500.css';
+@import '@fontsource/inter/latin-600.css';
+@import '@fontsource/montserrat/latin-600.css';
+@import '@fontsource/montserrat/latin-700.css';
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
@@ -86,6 +91,19 @@
  * Se cubren todos los peldaños de radio de Tailwind para no dejar valores fuera de 6/10.
  */
 @theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-heading: 'Montserrat', ui-sans-serif, system-ui, sans-serif;
+
+  /* Escala de la sección 4 de la especificación visual. */
+  --text-h1: 1.5rem;
+  --text-h1--font-weight: 700;
+  --text-h2: 1.125rem;
+  --text-h2--font-weight: 600;
+  --text-h3: 1rem;
+  --text-h3--font-weight: 600;
+  --text-tabla: 0.8125rem;
+
+  /* Forma: 6 px en controles y 10 px en contenedores. */
   --radius-sm: 0.375rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.375rem;
@@ -171,9 +189,21 @@
     @apply bg-bg font-sans text-sm text-text;
     margin: 0;
   }
+  h1 {
+    @apply font-heading text-h1;
+  }
+  h2 {
+    @apply font-heading text-h2;
+  }
+  h3 {
+    @apply font-heading text-h3;
+  }
   strong,
   b {
     font-weight: 600;
+  }
+  table {
+    font-variant-numeric: tabular-nums;
   }
   button:not(:disabled),
   [role='button']:not(:disabled) {
