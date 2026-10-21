@@ -25,9 +25,9 @@ Tres capas de tono: **fondo** (la más oscura en tema oscuro), **superficie** (s
 | `--primary` (botón principal) | `#58C481` | `#58C481` |
 | `--primary-hover` | `#4AB574` | `#6BD093` |
 | `--on-primary` (texto sobre botón) | `#0A192F` | `#0F141B` |
-| `--link` (texto/enlaces verdes) | `#14804E` | `#7FD9A3` |
+| `--link` (texto/enlaces verdes) | `#137A4A` | `#7FD9A3` |
 | `--active-bg` (ítem activo del menú) | `#58C481` al 14 % | `#58C481` al 14 % |
-| `--active-text` | `#14804E` | `#7FD9A3` |
+| `--active-text` | `#137A4A` | `#7FD9A3` |
 | `--focus` | `#58C481` | `#58C481` |
 | `--danger` | `#D64545` | `#D64545` |
 
@@ -48,7 +48,7 @@ Cada estado se muestra como **badge**: fondo suave + texto oscuro (tema claro) o
 | Disponible | `#8892B0` | `#EEF1F7` / `#4A5578` | `#B4BDD6` |
 | En progreso | `#3B7DDD` | `#E8F0FD` / `#1B4FA8` | `#8DB4F5` |
 | Esperando supervisión | `#F2B01E` | `#FFF4D6` / `#8A5A00` | `#F5C85C` |
-| Terminada | `#58C481` | `#E4F6EC` / `#14804E` | `#7FD9A3` |
+| Terminada | `#58C481` | `#E4F6EC` / `#137A4A` | `#7FD9A3` |
 | Devuelta con observaciones (marca sobre una tarea "En progreso") | `#D64545` | `#FDE8E8` / `#A12626` | `#F59A9A` |
 
 ### Postulaciones
@@ -59,6 +59,8 @@ Cada estado se muestra como **badge**: fondo suave + texto oscuro (tema claro) o
 | Requiere revisión manual | Ámbar (como "Esperando supervisión") |
 | Aprobada | Verde (como "Terminada") |
 | Rechazada | Rojo |
+
+- El texto rojo usa --danger-text (#A12626 claro / #F59A9A oscuro). --danger (#D64545) se reserva solo para fondos, bordes e íconos
 
 ### Proyectos
 
@@ -118,7 +120,8 @@ No existe un "estado de error" en las tareas. El rojo se reserva para:
   --bg:#F7F9FC; --surface:#FFFFFF; --surface-2:#F0F3F8; --border:#E1E6EF;
   --text:#0A192F; --text-2:#5B6785;
   --primary:#58C481; --primary-hover:#4AB574; --on-primary:#0A192F;
-  --link:#14804E; --active-text:#14804E; --focus:#58C481; --danger:#D64545;
+  --link:#137A4A; --active-text:#137A4A; --focus:#58C481; --danger:#D64545;
+  --danger-text:#A12626;
   --active-bg:rgba(88,196,129,.14);
 }
 [data-theme="dark"] {
@@ -126,6 +129,7 @@ No existe un "estado de error" en las tareas. El rojo se reserva para:
   --text:#E6E9EF; --text-2:#9BA3B2;
   --primary:#58C481; --primary-hover:#6BD093; --on-primary:#0F141B;
   --link:#7FD9A3; --active-text:#7FD9A3; --focus:#58C481; --danger:#D64545;
+  --danger-text: #F59A9A;
   --active-bg:rgba(88,196,129,.14);
 }
 ```
