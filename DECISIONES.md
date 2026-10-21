@@ -258,3 +258,45 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
 - `npm.cmd run build`: `tsc -b` revisa el setup y la prueba; compila (CSS 23.89 kB, JS 260.13 kB).
 - `npm.cmd install`: 72 paquetes nuevos; `npm audit` mantiene las 7 vulnerabilidades altas de las herramientas de `shadcn` (no llegan al bundle).
 - `git diff -- docs`: vacío.
+
+---
+
+## 2026-10-21 — Página temporal y contraste (Fase 0, pasos 8 y 9)
+
+### Página temporal
+
+- Se crea **`src/app/pagina-prueba/PaginaPrueba.tsx`** y `src/App.tsx` solo la renderiza. Para eliminarla al final de la Fase 3: borrar la carpeta `src/app/pagina-prueba/` y sustituir esa línea de `App.tsx` por el layout definitivo.
+- Incluye botón primario (el `Button` existente), tarjeta, los 5 badges de tarea con punto del color base, tabla pequeña (cabecera `surface-2`, filas de ~44 px con `py-3`, 13 px) y el `AlternadorTema`.
+- Solo usa tokens (`bg-surface`, `text-text-2`, `bg-state-*-bg`, etc.). No se instalaron componentes de shadcn ni dependencias nuevas, y no hay colores escritos a mano.
+- La revisión visual la hacen los autores en el navegador (no se usó Edge headless en este paso).
+
+### Ajustes de contraste (valores antes → después)
+
+| Token | Tema claro antes | Tema claro ahora | Tema oscuro |
+|---|---|---|---|
+| `--link` | `#14804E` | **`#137A4A`** | `#7FD9A3` (sin cambio) |
+| `--active-text` | `#14804E` | **`#137A4A`** | `#7FD9A3` (sin cambio) |
+| `--state-success-text` | `#14804E` | **`#137A4A`** | `#7FD9A3` (sin cambio) |
+| `--danger` | `#D64545` | `#D64545` (sin cambio) | `#D64545` (sin cambio) |
+| `--danger-text` | no existía | **`#A12626`** (nuevo) | **`#F59A9A`** (nuevo) |
+| alias `--color-destructive` | `var(--danger)` | **`var(--danger-text)`** | `var(--danger-text)` |
+
+**Por qué:**
+
+- `#14804E` no llegaba a 4,5:1 como texto: `link` sobre `surface-2` daba **4,47**, `active-text` sobre `active-bg` **4,48** y el badge Terminada **4,42**. `#137A4A` mantiene el mismo tono y deja **4,83**, **4,84** y **4,78**.
+- `#D64545` tampoco llegaba como texto: claro **4,15 / 4,38 / 3,94** y oscuro **4,22 / 3,83 / 3,44** (bg / surface / surface-2). No se cambió el rojo base: se añadió `--danger-text` con dos valores que ya existían en la especificación §3 (`#A12626` claro, `#F59A9A` oscuro). Resultado: **6,69–7,45** en claro y **7,14–8,78** en oscuro.
+- El botón destructivo generado por shadcn **usa `destructive` como color de texto** (`text-destructive`), así que el alias `--color-destructive` se apunta a `--danger-text`. Efecto secundario: `bg-destructive/10`, `border-destructive/40` y los anillos de error también derivan de `--danger-text` (siguen siendo el mismo rojo de la familia, algo más oscuro en claro y más claro en oscuro).
+- **Regla de uso:** `--danger` (`#D64545`) queda para fondos sólidos, bordes e iconos; para texto rojo se usa `--danger-text` (clase `text-danger-text`). `text-danger` no debe usarse como texto.
+
+### Divergencia con la documentación (pendiente de los autores)
+
+- El código **difiere a propósito** de la especificación visual §2/§3 y de la propuesta §13: `--link`, `--active-text` y `--state-success-text` en claro pasan de `#14804E` a `#137A4A`, y se añade `--danger-text` (`#A12626` / `#F59A9A`).
+- No se tocó `docs/` (regla del proyecto). Hay que actualizar esos documentos para que la especificación vuelva a ser la fuente única.
+
+### Verificación
+
+- Script WCAG temporal en `%TEMP%` (fuera del repo, borrado después), leyendo los valores reales de `src/index.css` y componiendo las transparencias de `active-bg` (14 %) y de los badges oscuros (16 %) sobre `surface`.
+- **42 pares de texto (21 por tema): todos ≥ 4,5:1.** Mínimos: claro `active-text` sobre `active-bg` sobre `bg` **4,61**, badge Terminada **4,78**, `link` sobre `surface-2` **4,83**; oscuro `text-2` sobre `surface-2` **5,93**.
+- `--danger` como texto queda entre **3,44 y 4,38**: por eso no se usa como texto.
+- `npm.cmd run format` y `format:check`: pasan. `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25,33 kB, JS 261,85 kB).
+- `git diff -- docs`: vacío.

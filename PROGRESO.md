@@ -3,7 +3,7 @@
 ## Estado actual
 
 - **Fase:** 0 — Base técnica y tema
-- **Paso actual:** 8 de 11 — Página temporal de prueba (botón, tarjeta, badges, tabla y alternador de tema).
+- **Paso actual:** 9 de 11 completado (página temporal y contraste). Siguiente: cierre de la Fase 0 (pasos 10 y 11).
 - **Fecha:** 2026-10-21
 - **Rama:** `chore/fase0-base-tecnica` (creada desde `development`)
 
@@ -16,8 +16,8 @@
 | 2026-10-20 | 0 | 3. Tailwind v4 y shadcn/ui | `9b7b073` |
 | 2026-10-20 | 0 | 4. Tokens de la especificación visual y tema con `data-theme` + persistencia | `7f8b494` |
 | 2026-10-20 | 0 | 5. Montserrat e Inter; escala tipográfica | `44a3e85` |
-| 2026-10-21 | 0 | 6. Estructura de carpetas de `src/` | incluido en este commit |
-| 2026-10-21 | 0 | 7. Vitest + Testing Library con prueba de ejemplo | incluido en este commit |
+| 2026-10-21 | 0 | 6. Estructura de carpetas de `src/` | `111af6e` |
+| 2026-10-21 | 0 | 7. Vitest + Testing Library con prueba de ejemplo | `111af6e` |
 
 ## Pendientes de la Fase 0
 
@@ -28,15 +28,15 @@
 5. ✅ Montserrat e Inter; escala tipográfica.
 6. ✅ Estructura de carpetas de `src/` (con `README`/`.gitkeep` donde haga falta).
 7. ✅ Vitest (+ Testing Library) con prueba de ejemplo.
-8. ⏳ Página temporal de prueba (botón, tarjeta, badges, tabla, alternador de tema).
-9. ⏳ Verificar contraste en ambos temas y anotarlo en `DECISIONES.md`.
+8. ✅ Página temporal de prueba (botón, tarjeta, badges, tabla, alternador de tema).
+9. ✅ Verificar contraste en ambos temas y anotarlo en `DECISIONES.md`.
 10. ⏳ Commit inicial en `main` (.gitignore, README, docs) y rama `development`.
 11. ⏳ Crear/actualizar `PROGRESO.md` y `DECISIONES.md`.
 
 ## Estado del repositorio
 
 - `main` en `0709f42` (documentos iniciales); `development` en `3f2177b` (actualización del plan).
-- `chore/fase0-base-tecnica` en `6a7c25a`, **al día con `origin`**: los pasos 4 y 5 (`7f8b494`, `44a3e85`) y el commit de documentación (`6a7c25a`) ya están publicados.
+- `chore/fase0-base-tecnica` en `111af6e`, **al día con `origin`**: incluye los pasos 4 y 5 (`7f8b494`, `44a3e85`), su documentación (`6a7c25a`), la regla de no commitear sin confirmación (`995b3a3`) y los pasos 6 y 7 (`111af6e`). Sin commits locales pendientes de publicar.
 - `docs/` ya está versionado y **no se debe borrar ni sobrescribir**.
 - `AGENTS.md` está versionado (entró en `2d35e5b`).
 - Código de aplicación: base mínima, estructura de la sección 4.3 del plan (`src/app/`, `auth/`, `domain/`, `services/`, `data/`, `compartido/` y `paneles/{administrador,supervisor,practicante}/`); `src/compartido/` (`utils.ts` y `ui/button.tsx` de prueba), `src/app/tema/` (tokens, proveedor y alternador) y las fuentes Inter/Montserrat con la escala tipográfica. Vitest + Testing Library configurados con una prueba de ejemplo. Sin módulos de negocio todavía.
@@ -101,6 +101,17 @@
 - `npm.cmd run build`: `tsc -b` revisa también `src/vitest.setup.ts` y la prueba; compila (CSS 23.89 kB, JS 260.13 kB).
 - `git diff -- docs`: vacío; `docs/` intacto.
 
+## Verificación de los pasos 8 y 9 (2026-10-21)
+
+- **Página temporal:** `src/app/pagina-prueba/PaginaPrueba.tsx`, renderizada desde `src/App.tsx`. Incluye botón primario, tarjeta, los 5 badges de tarea con punto del color base, tabla (cabecera `surface-2`, filas de ~44 px, 13 px) y alternador de tema. Solo tokens; sin componentes nuevos de shadcn ni dependencias. Se elimina al final de la Fase 3 borrando `src/app/pagina-prueba/` y esa línea de `App.tsx`.
+- **Contraste:** script WCAG temporal en `%TEMP%` (fuera del repo, borrado después), leyendo los valores reales de `src/index.css` y componiendo `active-bg` (14 %) y los badges oscuros (16 %) sobre `surface`.
+  - **42 pares de texto (21 por tema), todos ≥ 4,5:1.** Mínimos: claro `active-text` sobre `active-bg` sobre `bg` 4,61; badge Terminada 4,78; `link` sobre `surface-2` 4,83. Oscuro: `text-2` sobre `surface-2` 5,93.
+  - `--danger` (`#D64545`) queda entre 3,44 y 4,38 como texto: se reserva para fondos, bordes e iconos. El texto rojo usa el nuevo `--danger-text` (`#A12626` claro / `#F59A9A` oscuro).
+- **Cambios de tokens:** en claro, `--link`, `--active-text` y `--state-success-text` pasan de `#14804E` a `#137A4A`; se añade `--danger-text`; el alias `--color-destructive` apunta a `--danger-text` porque el botón destructivo de shadcn usa `destructive` como texto. El tema oscuro no cambia salvo el nuevo `--danger-text`.
+- `npm.cmd run format` y `format:check`: pasan. `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25.33 kB, JS 261.85 kB).
+- Revisión visual: pendiente de los autores en el navegador (no se usó Edge headless en este paso).
+- `git diff -- docs`: vacío; `docs/` intacto. Sin commit ni push.
+
 ## Decisiones recientes
 
 - Tailwind CSS 4.3.3 con `@tailwindcss/vite` 4.3.3 (sin `tailwind.config.js`).
@@ -117,13 +128,17 @@
 - Estructura de la sección 4.3 con `.gitkeep` en las carpetas vacías; `App.tsx`, `main.tsx` e `index.css` se quedan en `src/` hasta la Fase 3 (al moverlos habría que tocar `components.json`, Prettier y `main.tsx`).
 - Vitest 5.0.5 + Testing Library con `environment: 'jsdom'`, sin `globals`, setup en `src/vitest.setup.ts` y pruebas colocadas junto al código con sufijo `.test.tsx`.
 - Nota visual pendiente: la especificación §6 pide radio de 8 px en el cuadrado del icono de las tarjetas de métricas; se resuelve en la Fase 4 (ver `DECISIONES.md`).
+- Página temporal aislada en `src/app/pagina-prueba/PaginaPrueba.tsx` (solo la usa `App.tsx`); se borra entera al final de la Fase 3.
+- Contraste: en claro `--link`, `--active-text` y `--state-success-text` pasan de `#14804E` a `#137A4A`; se añade `--danger-text` (`#A12626` / `#F59A9A`) y el alias `destructive` apunta a él. `--danger` sigue siendo `#D64545` para fondos, bordes e iconos.
+- El código difiere de la especificación visual §2/§3 y de la propuesta §13 hasta que los autores actualicen esos documentos (no se tocó `docs/`).
 - Detalle completo en `DECISIONES.md`.
 
 ## Preguntas abiertas
 
 - Node local 24.21.0: cumple el rango; 24.22.0 es el parche más reciente de la LTS.
 - Confirmar estilo de Prettier si se quiere otro distinto al propuesto (comillas simples, punto y coma, ancho 100).
-- Contraste de ambos temas: pendiente del paso 9.
+- Contraste de ambos temas: verificado en el paso 9; todos los pares de texto ≥ 4,5:1.
+- Actualizar la especificación visual (§2/§3) y la propuesta (§13) con `#137A4A` y `--danger-text`; el código ya los usa.
 - Interlineado: la especificación visual y la propuesta §13 no definen un valor; no se crearon tokens. Confirmar si se quiere fijar uno.
 - Radio de 8 px del cuadrado de icono en las tarjetas de métricas (especificación visual §6): los tokens solo tienen 6 y 10 px; se resuelve en la Fase 4.
 - Revisar las 7 vulnerabilidades altas de `shadcn` al actualizar esa dependencia.
