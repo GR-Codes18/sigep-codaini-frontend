@@ -7,3 +7,4 @@
 - En Windows usa `npm.cmd` y `npx.cmd` en vez de `npm` y `npx`.
 - Nunca borres ni sobrescribas `docs/`.
 - Nunca trabajes directo en `main` ni en `development`: usa una rama propia.
+- Nunca hagas commit ni push sin mi confirmación explícita.
