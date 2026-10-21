@@ -1097,10 +1097,10 @@ El sistema ofrece tema claro y tema oscuro, que el usuario elige con el botón d
 | Texto secundario                              | **\#5B6785**   | **\#9BA3B2**    |
 | Botón principal y acento                      | **\#58C481**   | **\#58C481**    |
 | Texto sobre el botón principal                | **\#0A192F**   | **\#0F141B**    |
-| Enlaces y texto verde                         | **\#14804E**   | **\#7FD9A3**    |
+| Enlaces y texto verde                         | **\#137A4A**   | **\#7FD9A3**    |
 | Rechazo, errores y atrasos (rojo)             | **\#D64545**   | **\#D64545**    |
 
-*El verde claro \#58C481 no se usa como texto sobre fondo claro por su bajo contraste; para eso se usa un verde más oscuro (#14804E). El contraste de los textos se verificará antes de cerrar el diseño.*
+*El verde claro \#58C481 no se usa como texto sobre fondo claro por su bajo contraste; para eso se usa un verde más oscuro (#137A4A). El contraste de los textos se verificará antes de cerrar el diseño.*
 
 ### 13.2 Colores de estado
 
