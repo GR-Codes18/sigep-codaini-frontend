@@ -3,7 +3,7 @@
 ## Estado actual
 
 - **Fase:** 0 — Base técnica y tema
-- **Paso actual:** 9 de 11 completado (página temporal y contraste). Siguiente: cierre de la Fase 0 (pasos 10 y 11).
+- **Paso actual:** 11 de 11 completado (README y cierre documentado). Siguiente: publicar el commit, PR a `development` y, con el OK de ambos, unir `development` a `main` con la etiqueta de cierre.
 - **Fecha:** 2026-10-21
 - **Rama:** `chore/fase0-base-tecnica` (creada desde `development`)
 
@@ -18,6 +18,11 @@
 | 2026-10-20 | 0 | 5. Montserrat e Inter; escala tipográfica | `44a3e85` |
 | 2026-10-21 | 0 | 6. Estructura de carpetas de `src/` | `111af6e` |
 | 2026-10-21 | 0 | 7. Vitest + Testing Library con prueba de ejemplo | `111af6e` |
+| 2026-10-21 | 0 | 8. Página temporal de prueba (botón, tarjeta, badges, tabla, tema) | `35e9fb7` |
+| 2026-10-21 | 0 | 9. Contraste verificado en ambos temas (`#137A4A`, `--danger-text`) | `14a79ea` |
+| 2026-10-21 | 0 | — Actualización de `docs/` con los ajustes de contraste (especificación visual y propuesta §13) | `56d755a` |
+| 2026-10-21 | 0 | 10. `README.md` y estado del repositorio | este commit |
+| 2026-10-21 | 0 | 11. `PROGRESO.md` y `DECISIONES.md` al día para el cierre | este commit |
 
 ## Pendientes de la Fase 0
 
@@ -30,16 +35,25 @@
 7. ✅ Vitest (+ Testing Library) con prueba de ejemplo.
 8. ✅ Página temporal de prueba (botón, tarjeta, badges, tabla, alternador de tema).
 9. ✅ Verificar contraste en ambos temas y anotarlo en `DECISIONES.md`.
-10. ⏳ Commit inicial en `main` (.gitignore, README, docs) y rama `development`.
-11. ⏳ Crear/actualizar `PROGRESO.md` y `DECISIONES.md`.
+10. ✅ `README.md` en `chore/fase0-base-tecnica` (en `main` y `development` solo hay `docs/`; el `.gitignore` y el README llegan a `main` en el PR de cierre, porque no se commitea directo en `main`).
+11. ✅ `PROGRESO.md` y `DECISIONES.md` al día para el cierre de la fase.
+
+## Cierre de la Fase 0
+
+- [ ] Revisar y ejecutar el commit único propuesto (solo `README.md`, `PROGRESO.md` y `DECISIONES.md`) y publicarlo en `origin/chore/fase0-base-tecnica`.
+- [ ] Abrir el PR de `chore/fase0-base-tecnica` a `development` y revisarlo entre las dos personas.
+- [ ] Confirmar que el proyecto instala y corre en el equipo de la otra persona (criterio de "Listo" de la fase).
+- [ ] Unir `development` a `main` con el OK de ambos y etiquetar `fase-0-completa` en `main`.
 
 ## Estado del repositorio
 
-- `main` en `0709f42` (documentos iniciales); `development` en `3f2177b` (actualización del plan).
-- `chore/fase0-base-tecnica` en `111af6e`, **al día con `origin`**: incluye los pasos 4 y 5 (`7f8b494`, `44a3e85`), su documentación (`6a7c25a`), la regla de no commitear sin confirmación (`995b3a3`) y los pasos 6 y 7 (`111af6e`). Sin commits locales pendientes de publicar.
+- `main` en `0709f42` (documentos iniciales) y `development` en `3f2177b` (actualización del plan); ambas también en `origin`.
+- `main` y `development` **solo contienen `docs/`** hoy. El `.gitignore` nació en la rama de trabajo (`0b6de05`) y todavía no está en `main`; llegará junto con el `README.md` en el PR de cierre (regla de no commitear directo en `main`).
+- `chore/fase0-base-tecnica` en `56d755a`, **1 commit por delante de `origin`** (`ahead 1`): incluye los pasos 4 y 5 (`7f8b494`, `44a3e85`), su documentación (`6a7c25a`), la regla de no commitear sin confirmación (`995b3a3`), los pasos 6 y 7 (`111af6e`), la página temporal (`35e9fb7`), el ajuste de contraste (`14a79ea`) y la actualización de `docs/` con esos valores (`56d755a`). Ese último commit **todavía no está publicado**.
+- Cambios locales sin commitear al redactar esto: `README.md` (nuevo), `PROGRESO.md` y `DECISIONES.md`. `docs/` no se tocó (`git diff -- docs` vacío).
 - `docs/` ya está versionado y **no se debe borrar ni sobrescribir**.
 - `AGENTS.md` está versionado (entró en `2d35e5b`).
-- Código de aplicación: base mínima, estructura de la sección 4.3 del plan (`src/app/`, `auth/`, `domain/`, `services/`, `data/`, `compartido/` y `paneles/{administrador,supervisor,practicante}/`); `src/compartido/` (`utils.ts` y `ui/button.tsx` de prueba), `src/app/tema/` (tokens, proveedor y alternador) y las fuentes Inter/Montserrat con la escala tipográfica. Vitest + Testing Library configurados con una prueba de ejemplo. Sin módulos de negocio todavía.
+- Código de aplicación: base mínima, estructura de la sección 4.3 del plan (`src/app/`, `auth/`, `domain/`, `services/`, `data/`, `compartido/` y `paneles/{administrador,supervisor,practicante}/`); `src/compartido/` (`utils.ts` y `ui/button.tsx` de prueba), `src/app/tema/` (tokens, proveedor y alternador) y las fuentes Inter/Montserrat con la escala tipográfica. Incluye la página temporal (`src/app/pagina-prueba/PaginaPrueba.tsx`, se elimina al final de la Fase 3) y los ajustes de contraste del paso 9. Vitest + Testing Library configurados con una prueba de ejemplo. Sin módulos de negocio todavía.
 - En Windows se usa `npm.cmd` (la política de PowerShell bloquea `npm.ps1`).
 
 ## Verificación del paso 2 (2026-10-20)
@@ -109,8 +123,16 @@
   - `--danger` (`#D64545`) queda entre 3,44 y 4,38 como texto: se reserva para fondos, bordes e iconos. El texto rojo usa el nuevo `--danger-text` (`#A12626` claro / `#F59A9A` oscuro).
 - **Cambios de tokens:** en claro, `--link`, `--active-text` y `--state-success-text` pasan de `#14804E` a `#137A4A`; se añade `--danger-text`; el alias `--color-destructive` apunta a `--danger-text` porque el botón destructivo de shadcn usa `destructive` como texto. El tema oscuro no cambia salvo el nuevo `--danger-text`.
 - `npm.cmd run format` y `format:check`: pasan. `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25.33 kB, JS 261.85 kB).
-- Revisión visual: pendiente de los autores en el navegador (no se usó Edge headless en este paso).
+- Revisión visual: **aprobada por los autores** en el navegador (no se usó Edge headless en este paso).
 - `git diff -- docs`: vacío; `docs/` intacto. Sin commit ni push.
+
+## Verificación de los pasos 10 y 11 (2026-10-21)
+
+- **README.md** en la raíz: una línea de qué es el prototipo, requisitos de Node del `package.json`, instalación y ejecución (`install`, `dev`, `test`, `lint`, `build`), otros scripts (`preview`, `test:watch`, `format`, `format:check`), ubicación de `docs/`, `PROGRESO.md` y `DECISIONES.md`, y el flujo de ramas y PR de la sección 11 del plan. Sin sección de estructura de `src/` (está en el plan §4.3) ni datos que no estén en la documentación.
+- **Archivos de seguimiento:** `PROGRESO.md` registra los pasos 8 (`35e9fb7`), 9 (`14a79ea`), la actualización de `docs/` (`56d755a`), el estado real del repositorio (`ahead 1`) y la revisión visual aprobada; `DECISIONES.md` cierra la divergencia con `docs/` y añade las decisiones de los pasos 10 y 11.
+- `npm.cmd run format:check`: pasa (Prettier ignora `docs/` y todos los `.md`). `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25.62 kB, JS 261.85 kB).
+- Colores escritos a mano: solo en `src/index.css` (tokens); ningún `#hex`, `rgb()` ni `hsl()` en `.ts`/`.tsx`.
+- `git diff -- docs`: vacío; `docs/` intacto. Cambios locales: `README.md` (nuevo), `PROGRESO.md` y `DECISIONES.md`. Sin commit ni push.
 
 ## Decisiones recientes
 
@@ -130,15 +152,16 @@
 - Nota visual pendiente: la especificación §6 pide radio de 8 px en el cuadrado del icono de las tarjetas de métricas; se resuelve en la Fase 4 (ver `DECISIONES.md`).
 - Página temporal aislada en `src/app/pagina-prueba/PaginaPrueba.tsx` (solo la usa `App.tsx`); se borra entera al final de la Fase 3.
 - Contraste: en claro `--link`, `--active-text` y `--state-success-text` pasan de `#14804E` a `#137A4A`; se añade `--danger-text` (`#A12626` / `#F59A9A`) y el alias `destructive` apunta a él. `--danger` sigue siendo `#D64545` para fondos, bordes e iconos.
-- El código difiere de la especificación visual §2/§3 y de la propuesta §13 hasta que los autores actualicen esos documentos (no se tocó `docs/`).
+- El código y `docs/` quedan sincronizados: `56d755a` actualiza la especificación visual (§2, §3 y §8) y la propuesta (§13.1) con `#137A4A` y `--danger-text`; ya no hay divergencia.
+- `README.md` en la raíz, en español y limitado al paso 10; se commitea en `chore/fase0-base-tecnica` y llega a `main` en el PR de cierre, nunca directo a `main`.
+- En Windows se documenta `npm.cmd`/`npx.cmd`; el rango de Node del README es el de `package.json` (`^22.22.2 || ^24.15.0 || >=26`), sin inventar un mínimo de npm.
 - Detalle completo en `DECISIONES.md`.
 
 ## Preguntas abiertas
 
 - Node local 24.21.0: cumple el rango; 24.22.0 es el parche más reciente de la LTS.
+- Confirmar que el proyecto instala y corre en el equipo de la otra persona (criterio de "Listo" de la Fase 0); falta esa comprobación.
 - Confirmar estilo de Prettier si se quiere otro distinto al propuesto (comillas simples, punto y coma, ancho 100).
-- Contraste de ambos temas: verificado en el paso 9; todos los pares de texto ≥ 4,5:1.
-- Actualizar la especificación visual (§2/§3) y la propuesta (§13) con `#137A4A` y `--danger-text`; el código ya los usa.
 - Interlineado: la especificación visual y la propuesta §13 no definen un valor; no se crearon tokens. Confirmar si se quiere fijar uno.
 - Radio de 8 px del cuadrado de icono en las tarjetas de métricas (especificación visual §6): los tokens solo tienen 6 y 10 px; se resuelve en la Fase 4.
 - Revisar las 7 vulnerabilidades altas de `shadcn` al actualizar esa dependencia.

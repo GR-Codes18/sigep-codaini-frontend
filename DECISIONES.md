@@ -288,10 +288,11 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
 - El botón destructivo generado por shadcn **usa `destructive` como color de texto** (`text-destructive`), así que el alias `--color-destructive` se apunta a `--danger-text`. Efecto secundario: `bg-destructive/10`, `border-destructive/40` y los anillos de error también derivan de `--danger-text` (siguen siendo el mismo rojo de la familia, algo más oscuro en claro y más claro en oscuro).
 - **Regla de uso:** `--danger` (`#D64545`) queda para fondos sólidos, bordes e iconos; para texto rojo se usa `--danger-text` (clase `text-danger-text`). `text-danger` no debe usarse como texto.
 
-### Divergencia con la documentación (pendiente de los autores)
+### Divergencia con la documentación (resuelta en `56d755a`)
 
-- El código **difiere a propósito** de la especificación visual §2/§3 y de la propuesta §13: `--link`, `--active-text` y `--state-success-text` en claro pasan de `#14804E` a `#137A4A`, y se añade `--danger-text` (`#A12626` / `#F59A9A`).
-- No se tocó `docs/` (regla del proyecto). Hay que actualizar esos documentos para que la especificación vuelva a ser la fuente única.
+- El código **se apartó a propósito** de la especificación visual §2/§3 y de la propuesta §13: `--link`, `--active-text` y `--state-success-text` en claro pasan de `#14804E` a `#137A4A`, y se añade `--danger-text` (`#A12626` / `#F59A9A`).
+- Los autores actualizaron `docs/` en **`56d755a`** (`docs: actualiza especificacion y propuesta con ajustes de contraste`): la especificación visual (§2 paleta, §3 estados y §8 bloque CSS) y la propuesta (§13.1) ya usan `#137A4A` y documentan `--danger-text`. Ya no hay divergencia y `docs/` vuelve a ser la fuente única.
+- El agente no tocó `docs/`: el cambio entró por un commit de los autores, respetando la regla de no borrar ni sobrescribir esa carpeta.
 
 ### Verificación
 
@@ -300,3 +301,29 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
 - `--danger` como texto queda entre **3,44 y 4,38**: por eso no se usa como texto.
 - `npm.cmd run format` y `format:check`: pasan. `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25,33 kB, JS 261,85 kB).
 - `git diff -- docs`: vacío.
+
+---
+
+## 2026-10-21 — README y cierre de la Fase 0 (Fase 0, pasos 10 y 11)
+
+### `README.md`
+
+- Se crea `README.md` en la raíz, en español, con: qué es el prototipo (una línea), requisitos, instalación y ejecución, otros scripts, ubicación de la documentación y flujo de ramas y PR.
+- **Dónde se commitea:** en `chore/fase0-base-tecnica`, no en `main`. El paso 10 del plan decía «primer commit en `main` con `.gitignore`, `README.md` y `docs/`», pero `main` (`0709f42`) solo trae `docs/`; el `.gitignore` nació en la rama de trabajo (`0b6de05`) y nunca se commiteó directo en `main`. Como la sección 11 prohíbe trabajar en `main`/`development`, no se recrea ese commit: el README se commitea en la rama y ambos archivos llegan a `main` en el PR de cierre de la Fase 0. Alternativa descartada: commit directo en `main` (rompe la regla y deja la rama estable sin revisión).
+- **Alcance:** solo lo que piden el plan y la propuesta. No se añade estructura de `src/` (está en el plan §4.3 y cambia por fases), ni licencia, autores, capturas, badges de CI o URL de despliegue, porque no existen en la documentación del proyecto.
+- **Requisitos:** se copia el rango real de `package.json` (`^22.22.2 || ^24.15.0 || >=26`), con la nota de que lo impone `jsdom` 30 y que se recomienda la LTS 24. No se inventa una versión mínima de npm. Se documenta `npm.cmd`/`npx.cmd` en Windows (política de PowerShell, ver paso 1).
+- Se listan los cinco comandos pedidos (`install`, `dev`, `test`, `lint`, `build`) y una línea aparte con `preview`, `test:watch`, `format` y `format:check`, que ya existen en `package.json`.
+
+### Estado de la Fase 0
+
+- **Commits registrados:** pasos 8 (`35e9fb7`), 9 (`14a79ea`) y la actualización de `docs/` con los ajustes de contraste (`56d755a`).
+- **Repositorio:** `main` `0709f42`, `development` `3f2177b`; `chore/fase0-base-tecnica` en `56d755a` con **1 commit sin publicar** (`ahead 1`). Se corrige en `PROGRESO.md` la afirmación anterior de que la rama estaba al día con `origin`.
+- **Revisión visual** de la página temporal: aprobada por los autores.
+- **Criterio de «Listo»:** código, tema, tokens, prueba de ejemplo y contraste cumplidos. Falta comprobar la instalación y ejecución en el equipo de la otra persona y cerrar en Git (PR a `development`, luego `development` → `main` con etiqueta `fase-0-completa`), que requieren el OK de ambos.
+- **Sin commit ni push** en este paso: el commit único se propone a los autores.
+
+### Verificación
+
+- `npm.cmd run format:check`: pasa (Prettier ignora `docs/` y los `.md`). `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25.62 kB, JS 261.85 kB).
+- Colores escritos a mano: solo en `src/index.css` (tokens).
+- `git diff -- docs`: vacío; solo cambian `README.md`, `PROGRESO.md` y `DECISIONES.md`.
