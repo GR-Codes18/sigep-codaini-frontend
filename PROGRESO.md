@@ -3,8 +3,8 @@
 ## Estado actual
 
 - **Fase:** 0 — Base técnica y tema
-- **Paso actual:** 5 de 11 — Montserrat e Inter; escala tipográfica (**terminado**, commit `44a3e85`). **Siguiente:** 6 de 11 — Estructura de carpetas de `src/`.
-- **Fecha:** 2026-10-20
+- **Paso actual:** 8 de 11 — Página temporal de prueba (botón, tarjeta, badges, tabla y alternador de tema).
+- **Fecha:** 2026-10-21
 - **Rama:** `chore/fase0-base-tecnica` (creada desde `development`)
 
 ## Pasos terminados
@@ -16,6 +16,8 @@
 | 2026-10-20 | 0 | 3. Tailwind v4 y shadcn/ui | `9b7b073` |
 | 2026-10-20 | 0 | 4. Tokens de la especificación visual y tema con `data-theme` + persistencia | `7f8b494` |
 | 2026-10-20 | 0 | 5. Montserrat e Inter; escala tipográfica | `44a3e85` |
+| 2026-10-21 | 0 | 6. Estructura de carpetas de `src/` | incluido en este commit |
+| 2026-10-21 | 0 | 7. Vitest + Testing Library con prueba de ejemplo | incluido en este commit |
 
 ## Pendientes de la Fase 0
 
@@ -24,8 +26,8 @@
 3. ✅ Tailwind v4 y shadcn/ui.
 4. ✅ Tokens de la especificación visual (claro/oscuro) y tema con `data-theme` + persistencia.
 5. ✅ Montserrat e Inter; escala tipográfica.
-6. ⏳ Estructura de carpetas de `src/` (con `README`/`.gitkeep` donde haga falta).
-7. ⏳ Vitest (+ Testing Library) con prueba de ejemplo.
+6. ✅ Estructura de carpetas de `src/` (con `README`/`.gitkeep` donde haga falta).
+7. ✅ Vitest (+ Testing Library) con prueba de ejemplo.
 8. ⏳ Página temporal de prueba (botón, tarjeta, badges, tabla, alternador de tema).
 9. ⏳ Verificar contraste en ambos temas y anotarlo en `DECISIONES.md`.
 10. ⏳ Commit inicial en `main` (.gitignore, README, docs) y rama `development`.
@@ -34,10 +36,10 @@
 ## Estado del repositorio
 
 - `main` en `0709f42` (documentos iniciales); `development` en `3f2177b` (actualización del plan).
-- `chore/fase0-base-tecnica`: pasos 3, 4 y 5 en `9b7b073`, `7f8b494` y `44a3e85`. La rama está 2 commits por delante de `origin/chore/fase0-base-tecnica`; este commit de documentación cierra la sesión.
+- `chore/fase0-base-tecnica` en `6a7c25a`, **al día con `origin`**: los pasos 4 y 5 (`7f8b494`, `44a3e85`) y el commit de documentación (`6a7c25a`) ya están publicados.
 - `docs/` ya está versionado y **no se debe borrar ni sobrescribir**.
 - `AGENTS.md` está versionado (entró en `2d35e5b`).
-- Código de aplicación: base mínima, `src/compartido/` (`utils.ts` y `ui/button.tsx` de prueba), `src/app/tema/` (tokens, proveedor y alternador) y las fuentes Inter/Montserrat con la escala tipográfica. Sin módulos de negocio todavía.
+- Código de aplicación: base mínima, estructura de la sección 4.3 del plan (`src/app/`, `auth/`, `domain/`, `services/`, `data/`, `compartido/` y `paneles/{administrador,supervisor,practicante}/`); `src/compartido/` (`utils.ts` y `ui/button.tsx` de prueba), `src/app/tema/` (tokens, proveedor y alternador) y las fuentes Inter/Montserrat con la escala tipográfica. Vitest + Testing Library configurados con una prueba de ejemplo. Sin módulos de negocio todavía.
 - En Windows se usa `npm.cmd` (la política de PowerShell bloquea `npm.ps1`).
 
 ## Verificación del paso 2 (2026-10-20)
@@ -88,6 +90,17 @@
   - Radios 6 px (botón) y 10 px (tarjeta) siguen correctos en ambos temas; tema persistente y sin parpadeo.
 - `git diff -- docs`: vacío; `docs/` intacto.
 
+## Verificación de los pasos 6 y 7 (2026-10-21)
+
+- Estructura de `src/` según la sección 4.3: se crearon `auth/`, `domain/`, `services/`, `data/` y `paneles/{administrador,supervisor,practicante}/`, todas vacías con `.gitkeep`. No se movieron `app/`, `compartido/`, `App.tsx`, `main.tsx` ni `index.css`.
+- Versiones verificadas con `npm.cmd view` y coincidentes con `DECISIONES.md`; instaladas exactas: `vitest` 5.0.5, `jsdom` 30.1.3, `@testing-library/react` 16.3.3, `@testing-library/dom` 10.4.2, `@testing-library/jest-dom` 7.0.1, `@testing-library/user-event` 14.6.8.
+- `npm.cmd install`: 72 paquetes nuevos, 576 auditados; se mantienen las 7 vulnerabilidades altas conocidas de las herramientas de `shadcn` (ninguna de las pruebas llega al navegador).
+- `npm.cmd run format` y `format:check`: pasan.
+- `npm.cmd run lint`: 0 errores y el aviso conocido de `react-refresh/only-export-components`.
+- `npm.cmd run test`: Vitest 5.0.5, 1 archivo y 2 pruebas pasan (tema claro por defecto; cambio a oscuro con persistencia en `localStorage`).
+- `npm.cmd run build`: `tsc -b` revisa también `src/vitest.setup.ts` y la prueba; compila (CSS 23.89 kB, JS 260.13 kB).
+- `git diff -- docs`: vacío; `docs/` intacto.
+
 ## Decisiones recientes
 
 - Tailwind CSS 4.3.3 con `@tailwindcss/vite` 4.3.3 (sin `tailwind.config.js`).
@@ -101,6 +114,9 @@
 - Botón generado: solo se ajustaron `hover:bg-primary-hover` y `text-link`; repetir si se regenera.
 - Fontsource 5.3.0 para Inter y Montserrat, subconjunto latin y pesos 400/500/600 y 600/700; sin peticiones externas.
 - Escala: H1 24/700, H2 18/600, H3 16/600, cuerpo 14, tablas 13 con `tabular-nums`, auxiliar 12. Sin tokens de interlineado porque la especificación no lo define.
+- Estructura de la sección 4.3 con `.gitkeep` en las carpetas vacías; `App.tsx`, `main.tsx` e `index.css` se quedan en `src/` hasta la Fase 3 (al moverlos habría que tocar `components.json`, Prettier y `main.tsx`).
+- Vitest 5.0.5 + Testing Library con `environment: 'jsdom'`, sin `globals`, setup en `src/vitest.setup.ts` y pruebas colocadas junto al código con sufijo `.test.tsx`.
+- Nota visual pendiente: la especificación §6 pide radio de 8 px en el cuadrado del icono de las tarjetas de métricas; se resuelve en la Fase 4 (ver `DECISIONES.md`).
 - Detalle completo en `DECISIONES.md`.
 
 ## Preguntas abiertas
@@ -109,4 +125,5 @@
 - Confirmar estilo de Prettier si se quiere otro distinto al propuesto (comillas simples, punto y coma, ancho 100).
 - Contraste de ambos temas: pendiente del paso 9.
 - Interlineado: la especificación visual y la propuesta §13 no definen un valor; no se crearon tokens. Confirmar si se quiere fijar uno.
+- Radio de 8 px del cuadrado de icono en las tarjetas de métricas (especificación visual §6): los tokens solo tienen 6 y 10 px; se resuelve en la Fase 4.
 - Revisar las 7 vulnerabilidades altas de `shadcn` al actualizar esa dependencia.

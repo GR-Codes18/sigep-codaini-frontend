@@ -224,3 +224,37 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
   - Los recursos de fuente son todos locales (`/assets/...woff2`), sin dominios externos.
   - El color de enlace es `rgb(20, 128, 78)` en claro y `rgb(127, 217, 163)` en oscuro (`--link`).
 - El contraste sigue pendiente para el paso 9.
+
+---
+
+## 2026-10-21 — Estructura de `src/` y pruebas (Fase 0, pasos 6 y 7)
+
+### Estructura
+
+- Se crean las carpetas de la sección 4.3 del plan con `.gitkeep` porque están vacías hasta su fase: `src/auth/`, `src/domain/`, `src/services/`, `src/data/` y `src/paneles/{administrador,supervisor,practicante}/`.
+- No se crean subcarpetas hipotéticas dentro de `app/` ni módulos dentro de cada panel: llegan en la Fase 3 y en las Fases 5–7 con los nombres ya acordados.
+- `src/app/tema/` y `src/compartido/` no se mueven. `src/App.tsx`, `src/main.tsx` y `src/index.css` se quedan en `src/` hasta la Fase 3: moverlos ahora obligaría a tocar `main.tsx`, la ruta del CSS en `components.json` y `tailwindStylesheet` en `.prettierrc.json`, y ese código se reemplaza al montar el router y el layout.
+- Se usa `.gitkeep` en vez de un `README.md` por carpeta para no duplicar la descripción de capas que ya viven en el plan y en este archivo.
+
+### Pruebas
+
+- Versiones verificadas con `npm.cmd view` (coinciden con la decisión del paso 1) e instaladas exactas: `vitest` 5.0.5, `jsdom` 30.1.3, `@testing-library/react` 16.3.3, `@testing-library/dom` 10.4.2, `@testing-library/jest-dom` 7.0.1 y `@testing-library/user-event` 14.6.8.
+- La configuración `test` vive en `vite.config.ts` y usa `defineConfig` de `vitest/config` para que TypeScript conozca la propiedad. `environment: 'jsdom'` e `include` limitado a `src/**/*.{test,spec}.{ts,tsx}`.
+- **Sin `globals: true`**: cada prueba importa `describe`, `it`, `expect`, etc. Evita depender de variables globales y de ampliar `types` en el tsconfig.
+- `src/vitest.setup.ts` importa `@testing-library/jest-dom/vitest` y registra `afterEach(cleanup)`, que Testing Library no hace sola cuando no hay globals. Se deja dentro de `src/` para que lo revise `tsconfig.app.json` (tiene libs del DOM) sin añadir `DOM` a `tsconfig.node.json`.
+- Las pruebas se colocan junto al código con sufijo `.test.tsx` (patrón por defecto de Vitest, sin configuración extra). Si se prefiere español (`.prueba.tsx`), habría que declarar un `include` propio.
+- Scripts: `test` ejecuta `vitest run` (una pasada, apta para verificación) y `test:watch` abre el modo interactivo.
+- La prueba de ejemplo prueba código real, no un archivo desechable: monta `ProveedorTema` + `AlternadorTema`, limpia `localStorage` y `data-theme` antes de cada caso, y cubre (1) tema claro por defecto y (2) cambio a oscuro con `data-theme`, `color-scheme` y persistencia.
+
+### Pendiente visual: radio de 8 px en tarjetas de métricas
+
+- La especificación visual §6 pide el icono de las tarjetas de métricas en un cuadrado de 32 px con **esquinas de 8 px**, pero §5 solo define radios de 6 px (controles) y 10 px (contenedores). No se inventa un token en la Fase 0 porque esas tarjetas no existen todavía.
+- Se resuelve en la **Fase 4**, al construir la tarjeta de métrica: se añade el radio específico que corresponda (8 px) sin cambiar los 6/10 px del resto.
+
+### Verificación
+
+- `npm.cmd run test`: 1 archivo, 2 pruebas, todas pasan.
+- `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`; `format:check` pasa.
+- `npm.cmd run build`: `tsc -b` revisa el setup y la prueba; compila (CSS 23.89 kB, JS 260.13 kB).
+- `npm.cmd install`: 72 paquetes nuevos; `npm audit` mantiene las 7 vulnerabilidades altas de las herramientas de `shadcn` (no llegan al bundle).
+- `git diff -- docs`: vacío.
