@@ -169,6 +169,7 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
 
 - Se cambiaron solo dos clases de `src/compartido/ui/button.tsx` para respetar la especificación: el hover del botón principal usa `hover:bg-primary-hover` y la variante `link` usa `text-link` (el verde `#58C481` no se usa como texto sobre fondo claro).
 - **Si se regenera el botón con `shadcn add`, hay que repetir estos dos cambios.**
+- La variante `secondary` del botón generado conserva un `hover:bg-[color-mix(in oklch, var(--secondary), var(--foreground) 5%)]` interno. Usa los tokens del tema y no introduce un color fijo; no se tocó porque los autores limitaron los cambios del botón a las dos clases anteriores.
 
 ### Interlineado
 
