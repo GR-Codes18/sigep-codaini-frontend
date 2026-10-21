@@ -2,6 +2,8 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import App from '@/App.tsx';
+import { ProveedorTema } from '@/app/tema/ProveedorTema';
+
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -12,6 +14,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <ProveedorTema>
+      <App />
+    </ProveedorTema>
   </StrictMode>,
 );

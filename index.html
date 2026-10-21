@@ -3,6 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      Aplica el tema antes de que se pinte la página para evitar el parpadeo.
+      La clave debe coincidir con CLAVE_TEMA en src/app/tema/tema.ts.
+      Es un script clásico (no type="module") porque los módulos se ejecutan después del HTML.
+    -->
+    <script>
+      try {
+        if (localStorage.getItem('sigep-tema') === 'dark') {
+          document.documentElement.dataset.theme = 'dark';
+          document.documentElement.style.colorScheme = 'dark';
+        }
+      } catch {
+        // Sin almacenamiento disponible se mantiene el tema claro del HTML.
+      }
+    </script>
     <title>SIGEP CODAINI</title>
   </head>
   <body>
