@@ -327,3 +327,44 @@ Se actualiza al cerrar cada decisión; no sustituye a `docs/`.
 - `npm.cmd run format:check`: pasa (Prettier ignora `docs/` y los `.md`). `npm.cmd run lint`: 0 errores y el aviso conocido de `button.tsx`. `npm.cmd run test`: 2 pruebas pasan. `npm.cmd run build`: compila (CSS 25.62 kB, JS 261.85 kB).
 - Colores escritos a mano: solo en `src/index.css` (tokens).
 - `git diff -- docs`: vacío; solo cambian `README.md`, `PROGRESO.md` y `DECISIONES.md`.
+
+---
+
+## 2026-10-21 — [A] Reparto en paralelo y reglas de convivencia
+
+Con la Fase 0 cerrada (PR #1 a `development`, PR #2 a `main` y etiqueta `fase-0-completa` en
+`67e4116`), el trabajo pasa a hacerse entre dos personas a la vez. Estas son las reglas acordadas
+para que el paralelismo no genere conflictos ni decisiones duplicadas.
+
+### Reparto
+
+- **Persona A:** Fases 1 y 2 (`domain/`, `data/`, `services/`).
+- **Persona B:** Fases 3 y 4 (acceso, layout, componentes de `compartido/`).
+- **Desde la Fase 5:** se reparte por panel o por módulo, acordando antes qué componentes de
+  `compartido/` toca cada una.
+
+### Ramas y revisión
+
+- Una rama por paso o módulo, creada **desde `development`** (nunca se trabaja en `main` ni en
+  `development`).
+- Cada rama se integra con un **PR revisado por la otra persona**, con test, lint y build pasando.
+- **Dependencias:** quien instale una dependencia lo avisa y hace un **PR pequeño solo para eso**,
+  para que la otra persona no reciba instalaciones mezcladas con código.
+- **Conflicto en `package-lock.json`:** se toma la versión de `development` y se ejecuta
+  `npm.cmd install`; no se resuelve a mano.
+
+### Archivos de seguimiento
+
+- **`PROGRESO.md`:** cada persona escribe **solo en su bloque** (Persona A / Persona B); el bloque
+  «Estado general (común)» solo lo edita quien cierra una fase, avisando a la otra persona.
+- **`DECISIONES.md`:** solo se **agregan entradas al final**, con fecha y `[A]` o `[B]` en el título;
+  las entradas anteriores no se editan.
+
+### Fronteras de código mientras dure el paralelismo
+
+- **Persona B** usa datos de ejemplo propios en `src/app/ejemplos/` hasta que existan los servicios;
+  **`src/data/` es de la Persona A**.
+- **`main.tsx` y `App.tsx` los toca solo quien monta el router (Persona B)**; la Persona A no los
+  modifica.
+- **Tipos de `domain/`:** se acuerdan por PR en la rama `feat/fase1-tipos` y **no se cambian sin
+  avisar**, porque todo el resto del sistema depende de ellos.
