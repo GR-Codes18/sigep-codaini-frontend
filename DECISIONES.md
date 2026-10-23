@@ -368,3 +368,12 @@ para que el paralelismo no genere conflictos ni decisiones duplicadas.
   modifica.
 - **Tipos de `domain/`:** se acuerdan por PR en la rama `feat/fase1-tipos` y **no se cambian sin
   avisar**, porque todo el resto del sistema depende de ellos.
+
+## 2026-10-22 — [B] @hookform/resolvers baja de 6.0.0 a 5.2.2 (Fase 3, paso 1)
+
+- **Qué cambia:** `@hookform/resolvers` pasa de `6.0.0` (decidido en la Fase 0, paso 1) a `5.2.2`, exacta.
+- **Por qué:** la 6.0.0 nunca se había instalado. Al instalarla, `npm install` falla con `ERESOLVE`: sus peers opcionales (`effect@^4`, `@typeschema/main`) arrastran `@effect/schema@0.71.4`, que pide `effect@^3`. Se descartaron `--force` y `--legacy-peer-deps` porque instalan un árbol roto u ocultan conflictos futuros.
+- **Por qué 5.2.2:** última 5.x; su único peer es `react-hook-form@^7.55.0` y usa Standard Schema, así que `zodResolver` funciona con Zod 4.
+- **Alternativas descartadas:** mantener 6.0.0 con `--legacy-peer-deps` en `.npmrc` (afecta a todo el proyecto) o con `overrides` (parche a mantener).
+- **Además:** `zod` 4.6.7 pasa a estar declarado en `dependencies` (antes llegaba solo como transitiva de `shadcn`).
+- **Reabrir cuando:** una 6.x instale sin conflicto de peers.
