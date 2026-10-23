@@ -368,3 +368,107 @@ para que el paralelismo no genere conflictos ni decisiones duplicadas.
   modifica.
 - **Tipos de `domain/`:** se acuerdan por PR en la rama `feat/fase1-tipos` y **no se cambian sin
   avisar**, porque todo el resto del sistema depende de ellos.
+
+---
+
+## 2026-10-22 — [A] Fase 1, paso 1: contrato de tipos de `domain/`
+
+Acuerdo entre las dos personas para `src/domain/`: solo tipos, enumeraciones y listas constantes;
+cero lógica. Se implementa en `feat/fase1-tipos`.
+
+### Convenciones
+
+- Enumeraciones como arreglo `as const` + tipo derivado (`ESTADOS_TAREA` → `EstadoTarea`).
+  Descartado `enum` de TypeScript: `tsconfig.app.json` activa `erasableSyntaxOnly` y
+  `verbatimModuleSyntax`.
+- `Id = string`, sin *branded types*. `Fecha = string` (`YYYY-MM-DD`), `FechaHora = string`
+  (ISO 8601 UTC) y `Hora = string` (`HH:mm`). Descartados `Date` y los números de época por
+  persistencia, zona horaria y legibilidad. `crypto.randomUUID()` no vive en `domain/`: lo usan
+  `services/` y `data/`; la semilla usa IDs fijos y legibles.
+- Sin campos calculados en entidades guardadas (días esperando, veces devuelta, carga, avance,
+  indicadores). `Tarea.id` es el identificador interno; `Tarea.numero` es el correlativo por
+  proyecto; el ID legible `CODIGO-NNN` se calcula y no se guarda.
+
+### Personas
+
+- `Usuario` es la tabla base; `Practicante` y `Supervisor` son detalles. Descartada la unión
+  discriminada. La PK de los detalles es `id_usuario`.
+- `Usuario.fecha_alta: FechaHora` no nula, separada de `Practicante.fecha_ingreso`.
+- `celular: string` no nulo en `Usuario` para los tres roles; se quita de `Practicante` y
+  `Supervisor`. `Postulante` conserva su propio celular. Descartado el detalle `Administrador`
+  solo para el celular.
+- `Usuario.contrasena` nunca se registra en el historial. `Usuario.estado` es `EstadoUsuario`
+  (`ACTIVO | INACTIVO`). `Practicante` no guarda estado: `EstadoPracticante`
+  (`ACTIVO | FINALIZADO`) es presentación derivada de `Usuario.estado`.
+- `Practicante.discord`, `cuenta_github` y `disponibilidad_horaria` nacen nulos al crear la
+  cuenta desde una postulación y se completan en Mi perfil.
+
+### Proyecto, tareas y Pull Requests
+
+- `Proyecto.ultimo_numero_tarea: number` no nulo, inicia en 0 y solo lo escribe la generación de
+  IDs (paso 6). Descartado derivar `max(numero) + 1` porque reutilizaría el último número
+  eliminado.
+- `dia_reunion` y `hora_reunion` son opcionales; «ambos o ninguno» se valida en servicios y Zod,
+  no en el tipo.
+- `Tarea.estado_pr: EstadoPR | null`. Es `null` hasta la primera llegada a `ESPERANDO_SUPERVISION`
+  o `TERMINADA` (ahí pasa a `PENDIENTE`); después se conserva al devolver o reabrir y se oculta
+  con una regla de visibilidad (`requiere_pr` y estado de la tarea). Descartado el diseño que lo
+  ponía en `null` al devolver o reabrir: perdía el último estado y dejaba un `Pendiente` con
+  enlace a un PR fusionado.
+- `url_pull_request`, `rama_origen` y `rama_base` son nulos hasta el primer PR y se conservan al
+  devolver o reabrir; un PR nuevo los sobrescribe.
+- `Asignacion.id_practicante`, `Tarea.id_practicante` y `Proyecto.id_supervisor` contienen un
+  `Usuario.id` (comentario en el código).
+
+### Enumeraciones e historial
+
+- Se mantienen las seis del plan (`Rol`, `EstadoTarea`, `EstadoPR`, `EstadoPostulacion`,
+  `EstadoProyecto`, `EstadoPracticante`) y se agregan `EstadoUsuario`, `TipoCriterio`,
+  `Severidad`, `TipoReglaInsight`, `TipoElemento`, `DiaSemana`, `BloqueCriterio`,
+  `TipoAccionHistorial` y `TipoNotificacion`.
+- `TipoElemento`: `USUARIO | PROYECTO | TAREA | POSTULANTE | AREA_TECNICA | ESPECIALIDAD |
+  CRITERIO_EVALUACION | PARAMETRO_CONFIGURACION`. Toda persona se referencia como `USUARIO` +
+  `id_usuario`; descartados `PRACTICANTE` y `SUPERVISOR` como tipos de elemento.
+- `ACCIONES_POR_CATEGORIA` es un objeto `as const` con un arreglo por categoría (8 categorías,
+  62 acciones) y es la única fuente de `TipoAccionHistorial` y `CategoriaEvento`.
+  `CategoriaEvento` no se guarda en `EventoHistorial`: se deriva de la acción. Incluye
+  `PROYECTO_ENLACE_EDITADO` (13 acciones de proyectos). Prefijo `PULL_REQUEST_` en historial y
+  notificaciones.
+- `TipoNotificacion`: 18 valores. `ASIGNADO_A_PROYECTO` y `QUITADO_DE_PROYECTO` cubren a
+  practicantes y supervisores. En asignación o quita, `Notificacion.elemento` es el `PROYECTO` y
+  la persona va en `id_destinatario`.
+- `EventoHistorial`: `autor` es `{ tipo: 'USUARIO'; id_usuario } | { tipo: 'SISTEMA' }`;
+  `elemento` lleva `tipo`, `id` y `etiqueta` copiada; `cambios` es `CambioRegistrado[]`;
+  `id_proyecto` es opcional, pero obligatorio en eventos de proyecto, tarea y asignación. En
+  asignación o quita el elemento es `USUARIO` y el proyecto va en `id_proyecto`.
+- `PostulacionEvaluacionDetalle.bloque: BloqueCriterio` (`AREA | ESPECIALIDAD`) se copia al
+  evaluar; no se deriva de `id_criterio` porque los criterios se editan.
+
+### Insights y configuración
+
+- Los insights no se guardan. El tipo calculado lleva `tipo_regla`, `severidad`, `titulo`,
+  `motivo`, `elemento`, `fecha_deteccion` (`FechaHora`), `revisado` e `ids_proyecto: Id[]` (`[]`
+  para postulantes). `fecha_deteccion` es el inicio de la condición por regla; se usa `ahora` en
+  carga desbalanceada y en el tramo de 20 puntos de posible atraso. El cálculo es del paso 8.
+- `InsightRevision` queda como en §11, sin `metrica_al_revisar`. «Empeora» significa solo aumento
+  de severidad, más el plazo de 7 días; se documentará en §5.6.
+- `Postulante.cv: ArchivoCV { nombre: string; url: string }`, con PDFs de ejemplo; sin subida
+  real.
+- `ParametroConfiguracion.valor` y `valor_predeterminado` usan `ValorParametro`
+  (`numero | rango | proporcion`). Banda ambigua: `{ tipo: 'rango', minimo: 50, maximo: 69 }`.
+  Proporción: `{ tipo: 'proporcion', area: 40, especialidad: 60 }`. El catálogo de claves se fija
+  al construir `configuracion.ts`, tras leer §5.8 y la tabla de umbrales de §5.6.
+
+### Archivos
+
+- `src/domain/`: `comunes.ts`, `enumeraciones.ts`, `usuarios.ts`, `proyectos.ts`, `tareas.ts`,
+  `postulaciones.ts` (contiene Postulante, catálogos y evaluación; no existe `evaluacion.ts`),
+  `historial.ts`, `notificaciones.ts`, `insights.ts`, `configuracion.ts` e `index.ts` (barril).
+  Se borra `domain/.gitkeep` al crear los archivos.
+- `docs/` no se toca: los cambios de la propuesta v6 los aplican los autores a mano.
+
+### Fechas
+
+- `Tarea.fecha_termino` y `Postulante.fecha_postulacion` son `FechaHora` (no `Fecha`) a
+  propósito: desempatan el orden por hora y permiten calcular plazos.
+- `Proyecto.fecha_fin_real` es `Fecha`.

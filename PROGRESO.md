@@ -69,18 +69,19 @@
 ## Persona A — Fases 1 y 2 (`domain/`, `data/`, `services/`)
 
 - **Fase actual:** 1 — `domain/`: tipos y reglas puras.
-- **Rama:** `feat/fase1-tipos` (se crea desde `development`).
-- **Siguiente paso:** Fase 1, paso 1 — tipos y enumeraciones (propuesta §11).
+- **Rama:** `feat/fase1-tipos`.
+- **Siguiente paso:** Fase 1, paso 2 — permisos por rol (matriz de §4), tras la revisión del PR de
+  tipos.
 
 ### Pasos terminados
 
 | Fecha | Fase | Paso | Commit / PR |
 |---|---|---|---|
-| — | — | — | — |
+| 2026-10-23 | 1 | 1. Tipos, enumeraciones y constantes de `domain/` | pendiente de commit y PR |
 
 ### Pendientes
 
-- [ ] Fase 1, paso 1: tipos y enumeraciones. Se acuerdan con la Persona B por PR antes de seguir.
+- [ ] Fase 1, paso 1: revisión de los tipos por la Persona B en el PR de `feat/fase1-tipos`.
 - [ ] Fase 1, pasos 2–10: permisos, transiciones de tarea, reglas de edición, máquina del estado del
       PR, generación de ID, puntaje de postulaciones, insights, indicadores y ciclo de vida.
 - [ ] Fase 1: pruebas mínimas de la sección 9 del plan.
@@ -89,7 +90,8 @@
 
 ### Preguntas abiertas
 
-- Ninguna por ahora.
+- Paso 8 (regla «Posible atraso»): el 25 % de tareas vencidas, ¿se calcula sobre el total de tareas
+  o sobre las no terminadas?
 
 ## Persona B — Fases 3 y 4 (acceso, layout, `compartido/`)
 
