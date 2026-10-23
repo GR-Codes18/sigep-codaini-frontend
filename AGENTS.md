@@ -8,3 +8,4 @@
 - Nunca borres ni sobrescribas `docs/`.
 - Nunca trabajes directo en `main` ni en `development`: usa una rama propia.
 - Nunca hagas commit ni push sin mi confirmación explícita.
+- Nunca cambies configuración de Git (`git config`, ni local ni global) sin mi autorización explícita. Si un diff parece raro por finales de línea, avísame y espera.
