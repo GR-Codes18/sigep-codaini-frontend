@@ -6,7 +6,7 @@ function SesionProvisional() {
   const usuario = useAlmacenSesion((s) => s.usuario);
   const cerrarSesion = useAlmacenSesion((s) => s.cerrarSesion);
   return (
-    <main className="bg-bg text-text flex min-h-screen flex-col items-center justify-center gap-4">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bg text-text">
       <p>
         Sesión: {usuario?.nombre} ({usuario?.rol})
       </p>
