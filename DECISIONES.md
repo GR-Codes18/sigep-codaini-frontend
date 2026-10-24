@@ -377,3 +377,18 @@ para que el paralelismo no genere conflictos ni decisiones duplicadas.
 - **Alternativas descartadas:** mantener 6.0.0 con `--legacy-peer-deps` en `.npmrc` (afecta a todo el proyecto) o con `overrides` (parche a mantener).
 - **Además:** `zod` 4.6.7 pasa a estar declarado en `dependencies` (antes llegaba solo como transitiva de `shadcn`).
 - **Reabrir cuando:** una 6.x instale sin conflicto de peers.
+
+## 2026-10-23 — [B] Rutas con prefijo, layout y franja (Fase 3, pasos 2 a 6)
+
+- **Rutas con prefijo por panel** (`/administrador/...`, `/supervisor/...`, `/practicante/...`). `puedeVerRuta` (pura, en `auth/`) decide y `GuardaRuta` la consulta. Alternativa descartada: rutas planas (la guarda se complica). La propuesta no define URLs; pendiente de confirmar con Persona A.
+- **`react-router` 7.18.4** (sin `react-router-dom`). Se corrigió una instalación errónea que dejó la 8.5.0.
+- **Menús como datos** (`src/app/menus.ts`): un arreglo alimenta sidebar, rutas y migas de pan (9, 5 y 3 módulos).
+- **Logo provisional** con `bg-white` y `text-neutral-900` (colores a mano, excepción temporal).
+- **Franja de contraseña temporal** neutra (`surface-2`): los colores de estado se reservan para estados. No aparece al Administrador (§8.3). Las cuentas demo arrancan con `debe_cambiar_contrasena: false`.
+- **`src/app/pagina-prueba/`** no se borró (el plan lo pedía en el paso 7); queda como pendiente.
+
+## 2026-10-23 — [B] Componentes base con shadcn (Fase 4, paso 1)
+
+- **Opción A:** componentes accesibles con el CLI (`select`, `textarea`, luego `dialog`, `tabs`, `table`, `skeleton`) y a mano solo las piezas propias (estado vacío, pestañas con contador, filtros). Alternativa descartada: todo a mano (el modal y el selector accesibles son difíciles de hacer bien).
+- **Dividido en 1a, 1b y 1c.** 1a: `select` y `textarea` con `shadcn@4.22.1`, sin cambios en `package.json`, y sin colores a mano.
+- **Pendiente:** `sonner` (toast) figura en `DECISIONES.md` pero no está instalado; requiere PR pequeño con versión verificada.

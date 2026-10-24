@@ -115,3 +115,35 @@
 ### Preguntas abiertas
 
 - Ninguna por ahora.
+
+## Persona B — Fases 3 y 4 (acceso, layout, `compartido/`)
+
+- **Fase actual:** 4 — componentes compartidos, paso 1 (1a hecho; faltan 1b y 1c).
+- **Rama:** `feature/fase3` (acordar con Persona A si se usa una rama por paso desde ahora).
+- **Siguiente paso:** Fase 4, paso 1b (modal de confirmación, toast, estado vacío, esqueleto).
+
+### Pasos terminados
+
+| Fecha | Fase | Paso | Commit / PR |
+|---|---|---|---|
+| 2026-10-22 | 3 | 1. Acceso y sesión simulada | `7edc37d` (PR #4) |
+| 2026-10-22 | 3 | Dependencias con versiones exactas (`@hookform/resolvers` 5.2.2) | `29f3da4` |
+| 2026-10-22 | 3 | Lint de `iniciarSesion` y pruebas de `PaginaAcceso` | `2c8d707` |
+| 2026-10-23 | 3 | 2, 3, 4 y 6. Router, guarda, layout, menús y páginas vacías | `4fbca0e` |
+| 2026-10-23 | 3 | 5. Franja de contraseña temporal | `627303a` |
+| 2026-10-23 | 4 | 1a. `select` y `textarea` de shadcn | _(hash pendiente)_ |
+
+### Pendientes
+
+- [ ] Fase 3, paso 7: borrar `src/app/pagina-prueba/` (se dejó a propósito; hacerlo antes de cerrar la Fase 3).
+- [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
+- [ ] Mover `RaizSegunSesion` y `AccesoSiNoHaySesion` fuera de `rutas.tsx` (2 avisos de lint).
+- [ ] Logo real de CODAINI (PNG recortado o SVG); hoy hay un placeholder.
+- [ ] Reemplazar los tipos provisionales de `src/auth/tipos.ts` cuando entre `feat/fase1-tipos`.
+- [ ] Fase 4: 1b, 1c, luego pasos 2 a 5, 7 y 8; esperar a Persona A para 6 y 9 a 11.
+- [ ] Push y PR a `development`.
+
+### Preguntas abiertas
+
+- ¿Persona A aprueba `@hookform/resolvers` 5.2.2 en vez de 6.0.0?
+- ¿Persona A aprueba las rutas con prefijo (`/administrador/...`)? La propuesta no las define.
