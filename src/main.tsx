@@ -6,6 +6,7 @@ import { ProveedorTema } from '@/app/tema/ProveedorTema';
 
 import './index.css';
 
+import { Toaster } from '@/compartido/ui/sonner';
 const rootElement = document.getElementById('root');
 
 if (!rootElement) {
@@ -16,6 +17,7 @@ createRoot(rootElement).render(
   <StrictMode>
     <ProveedorTema>
       <App />
+      <Toaster />
     </ProveedorTema>
   </StrictMode>,
 );
