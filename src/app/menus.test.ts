@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 import { MENU_POR_ROL, etiquetaDeRuta } from './menus';
 
-const total = (rol: keyof typeof MENU_POR_ROL) =>
-  MENU_POR_ROL[rol].flatMap((g) => g.items).length;
+const total = (rol: keyof typeof MENU_POR_ROL) => MENU_POR_ROL[rol].flatMap((g) => g.items).length;
 
 describe('menús por rol', () => {
   it('tienen 9, 5 y 3 módulos', () => {

@@ -5,7 +5,7 @@ import { FranjaContrasenaTemporal } from './FranjaContrasenaTemporal';
 
 export function LayoutPanel() {
   return (
-    <div className="bg-bg text-text flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col bg-bg text-text">
       <FranjaContrasenaTemporal />
       <div className="flex flex-1">
         <BarraLateral />

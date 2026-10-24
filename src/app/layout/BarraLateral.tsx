@@ -8,7 +8,7 @@ export function BarraLateral() {
   if (!rol) return null;
 
   return (
-    <aside className="bg-surface border-border flex w-60 shrink-0 flex-col border-r">
+    <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-surface">
       <div className="p-4">
         {/* PROVISIONAL: se reemplaza por el isotipo real de CODAINI (negro, en recuadro blanco). */}
         <div className="flex size-12 items-center justify-center rounded-md bg-white p-1.5">
@@ -20,7 +20,7 @@ export function BarraLateral() {
         {MENU_POR_ROL[rol].map((grupo, i) => (
           <div key={grupo.etiqueta ?? i} className="space-y-1">
             {grupo.etiqueta && (
-              <p className="text-text-2 px-3 text-xs font-semibold uppercase">{grupo.etiqueta}</p>
+              <p className="px-3 text-xs font-semibold text-text-2 uppercase">{grupo.etiqueta}</p>
             )}
             {grupo.items.map(({ etiqueta, ruta, icono: Icono }) => (
               <NavLink
@@ -30,7 +30,7 @@ export function BarraLateral() {
                   cn(
                     'flex items-center gap-3 rounded-md px-3 py-2 text-sm',
                     isActive
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground font-medium'
+                      ? 'bg-sidebar-accent font-medium text-sidebar-accent-foreground'
                       : 'text-text hover:bg-surface-2',
                   )
                 }

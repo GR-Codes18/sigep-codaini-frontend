@@ -13,13 +13,13 @@ export function FranjaContrasenaTemporal() {
   return (
     <div
       role="status"
-      className="bg-surface-2 border-border text-text flex items-center justify-center gap-3 border-b px-6 py-2 text-sm"
+      className="flex items-center justify-center gap-3 border-b border-border bg-surface-2 px-6 py-2 text-sm text-text"
     >
-      <Info className="text-text-2 size-4 shrink-0" strokeWidth={1.5} aria-hidden="true" />
+      <Info className="size-4 shrink-0 text-text-2" strokeWidth={1.5} aria-hidden="true" />
       <span>Estás usando una contraseña temporal. Cámbiala ahora.</span>
       <Link
         to={`${PREFIJO_POR_ROL[usuario.rol]}/perfil`}
-        className="text-link font-medium underline underline-offset-2"
+        className="font-medium text-link underline underline-offset-2"
       >
         Ir a mi perfil
       </Link>

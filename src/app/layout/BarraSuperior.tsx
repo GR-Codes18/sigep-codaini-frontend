@@ -16,14 +16,16 @@ export function BarraSuperior() {
   const navegar = useNavigate();
   if (!usuario) return null;
 
-  const nombrePanel = { ADMINISTRADOR: 'Administrador', SUPERVISOR: 'Supervisor', PRACTICANTE: 'Practicante' }[
-    usuario.rol
-  ];
+  const nombrePanel = {
+    ADMINISTRADOR: 'Administrador',
+    SUPERVISOR: 'Supervisor',
+    PRACTICANTE: 'Practicante',
+  }[usuario.rol];
   const seccion = etiquetaDeRuta(usuario.rol, pathname);
 
   return (
-    <header className="bg-surface border-border flex h-14 items-center justify-between border-b px-6">
-      <nav aria-label="Ruta de navegación" className="text-text-2 text-sm">
+    <header className="flex h-14 items-center justify-between border-b border-border bg-surface px-6">
+      <nav aria-label="Ruta de navegación" className="text-sm text-text-2">
         {nombrePanel}
         {seccion && (
           <>
@@ -39,14 +41,14 @@ export function BarraSuperior() {
         <button
           type="button"
           aria-label="Notificaciones"
-          className="text-text-2 hover:bg-surface-2 rounded-md p-2"
+          className="rounded-md p-2 text-text-2 hover:bg-surface-2"
         >
           <Bell className="size-5" strokeWidth={1.5} aria-hidden="true" />
         </button>
 
         <DropdownMenu.Root>
-          <DropdownMenu.Trigger className="hover:bg-surface-2 text-text flex items-center gap-2 rounded-md px-2 py-1.5 text-sm outline-none">
-            <span className="bg-surface-2 border-border flex size-7 items-center justify-center rounded-full border text-xs font-semibold">
+          <DropdownMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text outline-none hover:bg-surface-2">
+            <span className="flex size-7 items-center justify-center rounded-full border border-border bg-surface-2 text-xs font-semibold">
               {usuario.nombre.slice(0, 1)}
             </span>
             <span className="hidden sm:inline">{usuario.nombre}</span>
@@ -56,7 +58,7 @@ export function BarraSuperior() {
             <DropdownMenu.Content
               align="end"
               sideOffset={6}
-              className="bg-surface border-border z-50 min-w-44 rounded-xl border p-1 shadow-sm"
+              className="z-50 min-w-44 rounded-xl border border-border bg-surface p-1 shadow-sm"
             >
               <DropdownMenu.Item
                 className={ITEM}
