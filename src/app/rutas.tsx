@@ -9,6 +9,8 @@ import { PaginaVacia } from '@/app/layout/PaginaVacia';
 import { MENU_POR_ROL } from '@/app/menus';
 import { PaginaDesarrollo } from '@/app/ejemplos/PaginaDesarrollo';
 import { PaginaNotificaciones } from '@/app/layout/PaginaNotificaciones';
+import { PaginaPerfil } from '@/app/ejemplos/PaginaPerfil';
+
 function RaizSegunSesion() {
   const usuario = useAlmacenSesion((s) => s.usuario);
   return <Navigate to={usuario ? INICIO_POR_ROL[usuario.rol] : '/acceso'} replace />;
@@ -25,7 +27,7 @@ function rutasDeRol(rol: Rol): RouteObject[] {
   const prefijo = PREFIJO_POR_ROL[rol];
   return [
     ...items.map((i) => ({ path: i.ruta, element: <PaginaVacia titulo={i.etiqueta} /> })),
-    { path: `${prefijo}/perfil`, element: <PaginaVacia titulo="Mi perfil" /> },
+    { path: `${prefijo}/perfil`, element: <PaginaPerfil /> },
     { path: `${prefijo}/notificaciones`, element: <PaginaNotificaciones /> },
     { path: `${prefijo}/desarrollo`, element: <PaginaDesarrollo /> },
   ];
