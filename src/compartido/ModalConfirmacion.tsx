@@ -83,13 +83,13 @@ function Contenido({
             rows={3}
           />
           {pedirMotivo.obligatorio && minimo > 1 && (
-            <p className="text-text-2 text-xs">Mínimo {minimo} caracteres.</p>
+            <p className="text-xs text-text-2">Mínimo {minimo} caracteres.</p>
           )}
         </div>
       )}
 
       {error && (
-        <p role="alert" className="text-danger-text text-sm">
+        <p role="alert" className="text-sm text-danger-text">
           {error}
         </p>
       )}
