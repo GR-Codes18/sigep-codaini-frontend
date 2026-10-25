@@ -7,6 +7,7 @@ import type { Rol } from '@/auth/tipos';
 import { LayoutPanel } from '@/app/layout/LayoutPanel';
 import { PaginaVacia } from '@/app/layout/PaginaVacia';
 import { MENU_POR_ROL } from '@/app/menus';
+import { PaginaDesarrollo } from '@/app/ejemplos/PaginaDesarrollo';
 
 function RaizSegunSesion() {
   const usuario = useAlmacenSesion((s) => s.usuario);
@@ -23,7 +24,8 @@ function rutasDeRol(rol: Rol): RouteObject[] {
   const items = MENU_POR_ROL[rol].flatMap((g) => g.items);
   return [
     ...items.map((i) => ({ path: i.ruta, element: <PaginaVacia titulo={i.etiqueta} /> })),
-    { path: `${PREFIJO_POR_ROL[rol]}/perfil`, element: <PaginaVacia titulo="Mi perfil" /> },
+    /*{ path: `${PREFIJO_POR_ROL[rol]}/perfil`, element: <PaginaVacia titulo="Mi perfil" /> },*/
+    { path: `${PREFIJO_POR_ROL[rol]}/desarrollo`, element: <PaginaDesarrollo /> },
   ];
 }
 
