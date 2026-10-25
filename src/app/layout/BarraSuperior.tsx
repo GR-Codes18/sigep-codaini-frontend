@@ -1,10 +1,11 @@
-import { Bell, ChevronDown, LogOut, User } from 'lucide-react';
+import { ChevronDown, LogOut, User } from 'lucide-react';
 import { DropdownMenu } from 'radix-ui';
 import { useLocation, useNavigate } from 'react-router';
 import { AlternadorTema } from '@/app/tema/AlternadorTema';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 import { etiquetaDeRuta } from '@/app/menus';
+import { CampanaConectada } from './CampanaConectada';
 
 const ITEM =
   'text-text hover:bg-surface-2 focus:bg-surface-2 flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none';
@@ -38,13 +39,7 @@ export function BarraSuperior() {
       <div className="flex items-center gap-2">
         <AlternadorTema />
         {/* Sin funcionalidad todavía: las notificaciones llegan en la Fase 4, paso 9. */}
-        <button
-          type="button"
-          aria-label="Notificaciones"
-          className="rounded-md p-2 text-text-2 hover:bg-surface-2"
-        >
-          <Bell className="size-5" strokeWidth={1.5} aria-hidden="true" />
-        </button>
+        <CampanaConectada />
 
         <DropdownMenu.Root>
           <DropdownMenu.Trigger className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-text outline-none hover:bg-surface-2">
