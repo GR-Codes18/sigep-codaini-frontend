@@ -121,7 +121,7 @@ La matriz está completa para los tres roles. Cada regla se explica en las secci
 
 | **Acción**                                                                     | **Administrador** | **Supervisor**                                         | **Practicante**                                           |
 |--------------------------------------------------------------------------------|-------------------|--------------------------------------------------------|-----------------------------------------------------------|
-| **Crear proyectos y editar nombre, código, descripción, fechas y repositorio** | Sí                | No                                                     | No                                                        |
+| **Crear proyectos (definiendo su código) y editar nombre, descripción, fechas y repositorio.** | Sí                | No                                                     | No                                                        |
 | **Cambiar la rama base**                                                       | Sí                | Sí                                                     | No                                                        |
 | **Definir la reunión semanal**                                                 | Sí                | Sí                                                     | No                                                        |
 | **Gestionar enlaces útiles**                                                   | Sí                | Sí                                                     | No                                                        |
@@ -149,7 +149,7 @@ La matriz está completa para los tres roles. Cada regla se explica en las secci
 | **Ver Reportes**                          | Todo                                        | Solo sus proyectos                   | No                          |
 | **Marcar un insight como revisado**       | Sí                                          | Sí (independiente del Administrador) | No                          |
 | **Notificar desde un insight**            | Practicante inactivo y supervisión demorada | Solo practicante inactivo            | No                          |
-| **Historial de actividad**                | Vista global                                | Líneas de tiempo de sus proyectos    | Líneas de tiempo de lo suyo |
+| **Historial de actividad**                | Vista global                                | Líneas de tiempo de sus proyectos    | Líneas de tiempo de lo suyo y de las tareas que puede abrir |
 | **Configuración y datos de demostración** | Sí                                          | No                                   | No                          |
 
 ## 5. Panel del Administrador
@@ -332,7 +332,7 @@ Reglas
 
 - **En pausa:** nadie puede tomar tareas nuevas; todo lo demás sigue igual. Quien tiene tareas en progreso puede seguir trabajándolas, y el Supervisor puede seguir aprobando o devolviendo lo que ya estaba en revisión.
 
-- **Finalizar:** se bloquea mientras haya tareas “Esperando supervisión”, porque son decisiones pendientes del supervisor. Las tareas “En progreso” se liberan automáticamente con registro, y el tablero queda en solo lectura. Las asignaciones de los practicantes no se cierran al finalizar el proyecto: si el Administrador lo reactiva, el equipo recupera su acceso. El sistema guarda la fecha real de finalización.
+- **Finalizar:** se bloquea mientras haya tareas “Esperando supervisión”, porque son decisiones pendientes del supervisor. Las tareas “En progreso” se liberan automáticamente con registro. Las asignaciones de los practicantes no se cierran al finalizar el proyecto: si el Administrador lo reactiva, el equipo recupera su acceso. El sistema guarda la fecha real de finalización. El tablero queda en solo lectura, pero los datos del proyecto (reunión, enlaces, rama base, descripción, fechas y repositorio) siguen editables según el rol.
 
 - Quedan fuera sprints, prioridades, presupuesto, clientes y etiquetas, porque no forman parte del modelo.
 
@@ -1204,7 +1204,7 @@ Para no duplicar trabajo, varias pantallas se construyen una sola vez y cada pan
 | **Listado de tareas**                                         | Módulo Tareas                       | Mismo componente, filtrado a sus proyectos          | No tiene (usa Inicio y Mis proyectos)                         |
 | **Personas**                                                  | Módulos Practicantes y Supervisores | Practicantes a cargo (pantalla nueva, solo lectura) | Pestaña Equipo del proyecto                                   |
 | **Reportes**                                                  | Completo                            | Mismo componente, filtrado a sus proyectos          | No tiene                                                      |
-| **Historial**                                                 | Vista global                        | Líneas de tiempo de sus proyectos                   | Líneas de tiempo de lo suyo; Mi historial (tareas terminadas) |
+| **Historial**                                                 | Vista global                        | Líneas de tiempo de sus proyectos                   | Líneas de tiempo de lo suyo y de las tareas que puede abrir; Mi historial (tareas terminadas) |
 | **Notificaciones, Mi perfil y franja de contraseña temporal** | Compartidos                         | Compartidos                                         | Compartidos                                                   |
 
 ## 15. Mejoras futuras (fuera del alcance actual)
