@@ -38,7 +38,6 @@ export function BarraSuperior() {
 
       <div className="flex items-center gap-2">
         <AlternadorTema />
-        {/* Sin funcionalidad todavía: las notificaciones llegan en la Fase 4, paso 9. */}
         <CampanaConectada />
 
         <DropdownMenu.Root>
