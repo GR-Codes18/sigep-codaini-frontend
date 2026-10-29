@@ -68,20 +68,21 @@
 
 ## Persona A — Fases 1 y 2 (`domain/`, `data/`, `services/`)
 
-- **Fase actual:** 1 — `domain/`: tipos y reglas puras.
-- **Rama:** `feat/fase1-tipos`.
-- **Siguiente paso:** Fase 1, paso 2 — permisos por rol (matriz de §4), tras la revisión del PR de
-  tipos.
+- **Fase actual:** 1, paso 2 en curso.
+- **Rama:** `feat/fase1-permisos`.
+- **Siguiente paso:** Fase 1, paso 2 — permisos por rol (matriz de §4).
 
 ### Pasos terminados
 
 | Fecha | Fase | Paso | Commit / PR |
 |---|---|---|---|
-| 2026-10-23 | 1 | 1. Tipos, enumeraciones y constantes de `domain/` | pendiente de commit y PR |
+| 2026-10-23 | 1 | 1. Tipos, enumeraciones y constantes de `domain/` | `1251fb5`; docs `fd8cf78`; PR #5 fusionado en `a17099a` |
+| 2026-10-23 | — | chore PR #6: `.gitattributes` y regla de `git config` en `AGENTS.md` | fusionado en `e4993af` |
 
 ### Pendientes
 
-- [ ] Fase 1, paso 1: revisión de los tipos por la Persona B en el PR de `feat/fase1-tipos`.
+- [x] Fase 1, paso 1: revisión de los tipos por la Persona B en el PR de `feat/fase1-tipos`.
+- [ ] Confirmar que el PR de dependencias de la Persona B (`zustand`, `zod`, `react-hook-form`, `@hookform/resolvers`, `react-router`, `date-fns`, `sonner`) se fusionó en `development`.
 - [ ] Fase 1, pasos 2–10: permisos, transiciones de tarea, reglas de edición, máquina del estado del
       PR, generación de ID, puntaje de postulaciones, insights, indicadores y ciclo de vida.
 - [ ] Fase 1: pruebas mínimas de la sección 9 del plan.
@@ -92,6 +93,10 @@
 
 - Paso 8 (regla «Posible atraso»): el 25 % de tareas vencidas, ¿se calcula sobre el total de tareas
   o sobre las no terminadas?
+- Paso 10 (ciclo de vida): en un proyecto FINALIZADO, `puede()` no bloquea asignar o quitar
+  practicantes ni cambiar de supervisor; decidir allí si debe bloquearse.
+- Paso 8 (insights): definir qué 5 de las 7 reglas ve el Supervisor.
+  `MARCAR_INSIGHT_REVISADO` y `NOTIFICAR_DESDE_INSIGHT` solo comprueban el alcance por proyectos.
 
 ## Persona B — Fases 3 y 4 (acceso, layout, `compartido/`)
 
