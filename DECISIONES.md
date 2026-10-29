@@ -472,3 +472,184 @@ cero lógica. Se implementa en `feat/fase1-tipos`.
 - `Tarea.fecha_termino` y `Postulante.fecha_postulacion` son `FechaHora` (no `Fecha`) a
   propósito: desempatan el orden por hora y permiten calcular plazos.
 - `Proyecto.fecha_fin_real` es `Fecha`.
+
+---
+
+## 2026-10-28 — [A] Fase 1, paso 2: permisos por rol
+
+La matriz de §4 queda en `src/domain/permisos.ts` como `puede(usuario, accion, contexto)`.
+No se toca `enumeraciones.ts` y el barril `index.ts` solo agrega los exports nuevos. El paso se
+entrega en dos commits: **2A** (contrato: nombres, ámbitos, contextos y resultado) y **2B**
+(lógica de `puede`, ayudantes, fábricas y pruebas).
+
+### Vocabulario y firma
+
+- `ACCIONES_PERMISO` (`as const`) + `AccionPermiso`, en español sin tildes y separados de
+  `TipoAccionHistorial`: una acción de permiso no siempre equivale a un evento del historial.
+- **55 acciones**: una por fila de §4, divididas cuando cambia el «quién» o el texto exigido.
+  Incluye `APROBAR_POSTULACION`, `RECHAZAR_POSTULACION` (motivo) y `RECONSIDERAR_POSTULACION`
+  (nota) en lugar de una sola «decidir» (§5.1); la separación de aprobar/devolver; la de
+  activar/desactivar «Requiere PR»; crear/editar datos del proyecto; asignar/quitar practicante;
+  las cuatro operaciones del ciclo de vida del proyecto; crear supervisor/restablecer contraseña;
+  finalizar/reactivar práctica y supervisor; y un campo por acción en los datos propios.
+- `AmbitoPermiso` (`PROYECTO | PROPIO | GLOBAL`) y `AMBITO_POR_ACCION` (`as const satisfies
+  Record<AccionPermiso, AmbitoPermiso>`): **32 PROYECTO, 7 PROPIO, 16 GLOBAL**. Sirve para las
+  pruebas de alcance y para no repetir comprobaciones.
+- `ContextoPorAccion[A]` está tipado por acción (tipo mapeado sobre `AccionPermiso`; si falta una
+  acción, el proyecto no compila) y trae solo las entidades necesarias: `proyecto`, `tarea`,
+  `asignaciones` **del usuario que actúa**, `usuario_objetivo` e `insight`
+  (`Pick<Insight, 'ids_proyecto' | 'tipo_regla'>`). La asignación vigente
+  (`fecha_baja === null`) se calcula en `domain/`.
+- `SolicitudPermiso` es la unión discriminada `{ accion, contexto }` por acción; permite escribir
+  la tabla de pruebas sin perder el tipado.
+- Resultado: `{ permitido: true; exige_texto: 'MOTIVO' | 'NOTA' | null }` o
+  `{ permitido: false; codigo }`.
+- Códigos: `USUARIO_INACTIVO`, `ROL_NO_PERMITIDO`, `FUERA_DE_ALCANCE`,
+  `NO_ES_EL_RESPONSABLE`, `NO_ES_TU_CUENTA` y `PROYECTO_FINALIZADO`. Ninguno revela si el recurso
+  existe: el servicio resuelve la entidad antes de preguntar y devuelve su propio error si no la
+  encuentra.
+
+### Orden de comprobación
+
+`puede()` comprueba, en este orden, y se detiene en la primera negativa:
+
+1. `usuario.estado === 'ACTIVO'`; si no, `USUARIO_INACTIVO`.
+2. Rol permitido para la acción; si no, `ROL_NO_PERMITIDO`.
+3. Alcance (proyecto del supervisor, asignación o insight del practicante); si no,
+   `FUERA_DE_ALCANCE`.
+4. Identidad (responsable de la tarea o cuenta propia); si no, `NO_ES_EL_RESPONSABLE` o
+   `NO_ES_TU_CUENTA`.
+5. Proyecto `FINALIZADO` para las 14 acciones que cambian tareas; si no, `PROYECTO_FINALIZADO`.
+6. Texto exigido (`'MOTIVO'`, `'NOTA'` o `null`).
+
+**El alcance va siempre antes que la identidad.** Quien está fuera del proyecto recibe
+`FUERA_DE_ALCANCE`, nunca `NO_ES_EL_RESPONSABLE`, para no revelar que la tarea existe. Queda
+escrito también en la cabecera de `permisos.ts`.
+
+### Alcance de la guarda
+
+- Decide rol, alcance, identidad y usuario ACTIVO. **No** mira el estado de la tarea, la pausa del
+  proyecto ni si hay PR: eso llega en los pasos 3 a 5. Por eso el resultado no basta para mostrar
+  botones; la interfaz usará las funciones de esos pasos.
+- Excepción única: en un proyecto `FINALIZADO` se deniegan las **14** acciones que cambian tareas
+  (tabla 1 menos `VER_TAREA`, incluidas las de Pull Request) a los tres roles. Ver, definir
+  reunión, gestionar enlaces, cambiar rama base y editar datos del proyecto siguen su fila.
+- En un proyecto `FINALIZADO`, `puede()` **no** bloquea asignar o quitar practicantes ni cambiar de
+  supervisor: si debe bloquearse, se decide en el paso 10 (ciclo de vida).
+- Practicante:
+  - `VER_PROYECTO`: asignación vigente **y** proyecto no FINALIZADO.
+  - `VER_PRACTICANTES`: mismo criterio que `VER_PROYECTO` (asignación vigente **y** proyecto no
+    FINALIZADO), porque §9.2.1 bloquea el acceso al tablero y al equipo cuando el proyecto finaliza.
+  - `VER_TAREA`: asignación vigente **y** proyecto no FINALIZADO, **o** ser el responsable de la
+    tarea (`tarea.id_practicante === usuario.id`), aunque la asignación tenga baja o el proyecto
+    esté FINALIZADO. Siempre en solo lectura (§9.2.2).
+  - `VER_RESUMEN_PROYECTO_ANTERIOR`: cualquier asignación a ese proyecto, vigente o con baja.
+- `VER_HISTORIAL_GLOBAL` es solo del Administrador (§5.7). Las líneas de tiempo del Supervisor y
+  del Practicante forman parte de ver proyecto/tarea/perfil y se resuelven en la Fase 2.
+- El código del proyecto solo existe en `CREAR_PROYECTO`; no hay acción para editarlo.
+- Datos propios por campo y solo para la propia cuenta: el Administrador no edita datos personales
+  de otras personas; la única excepción es el nombre y el correo del supervisor.
+- `EDITAR_CREDENCIAL_SUPERVISOR`, `DESACTIVAR_SUPERVISOR`, `REACTIVAR_SUPERVISOR` y
+  `CAMBIAR_CONTRASENA_PROPIA` no están en la matriz pero salen de §4 (reglas de acceso), §5.3 y
+  §8.2. `FINALIZAR_PRACTICA` exige motivo y `REACTIVAR_PRACTICA` nota (§5.2), aunque la matriz no
+  lo diga.
+- **Objetivos de persona** (si no coinciden, `FUERA_DE_ALCANCE`): `RESTABLECER_CONTRASENA` solo a
+  PRACTICANTE o SUPERVISOR (§8.3); `EDITAR_CREDENCIAL_SUPERVISOR`, `DESACTIVAR_SUPERVISOR` y
+  `REACTIVAR_SUPERVISOR` solo a SUPERVISOR; `FINALIZAR_PRACTICA`, `REACTIVAR_PRACTICA` y
+  `EDITAR_DATOS_PRACTICA` solo a PRACTICANTE.
+- **`VER_REPORTES` se comprueba por proyecto** (Admin cualquiera, Supervisor el suyo, Practicante
+  no). La vista transversal del Supervisor es la unión de los proyectos que ya puede ver; el
+  filtro lo aplica la Fase 2.
+- Insights: el Supervisor solo actúa si al menos un `id_proyecto` del insight es suyo; con
+  `ids_proyecto` vacío, nunca. `NOTIFICAR_DESDE_INSIGHT` es una sola acción: el Administrador
+  puede notificar en `PRACTICANTE_INACTIVO` y `SUPERVISION_DEMORADA`; el Supervisor solo en
+  `PRACTICANTE_INACTIVO`; otra regla, `ROL_NO_PERMITIDO`. Nombres exactos de
+  `TIPOS_REGLA_INSIGHT`. Qué 5 de las 7 reglas ve el Supervisor se decide en el paso 8.
+  `MARCAR_INSIGHT_REVISADO` admite una nota **opcional** (§5.6): no exige texto.
+
+### Pruebas (paso 2B)
+
+- Tabla dirigida por datos con las 55 acciones × 3 roles (`true`, `'MOTIVO'`, `'NOTA'` o `false`),
+  con el `ambito` de cada acción. Los barridos de «supervisor ajeno», «sin asignación» y «con
+  baja» se aplican solo a `PROYECTO`; un practicante sin proyecto sí puede editar sus datos y
+  cambiar su contraseña.
+- Exhaustividad (toda acción tiene fila y ámbito), FINALIZADO con el practicante
+  (`VER_PROYECTO` denegado, `VER_TAREA` solo si es el responsable), `INACTIVO`, textos exigidos y
+  códigos que no revelan existencia.
+- Fábricas en `src/domain/pruebas/fabricas.ts`, importadas solo por los tests.
+- Archivos: `src/domain/permisos.ts`, `src/domain/permisos.test.ts`,
+  `src/domain/pruebas/fabricas.ts` y `src/domain/index.ts`. Sin dependencias nuevas y sin cambios
+  en `src/auth` ni `src/App.tsx`.
+
+### Tabla de las 55 acciones
+
+Leyenda: «Sí» en Supervisor dentro de `PROYECTO` implica `proyecto.id_supervisor === usuario.id`
+(en insights, al menos un `ids_proyecto` suyo); en Practicante implica asignación vigente, salvo
+las excepciones de arriba. El Administrador no tiene comprobación de alcance en las acciones de
+proyecto.
+
+| Acción | Ámbito | Admin | Supervisor | Practicante | `exige_texto` |
+|---|---|---|---|---|---|
+| **Tareas y Pull Requests** | | | | | |
+| `CREAR_TAREA` | PROYECTO | Sí | Sí | — | — |
+| `EDITAR_DATOS_TAREA` | PROYECTO | Sí | Sí | — | — |
+| `TOMAR_TAREA` | PROYECTO | — | — | Sí | — |
+| `LIBERAR_TAREA` | PROYECTO | Sí | Sí | Sí (responsable) | `MOTIVO` (Admin/Sup); — (Prac) |
+| `ENVIAR_TAREA` | PROYECTO | — | — | Sí (responsable) | — |
+| `APROBAR_TAREA` | PROYECTO | — | Sí | — | — |
+| `DEVOLVER_TAREA` | PROYECTO | — | Sí | — | `NOTA` |
+| `REABRIR_TAREA` | PROYECTO | Sí | Sí | — | `NOTA` |
+| `ELIMINAR_TAREA` | PROYECTO | Sí | Sí | — | `MOTIVO` |
+| `CAMBIAR_REQUIERE_SUPERVISION` | PROYECTO | Sí | Sí | — | — |
+| `ACTIVAR_REQUIERE_PR` | PROYECTO | Sí | Sí | — | — |
+| `DESACTIVAR_REQUIERE_PR` | PROYECTO | Sí | Sí | Sí (responsable) | — (Admin/Sup); `MOTIVO` (Prac) |
+| `CREAR_PULL_REQUEST` | PROYECTO | — | — | Sí (responsable) | — |
+| `CERRAR_PULL_REQUEST` | PROYECTO | Sí | Sí | Sí (responsable) | `MOTIVO` |
+| `VER_TAREA` | PROYECTO | Sí | Sí | Sí (regla de arriba) | — |
+| **Proyectos y equipo** | | | | | |
+| `CREAR_PROYECTO` | GLOBAL | Sí | — | — | — |
+| `EDITAR_DATOS_PROYECTO` | PROYECTO | Sí | — | — | — |
+| `CAMBIAR_RAMA_BASE` | PROYECTO | Sí | Sí | — | — |
+| `DEFINIR_REUNION` | PROYECTO | Sí | Sí | — | — |
+| `GESTIONAR_ENLACES` | PROYECTO | Sí | Sí | — | — |
+| `CAMBIAR_SUPERVISOR` | PROYECTO | Sí | — | — | — |
+| `ASIGNAR_PRACTICANTE` | PROYECTO | Sí | — | — | — |
+| `QUITAR_PRACTICANTE` | PROYECTO | Sí | — | — | — |
+| `PAUSAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `REANUDAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `FINALIZAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `REACTIVAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `VER_PROYECTO` | PROYECTO | Sí | Sí | Sí (vigente y no finalizado) | — |
+| `VER_RESUMEN_PROYECTO_ANTERIOR` | PROYECTO | Sí | Sí | Sí (cualquier asignación) | — |
+| `VER_PRACTICANTES` | PROYECTO | Sí | Sí | Sí (vigente y no finalizado) | — |
+| **Personas y cuentas** | | | | | |
+| `APROBAR_POSTULACION` | GLOBAL | Sí | — | — | — |
+| `RECHAZAR_POSTULACION` | GLOBAL | Sí | — | — | `MOTIVO` |
+| `RECONSIDERAR_POSTULACION` | GLOBAL | Sí | — | — | `NOTA` |
+| `GESTIONAR_CRITERIOS_EVALUACION` | GLOBAL | Sí | — | — | — |
+| `CREAR_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `RESTABLECER_CONTRASENA` | GLOBAL | Sí | — | — | — |
+| `FINALIZAR_PRACTICA` | GLOBAL | Sí | — | — | `MOTIVO` |
+| `REACTIVAR_PRACTICA` | GLOBAL | Sí | — | — | `NOTA` |
+| `EDITAR_DATOS_PRACTICA` | GLOBAL | Sí | — | — | — |
+| `EDITAR_NOMBRE_PROPIO` | PROPIO | Sí | — | Sí | — |
+| `EDITAR_CORREO_PROPIO` | PROPIO | Sí | — | Sí | — |
+| `EDITAR_CELULAR_PROPIO` | PROPIO | Sí | Sí | Sí | — |
+| `EDITAR_DISCORD_PROPIO` | PROPIO | — | Sí | Sí | — |
+| `EDITAR_GITHUB_PROPIO` | PROPIO | — | Sí | Sí | — |
+| `EDITAR_DISPONIBILIDAD_PROPIA` | PROPIO | — | — | Sí | — |
+| `EDITAR_CREDENCIAL_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `DESACTIVAR_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `REACTIVAR_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `CAMBIAR_CONTRASENA_PROPIA` | PROPIO | Sí | Sí | Sí | — |
+| **Seguimiento y sistema** | | | | | |
+| `VER_REPORTES` | PROYECTO | Sí | Sí | — | — |
+| `MARCAR_INSIGHT_REVISADO` | PROYECTO | Sí | Sí (algún `ids_proyecto` suyo) | — | — |
+| `NOTIFICAR_DESDE_INSIGHT` | PROYECTO | Sí (2 reglas) | Sí (1 regla) | — | — |
+| `VER_HISTORIAL_GLOBAL` | GLOBAL | Sí | — | — | — |
+| `GESTIONAR_CONFIGURACION` | GLOBAL | Sí | — | — | — |
+| `RESTABLECER_DATOS_DEMOSTRACION` | GLOBAL | Sí | — | — | — |
+
+**Totales:** 55 acciones; 32 de ámbito `PROYECTO`, 7 `PROPIO` y 16 `GLOBAL`; 14 exigen texto
+(6 `MOTIVO` y 8 `NOTA`; `LIBERAR_TAREA` y `DESACTIVAR_REQUIERE_PR` solo cuando las ejecuta el rol
+indicado).
