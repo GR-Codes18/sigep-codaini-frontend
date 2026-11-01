@@ -69,6 +69,7 @@ export {
   AMBITO_POR_ACCION,
   AMBITOS_PERMISO,
   CODIGOS_DENEGACION,
+  puede,
 } from './permisos';
 export type {
   AccionPermiso,
