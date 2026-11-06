@@ -653,3 +653,67 @@ proyecto.
 **Totales:** 55 acciones; 32 de ámbito `PROYECTO`, 7 `PROPIO` y 16 `GLOBAL`; 14 exigen texto
 (6 `MOTIVO` y 8 `NOTA`; `LIBERAR_TAREA` y `DESACTIVAR_REQUIERE_PR` solo cuando las ejecuta el rol
 indicado).
+
+## 2026-10-30 — [A] Fase 1, paso 2B: implementación de `puede()`
+
+### Orden y estructura
+
+- `puede()` es el único lugar donde vive el orden: `ACTIVO` → rol (`REGLAS_POR_ACCION`, un `Record`
+  total sobre las 55) → alcance → identidad → `FINALIZADO` → texto. Delega en tres funciones
+  privadas (`comprobarAlcance`, `comprobarIdentidad` y `finalizadoBloquea`) que reciben
+  `SolicitudPermiso`, de modo que cada `switch` estrecha `contexto` sin conversiones por caso.
+- `accion` y `contexto` llegan como parámetros independientes y TypeScript no los correlaciona: se
+  unen una sola vez con `as SolicitudPermiso` en la frontera de `puede()`. No hay otro `as` ni
+  `as any`, `ts-ignore` o `ts-expect-error` en el paso.
+- Ayudantes privados: `tieneAsignacionVigente` (exige `id_proyecto`, `id_practicante` y
+  `fecha_baja === null`), `esResponsable`, `proyectoEsDelSupervisor` e `insightEnAlcance`.
+- `AccionQueCambiaTarea` se deriva de una lista privada de 14 y `finalizadoBloquea` lee
+  `contexto.proyecto` sobre un `Extract<SolicitudPermiso, …>`: si una de las 14 no trae `proyecto`,
+  el proyecto no compila. La lista no se exporta.
+
+### D1 — `ContextoInsight` gana `proyectos` (cambio de contrato del 2A)
+
+- `ContextoInsight` pasa a `{ insight: Pick<Insight, 'ids_proyecto' | 'tipo_regla'>; proyectos:
+  Pick<Proyecto, 'id' | 'id_supervisor'>[] }`, con los proyectos del usuario que actúa.
+- Sin esa lista, `domain/` no puede comprobar la regla «al menos un proyecto del insight es suyo»:
+  el Supervisor exige que algún proyecto de `proyectos` esté en `insight.ids_proyecto` **y** tenga
+  `id_supervisor === usuario.id`. Con `ids_proyecto` vacío nunca hay alcance.
+- Es un cambio de contrato del paso 2A dentro del mismo PR: la Persona B debe revisarlo antes de
+  fusionar. El servicio que arma el contexto resuelve la lista; `puede()` no consulta el almacén.
+
+### D2 — `FUERA_DE_ALCANCE` para el practicante en proyecto FINALIZADO
+
+- `VER_PROYECTO`, `VER_PRACTICANTES` y `VER_TAREA` de un practicante exigen «asignación vigente y
+  proyecto no FINALIZADO». Si el proyecto está FINALIZADO, la respuesta es `FUERA_DE_ALCANCE`, no
+  `PROYECTO_FINALIZADO`: es una regla de alcance.
+- `PROYECTO_FINALIZADO` queda reservado a las 14 acciones que cambian tareas (§6.8). **La interfaz
+  no debe usar ese código para mostrar «proyecto finalizado»**: ese texto sale del estado del
+  proyecto. Queda documentado en la cabecera de `permisos.ts`.
+- Excepciones que se conservan: `VER_RESUMEN_PROYECTO_ANTERIOR` acepta cualquier asignación (con o
+  sin baja) y `VER_TAREA` permite al responsable aunque el proyecto esté FINALIZADO o su asignación
+  tenga baja.
+
+### D3 — `NOTIFICAR_DESDE_INSIGHT`: la regla va antes del alcance
+
+- Si la regla del insight no aplica al rol, responde `ROL_NO_PERMITIDO` antes de comprobar el
+  alcance: es una condición de rol. Administrador en `PRACTICANTE_INACTIVO` y
+  `SUPERVISION_DEMORADA`; Supervisor solo en `PRACTICANTE_INACTIVO`; otra regla,
+  `ROL_NO_PERMITIDO`.
+- La tabla se tipa con `TipoReglaInsight`, no con cadenas sueltas.
+
+### D4 — Contexto incoherente y pruebas
+
+- `comprobarAlcance` empieza comprobando `tarea.id_proyecto === proyecto.id`; si no coincide, deniega
+  con `FUERA_DE_ALCANCE` incluso al Administrador. Un contexto incoherente nunca concede acceso.
+- Pruebas: matriz de 55 × 3 transcrita a mano de §4 y de la tabla de arriba (con un comentario por
+  fila), ámbito por acción, textos (6 `MOTIVO` + 8 `NOTA`), barridos de alcance (`AJENO`,
+  `SIN_ASIGNACION`, `CON_BAJA`, `OTRO_PROYECTO`), FINALIZADO solo en las 14 y solo en celdas
+  permitidas, `INACTIVO` en 55 × 3, objetivos de persona, identidad, orden de comprobación,
+  insights, opacidad, frontera del paso y los 6 códigos con al menos una aserción.
+- Fábricas en `src/domain/pruebas/fabricas.ts` (solo las importan los tests), con
+  `contextoPara(accion, usuario, variante, cambiosDelProyecto)` tipado por un tipo mapeado: si falta
+  una acción, no compila.
+- Verificación: `npm run test` con 62 pruebas en verde; `tsc -b` y `build` OK; `eslint src/domain` y
+  `prettier --check src/domain` limpios. `npm run lint` sigue fallando en
+  `src/auth/iniciarSesion.ts` y `format:check` en `src/App.tsx`, ambos de la Persona B y fuera de
+  este paso.
