@@ -64,3 +64,18 @@ export type {
   SeccionConfiguracion,
   ValorParametro,
 } from './configuracion';
+export {
+  ACCIONES_PERMISO,
+  AMBITO_POR_ACCION,
+  AMBITOS_PERMISO,
+  CODIGOS_DENEGACION,
+  puede,
+} from './permisos';
+export type {
+  AccionPermiso,
+  AmbitoPermiso,
+  CodigoDenegacion,
+  ContextoPorAccion,
+  ResultadoPermiso,
+  SolicitudPermiso,
+} from './permisos';

@@ -35,7 +35,7 @@ Los archivos van en la carpeta `docs/` del repositorio:
 
 ## 2. Metodología de trabajo (adaptada a este proyecto)
 
-Aplica la metodología completa de `docs/METODOLOGIA.md`. Estas son las adaptaciones para este proyecto, porque esa metodología está escrita pensando también en backend:
+Aplica la metodología completa de `docs/METODOLOGÍA DE TRABAJO.md`. Estas son las adaptaciones para este proyecto, porque esa metodología está escrita pensando también en backend:
 
 ### 2.1 Ciclo de cada paso (obligatorio)
 
@@ -104,7 +104,8 @@ Aplica la metodología completa de `docs/METODOLOGIA.md`. Estas son las adaptaci
   - `EstadoPR`: `PENDIENTE | CREADO | CON_CONFLICTOS | FUSIONADO | CERRADO`
   - `EstadoPostulacion`: `PENDIENTE | APROBADA | RECHAZADA`
   - `EstadoProyecto`: `ACTIVO | EN_PAUSA | FINALIZADO`
-  - `EstadoPracticante` (usuario): `ACTIVO | FINALIZADO`
+  - `EstadoUsuario` (campo `Usuario.estado`): `ACTIVO | INACTIVO`
+  - `EstadoPracticante`: `ACTIVO | FINALIZADO`. Es solo presentación derivada de `Usuario.estado`; no se guarda.
 - "Devuelta con observaciones" **no es un estado**: es una marca sobre una tarea EN_PROGRESO (viene de un evento del historial).
 - "Requiere revisión manual" **no es un estado**: es una marca en la evaluación.
 
@@ -189,7 +190,7 @@ No construir, no sugerir como si existiera, no dejar "por si acaso":
 
 ---
 
-## 7. Reglas visuales (resumen; manda `docs/ESPECIFICACION_VISUAL.md`)
+## 7. Reglas visuales (resumen; manda `docs/Especificacion_visual_SIGEP (1).md`)
 
 - **Nunca colores escritos a mano en un componente.** Solo tokens (`--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-2`, `--primary`, `--link`, `--danger`, etc.). Todo componente debe verse bien en tema claro y oscuro.
 - Un solo color de acción (verde `#58C481`). `#58C481` **no** se usa como texto sobre fondo claro; para texto verde, `--link`.
@@ -256,7 +257,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 
 **Pasos**
 1. **Tipos y enumeraciones** de todas las entidades (propuesta §11). Mostrar y acordar nombres antes de seguir.
-2. **Permisos** por rol (la matriz de §4 convertida en una función `puede(rol, accion, contexto)`).
+2. **Permisos** por rol (la matriz de §4 convertida en una función `puede(usuario, accion, contexto)`). Recibe el usuario completo porque el rol solo no alcanza para "el responsable" o "sus proyectos". Devuelve un resultado con el código de denegación y si exige motivo o nota. Decide solo **quién** puede (rol, alcance, identidad, usuario activo); no mira el estado de la tarea, eso es de los pasos 3 a 5. Única excepción: un proyecto FINALIZADO es de solo lectura para las acciones que cambian tareas (§6.8). En un proyecto FINALIZADO nadie (Administrador o Supervisor) ejecuta acciones que cambien tareas; la vía es reactivar el proyecto. La guarda NO bloquea editar datos del proyecto, que siguen su fila de la matriz: reunión, enlaces y rama base (Administrador y Supervisor); descripción, fechas y repositorio (solo Administrador). El código del proyecto se define al crearlo y no se edita nunca.
 3. **Transiciones de tarea** (regla 1 de la sección 5): función única `transicionesDisponibles(tarea, usuario, proyecto)` y `puedeTransicionar(...)`, incluyendo condiciones (supervisión, pausa, motivo/nota obligatorios).
 4. **Reglas de edición de tarea y de opciones** (`requiere_supervision`, `requiere_pr`).
 5. **Máquina del estado del PR** (tabla de §7.4, incluyendo recálculo al devolver/reabrir y "No requiere PR").
@@ -272,7 +273,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 - Motivo/nota faltante cuando es obligatorio → rechazada.
 - Puntaje: el ejemplo 80/90 → 86; pesos que no suman 100; criterio obligatorio incumplido → marca; puntaje 50, 69, 49 y 70 en los bordes de la banda.
 - Insights: justo en el umbral y un valor por debajo; reaparición de un insight revisado (empeora o 7 días).
-- Permisos: cada fila de la matriz de §4 para cada rol.
+- Permisos: cada fila de la matriz de §4 para cada rol; alcance (supervisor ajeno, practicante sin asignación o con fecha_baja, responsable vs. otro practicante); proyecto FINALIZADO (acciones de tareas denegadas a todos; editar reunión, enlaces y rama base permitido); usuario INACTIVO.
 - Generación de IDs: número eliminado no se reutiliza.
 
 **Listo cuando:** todas las pruebas pasan; `domain/` no importa React ni `data/`; los autores revisaron los tipos.
@@ -294,7 +295,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 6. **Servicios de Pull Request** (crear con ramas de ejemplo, caso de error preparado, detectar PR existente, cerrar, "No requiere PR", recálculo).
 7. **Servicios de postulaciones** (evaluación simulada, aprobar —crea practicante con contraseña temporal—, rechazar, reconsiderar, criterios, áreas y especialidades).
 8. **Servicios de practicantes y supervisores** (asignar, quitar, finalizar práctica, reactivar, restablecer contraseña, crear supervisor, editar, reasignar proyectos, desactivar).
-9. **Servicios de proyectos** (crear, editar, cambiar supervisor, pausar, reanudar, finalizar, reactivar, reunión, enlaces, rama base).
+9. **Servicios de proyectos** (crear, editar, cambiar supervisor, pausar, reanudar, finalizar, reactivar, reunión, enlaces, rama base). El servicio de editar proyecto rechaza cualquier cambio del código.
 10. **Servicios de cuenta** (perfil, cambiar contraseña, marcar insight revisado, notificar desde insight, marcar notificaciones leídas, configuración).
 11. **Consultas con alcance por rol:** funciones que devuelven "lo que este usuario puede ver" (proyectos, tareas, practicantes, insights). El alcance se aplica **aquí**, no en las pantallas.
 
@@ -339,7 +340,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 3. **Tarjeta de métrica** y **tarjeta de proyecto** (con variante atenuada para "anteriores").
 4. **Línea de tiempo** (alimentada por eventos del historial).
 5. **Tablero Kanban** (4 columnas, tarjetas sin botones de acción, columna "Terminada" con las 5 más recientes y "Ver todas las terminadas", filtro "Solo mis tareas").
-6. **Detalle de tarea** (componente compartido): estado, responsable, descripción, fecha límite, opciones, datos del PR, observaciones, línea de tiempo y **los botones que `domain/` permita** para el usuario y la tarea. Solo lectura cuando no tiene permiso.
+6. **Detalle de tarea** (componente compartido): estado, responsable, descripción, fecha límite, opciones, datos del PR, observaciones, línea de tiempo y **los botones que `domain/` permita** para el usuario y la tarea. Solo lectura cuando no tiene permiso. La línea de tiempo se muestra en cualquier detalle de tarea que el usuario pueda abrir, incluso en solo lectura. «Lo suyo» (matriz, Historial) se aplica a los perfiles y a «mi actividad» del resumen del proyecto.
 7. **Modal "Crear Pull Request"** (título, descripción, rama de trabajo con buscador, rama base fija; estado "Creando…"; error que no cierra la ventana) y modal de cerrar PR.
 8. **Formulario de tarea** (crear/editar) con Zod.
 9. **Notificaciones:** campana con las últimas 8, "marcar todas", "ver todas" con pestañas, enlace desactivado si el elemento ya no existe.
