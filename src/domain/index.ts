@@ -78,4 +78,23 @@ export type {
   ContextoPorAccion,
   ResultadoPermiso,
   SolicitudPermiso,
+  TextoExigido,
 } from './permisos';
+
+export {
+  ACCIONES_TRANSICION,
+  CODIGOS_TRANSICION,
+  TRANSICIONES_TAREA,
+  puedeTransicionar,
+  transicionesDisponibles,
+} from './transiciones';
+export type {
+  AccionTransicion,
+  CodigoTransicion,
+  CodigoTransicionPropio,
+  ContextoTransicion,
+  DefinicionTransicion,
+  ResultadoTransicion,
+  TextoTransicion,
+  TransicionDisponible,
+} from './transiciones';

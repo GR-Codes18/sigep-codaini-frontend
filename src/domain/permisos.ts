@@ -315,7 +315,7 @@ export const CODIGOS_DENEGACION = [
 export type CodigoDenegacion = (typeof CODIGOS_DENEGACION)[number];
 
 /** Texto que el servicio debe exigir para completar la acción. */
-type TextoExigido = 'MOTIVO' | 'NOTA' | null;
+export type TextoExigido = 'MOTIVO' | 'NOTA' | null;
 
 /**
  * Resultado de un permiso. `exige_texto` solo aparece cuando se permite; el servicio es quien
