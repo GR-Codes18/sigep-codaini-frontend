@@ -717,3 +717,67 @@ indicado).
   `prettier --check src/domain` limpios. `npm run lint` sigue fallando en
   `src/auth/iniciarSesion.ts` y `format:check` en `src/App.tsx`, ambos de la Persona B y fuera de
   este paso.
+
+## 2026-11-06 — [A] Fase 1, paso 3: transiciones de tarea
+
+### API y composición
+
+- `src/domain/transiciones.ts` es la única fuente de las 7 transiciones de §6.2. El catálogo
+  `TRANSICIONES_TAREA` declara `desde`, `hacia` y la `accion` de permiso de §4; no incluye el
+  evento de historial (eso es Fase 2).
+- `puedeTransicionar(tarea, usuario, contexto, transicion, texto?)` comprueba en este orden:
+  `puede()` → estado → condición → texto. `puede()` va primero para conservar sus códigos y no
+  revelar la pausa del proyecto ni la marca de supervisión a quien no tiene alcance.
+- `ContextoTransicion = { proyecto, asignaciones }`. Las `asignaciones` son las del usuario que
+  actúa; sin ellas `puede()` no puede comprobar el alcance del practicante. El plan escribía
+  `(tarea, usuario, proyecto)`; se amplía con el contexto acordado.
+- La capa de transiciones no repite roles, alcance, identidad, usuario activo ni FINALIZADO:
+  todo eso vive en `puede()`. Solo añade estado, `EN_PAUSA` para TOMAR y `requiere_supervision`
+  para ENVIAR_A_SUPERVISION / MARCAR_TERMINADA.
+- `transicionesDisponibles(tarea, usuario, contexto)` filtra el catálogo por el estado actual y
+  devuelve `{ transicion, exige_texto }[]` en el orden de §6.2. No tiene ningún `switch` de roles.
+- `ENVIAR_TAREA` cubre las dos salidas de EN_PROGRESO porque §4 las agrupa como «Enviar a
+  supervisión o marcar como terminada»; la condición de `requiere_supervision` decide cuál aplica.
+
+### Texto obligatorio
+
+- `undefined` en el campo exigido significa «todavía no se escribió»: la transición sigue
+  disponible y el resultado devuelve `exige_texto` para que la interfaz abra el modal.
+- Vacío o solo espacios = `TEXTO_OBLIGATORIO`.
+- La propuesta no define este matiz; se decide aquí como regla mínima para que la interfaz y el
+  servicio usen la misma función. El paso 2 había dejado el contenido del texto al servicio.
+- Con `texto` ausente, `puedeTransicionar` devuelve `permitido: true`, así que un servicio que 
+  no pase el texto dejaría pasar un `LIBERAR` de supervisor sin motivo. El servicio debe pasar 
+  siempre el texto y rechazar si `exige_texto !== null` y el campo falta o viene vacío.
+
+### Marca «Devuelta con observaciones»
+
+- No se implementa `devolucionVigente` en este paso; la función llega en la Fase 4.
+- La marca no se guarda en `Tarea` y no es un estado: se deriva del historial.
+- Regla acordada: se apaga solo cuando la tarea vuelve a ESPERANDO_SUPERVISION o a TERMINADA;
+  liberar y volver a tomar **no** la apagan (§6.5: el practicante debe saber qué corregir).
+- La función de Fase 4 mirará el historial y aplicará esa regla: `TAREA_DEVUELTA` la enciende;
+  `TAREA_ENVIADA_A_SUPERVISION` y `TAREA_TERMINADA` la apagan; `TAREA_LIBERADA` y `TAREA_TOMADA`
+  no la cambian.
+
+### Pruebas
+
+- Matriz de 7 transiciones × 3 roles escrita a mano desde §6.2, con un comentario por fila.
+- Los 7 pares `(desde, hacia)` se comparan contra una lista escrita a mano desde §6.2, no generada
+  desde `TRANSICIONES_TAREA`.
+- Casos añadidos: usuario sin alcance en una tarea cuyo estado no coincide → `FUERA_DE_ALCANCE`
+  (no `TRANSICION_NO_APLICA`); `ENVIAR_A_SUPERVISION` y `MARCAR_TERMINADA` nunca disponibles a la
+  vez; proyecto EN_PAUSA solo bloquea TOMAR; FINALIZADO e INACTIVO no dejan ninguna transición;
+  motivo/nota vacíos o con espacios → `TEXTO_OBLIGATORIO`.
+
+### Archivos y verificación
+
+- `src/domain/transiciones.ts`, `src/domain/transiciones.test.ts`, `src/domain/index.ts` y
+  `src/domain/permisos.ts`.
+- En `permisos.ts` el único cambio fue `type TextoExigido` → `export type TextoExigido`; ninguna
+  regla, firma ni tabla cambió.
+- `src/domain/index.ts` conserva todos los exports anteriores y solo agrega los nuevos.
+- Verificación: `npm run test` con 98 pruebas en verde; `tsc -b` y `build` OK; `eslint` de los
+  4 archivos limpio; `prettier --check` de los 4 archivos limpio; `git diff -- docs` vacío.
+  `npm run lint` global sigue fallando solo por `src/auth/iniciarSesion.ts` (Persona B) y el
+  aviso conocido de `button.tsx`.

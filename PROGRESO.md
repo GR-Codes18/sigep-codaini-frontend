@@ -68,28 +68,30 @@
 
 ## Persona A — Fases 1 y 2 (`domain/`, `data/`, `services/`)
 
-- **Fase actual:** 1, paso 2 terminado (2A y 2B); paso 3 sin empezar.
-- **Rama:** `feat/fase1-permisos`.
-- **Siguiente paso:** Fase 1, paso 3 — transiciones de tarea.
+- **Fase actual:** 1, paso 3 terminado; paso 4 sin empezar.
+- **Rama:** `feat/fase1-transiciones`.
+- **Siguiente paso:** Fase 1, paso 4 — reglas de edición de tarea y de opciones.
 
 ### Pasos terminados
 
 | Fecha | Fase | Paso | Commit / PR |
 |---|---|---|---|
-| 2026-10-23 | 1 | 1. Tipos, enumeraciones y constantes de `domain/` | `1251fb5`; docs `fd8cf78`; PR #5 fusionado en `a17099a` |
+| 2026-10-23 | 1 | 1. Tipos, enumeraciones y constantes de `domain/` | `1251fb5`; docs `fd8cf78`; PR #5 fusionado en `a17099a`; docs de cierre `6233dda` |
 | 2026-10-23 | — | chore PR #6: `.gitattributes` y regla de `git config` en `AGENTS.md` | fusionado en `e4993af` |
-| 2026-10-28 | 1 | 2A. Contrato de permisos: acciones, ámbitos, contextos y resultado | `eb0e382`; docs `6407ec7` |
-| 2026-10-30 | 1 | 2B. `puede()`, ayudantes, fábricas y pruebas de la matriz | `2eef457` |
+| 2026-10-28 | 1 | 2A. Contrato de permisos: acciones, ámbitos, contextos y resultado | `eb0e382`; docs `6407ec7`; plan/propuesta `5fd8f80` |
+| 2026-10-30 | 1 | 2B. `puede()`, ayudantes, fábricas y pruebas de la matriz | `2eef457`; docs `5647787`; PR #7 fusionado en `2f603cc` |
+| 2026-11-06 | 1 | 3. Transiciones de tarea y matriz de §6.2 | `66cfa34` |
 
 ### Pendientes
 
 - [x] Fase 1, paso 1: revisión de los tipos por la Persona B en el PR de `feat/fase1-tipos`.
 - [x] Fase 1, paso 2: permisos por rol (`puede()` y pruebas de la matriz de §4).
+- [x] Fase 1, paso 3: transiciones de tarea y matriz estado × rol × condición.
 - [ ] Fase 1, paso 2B: revisión de la Persona B del cambio de contrato de `ContextoInsight`
       (`proyectos`) antes de fusionar.
 - [ ] Confirmar que el PR de dependencias de la Persona B (`zustand`, `zod`, `react-hook-form`, `@hookform/resolvers`, `react-router`, `date-fns`, `sonner`) se fusionó en `development`.
-- [ ] Fase 1, pasos 3–10: transiciones de tarea, reglas de edición, máquina del estado del
-      PR, generación de ID, puntaje de postulaciones, insights, indicadores y ciclo de vida.
+- [ ] Fase 1, pasos 4–10: reglas de edición, máquina del estado del PR, generación de ID,
+      puntaje de postulaciones, insights, indicadores y ciclo de vida.
 - [ ] Fase 1: pruebas mínimas de la sección 9 del plan.
 - [ ] Fase 2, pasos 1–11: almacén, semilla, restablecer datos, utilidades y servicios por módulo,
       consultas con alcance por rol, más sus pruebas.
