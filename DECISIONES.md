@@ -369,26 +369,413 @@ para que el paralelismo no genere conflictos ni decisiones duplicadas.
 - **Tipos de `domain/`:** se acuerdan por PR en la rama `feat/fase1-tipos` y **no se cambian sin
   avisar**, porque todo el resto del sistema depende de ellos.
 
-## 2026-10-22 — [B] @hookform/resolvers baja de 6.0.0 a 5.2.2 (Fase 3, paso 1)
+## 2026-10-22 — [A] Fase 1, paso 1: contrato de tipos de `domain/`
 
-- **Qué cambia:** `@hookform/resolvers` pasa de `6.0.0` (decidido en la Fase 0, paso 1) a `5.2.2`, exacta.
-- **Por qué:** la 6.0.0 nunca se había instalado. Al instalarla, `npm install` falla con `ERESOLVE`: sus peers opcionales (`effect@^4`, `@typeschema/main`) arrastran `@effect/schema@0.71.4`, que pide `effect@^3`. Se descartaron `--force` y `--legacy-peer-deps` porque instalan un árbol roto u ocultan conflictos futuros.
-- **Por qué 5.2.2:** última 5.x; su único peer es `react-hook-form@^7.55.0` y usa Standard Schema, así que `zodResolver` funciona con Zod 4.
-- **Alternativas descartadas:** mantener 6.0.0 con `--legacy-peer-deps` en `.npmrc` (afecta a todo el proyecto) o con `overrides` (parche a mantener).
-- **Además:** `zod` 4.6.7 pasa a estar declarado en `dependencies` (antes llegaba solo como transitiva de `shadcn`).
-- **Reabrir cuando:** una 6.x instale sin conflicto de peers.
+Acuerdo entre las dos personas para `src/domain/`: solo tipos, enumeraciones y listas constantes;
+cero lógica. Se implementa en `feat/fase1-tipos`.
 
-## 2026-10-23 — [B] Rutas con prefijo, layout y franja (Fase 3, pasos 2 a 6)
+### Convenciones
 
-- **Rutas con prefijo por panel** (`/administrador/...`, `/supervisor/...`, `/practicante/...`). `puedeVerRuta` (pura, en `auth/`) decide y `GuardaRuta` la consulta. Alternativa descartada: rutas planas (la guarda se complica). La propuesta no define URLs; pendiente de confirmar con Persona A.
-- **`react-router` 7.18.4** (sin `react-router-dom`). Se corrigió una instalación errónea que dejó la 8.5.0.
-- **Menús como datos** (`src/app/menus.ts`): un arreglo alimenta sidebar, rutas y migas de pan (9, 5 y 3 módulos).
-- **Logo provisional** con `bg-white` y `text-neutral-900` (colores a mano, excepción temporal).
-- **Franja de contraseña temporal** neutra (`surface-2`): los colores de estado se reservan para estados. No aparece al Administrador (§8.3). Las cuentas demo arrancan con `debe_cambiar_contrasena: false`.
-- **`src/app/pagina-prueba/`** no se borró (el plan lo pedía en el paso 7); queda como pendiente.
+- Enumeraciones como arreglo `as const` + tipo derivado (`ESTADOS_TAREA` → `EstadoTarea`).
+  Descartado `enum` de TypeScript: `tsconfig.app.json` activa `erasableSyntaxOnly` y
+  `verbatimModuleSyntax`.
+- `Id = string`, sin *branded types*. `Fecha = string` (`YYYY-MM-DD`), `FechaHora = string`
+  (ISO 8601 UTC) y `Hora = string` (`HH:mm`). Descartados `Date` y los números de época por
+  persistencia, zona horaria y legibilidad. `crypto.randomUUID()` no vive en `domain/`: lo usan
+  `services/` y `data/`; la semilla usa IDs fijos y legibles.
+- Sin campos calculados en entidades guardadas (días esperando, veces devuelta, carga, avance,
+  indicadores). `Tarea.id` es el identificador interno; `Tarea.numero` es el correlativo por
+  proyecto; el ID legible `CODIGO-NNN` se calcula y no se guarda.
 
-## 2026-10-23 — [B] Componentes base con shadcn (Fase 4, paso 1)
+### Personas
 
-- **Opción A:** componentes accesibles con el CLI (`select`, `textarea`, luego `dialog`, `tabs`, `table`, `skeleton`) y a mano solo las piezas propias (estado vacío, pestañas con contador, filtros). Alternativa descartada: todo a mano (el modal y el selector accesibles son difíciles de hacer bien).
-- **Dividido en 1a, 1b y 1c.** 1a: `select` y `textarea` con `shadcn@4.22.1`, sin cambios en `package.json`, y sin colores a mano.
-- **Pendiente:** `sonner` (toast) figura en `DECISIONES.md` pero no está instalado; requiere PR pequeño con versión verificada.
+- `Usuario` es la tabla base; `Practicante` y `Supervisor` son detalles. Descartada la unión
+  discriminada. La PK de los detalles es `id_usuario`.
+- `Usuario.fecha_alta: FechaHora` no nula, separada de `Practicante.fecha_ingreso`.
+- `celular: string` no nulo en `Usuario` para los tres roles; se quita de `Practicante` y
+  `Supervisor`. `Postulante` conserva su propio celular. Descartado el detalle `Administrador`
+  solo para el celular.
+- `Usuario.contrasena` nunca se registra en el historial. `Usuario.estado` es `EstadoUsuario`
+  (`ACTIVO | INACTIVO`). `Practicante` no guarda estado: `EstadoPracticante`
+  (`ACTIVO | FINALIZADO`) es presentación derivada de `Usuario.estado`.
+- `Practicante.discord`, `cuenta_github` y `disponibilidad_horaria` nacen nulos al crear la
+  cuenta desde una postulación y se completan en Mi perfil.
+
+### Proyecto, tareas y Pull Requests
+
+- `Proyecto.ultimo_numero_tarea: number` no nulo, inicia en 0 y solo lo escribe la generación de
+  IDs (paso 6). Descartado derivar `max(numero) + 1` porque reutilizaría el último número
+  eliminado.
+- `dia_reunion` y `hora_reunion` son opcionales; «ambos o ninguno» se valida en servicios y Zod,
+  no en el tipo.
+- `Tarea.estado_pr: EstadoPR | null`. Es `null` hasta la primera llegada a `ESPERANDO_SUPERVISION`
+  o `TERMINADA` (ahí pasa a `PENDIENTE`); después se conserva al devolver o reabrir y se oculta
+  con una regla de visibilidad (`requiere_pr` y estado de la tarea). Descartado el diseño que lo
+  ponía en `null` al devolver o reabrir: perdía el último estado y dejaba un `Pendiente` con
+  enlace a un PR fusionado.
+- `url_pull_request`, `rama_origen` y `rama_base` son nulos hasta el primer PR y se conservan al
+  devolver o reabrir; un PR nuevo los sobrescribe.
+- `Asignacion.id_practicante`, `Tarea.id_practicante` y `Proyecto.id_supervisor` contienen un
+  `Usuario.id` (comentario en el código).
+
+### Enumeraciones e historial
+
+- Se mantienen las seis del plan (`Rol`, `EstadoTarea`, `EstadoPR`, `EstadoPostulacion`,
+  `EstadoProyecto`, `EstadoPracticante`) y se agregan `EstadoUsuario`, `TipoCriterio`,
+  `Severidad`, `TipoReglaInsight`, `TipoElemento`, `DiaSemana`, `BloqueCriterio`,
+  `TipoAccionHistorial` y `TipoNotificacion`.
+- `TipoElemento`: `USUARIO | PROYECTO | TAREA | POSTULANTE | AREA_TECNICA | ESPECIALIDAD |
+  CRITERIO_EVALUACION | PARAMETRO_CONFIGURACION`. Toda persona se referencia como `USUARIO` +
+  `id_usuario`; descartados `PRACTICANTE` y `SUPERVISOR` como tipos de elemento.
+- `ACCIONES_POR_CATEGORIA` es un objeto `as const` con un arreglo por categoría (8 categorías,
+  62 acciones) y es la única fuente de `TipoAccionHistorial` y `CategoriaEvento`.
+  `CategoriaEvento` no se guarda en `EventoHistorial`: se deriva de la acción. Incluye
+  `PROYECTO_ENLACE_EDITADO` (13 acciones de proyectos). Prefijo `PULL_REQUEST_` en historial y
+  notificaciones.
+- `TipoNotificacion`: 18 valores. `ASIGNADO_A_PROYECTO` y `QUITADO_DE_PROYECTO` cubren a
+  practicantes y supervisores. En asignación o quita, `Notificacion.elemento` es el `PROYECTO` y
+  la persona va en `id_destinatario`.
+- `EventoHistorial`: `autor` es `{ tipo: 'USUARIO'; id_usuario } | { tipo: 'SISTEMA' }`;
+  `elemento` lleva `tipo`, `id` y `etiqueta` copiada; `cambios` es `CambioRegistrado[]`;
+  `id_proyecto` es opcional, pero obligatorio en eventos de proyecto, tarea y asignación. En
+  asignación o quita el elemento es `USUARIO` y el proyecto va en `id_proyecto`.
+- `PostulacionEvaluacionDetalle.bloque: BloqueCriterio` (`AREA | ESPECIALIDAD`) se copia al
+  evaluar; no se deriva de `id_criterio` porque los criterios se editan.
+
+### Insights y configuración
+
+- Los insights no se guardan. El tipo calculado lleva `tipo_regla`, `severidad`, `titulo`,
+  `motivo`, `elemento`, `fecha_deteccion` (`FechaHora`), `revisado` e `ids_proyecto: Id[]` (`[]`
+  para postulantes). `fecha_deteccion` es el inicio de la condición por regla; se usa `ahora` en
+  carga desbalanceada y en el tramo de 20 puntos de posible atraso. El cálculo es del paso 8.
+- `InsightRevision` queda como en §11, sin `metrica_al_revisar`. «Empeora» significa solo aumento
+  de severidad, más el plazo de 7 días; se documentará en §5.6.
+- `Postulante.cv: ArchivoCV { nombre: string; url: string }`, con PDFs de ejemplo; sin subida
+  real.
+- `ParametroConfiguracion.valor` y `valor_predeterminado` usan `ValorParametro`
+  (`numero | rango | proporcion`). Banda ambigua: `{ tipo: 'rango', minimo: 50, maximo: 69 }`.
+  Proporción: `{ tipo: 'proporcion', area: 40, especialidad: 60 }`. El catálogo de claves se fija
+  al construir `configuracion.ts`, tras leer §5.8 y la tabla de umbrales de §5.6.
+
+### Archivos
+
+- `src/domain/`: `comunes.ts`, `enumeraciones.ts`, `usuarios.ts`, `proyectos.ts`, `tareas.ts`,
+  `postulaciones.ts` (contiene Postulante, catálogos y evaluación; no existe `evaluacion.ts`),
+  `historial.ts`, `notificaciones.ts`, `insights.ts`, `configuracion.ts` e `index.ts` (barril).
+  Se borra `domain/.gitkeep` al crear los archivos.
+- `docs/` no se toca: los cambios de la propuesta v6 los aplican los autores a mano.
+
+### Fechas
+
+- `Tarea.fecha_termino` y `Postulante.fecha_postulacion` son `FechaHora` (no `Fecha`) a
+  propósito: desempatan el orden por hora y permiten calcular plazos.
+- `Proyecto.fecha_fin_real` es `Fecha`.
+
+---
+
+## 2026-10-28 — [A] Fase 1, paso 2: permisos por rol
+
+La matriz de §4 queda en `src/domain/permisos.ts` como `puede(usuario, accion, contexto)`.
+No se toca `enumeraciones.ts` y el barril `index.ts` solo agrega los exports nuevos. El paso se
+entrega en dos commits: **2A** (contrato: nombres, ámbitos, contextos y resultado) y **2B**
+(lógica de `puede`, ayudantes, fábricas y pruebas).
+
+### Vocabulario y firma
+
+- `ACCIONES_PERMISO` (`as const`) + `AccionPermiso`, en español sin tildes y separados de
+  `TipoAccionHistorial`: una acción de permiso no siempre equivale a un evento del historial.
+- **55 acciones**: una por fila de §4, divididas cuando cambia el «quién» o el texto exigido.
+  Incluye `APROBAR_POSTULACION`, `RECHAZAR_POSTULACION` (motivo) y `RECONSIDERAR_POSTULACION`
+  (nota) en lugar de una sola «decidir» (§5.1); la separación de aprobar/devolver; la de
+  activar/desactivar «Requiere PR»; crear/editar datos del proyecto; asignar/quitar practicante;
+  las cuatro operaciones del ciclo de vida del proyecto; crear supervisor/restablecer contraseña;
+  finalizar/reactivar práctica y supervisor; y un campo por acción en los datos propios.
+- `AmbitoPermiso` (`PROYECTO | PROPIO | GLOBAL`) y `AMBITO_POR_ACCION` (`as const satisfies
+  Record<AccionPermiso, AmbitoPermiso>`): **32 PROYECTO, 7 PROPIO, 16 GLOBAL**. Sirve para las
+  pruebas de alcance y para no repetir comprobaciones.
+- `ContextoPorAccion[A]` está tipado por acción (tipo mapeado sobre `AccionPermiso`; si falta una
+  acción, el proyecto no compila) y trae solo las entidades necesarias: `proyecto`, `tarea`,
+  `asignaciones` **del usuario que actúa**, `usuario_objetivo` e `insight`
+  (`Pick<Insight, 'ids_proyecto' | 'tipo_regla'>`). La asignación vigente
+  (`fecha_baja === null`) se calcula en `domain/`.
+- `SolicitudPermiso` es la unión discriminada `{ accion, contexto }` por acción; permite escribir
+  la tabla de pruebas sin perder el tipado.
+- Resultado: `{ permitido: true; exige_texto: 'MOTIVO' | 'NOTA' | null }` o
+  `{ permitido: false; codigo }`.
+- Códigos: `USUARIO_INACTIVO`, `ROL_NO_PERMITIDO`, `FUERA_DE_ALCANCE`,
+  `NO_ES_EL_RESPONSABLE`, `NO_ES_TU_CUENTA` y `PROYECTO_FINALIZADO`. Ninguno revela si el recurso
+  existe: el servicio resuelve la entidad antes de preguntar y devuelve su propio error si no la
+  encuentra.
+
+### Orden de comprobación
+
+`puede()` comprueba, en este orden, y se detiene en la primera negativa:
+
+1. `usuario.estado === 'ACTIVO'`; si no, `USUARIO_INACTIVO`.
+2. Rol permitido para la acción; si no, `ROL_NO_PERMITIDO`.
+3. Alcance (proyecto del supervisor, asignación o insight del practicante); si no,
+   `FUERA_DE_ALCANCE`.
+4. Identidad (responsable de la tarea o cuenta propia); si no, `NO_ES_EL_RESPONSABLE` o
+   `NO_ES_TU_CUENTA`.
+5. Proyecto `FINALIZADO` para las 14 acciones que cambian tareas; si no, `PROYECTO_FINALIZADO`.
+6. Texto exigido (`'MOTIVO'`, `'NOTA'` o `null`).
+
+**El alcance va siempre antes que la identidad.** Quien está fuera del proyecto recibe
+`FUERA_DE_ALCANCE`, nunca `NO_ES_EL_RESPONSABLE`, para no revelar que la tarea existe. Queda
+escrito también en la cabecera de `permisos.ts`.
+
+### Alcance de la guarda
+
+- Decide rol, alcance, identidad y usuario ACTIVO. **No** mira el estado de la tarea, la pausa del
+  proyecto ni si hay PR: eso llega en los pasos 3 a 5. Por eso el resultado no basta para mostrar
+  botones; la interfaz usará las funciones de esos pasos.
+- Excepción única: en un proyecto `FINALIZADO` se deniegan las **14** acciones que cambian tareas
+  (tabla 1 menos `VER_TAREA`, incluidas las de Pull Request) a los tres roles. Ver, definir
+  reunión, gestionar enlaces, cambiar rama base y editar datos del proyecto siguen su fila.
+- En un proyecto `FINALIZADO`, `puede()` **no** bloquea asignar o quitar practicantes ni cambiar de
+  supervisor: si debe bloquearse, se decide en el paso 10 (ciclo de vida).
+- Practicante:
+  - `VER_PROYECTO`: asignación vigente **y** proyecto no FINALIZADO.
+  - `VER_PRACTICANTES`: mismo criterio que `VER_PROYECTO` (asignación vigente **y** proyecto no
+    FINALIZADO), porque §9.2.1 bloquea el acceso al tablero y al equipo cuando el proyecto finaliza.
+  - `VER_TAREA`: asignación vigente **y** proyecto no FINALIZADO, **o** ser el responsable de la
+    tarea (`tarea.id_practicante === usuario.id`), aunque la asignación tenga baja o el proyecto
+    esté FINALIZADO. Siempre en solo lectura (§9.2.2).
+  - `VER_RESUMEN_PROYECTO_ANTERIOR`: cualquier asignación a ese proyecto, vigente o con baja.
+- `VER_HISTORIAL_GLOBAL` es solo del Administrador (§5.7). Las líneas de tiempo del Supervisor y
+  del Practicante forman parte de ver proyecto/tarea/perfil y se resuelven en la Fase 2.
+- El código del proyecto solo existe en `CREAR_PROYECTO`; no hay acción para editarlo.
+- Datos propios por campo y solo para la propia cuenta: el Administrador no edita datos personales
+  de otras personas; la única excepción es el nombre y el correo del supervisor.
+- `EDITAR_CREDENCIAL_SUPERVISOR`, `DESACTIVAR_SUPERVISOR`, `REACTIVAR_SUPERVISOR` y
+  `CAMBIAR_CONTRASENA_PROPIA` no están en la matriz pero salen de §4 (reglas de acceso), §5.3 y
+  §8.2. `FINALIZAR_PRACTICA` exige motivo y `REACTIVAR_PRACTICA` nota (§5.2), aunque la matriz no
+  lo diga.
+- **Objetivos de persona** (si no coinciden, `FUERA_DE_ALCANCE`): `RESTABLECER_CONTRASENA` solo a
+  PRACTICANTE o SUPERVISOR (§8.3); `EDITAR_CREDENCIAL_SUPERVISOR`, `DESACTIVAR_SUPERVISOR` y
+  `REACTIVAR_SUPERVISOR` solo a SUPERVISOR; `FINALIZAR_PRACTICA`, `REACTIVAR_PRACTICA` y
+  `EDITAR_DATOS_PRACTICA` solo a PRACTICANTE.
+- **`VER_REPORTES` se comprueba por proyecto** (Admin cualquiera, Supervisor el suyo, Practicante
+  no). La vista transversal del Supervisor es la unión de los proyectos que ya puede ver; el
+  filtro lo aplica la Fase 2.
+- Insights: el Supervisor solo actúa si al menos un `id_proyecto` del insight es suyo; con
+  `ids_proyecto` vacío, nunca. `NOTIFICAR_DESDE_INSIGHT` es una sola acción: el Administrador
+  puede notificar en `PRACTICANTE_INACTIVO` y `SUPERVISION_DEMORADA`; el Supervisor solo en
+  `PRACTICANTE_INACTIVO`; otra regla, `ROL_NO_PERMITIDO`. Nombres exactos de
+  `TIPOS_REGLA_INSIGHT`. Qué 5 de las 7 reglas ve el Supervisor se decide en el paso 8.
+  `MARCAR_INSIGHT_REVISADO` admite una nota **opcional** (§5.6): no exige texto.
+
+### Pruebas (paso 2B)
+
+- Tabla dirigida por datos con las 55 acciones × 3 roles (`true`, `'MOTIVO'`, `'NOTA'` o `false`),
+  con el `ambito` de cada acción. Los barridos de «supervisor ajeno», «sin asignación» y «con
+  baja» se aplican solo a `PROYECTO`; un practicante sin proyecto sí puede editar sus datos y
+  cambiar su contraseña.
+- Exhaustividad (toda acción tiene fila y ámbito), FINALIZADO con el practicante
+  (`VER_PROYECTO` denegado, `VER_TAREA` solo si es el responsable), `INACTIVO`, textos exigidos y
+  códigos que no revelan existencia.
+- Fábricas en `src/domain/pruebas/fabricas.ts`, importadas solo por los tests.
+- Archivos: `src/domain/permisos.ts`, `src/domain/permisos.test.ts`,
+  `src/domain/pruebas/fabricas.ts` y `src/domain/index.ts`. Sin dependencias nuevas y sin cambios
+  en `src/auth` ni `src/App.tsx`.
+
+### Tabla de las 55 acciones
+
+Leyenda: «Sí» en Supervisor dentro de `PROYECTO` implica `proyecto.id_supervisor === usuario.id`
+(en insights, al menos un `ids_proyecto` suyo); en Practicante implica asignación vigente, salvo
+las excepciones de arriba. El Administrador no tiene comprobación de alcance en las acciones de
+proyecto.
+
+| Acción | Ámbito | Admin | Supervisor | Practicante | `exige_texto` |
+|---|---|---|---|---|---|
+| **Tareas y Pull Requests** | | | | | |
+| `CREAR_TAREA` | PROYECTO | Sí | Sí | — | — |
+| `EDITAR_DATOS_TAREA` | PROYECTO | Sí | Sí | — | — |
+| `TOMAR_TAREA` | PROYECTO | — | — | Sí | — |
+| `LIBERAR_TAREA` | PROYECTO | Sí | Sí | Sí (responsable) | `MOTIVO` (Admin/Sup); — (Prac) |
+| `ENVIAR_TAREA` | PROYECTO | — | — | Sí (responsable) | — |
+| `APROBAR_TAREA` | PROYECTO | — | Sí | — | — |
+| `DEVOLVER_TAREA` | PROYECTO | — | Sí | — | `NOTA` |
+| `REABRIR_TAREA` | PROYECTO | Sí | Sí | — | `NOTA` |
+| `ELIMINAR_TAREA` | PROYECTO | Sí | Sí | — | `MOTIVO` |
+| `CAMBIAR_REQUIERE_SUPERVISION` | PROYECTO | Sí | Sí | — | — |
+| `ACTIVAR_REQUIERE_PR` | PROYECTO | Sí | Sí | — | — |
+| `DESACTIVAR_REQUIERE_PR` | PROYECTO | Sí | Sí | Sí (responsable) | — (Admin/Sup); `MOTIVO` (Prac) |
+| `CREAR_PULL_REQUEST` | PROYECTO | — | — | Sí (responsable) | — |
+| `CERRAR_PULL_REQUEST` | PROYECTO | Sí | Sí | Sí (responsable) | `MOTIVO` |
+| `VER_TAREA` | PROYECTO | Sí | Sí | Sí (regla de arriba) | — |
+| **Proyectos y equipo** | | | | | |
+| `CREAR_PROYECTO` | GLOBAL | Sí | — | — | — |
+| `EDITAR_DATOS_PROYECTO` | PROYECTO | Sí | — | — | — |
+| `CAMBIAR_RAMA_BASE` | PROYECTO | Sí | Sí | — | — |
+| `DEFINIR_REUNION` | PROYECTO | Sí | Sí | — | — |
+| `GESTIONAR_ENLACES` | PROYECTO | Sí | Sí | — | — |
+| `CAMBIAR_SUPERVISOR` | PROYECTO | Sí | — | — | — |
+| `ASIGNAR_PRACTICANTE` | PROYECTO | Sí | — | — | — |
+| `QUITAR_PRACTICANTE` | PROYECTO | Sí | — | — | — |
+| `PAUSAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `REANUDAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `FINALIZAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `REACTIVAR_PROYECTO` | PROYECTO | Sí | — | — | `NOTA` |
+| `VER_PROYECTO` | PROYECTO | Sí | Sí | Sí (vigente y no finalizado) | — |
+| `VER_RESUMEN_PROYECTO_ANTERIOR` | PROYECTO | Sí | Sí | Sí (cualquier asignación) | — |
+| `VER_PRACTICANTES` | PROYECTO | Sí | Sí | Sí (vigente y no finalizado) | — |
+| **Personas y cuentas** | | | | | |
+| `APROBAR_POSTULACION` | GLOBAL | Sí | — | — | — |
+| `RECHAZAR_POSTULACION` | GLOBAL | Sí | — | — | `MOTIVO` |
+| `RECONSIDERAR_POSTULACION` | GLOBAL | Sí | — | — | `NOTA` |
+| `GESTIONAR_CRITERIOS_EVALUACION` | GLOBAL | Sí | — | — | — |
+| `CREAR_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `RESTABLECER_CONTRASENA` | GLOBAL | Sí | — | — | — |
+| `FINALIZAR_PRACTICA` | GLOBAL | Sí | — | — | `MOTIVO` |
+| `REACTIVAR_PRACTICA` | GLOBAL | Sí | — | — | `NOTA` |
+| `EDITAR_DATOS_PRACTICA` | GLOBAL | Sí | — | — | — |
+| `EDITAR_NOMBRE_PROPIO` | PROPIO | Sí | — | Sí | — |
+| `EDITAR_CORREO_PROPIO` | PROPIO | Sí | — | Sí | — |
+| `EDITAR_CELULAR_PROPIO` | PROPIO | Sí | Sí | Sí | — |
+| `EDITAR_DISCORD_PROPIO` | PROPIO | — | Sí | Sí | — |
+| `EDITAR_GITHUB_PROPIO` | PROPIO | — | Sí | Sí | — |
+| `EDITAR_DISPONIBILIDAD_PROPIA` | PROPIO | — | — | Sí | — |
+| `EDITAR_CREDENCIAL_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `DESACTIVAR_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `REACTIVAR_SUPERVISOR` | GLOBAL | Sí | — | — | — |
+| `CAMBIAR_CONTRASENA_PROPIA` | PROPIO | Sí | Sí | Sí | — |
+| **Seguimiento y sistema** | | | | | |
+| `VER_REPORTES` | PROYECTO | Sí | Sí | — | — |
+| `MARCAR_INSIGHT_REVISADO` | PROYECTO | Sí | Sí (algún `ids_proyecto` suyo) | — | — |
+| `NOTIFICAR_DESDE_INSIGHT` | PROYECTO | Sí (2 reglas) | Sí (1 regla) | — | — |
+| `VER_HISTORIAL_GLOBAL` | GLOBAL | Sí | — | — | — |
+| `GESTIONAR_CONFIGURACION` | GLOBAL | Sí | — | — | — |
+| `RESTABLECER_DATOS_DEMOSTRACION` | GLOBAL | Sí | — | — | — |
+
+**Totales:** 55 acciones; 32 de ámbito `PROYECTO`, 7 `PROPIO` y 16 `GLOBAL`; 14 exigen texto
+(6 `MOTIVO` y 8 `NOTA`; `LIBERAR_TAREA` y `DESACTIVAR_REQUIERE_PR` solo cuando las ejecuta el rol
+indicado).
+
+## 2026-10-30 — [A] Fase 1, paso 2B: implementación de `puede()`
+
+### Orden y estructura
+
+- `puede()` es el único lugar donde vive el orden: `ACTIVO` → rol (`REGLAS_POR_ACCION`, un `Record`
+  total sobre las 55) → alcance → identidad → `FINALIZADO` → texto. Delega en tres funciones
+  privadas (`comprobarAlcance`, `comprobarIdentidad` y `finalizadoBloquea`) que reciben
+  `SolicitudPermiso`, de modo que cada `switch` estrecha `contexto` sin conversiones por caso.
+- `accion` y `contexto` llegan como parámetros independientes y TypeScript no los correlaciona: se
+  unen una sola vez con `as SolicitudPermiso` en la frontera de `puede()`. No hay otro `as` ni
+  `as any`, `ts-ignore` o `ts-expect-error` en el paso.
+- Ayudantes privados: `tieneAsignacionVigente` (exige `id_proyecto`, `id_practicante` y
+  `fecha_baja === null`), `esResponsable`, `proyectoEsDelSupervisor` e `insightEnAlcance`.
+- `AccionQueCambiaTarea` se deriva de una lista privada de 14 y `finalizadoBloquea` lee
+  `contexto.proyecto` sobre un `Extract<SolicitudPermiso, …>`: si una de las 14 no trae `proyecto`,
+  el proyecto no compila. La lista no se exporta.
+
+### D1 — `ContextoInsight` gana `proyectos` (cambio de contrato del 2A)
+
+- `ContextoInsight` pasa a `{ insight: Pick<Insight, 'ids_proyecto' | 'tipo_regla'>; proyectos:
+  Pick<Proyecto, 'id' | 'id_supervisor'>[] }`, con los proyectos del usuario que actúa.
+- Sin esa lista, `domain/` no puede comprobar la regla «al menos un proyecto del insight es suyo»:
+  el Supervisor exige que algún proyecto de `proyectos` esté en `insight.ids_proyecto` **y** tenga
+  `id_supervisor === usuario.id`. Con `ids_proyecto` vacío nunca hay alcance.
+- Es un cambio de contrato del paso 2A dentro del mismo PR: la Persona B debe revisarlo antes de
+  fusionar. El servicio que arma el contexto resuelve la lista; `puede()` no consulta el almacén.
+
+### D2 — `FUERA_DE_ALCANCE` para el practicante en proyecto FINALIZADO
+
+- `VER_PROYECTO`, `VER_PRACTICANTES` y `VER_TAREA` de un practicante exigen «asignación vigente y
+  proyecto no FINALIZADO». Si el proyecto está FINALIZADO, la respuesta es `FUERA_DE_ALCANCE`, no
+  `PROYECTO_FINALIZADO`: es una regla de alcance.
+- `PROYECTO_FINALIZADO` queda reservado a las 14 acciones que cambian tareas (§6.8). **La interfaz
+  no debe usar ese código para mostrar «proyecto finalizado»**: ese texto sale del estado del
+  proyecto. Queda documentado en la cabecera de `permisos.ts`.
+- Excepciones que se conservan: `VER_RESUMEN_PROYECTO_ANTERIOR` acepta cualquier asignación (con o
+  sin baja) y `VER_TAREA` permite al responsable aunque el proyecto esté FINALIZADO o su asignación
+  tenga baja.
+
+### D3 — `NOTIFICAR_DESDE_INSIGHT`: la regla va antes del alcance
+
+- Si la regla del insight no aplica al rol, responde `ROL_NO_PERMITIDO` antes de comprobar el
+  alcance: es una condición de rol. Administrador en `PRACTICANTE_INACTIVO` y
+  `SUPERVISION_DEMORADA`; Supervisor solo en `PRACTICANTE_INACTIVO`; otra regla,
+  `ROL_NO_PERMITIDO`.
+- La tabla se tipa con `TipoReglaInsight`, no con cadenas sueltas.
+
+### D4 — Contexto incoherente y pruebas
+
+- `comprobarAlcance` empieza comprobando `tarea.id_proyecto === proyecto.id`; si no coincide, deniega
+  con `FUERA_DE_ALCANCE` incluso al Administrador. Un contexto incoherente nunca concede acceso.
+- Pruebas: matriz de 55 × 3 transcrita a mano de §4 y de la tabla de arriba (con un comentario por
+  fila), ámbito por acción, textos (6 `MOTIVO` + 8 `NOTA`), barridos de alcance (`AJENO`,
+  `SIN_ASIGNACION`, `CON_BAJA`, `OTRO_PROYECTO`), FINALIZADO solo en las 14 y solo en celdas
+  permitidas, `INACTIVO` en 55 × 3, objetivos de persona, identidad, orden de comprobación,
+  insights, opacidad, frontera del paso y los 6 códigos con al menos una aserción.
+- Fábricas en `src/domain/pruebas/fabricas.ts` (solo las importan los tests), con
+  `contextoPara(accion, usuario, variante, cambiosDelProyecto)` tipado por un tipo mapeado: si falta
+  una acción, no compila.
+- Verificación: `npm run test` con 62 pruebas en verde; `tsc -b` y `build` OK; `eslint src/domain` y
+  `prettier --check src/domain` limpios. `npm run lint` sigue fallando en
+  `src/auth/iniciarSesion.ts` y `format:check` en `src/App.tsx`, ambos de la Persona B y fuera de
+  este paso.
+
+## 2026-11-06 — [A] Fase 1, paso 3: transiciones de tarea
+
+### API y composición
+
+- `src/domain/transiciones.ts` es la única fuente de las 7 transiciones de §6.2. El catálogo
+  `TRANSICIONES_TAREA` declara `desde`, `hacia` y la `accion` de permiso de §4; no incluye el
+  evento de historial (eso es Fase 2).
+- `puedeTransicionar(tarea, usuario, contexto, transicion, texto?)` comprueba en este orden:
+  `puede()` → estado → condición → texto. `puede()` va primero para conservar sus códigos y no
+  revelar la pausa del proyecto ni la marca de supervisión a quien no tiene alcance.
+- `ContextoTransicion = { proyecto, asignaciones }`. Las `asignaciones` son las del usuario que
+  actúa; sin ellas `puede()` no puede comprobar el alcance del practicante. El plan escribía
+  `(tarea, usuario, proyecto)`; se amplía con el contexto acordado.
+- La capa de transiciones no repite roles, alcance, identidad, usuario activo ni FINALIZADO:
+  todo eso vive en `puede()`. Solo añade estado, `EN_PAUSA` para TOMAR y `requiere_supervision`
+  para ENVIAR_A_SUPERVISION / MARCAR_TERMINADA.
+- `transicionesDisponibles(tarea, usuario, contexto)` filtra el catálogo por el estado actual y
+  devuelve `{ transicion, exige_texto }[]` en el orden de §6.2. No tiene ningún `switch` de roles.
+- `ENVIAR_TAREA` cubre las dos salidas de EN_PROGRESO porque §4 las agrupa como «Enviar a
+  supervisión o marcar como terminada»; la condición de `requiere_supervision` decide cuál aplica.
+
+### Texto obligatorio
+
+- `undefined` en el campo exigido significa «todavía no se escribió»: la transición sigue
+  disponible y el resultado devuelve `exige_texto` para que la interfaz abra el modal.
+- Vacío o solo espacios = `TEXTO_OBLIGATORIO`.
+- La propuesta no define este matiz; se decide aquí como regla mínima para que la interfaz y el
+  servicio usen la misma función. El paso 2 había dejado el contenido del texto al servicio.
+- Con `texto` ausente, `puedeTransicionar` devuelve `permitido: true`, así que un servicio que 
+  no pase el texto dejaría pasar un `LIBERAR` de supervisor sin motivo. El servicio debe pasar 
+  siempre el texto y rechazar si `exige_texto !== null` y el campo falta o viene vacío.
+
+### Marca «Devuelta con observaciones»
+
+- No se implementa `devolucionVigente` en este paso; la función llega en la Fase 4.
+- La marca no se guarda en `Tarea` y no es un estado: se deriva del historial.
+- Regla acordada: se apaga solo cuando la tarea vuelve a ESPERANDO_SUPERVISION o a TERMINADA;
+  liberar y volver a tomar **no** la apagan (§6.5: el practicante debe saber qué corregir).
+- La función de Fase 4 mirará el historial y aplicará esa regla: `TAREA_DEVUELTA` la enciende;
+  `TAREA_ENVIADA_A_SUPERVISION` y `TAREA_TERMINADA` la apagan; `TAREA_LIBERADA` y `TAREA_TOMADA`
+  no la cambian.
+
+### Pruebas
+
+- Matriz de 7 transiciones × 3 roles escrita a mano desde §6.2, con un comentario por fila.
+- Los 7 pares `(desde, hacia)` se comparan contra una lista escrita a mano desde §6.2, no generada
+  desde `TRANSICIONES_TAREA`.
+- Casos añadidos: usuario sin alcance en una tarea cuyo estado no coincide → `FUERA_DE_ALCANCE`
+  (no `TRANSICION_NO_APLICA`); `ENVIAR_A_SUPERVISION` y `MARCAR_TERMINADA` nunca disponibles a la
+  vez; proyecto EN_PAUSA solo bloquea TOMAR; FINALIZADO e INACTIVO no dejan ninguna transición;
+  motivo/nota vacíos o con espacios → `TEXTO_OBLIGATORIO`.
+
+### Archivos y verificación
+
+- `src/domain/transiciones.ts`, `src/domain/transiciones.test.ts`, `src/domain/index.ts` y
+  `src/domain/permisos.ts`.
+- En `permisos.ts` el único cambio fue `type TextoExigido` → `export type TextoExigido`; ninguna
+  regla, firma ni tabla cambió.
+- `src/domain/index.ts` conserva todos los exports anteriores y solo agrega los nuevos.
+- Verificación: `npm run test` con 98 pruebas en verde; `tsc -b` y `build` OK; `eslint` de los
+  4 archivos limpio; `prettier --check` de los 4 archivos limpio; `git diff -- docs` vacío.
+  `npm run lint` global sigue fallando solo por `src/auth/iniciarSesion.ts` (Persona B) y el
+  aviso conocido de `button.tsx`
