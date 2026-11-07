@@ -161,6 +161,29 @@ describe('condiciones de §6.2', () => {
     );
   });
 
+  it('el estado manda sobre la pausa: TOMAR en EN_PROGRESO y proyecto EN_PAUSA no aplica', () => {
+    // La tarea ya está EN_PROGRESO, así que TOMAR no sale de su estado de origen. La pausa del
+    // proyecto solo se mira después del estado, de modo que el código es TRANSICION_NO_APLICA.
+    const t = tareaEn('EN_PROGRESO');
+    const ctx = contexto({ proyecto: { estado: 'EN_PAUSA' } });
+
+    esperarResultado(
+      puedeTransicionar(t, usuario('PRACTICANTE'), ctx, 'TOMAR'),
+      'TRANSICION_NO_APLICA',
+    );
+  });
+
+  it('el estado manda sobre la supervisión: MARCAR_TERMINADA en ESPERANDO_SUPERVISION no aplica', () => {
+    // MARCAR_TERMINADA espera EN_PROGRESO. Con la tarea en ESPERANDO_SUPERVISION y
+    // requiere_supervision activado, se detiene en el estado antes de mirar la condición.
+    const t = tareaEn('ESPERANDO_SUPERVISION', { requiere_supervision: true });
+
+    esperarResultado(
+      puedeTransicionar(t, usuario('PRACTICANTE'), contexto(), 'MARCAR_TERMINADA'),
+      'TRANSICION_NO_APLICA',
+    );
+  });
+
   it('no se puede enviar a supervisión si la tarea no requiere supervisión', () => {
     const t = tareaEn('EN_PROGRESO', { requiere_supervision: false });
 
