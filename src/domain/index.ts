@@ -84,9 +84,11 @@ export type {
 export {
   ACCIONES_TRANSICION,
   CODIGOS_TRANSICION,
+  TEXTO_OBLIGATORIO,
   TRANSICIONES_TAREA,
   puedeTransicionar,
   transicionesDisponibles,
+  validarTexto,
 } from './transiciones';
 export type {
   AccionTransicion,
@@ -98,3 +100,13 @@ export type {
   TextoTransicion,
   TransicionDisponible,
 } from './transiciones';
+
+export {
+  CODIGOS_EDICION,
+  puedeCambiarRequierePR,
+  puedeCambiarRequiereSupervision,
+  puedeEditarDatosTarea,
+  puedeEliminarTarea,
+  tuvoPullRequest,
+} from './edicionTarea';
+export type { CodigoEdicion, CodigoEdicionPropio, ResultadoEdicion } from './edicionTarea';
