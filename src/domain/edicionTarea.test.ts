@@ -204,6 +204,14 @@ describe('Requiere PR', () => {
     esperarDenegado(puedeCambiarRequierePR(t, prac, contexto(), false, '   '), TEXTO_OBLIGATORIO);
   });
 
+    it('con PR existente, el practicante con motivo vacío recibe TAREA_YA_TIENE_PR', () => {
+    const t = tareaEn('EN_PROGRESO', { url_pull_request: URL_PR });
+    const prac = usuario('PRACTICANTE');
+
+    esperarDenegado(puedeCambiarRequierePR(t, prac, contexto(), false, ''), 'TAREA_YA_TIENE_PR');
+    esperarDenegado(puedeCambiarRequierePR(t, prac, contexto(), false, '   '), 'TAREA_YA_TIENE_PR');
+  });
+
   it('con PR existente, el practicante recibe TAREA_YA_TIENE_PR antes que el motivo', () => {
     const t = tareaEn('EN_PROGRESO', { requiere_pr: true, url_pull_request: URL_PR });
 
@@ -305,6 +313,14 @@ describe('eliminar tarea', () => {
       puedeEliminarTarea(t, usuario('ADMINISTRADOR'), contexto(), 'motivo'),
       'TAREA_YA_TIENE_PR',
     );
+  });
+
+    it('con PR, motivo vacío en DISPONIBLE responde TAREA_YA_TIENE_PR', () => {
+    const t = tareaEn('DISPONIBLE', { url_pull_request: URL_PR });
+    const admin = usuario('ADMINISTRADOR');
+
+    esperarDenegado(puedeEliminarTarea(t, admin, contexto(), ''), 'TAREA_YA_TIENE_PR');
+    esperarDenegado(puedeEliminarTarea(t, admin, contexto(), '   '), 'TAREA_YA_TIENE_PR');
   });
 
   it('el estado manda sobre el PR: cualquier otro estado es TAREA_NO_ELIMINABLE', () => {
