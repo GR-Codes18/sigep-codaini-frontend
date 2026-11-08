@@ -801,3 +801,18 @@ indicado).
 - **Mi perfil:** Discord y GitHub del Administrador se muestran bloqueados (la propuesta no los lista); revisar si deben ocultarse.
 - **Pendientes:** borrar `src/app/pagina-prueba/` (paso 7 de la Fase 3); logo real; `devolucionVigente` (Fase 4, la deja Persona A); revisar el cambio D1 de `ContextoInsight`.
 - **Migración a `domain/`:** `accionesProvisionales` → `transicionesDisponibles`. Las fechas de `domain/` son strings ISO y mis componentes usan `Date`; propuesta: convertir en el borde con `parseISO` (a confirmar con Persona A). Tipos provisionales a reemplazar: `TareaTablero`, `TareaDetalle`, `EventoLinea`, `NotificacionItem`, `auth/tipos.ts`.
+
+## 2026-11-07 — [B] Limpieza de rutas y migración del detalle de tarea
+
+- Se eliminó la carpeta vacía `src/app/pagina-prueba/` y se movieron `RaizSegunSesion` y
+  `AccesoSiNoHaySesion` a `src/app/RedireccionesSesion.tsx`; `rutas.tsx` solo los importa y
+  compone las rutas.
+- `accionesDeTarea` reemplaza `accionesProvisionales`: las transiciones visibles vienen de
+  `transicionesDisponibles`, y las acciones adicionales de eliminar y crear PR consultan también
+  `puede()`. El adaptador convierte el modelo de presentación al tipo `Tarea` del dominio y los
+  datos del ejemplo ahora incluyen proyectos, asignaciones e historial tipados.
+- `devolucionVigente(idTarea, historial)` deriva la marca del historial de esa tarea: una devolución
+  la activa; enviar a supervisión o terminar la apagan; tomar y liberar la conservan. La página de
+  desarrollo calcula también la observación vigente desde el evento de devolución.
+- Verificación: 176 pruebas pasan; `npm.cmd run build`, ESLint y Prettier para los archivos
+  modificados pasan. Vite conserva su aviso de bundle de más de 500 kB. `docs/` no se modificó.

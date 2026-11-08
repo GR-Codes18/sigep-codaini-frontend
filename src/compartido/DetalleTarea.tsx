@@ -1,22 +1,25 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
+import type { EstadoPR, EstadoTarea } from '@/domain';
 import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo, type EventoLinea } from '@/compartido/LineaTiempo';
 import { ModalConfirmacion, type OpcionMotivo } from '@/compartido/ModalConfirmacion';
 import { Button } from '@/compartido/ui/button';
 
-/** Forma provisional: se reemplaza por el tipo Tarea de domain/ cuando entre feat/fase1-tipos. */
 export interface TareaDetalle {
   id: string;
+  numero: number;
   titulo: string;
   descripcion: string;
-  estado: string;
+  estado: EstadoTarea;
+  idProyecto: string;
   proyecto: string;
+  idPracticante: string | null;
   responsable?: string;
   fechaLimite: Date;
   requiereSupervision: boolean;
   requierePr: boolean;
-  estadoPr?: string;
+  estadoPr?: EstadoPR;
   urlPr?: string;
   ramaOrigen?: string;
   ramaBase?: string;

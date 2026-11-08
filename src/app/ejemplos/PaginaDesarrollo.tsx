@@ -1,31 +1,61 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
+import type { UsuarioSesion } from '@/auth/tipos';
+import type { EstadoTarea, EventoHistorial, TipoAccionHistorial, Usuario } from '@/domain';
+import { devolucionVigente } from '@/domain';
 import { DetalleTarea } from '@/compartido/DetalleTarea';
 import { ModalCrearPR } from '@/compartido/ModalCrearPR';
 import { TableroKanban, type TareaTablero } from '@/compartido/TableroKanban';
 import { Button } from '@/compartido/ui/button';
-import { accionesProvisionales } from './accionesProvisionales';
-import { EVENTOS_EJEMPLO, TAREAS_EJEMPLO } from './datos';
+import { accionesDeTarea } from './accionesDeTarea';
+import {
+  ASIGNACIONES_EJEMPLO,
+  eventosDeTarea,
+  HISTORIAL_EJEMPLO,
+  observacionDevolucionVigente,
+  proyectoPorId,
+  TAREAS_EJEMPLO,
+} from './datos';
 
 // TEMPORAL (plan Fase 4, paso 11): se elimina al terminar la Fase 7.
 const RAMAS = ['feat/login', 'feat/menu', 'fix/tema'];
 
+function usuarioDeSesion(usuario: UsuarioSesion): Usuario {
+  return {
+    ...usuario,
+    celular: '',
+    contrasena: '',
+    estado: 'ACTIVO',
+    fecha_alta: new Date().toISOString(),
+  };
+}
+
 export function PaginaDesarrollo() {
-  const rol = useAlmacenSesion((s) => s.usuario?.rol);
+  const usuarioSesion = useAlmacenSesion((s) => s.usuario);
   const [tareas, setTareas] = useState(TAREAS_EJEMPLO);
+  const [historial, setHistorial] = useState(HISTORIAL_EJEMPLO);
   const [abierta, setAbierta] = useState<string | null>(null);
   const [crearPr, setCrearPr] = useState(false);
-  if (!rol) return null;
+  if (!usuarioSesion) return null;
+  const usuario = usuarioDeSesion(usuarioSesion);
 
-  const tarea = tareas.find((t) => t.id === abierta);
+  const tareasConDevolucion = tareas.map((tarea) => {
+    const devuelta = devolucionVigente(tarea.id, historial);
+    return {
+      ...tarea,
+      devuelta,
+      observacion: devuelta ? observacionDevolucionVigente(historial, tarea.id) : undefined,
+    };
+  });
+  const tarea = tareasConDevolucion.find((t) => t.id === abierta);
 
-  const tablero: TareaTablero[] = tareas.map((t) => ({
+  const tablero: TareaTablero[] = tareasConDevolucion.map((t) => ({
     id: t.id,
     titulo: t.titulo,
-    estado: t.estado as TareaTablero['estado'],
+    estado: t.estado,
     responsable: t.responsable,
-    esMia: t.responsable === 'Practicante Demo',
+    esMia: t.idPracticante === usuario.id,
     fechaLimite: t.fechaLimite,
     fechaTermino: t.estado === 'TERMINADA' ? new Date() : undefined,
     requiereSupervision: t.requiereSupervision,
@@ -33,18 +63,20 @@ export function PaginaDesarrollo() {
     devuelta: t.devuelta,
   }));
 
-  // Transiciones simuladas solo para ver el flujo; la regla real vendrá de domain/.
-  const SIGUIENTE: Record<string, { estado: string; quitarResponsable?: boolean }> = {
-    tomar: { estado: 'EN_PROGRESO' },
-    liberar: { estado: 'DISPONIBLE', quitarResponsable: true },
-    enviar: { estado: 'ESPERANDO_SUPERVISION' },
-    terminar: { estado: 'TERMINADA' },
-    aprobar: { estado: 'TERMINADA' },
-    devolver: { estado: 'EN_PROGRESO' },
-    reabrir: { estado: 'EN_PROGRESO' },
+  const SIGUIENTE: Record<
+    string,
+    { estado: EstadoTarea; tipoAccion: TipoAccionHistorial; quitarResponsable?: boolean }
+  > = {
+    tomar: { estado: 'EN_PROGRESO', tipoAccion: 'TAREA_TOMADA' },
+    liberar: { estado: 'DISPONIBLE', tipoAccion: 'TAREA_LIBERADA', quitarResponsable: true },
+    enviar: { estado: 'ESPERANDO_SUPERVISION', tipoAccion: 'TAREA_ENVIADA_A_SUPERVISION' },
+    terminar: { estado: 'TERMINADA', tipoAccion: 'TAREA_TERMINADA' },
+    aprobar: { estado: 'TERMINADA', tipoAccion: 'TAREA_APROBADA' },
+    devolver: { estado: 'EN_PROGRESO', tipoAccion: 'TAREA_DEVUELTA' },
+    reabrir: { estado: 'EN_PROGRESO', tipoAccion: 'TAREA_REABIERTA' },
   };
 
-  async function ejecutar(clave: string) {
+  async function ejecutar(clave: string, nota?: string) {
     if (!tarea) return;
     if (clave === 'crear_pr') {
       setCrearPr(true);
@@ -58,16 +90,25 @@ export function PaginaDesarrollo() {
     }
     const sig = SIGUIENTE[clave];
     if (!sig) return;
+    const evento: EventoHistorial = {
+      id: crypto.randomUUID(),
+      fecha: new Date().toISOString(),
+      autor: { tipo: 'USUARIO', id_usuario: usuario.id },
+      tipo_accion: sig.tipoAccion,
+      elemento: { tipo: 'TAREA', id: tarea.id, etiqueta: `${tarea.id} · ${tarea.titulo}` },
+      id_proyecto: tarea.idProyecto,
+      cambios: [{ campo: 'estado', valor_anterior: tarea.estado, valor_nuevo: sig.estado }],
+      nota: nota ?? null,
+    };
+    setHistorial((eventos) => [...eventos, evento]);
     setTareas((ts) =>
       ts.map((t) =>
         t.id === tarea.id
           ? {
               ...t,
               estado: sig.estado,
-              responsable: sig.quitarResponsable
-                ? undefined
-                : (t.responsable ?? 'Practicante Demo'),
-              devuelta: clave === 'devolver',
+              responsable: sig.quitarResponsable ? undefined : (t.responsable ?? usuario.nombre),
+              idPracticante: sig.quitarResponsable ? null : (t.idPracticante ?? usuario.id),
             }
           : t,
       ),
@@ -79,7 +120,7 @@ export function PaginaDesarrollo() {
     <section className="space-y-6">
       <h1 className="text-text">Desarrollo: tablero y detalle (temporal)</h1>
       <p className="text-sm text-text-2">
-        Entra con otro rol para ver cómo cambian los botones del detalle. Rol actual: {rol}.
+        Entra con otro rol para ver cómo cambian los botones del detalle. Rol actual: {usuario.rol}.
       </p>
 
       {tarea ? (
@@ -89,12 +130,17 @@ export function PaginaDesarrollo() {
           </Button>
           <DetalleTarea
             tarea={tarea}
-            acciones={accionesProvisionales(tarea, {
-              rol,
-              esResponsable: tarea.responsable === 'Practicante Demo' && rol === 'PRACTICANTE',
-              proyectoEnPausa: tarea.proyecto === 'Juego móvil',
+            acciones={accionesDeTarea(tarea, {
+              usuario,
+              proyecto: proyectoPorId(tarea.idProyecto),
+              asignaciones:
+                usuario.rol === 'PRACTICANTE'
+                  ? ASIGNACIONES_EJEMPLO.filter(
+                      (asignacion) => asignacion.id_practicante === usuario.id,
+                    )
+                  : [],
             })}
-            eventos={EVENTOS_EJEMPLO}
+            eventos={eventosDeTarea(historial, tarea.id)}
             onEjecutar={ejecutar}
           />
           <ModalCrearPR
@@ -116,7 +162,7 @@ export function PaginaDesarrollo() {
         <TableroKanban
           tareas={tablero}
           onAbrir={setAbierta}
-          permitirSoloMias={rol === 'PRACTICANTE'}
+          permitirSoloMias={usuario.rol === 'PRACTICANTE'}
           onVerTerminadas={() => toast.info('Aquí irá el listado completo')}
         />
       )}
