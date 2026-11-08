@@ -85,6 +85,7 @@ export {
   ACCIONES_TRANSICION,
   CODIGOS_TRANSICION,
   TRANSICIONES_TAREA,
+  devolucionVigente,
   puedeTransicionar,
   transicionesDisponibles,
 } from './transiciones';
