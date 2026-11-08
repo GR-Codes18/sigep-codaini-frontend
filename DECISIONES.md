@@ -781,3 +781,75 @@ indicado).
   4 archivos limpio; `prettier --check` de los 4 archivos limpio; `git diff -- docs` vacío.
   `npm run lint` global sigue fallando solo por `src/auth/iniciarSesion.ts` (Persona B) y el
   aviso conocido de `button.tsx`.
+
+## 2026-11-07 — [A] Fase 1, paso 4: reglas de edición de tarea y de opciones
+
+### API y orden
+
+- `src/domain/edicionTarea.ts` es la única fuente de las reglas de edición. Expone cinco
+  funciones: `tuvoPullRequest`, `puedeEditarDatosTarea`, `puedeCambiarRequiereSupervision`,
+  `puedeCambiarRequierePR(tarea, usuario, contexto, valor, motivo?)` y
+  `puedeEliminarTarea(tarea, usuario, contexto, motivo?)`.
+- Se reutiliza `ContextoTransicion` (`proyecto` y `asignaciones` de quien actúa); no se creó un
+  `ContextoEdicionTarea` paralelo.
+- Orden de comprobación, detenido en la primera negativa: `puede()` → estado →
+  `tuvoPullRequest` → texto. **«Requiere PR» es la excepción al estado**: §4 no lo restringe por
+  el estado de la tarea, así que solo se miran el PR existente y el motivo.
+- `tuvoPullRequest(tarea) = tarea.url_pull_request !== null`. Un PR **CERRADO** cuenta como «ya
+  hubo PR»: la URL se conserva al cerrar, devolver o reabrir.
+- La condición «aún no hubo PR» se comprueba **para los tres roles**, después de `puede()` y
+  antes del texto, sin mirar `usuario.rol` ni `exige_texto`. Por eso un practicante que desactiva
+  con PR existente y sin motivo recibe `TAREA_YA_TIENE_PR`, no `TEXTO_OBLIGATORIO`.
+- Códigos nuevos: `TAREA_NO_EDITABLE`, `TAREA_YA_TIENE_PR` y `TAREA_NO_ELIMINABLE`. Se reutiliza
+  `TEXTO_OBLIGATORIO` de `transiciones.ts` y la misma `validarTexto` (vacío o solo espacios).
+- `ResultadoEdicion` añade `avisar_responsable`: solo puede ser `true` al editar los datos de una
+  tarea `EN_PROGRESO` con responsable. Las otras tres reglas lo devuelven en `false`.
+- Si `valor === tarea.requiere_pr`, `domain/` **no decide**: no compara el valor actual con el
+  nuevo. Un cambio que no cambia nada se rechaza en Zod o en el servicio, no aquí.
+
+### Reglas acordadas
+
+- **Editar título, descripción y fecha límite:** solo en `DISPONIBLE` y `EN_PROGRESO`; fuera de
+  ahí, `TAREA_NO_EDITABLE` (§6.4). Los tres campos comparten la misma regla, así que la función
+  no recibe cuál se edita.
+- **«Requiere supervisión»:** solo `DISPONIBLE` y `EN_PROGRESO`; fuera de ahí,
+  `TAREA_NO_EDITABLE` (§6.3). No mira el PR ni pide texto.
+- **«Requiere PR»:** sin restricción por estado de la tarea, ni siquiera `TERMINADA`. Solo aplican
+  «ya hubo PR» y el motivo del practicante. Activar es solo de Administrador y Supervisor; el
+  Practicante responsable solo desactiva, con motivo.
+- **Eliminar:** solo `DISPONIBLE` y sin PR; fuera de `DISPONIBLE`, `TAREA_NO_ELIMINABLE`; con PR,
+  `TAREA_YA_TIENE_PR`. No se lee el historial: la URL es la única prueba de trabajo que necesita
+  la regla. El estado se comprueba antes que el PR.
+
+### C1 — «Requiere PR» en una tarea TERMINADA
+
+- Con la regla cerrada, un Administrador o un Supervisor pueden **activar** «Requiere PR» en una
+  tarea `ESPERANDO_SUPERVISION` o `TERMINADA` cuyo `url_pull_request` es nulo. Es un **riesgo
+  aceptado**: §4 solo condiciona la acción a que no haya PR.
+- El paso 4 solo permite la activación; el **paso 5** es quien decide que, si `estado_pr` era
+  `null`, pase a `PENDIENTE`. Queda anotado como pendiente del paso 5.
+- El aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1) es de la
+  **Fase 2**, no de este paso.
+- Pendiente de la **Fase 4**: la acción «No requiere PR» debe estar visible para el practicante
+  responsable ya en `EN_PROGRESO` (hoy `domain/` ya la permite, falta la interfaz).
+
+### Cambio mínimo en `transiciones.ts`
+
+- Se exporta `TEXTO_OBLIGATORIO` y se usa dentro de `CODIGOS_TRANSICION`, y se añade `export` a
+  `validarTexto`. **No cambió ninguna lógica**; `textoDe` sigue privado y `ContextoTransicion` se
+  reutiliza. Tras ese cambio, las 100 pruebas siguieron en verde.
+- En `index.ts` se agregan los exports de `edicionTarea.ts` y los dos nuevos de `transiciones.ts`.
+
+### Pruebas y verificación
+
+- `src/domain/edicionTarea.test.ts` con 33 pruebas nuevas: los 4 estados × los 3 campos editables,
+  «Requiere supervisión» en los 4 estados, `estado_pr` × URL, practicante con y sin motivo,
+  supervisor ajeno, practicante sin asignación / con baja / no responsable, proyecto `FINALIZADO`,
+  usuario `INACTIVO`, textos vacíos, C1, eliminación `DISPONIBLE` + `PENDIENTE` + URL nula y el
+  orden `puede()` → estado → condición → texto.
+- `npm run test`: **133 pruebas en verde** (100 anteriores + 33 nuevas). `tsc -b`, `eslint
+  src/domain`, `prettier --check src/domain` y `npm run build` OK. `git diff -- docs` vacío.
+
+### Divergencias respecto a la propuesta: B2 y eliminación en el paso 4; §4 y el plan se actualizaron a mano:
+- B2: el practicante queda sujeto a «aún no hubo PR». §4 no lo escribe.
+- Eliminar tarea: entra en el paso 4. El plan no lo lista.
