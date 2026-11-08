@@ -130,12 +130,15 @@
 | 2026-10-24 | 4 | 1c. Pestañas con contador, tabla compacta, búsqueda | `be181b5` |
 | 2026-10-24 | 4 | 5. Tablero Kanban | `aab2185` |
 | 2026-10-25 | 4 | 2 (insignias), 3 (tarjetas), 4 (línea de tiempo, `date-fns`), 7 (modal PR), 8 (formulario de tarea) | `7a78c98` (commit conjunto) |
+| 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/` y derivar devolución del historial | Sin commit (pendiente de aprobación) |
 
 ### Pendientes
 
-- [ ] Fase 3, paso 7: borrar `src/app/pagina-prueba/` (se dejó a propósito).
+- [x] Fase 3, paso 7: borrar `src/app/pagina-prueba/` (2026-11-07).
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
-- [ ] Mover `RaizSegunSesion` y `AccesoSiNoHaySesion` fuera de `rutas.tsx` (2 avisos de lint).
+- [x] Mover `RaizSegunSesion` y `AccesoSiNoHaySesion` fuera de `rutas.tsx` (2026-11-07).
+- [x] Migrar `accionesProvisionales` a las transiciones y permisos de `domain/` (2026-11-07).
+- [x] Implementar `devolucionVigente` derivada del historial (2026-11-07).
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
 - [ ] Reemplazar tipos provisionales (`auth/tipos.ts`, `TareaTablero`, `EventoLinea`) cuando entre `feat/fase1-tipos`.
 - [ ] Fase 4, paso 6 (detalle de tarea) y pasos 9 a 11: esperan a Persona A.
