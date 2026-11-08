@@ -9,8 +9,13 @@ const MENSAJE_GENERICO = 'Correo o contraseña incorrectos';
 
 // Quita la contraseña: la sesión nunca debe guardarla.
 function aUsuarioSesion(cuenta: CuentaDemo): UsuarioSesion {
-  const { contrasena: _contrasena, ...usuario } = cuenta;
-  return usuario;
+  return {
+    id: cuenta.id,
+    nombre: cuenta.nombre,
+    correo: cuenta.correo,
+    rol: cuenta.rol,
+    debe_cambiar_contrasena: cuenta.debe_cambiar_contrasena,
+  };
 }
 
 export function iniciarSesion(correo: string, contrasena: string): ResultadoAcceso {

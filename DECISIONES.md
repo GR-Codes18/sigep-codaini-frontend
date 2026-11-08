@@ -369,8 +369,6 @@ para que el paralelismo no genere conflictos ni decisiones duplicadas.
 - **Tipos de `domain/`:** se acuerdan por PR en la rama `feat/fase1-tipos` y **no se cambian sin
   avisar**, porque todo el resto del sistema depende de ellos.
 
----
-
 ## 2026-10-22 — [A] Fase 1, paso 1: contrato de tipos de `domain/`
 
 Acuerdo entre las dos personas para `src/domain/`: solo tipos, enumeraciones y listas constantes;
@@ -780,4 +778,26 @@ indicado).
 - Verificación: `npm run test` con 98 pruebas en verde; `tsc -b` y `build` OK; `eslint` de los
   4 archivos limpio; `prettier --check` de los 4 archivos limpio; `git diff -- docs` vacío.
   `npm run lint` global sigue fallando solo por `src/auth/iniciarSesion.ts` (Persona B) y el
-  aviso conocido de `button.tsx`.
+  aviso conocido de `button.tsx`
+
+## 2026-11-07 — [B] Fase 3: acceso, rutas, layout y dependencias
+
+- **`@hookform/resolvers` 5.2.2 en lugar de 6.0.0** (la entrada de la Fase 0 queda como estaba; esta la corrige hacia adelante). La 6.0.0 nunca se había instalado y falla con `ERESOLVE`: sus peers opcionales (`effect@^4`, `@typeschema/main`) arrastran `@effect/schema@0.71.4`, que pide `effect@^3`. Se descartaron `--force` y `--legacy-peer-deps` porque instalan un árbol roto u ocultan conflictos futuros. La 5.2.2 solo tiene como peer `react-hook-form@^7.55.0` y usa Standard Schema, así que funciona con Zod 4. Reabrir cuando una 6.x instale sin conflicto.
+- **`zod` 4.6.7 declarado en `dependencies`** (antes llegaba solo como transitiva de `shadcn`). También `zustand` 5.0.15, `react-hook-form` 7.90.0, `date-fns` 4.4.0 y `sonner` 2.0.8, todas exactas.
+- **`react-router` 7.18.4** sin `react-router-dom`. Se corrigió una instalación errónea que había dejado la 8.5.0 (descartada en la Fase 0).
+- **Sesión simulada** en `src/auth/` con Zustand persistido (`sigep-sesion`). Lo guardado se valida con Zod al rehidratar; una sesión corrupta o con rol inventado se descarta y vuelve al login. Cuentas demo con contraseña común `demo12345` y `debe_cambiar_contrasena: false`. Tipos provisionales en `auth/tipos.ts`.
+- **Rutas con prefijo por panel** (`/administrador/...`, `/supervisor/...`, `/practicante/...`). `puedeVerRuta` (pura) decide y `GuardaRuta` la consulta. Alternativa descartada: rutas planas (la guarda se complica). La propuesta no define URLs; **pendiente de confirmar con Persona A**.
+- **Menús como datos** (`src/app/menus.ts`): un arreglo alimenta sidebar, rutas y migas (9, 5 y 3 módulos).
+- **Franja de contraseña temporal** neutra (`surface-2`); no aparece al Administrador (§8.3).
+- **Logo provisional** con `bg-white` y `text-neutral-900` (colores a mano, excepción temporal hasta tener el isotipo real).
+
+## 2026-11-07 — [B] Fase 4: componentes compartidos (pasos 1 a 11)
+
+- **shadcn 4.22.1** para `dialog`, `select`, `textarea`, `skeleton` y `sonner`. `sonner.tsx` se adaptó para leer el tema de `useTema()`; se desinstaló `next-themes` (lo había instalado el CLI) para mantener una sola fuente de verdad del tema. Al correr `shadcn add dialog`, responder **N** a sobrescribir `button.tsx` (tiene dos ajustes de tokens).
+- **Pestañas, tabla y búsqueda** con `radix-ui` directo, sin pasar por el CLI.
+- **Componentes sin reglas de negocio:** `ModalConfirmacion`, `ModalCrearPR`, `FormularioTarea`, `TableroKanban`, `DetalleTarea`, `PerfilUsuario`, etc. reciben datos y callbacks. `DetalleTarea` recibe las `acciones` ya calculadas; sin acciones queda en solo lectura.
+- **Radio de 8 px** solo en el icono de `TarjetaMetrica` (`rounded-[8px]`), sin token nuevo.
+- **`src/app/ejemplos/` provisional** (acordado con Persona A): `datos.ts`, `accionesProvisionales.ts`, store de notificaciones, `PaginaDesarrollo` (paso 11, ruta `/<panel>/desarrollo`, se elimina al terminar la Fase 7), `PaginaPerfil`. Se reemplazan por `domain/`, `data/` y `services/`.
+- **Mi perfil:** Discord y GitHub del Administrador se muestran bloqueados (la propuesta no los lista); revisar si deben ocultarse.
+- **Pendientes:** borrar `src/app/pagina-prueba/` (paso 7 de la Fase 3); logo real; `devolucionVigente` (Fase 4, la deja Persona A); revisar el cambio D1 de `ContextoInsight`.
+- **Migración a `domain/`:** `accionesProvisionales` → `transicionesDisponibles`. Las fechas de `domain/` son strings ISO y mis componentes usan `Date`; propuesta: convertir en el borde con `parseISO` (a confirmar con Persona A). Tipos provisionales a reemplazar: `TareaTablero`, `TareaDetalle`, `EventoLinea`, `NotificacionItem`, `auth/tipos.ts`.
