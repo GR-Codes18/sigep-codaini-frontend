@@ -8,16 +8,22 @@ import { MENU_POR_ROL } from '@/app/menus';
 import { PaginaDesarrollo } from '@/app/ejemplos/PaginaDesarrollo';
 import { PaginaNotificaciones } from '@/app/layout/PaginaNotificaciones';
 import { PaginaPerfil } from '@/app/ejemplos/PaginaPerfil';
+import { ListadoPostulaciones } from '@/paneles/administrador/postulaciones/ListadoPostulaciones';
 import { AccesoSiNoHaySesion, RaizSegunSesion } from '@/app/RedireccionesSesion';
 
 function rutasDeRol(rol: Rol): RouteObject[] {
   const items = MENU_POR_ROL[rol].flatMap((g) => g.items);
   const prefijo = PREFIJO_POR_ROL[rol];
   return [
-    ...items.map((i) => ({ path: i.ruta, element: <PaginaVacia titulo={i.etiqueta} /> })),
+    ...items
+      .filter((i) => i.ruta !== '/administrador/postulaciones')
+      .map((i) => ({ path: i.ruta, element: <PaginaVacia titulo={i.etiqueta} /> })),
     { path: `${prefijo}/perfil`, element: <PaginaPerfil /> },
     { path: `${prefijo}/notificaciones`, element: <PaginaNotificaciones /> },
     { path: `${prefijo}/desarrollo`, element: <PaginaDesarrollo /> },
+    ...(rol === 'ADMINISTRADOR'
+      ? [{ path: '/administrador/postulaciones', element: <ListadoPostulaciones /> }]
+      : []),
   ];
 }
 
