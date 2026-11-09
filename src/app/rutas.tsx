@@ -8,6 +8,7 @@ import { MENU_POR_ROL } from '@/app/menus';
 import { PaginaDesarrollo } from '@/app/ejemplos/PaginaDesarrollo';
 import { PaginaNotificaciones } from '@/app/layout/PaginaNotificaciones';
 import { PaginaPerfil } from '@/app/ejemplos/PaginaPerfil';
+import { DetallePostulacion } from '@/paneles/administrador/postulaciones/DetallePostulacion';
 import { ListadoPostulaciones } from '@/paneles/administrador/postulaciones/ListadoPostulaciones';
 import { AccesoSiNoHaySesion, RaizSegunSesion } from '@/app/RedireccionesSesion';
 
@@ -24,6 +25,7 @@ function rutasDeRol(rol: Rol): RouteObject[] {
     ...(rol === 'ADMINISTRADOR'
       ? [{ path: '/administrador/postulaciones', element: <ListadoPostulaciones /> }]
       : []),
+    { path: '/administrador/postulaciones/:id', element: <DetallePostulacion /> },
   ];
 }
 
