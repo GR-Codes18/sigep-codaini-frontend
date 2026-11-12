@@ -86,6 +86,7 @@ export {
   CODIGOS_TRANSICION,
   TEXTO_OBLIGATORIO,
   TRANSICIONES_TAREA,
+  devolucionVigente,
   puedeTransicionar,
   transicionesDisponibles,
   validarTexto,

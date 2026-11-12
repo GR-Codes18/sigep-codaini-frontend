@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { EstadoTarea, Rol } from './enumeraciones';
+import type { EstadoTarea, Rol, TipoAccionHistorial } from './enumeraciones';
 import { ESTADOS_TAREA } from './enumeraciones';
+import type { EventoHistorial } from './historial';
 import { ACCIONES_PERMISO } from './permisos';
 import type { Asignacion, Proyecto } from './proyectos';
 import { IDS, asignacion, proyecto, tarea, usuario } from './pruebas/fabricas';
@@ -9,6 +10,7 @@ import type { Tarea } from './tareas';
 import {
   ACCIONES_TRANSICION,
   TRANSICIONES_TAREA,
+  devolucionVigente,
   puedeTransicionar,
   transicionesDisponibles,
 } from './transiciones';
@@ -572,5 +574,84 @@ describe('transicionesDisponibles por rol y estado', () => {
     for (const estado of ESTADOS_TAREA) {
       expect(transicionesDisponibles(tareaEn(estado), usuario('SUPERVISOR'), ctx)).toEqual([]);
     }
+  });
+});
+
+describe('devolucionVigente', () => {
+  const crearEvento = (
+    tipo_accion: TipoAccionHistorial,
+    fecha: string,
+    idTarea = 'tarea-1',
+    tipoElemento: 'TAREA' | 'PROYECTO' = 'TAREA',
+  ): EventoHistorial => ({
+    id: `${idTarea}-${tipo_accion}-${fecha}`,
+    fecha,
+    autor: { tipo: 'SISTEMA' },
+    tipo_accion,
+    elemento: { tipo: tipoElemento, id: idTarea, etiqueta: idTarea },
+    id_proyecto: 'proyecto-1',
+    cambios: [],
+    nota: null,
+  });
+
+  it('activa la marca cuando la última transición relevante es una devolución', () => {
+    const historial = [
+      crearEvento('TAREA_TOMADA', '2026-11-01T10:00:00.000Z'),
+      crearEvento('TAREA_DEVUELTA', '2026-11-02T10:00:00.000Z'),
+    ];
+
+    expect(devolucionVigente('tarea-1', historial)).toBe(true);
+  });
+
+  it.each(['TAREA_ENVIADA_A_SUPERVISION', 'TAREA_TERMINADA'] as const)(
+    'apaga la marca al volver a una etapa posterior: %s',
+    (tipo_accion) => {
+      const historial = [
+        crearEvento('TAREA_DEVUELTA', '2026-11-01T10:00:00.000Z'),
+        crearEvento(tipo_accion, '2026-11-02T10:00:00.000Z'),
+      ];
+
+      expect(devolucionVigente('tarea-1', historial)).toBe(false);
+    },
+  );
+
+  it.each(['TAREA_LIBERADA', 'TAREA_TOMADA'] as const)(
+    'conserva la marca después de %s',
+    (tipo_accion) => {
+      const historial = [
+        crearEvento('TAREA_DEVUELTA', '2026-11-01T10:00:00.000Z'),
+        crearEvento(tipo_accion, '2026-11-02T10:00:00.000Z'),
+      ];
+
+      expect(devolucionVigente('tarea-1', historial)).toBe(true);
+    },
+  );
+
+  it('conserva la marca al devolver, liberar y volver a tomar', () => {
+    const historial = [
+      crearEvento('TAREA_DEVUELTA', '2026-11-01T10:00:00.000Z'),
+      crearEvento('TAREA_LIBERADA', '2026-11-02T10:00:00.000Z'),
+      crearEvento('TAREA_TOMADA', '2026-11-03T10:00:00.000Z'),
+    ];
+
+    expect(devolucionVigente('tarea-1', historial)).toBe(true);
+  });
+
+  it('ignora eventos de otras tareas y entidades', () => {
+    const historial = [
+      crearEvento('TAREA_DEVUELTA', '2026-11-01T10:00:00.000Z', 'otra-tarea'),
+      crearEvento('TAREA_DEVUELTA', '2026-11-02T10:00:00.000Z', 'tarea-1', 'PROYECTO'),
+    ];
+
+    expect(devolucionVigente('tarea-1', historial)).toBe(false);
+  });
+
+  it('evalúa el historial por fecha aunque llegue desordenado', () => {
+    const historial = [
+      crearEvento('TAREA_ENVIADA_A_SUPERVISION', '2026-11-03T10:00:00.000Z'),
+      crearEvento('TAREA_DEVUELTA', '2026-11-02T10:00:00.000Z'),
+    ];
+
+    expect(devolucionVigente('tarea-1', historial)).toBe(false);
   });
 });

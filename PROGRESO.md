@@ -115,25 +115,44 @@
 
 ## Persona B — Fases 3 y 4 (acceso, layout, `compartido/`)
 
-- **Fase actual:** 3 — Acceso, estructura y contenedores de pantalla.
-- **Rama:** ninguna todavía; al arrancar, `feat/fase3-acceso` desde `development`.
-- **Siguiente paso:** Fase 3, paso 1 — pantalla de acceso.
+- **Fase actual:** 4 — hecho todo lo que no depende de Persona A (pasos 1 a 5, 7 y 8).
+- **Rama:** `feature/fase3`.
+- **Siguiente paso:** esperar a Persona A para el paso 6 (detalle de tarea) y los pasos 9 a 11.
 
 ### Pasos terminados
 
 | Fecha | Fase | Paso | Commit / PR |
 |---|---|---|---|
-| — | — | — | — |
+| 2026-10-22 | 3 | 1. Acceso y sesión simulada | `7edc37d` (PR #4) |
+| 2026-10-22 | 3 | Dependencias con versiones exactas (`@hookform/resolvers` 5.2.2) | `29f3da4` |
+| 2026-10-22 | 3 | Lint de `iniciarSesion` y pruebas de `PaginaAcceso` | `2c8d707` |
+| 2026-10-23 | 3 | 2, 3, 4 y 6. Router, guarda, layout, menús y páginas vacías | `4fbca0e` |
+| 2026-10-23 | 3 | 5. Franja de contraseña temporal | `627303a` |
+| 2026-10-23 | 3 | Formato (prettier) de layout y menús | `1f8b0be` |
+| 2026-10-23 | 4 | 1a. `select` y `textarea` | `f2f3b47` |
+| 2026-10-23 | 4 | Docs de las fases 3 y 4 | `51e428d` |
+| 2026-10-24 | 4 | `sonner` 2.0.8 | `9e89afe` |
+| 2026-10-24 | 4 | 1b. Toast, esqueleto y estado vacío | `8d9ac21` |
+| 2026-10-24 | 4 | 1b. Modal de confirmación | `5e796d2` |
+| 2026-10-24 | 4 | 1c. Pestañas con contador, tabla compacta, búsqueda | `be181b5` |
+| 2026-10-24 | 4 | 5. Tablero Kanban | `aab2185` |
+| 2026-10-25 | 4 | 2 (insignias), 3 (tarjetas), 4 (línea de tiempo, `date-fns`), 7 (modal PR), 8 (formulario de tarea) | `7a78c98` (commit conjunto) |
+| 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/` y derivar devolución del historial | Sin commit (pendiente de aprobación) |
 
 ### Pendientes
 
-- [ ] Confirmar que el proyecto instala y corre en su equipo (criterio de «Listo» de la Fase 0).
-- [ ] Fase 3, pasos 1–7: pantalla de acceso, sesión y guardas por rol, layout común, tres menús,
-      franja de contraseña temporal, páginas vacías y borrado de la página de prueba.
-- [ ] Fase 4, pasos 1–11: base de componentes, badges, tarjetas, línea de tiempo, tablero, detalle de
-      tarea, modales de PR, formulario de tarea, notificaciones, Mi perfil y página temporal.
-- [ ] Fase 4, paso 3: definir el radio de 8 px de las tarjetas de métrica (pendiente heredado).
+- [x] Fase 3, paso 7: borrar `src/app/pagina-prueba/` (2026-11-07).
+- [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
+- [x] Mover `RaizSegunSesion` y `AccesoSiNoHaySesion` fuera de `rutas.tsx` (2026-11-07).
+- [x] Migrar `accionesProvisionales` a las transiciones y permisos de `domain/` (2026-11-07).
+- [x] Implementar `devolucionVigente` derivada del historial (2026-11-07).
+- [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
+- [ ] Reemplazar tipos provisionales (`auth/tipos.ts`, `TareaTablero`, `EventoLinea`) cuando entre `feat/fase1-tipos`.
+- [ ] Fase 4, paso 6 (detalle de tarea) y pasos 9 a 11: esperan a Persona A.
+- [ ] PR a `development` y aviso a Persona A.
 
 ### Preguntas abiertas
 
-- Ninguna por ahora.
+- ¿Persona A aprueba `@hookform/resolvers` 5.2.2 en vez de 6.0.0?
+- ¿Persona A aprueba las rutas con prefijo (`/administrador/...`)? La propuesta no las define.
+- ¿Una rama por paso desde ahora, o seguimos en `feature/fase3`?

@@ -20,13 +20,15 @@
  * sigue disponible y el resultado devuelve `exige_texto` para que la interfaz abra el modal.
  * La cadena vacía o solo espacios ya es un error (`TEXTO_OBLIGATORIO`).
  *
- * La marca «Devuelta con observaciones» **no** vive aquí: no es un estado y se deriva del
- * historial. Su regla está registrada en `DECISIONES.md` y la función llega en la Fase 4.
+ * La marca «Devuelta con observaciones» no es un estado: `devolucionVigente` la deriva del
+ * historial y conserva la marca al liberar o volver a tomar la tarea.
  *
  * No importa React, Zustand, `data/` ni `services/`.
  */
 
 import type { EstadoTarea } from './enumeraciones';
+import type { Id } from './comunes';
+import type { EventoHistorial } from './historial';
 import type { AccionPermiso, CodigoDenegacion, TextoExigido } from './permisos';
 import { puede } from './permisos';
 import type { Asignacion, Proyecto } from './proyectos';
@@ -225,4 +227,28 @@ export function transicionesDisponibles(
   }
 
   return disponibles;
+}
+
+/**
+ * Indica si la devolución más reciente sigue vigente según el historial de la tarea.
+ */
+export function devolucionVigente(idTarea: Id, historial: EventoHistorial[]): boolean {
+  const eventos = historial
+    .filter((evento) => evento.elemento.tipo === 'TAREA' && evento.elemento.id === idTarea)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+  for (const evento of eventos) {
+    switch (evento.tipo_accion) {
+      case 'TAREA_DEVUELTA':
+        return true;
+      case 'TAREA_ENVIADA_A_SUPERVISION':
+      case 'TAREA_TERMINADA':
+        return false;
+      case 'TAREA_LIBERADA':
+      case 'TAREA_TOMADA':
+        break;
+    }
+  }
+
+  return false;
 }
