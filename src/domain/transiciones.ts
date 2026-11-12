@@ -51,6 +51,12 @@ export const ACCIONES_TRANSICION = [
 export type AccionTransicion = (typeof ACCIONES_TRANSICION)[number];
 
 /**
+ * Texto obligatorio vacío o con solo espacios. Vive aquí para que la capa de edición del paso 4
+ * use el mismo código y la misma validación.
+ */
+export const TEXTO_OBLIGATORIO = 'TEXTO_OBLIGATORIO' as const;
+
+/**
  * Códigos que añade la capa de transiciones. Los de `puede()` se conservan tal cual.
  */
 export const CODIGOS_TRANSICION = [
@@ -58,7 +64,7 @@ export const CODIGOS_TRANSICION = [
   'TAREA_NO_REQUIERE_SUPERVISION',
   'TAREA_REQUIERE_SUPERVISION',
   'PROYECTO_EN_PAUSA',
-  'TEXTO_OBLIGATORIO',
+  TEXTO_OBLIGATORIO,
 ] as const;
 
 export type CodigoTransicionPropio = (typeof CODIGOS_TRANSICION)[number];
@@ -141,8 +147,10 @@ function textoDe(texto: TextoTransicion | undefined, exigido: TextoExigido): str
 /**
  * Solo rechaza cuando el llamador envió el campo y quedó vacío o con espacios. Si no lo envió,
  * la transición queda pendiente de texto y `puedeTransicionar` devuelve `exige_texto`.
+ *
+ * Se exporta para que la capa de edición del paso 4 valide el motivo con la misma regla.
  */
-function validarTexto(
+export function validarTexto(
   texto: TextoTransicion | undefined,
   exigido: TextoExigido,
 ): CodigoTransicionPropio | null {

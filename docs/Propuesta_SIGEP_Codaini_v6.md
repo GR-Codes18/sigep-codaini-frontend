@@ -112,7 +112,7 @@ La matriz está completa para los tres roles. Cada regla se explica en las secci
 | **Reabrir una tarea terminada**                                                  | Sí (con nota)         | Sí (con nota)         | No                                       |
 | **Eliminar una tarea disponible sin Pull Request**                               | Sí (con motivo)       | Sí (con motivo)       | No                                       |
 | **Cambiar “Requiere supervisión”**                                               | Sí                    | Sí                    | No                                       |
-| **Activar o desactivar “Requiere PR”**                                           | Sí (si aún no hay PR) | Sí (si aún no hay PR) | Solo desactivar, con motivo              |
+| **Activar o desactivar “Requiere PR”**                                           | Sí (si aún no hay PR) | Sí (si aún no hay PR) | Solo desactivar, con motivo (si aún no hay PR)              |
 | **Crear un Pull Request**                                                        | No                    | No                    | Sí (el responsable)                      |
 | **Cerrar un Pull Request**                                                       | Sí (con motivo)       | Sí (con motivo)       | Sí (el responsable, con motivo)          |
 | **Ver el detalle de tareas ajenas**                                              | Sí                    | Sí                    | Solo lectura                             |
