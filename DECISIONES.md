@@ -837,7 +837,7 @@ indicado).
 
 - Se exporta `TEXTO_OBLIGATORIO` y se usa dentro de `CODIGOS_TRANSICION`, y se añade `export` a
   `validarTexto`. **No cambió ninguna lógica**; `textoDe` sigue privado y `ContextoTransicion` se
-  reutiliza. Tras ese cambio, las 100 pruebas siguieron en verde.
+  reutiliza. Tras ese cambio, las 100 (98 más las 2 del paso 3) pruebas siguieron en verde.
 - En `index.ts` se agregan los exports de `edicionTarea.ts` y los dos nuevos de `transiciones.ts`.
 
 ### Pruebas y verificación
@@ -846,10 +846,16 @@ indicado).
   «Requiere supervisión» en los 4 estados, `estado_pr` × URL, practicante con y sin motivo,
   supervisor ajeno, practicante sin asignación / con baja / no responsable, proyecto `FINALIZADO`,
   usuario `INACTIVO`, textos vacíos, C1, eliminación `DISPONIBLE` + `PENDIENTE` + URL nula y el
-  orden `puede()` → estado → condición → texto.
-- `npm run test`: **133 pruebas en verde** (100 anteriores + 33 nuevas). `tsc -b`, `eslint
-  src/domain`, `prettier --check src/domain` y `npm run build` OK. `git diff -- docs` vacío.
+  orden `puede()` → estado → condición → texto. Dos de ellas (motivo vacío con PR existente, en
+  «Requiere PR» y en eliminar) se añadieron tras la prueba de mutación: el orden condición-texto
+  no estaba protegido cuando el motivo venía vacío.
+- `npm run test`: **133 pruebas en verde** (98 de pasos previos, 2 pendientes del paso 3 y 33
+  nuevas). `tsc -b`, `eslint src/domain`, `prettier --check src/domain` y `npm run build` OK.
 
-### Divergencias respecto a la propuesta: B2 y eliminación en el paso 4; §4 y el plan se actualizaron a mano:
-- B2: el practicante queda sujeto a «aún no hubo PR». §4 no lo escribe.
-- Eliminar tarea: entra en el paso 4. El plan no lo lista.
+### Divergencias respecto a la propuesta
+
+- **B2:** el practicante queda sujeto a «aún no hubo PR» al desactivar «Requiere PR». La matriz de
+  §4 solo lo escribía para Administrador y Supervisor; se actualizó a mano la celda del
+  Practicante.
+- **Eliminar tarea:** entra en el paso 4 porque ningún otro paso de `domain/` la cubre. El plan no
+  la listaba; se actualizó a mano.

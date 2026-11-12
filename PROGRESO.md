@@ -81,7 +81,7 @@
 | 2026-10-28 | 1 | 2A. Contrato de permisos: acciones, ámbitos, contextos y resultado | `eb0e382`; docs `6407ec7`; plan/propuesta `5fd8f80` |
 | 2026-10-30 | 1 | 2B. `puede()`, ayudantes, fábricas y pruebas de la matriz | `2eef457`; docs `5647787`; PR #7 fusionado en `2f603cc` |
 | 2026-11-06 | 1 | 3. Transiciones de tarea y matriz de §6.2 | `66cfa34`; docs `623c287`; PR #8 fusionado en `8b7739f` |
-| 2026-11-07 | 1 | 4. Reglas de edición de tarea y de opciones | `6ea9260`; test `c210313`|
+| 2026-11-07 | 1 | 4. Reglas de edición de tarea y de opciones | `6ea9260`; test `c210313`; docs `ab8128d` |
 
 ### Pendientes
 
