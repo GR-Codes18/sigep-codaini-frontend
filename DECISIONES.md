@@ -894,3 +894,42 @@ aviso conocido de `button.tsx`.
   desarrollo calcula también la observación vigente desde el evento de devolución.
 - Verificación: 176 pruebas pasan; `npm.cmd run build`, ESLint y Prettier para los archivos
   modificados pasan. Vite conserva su aviso de bundle de más de 500 kB. `docs/` no se modificó.
+
+## 2026-11-13 — [A] Auditoría de dependencias (`npm audit`)
+
+### Resultado
+
+- `npm audit` reporta **17 avisos** (1 alto, 14 moderados, 2 bajos). `npm audit --omit=dev` reporta
+  **9**, todos de la rama de `shadcn`.
+- El número cambia con la base de avisos de npm, no con nuestras instalaciones: antes eran 4 o 7 y
+  ahora son 17 sin haber instalado nada nuevo a propósito.
+
+### De dónde salen (verificado con `npm ls`)
+
+- **`shadcn` 4.22.1** (CLI): `@modelcontextprotocol/sdk` → `hono`, `@hono/node-server` y
+  `body-parser`; además `@shadcn/registry` → `deepmerge`, y `ts-morph` → `@ts-morph/common` →
+  `minimatch`.
+- **Herramientas de lint:** `eslint` 10.13.0 y `typescript-eslint` 8.72.0 → `minimatch`.
+- Ningún paquete de la aplicación (`react`, `zustand`, `zod`, `react-router`, etc.) aparece en el
+  árbol de avisos.
+
+### Por qué se aceptan
+
+- `npm run build` compila y `grep` sobre `dist/` no encuentra `hono`, `body-parser`, `deepmerge` ni
+  `ts-morph`: **no llegan al bundle del navegador**. Son código del CLI y del lint que solo corre
+  en las máquinas de desarrollo.
+- Aparecen en `--omit=dev` porque `shadcn` está en `dependencies`, tal como lo deja el CLI
+  (decisión de la Fase 0, paso 3), no porque el navegador los use.
+
+### Qué no se hace
+
+- **No se ejecuta `npm audit fix` ni `npm audit fix --force`.** El segundo instalaría `shadcn`
+  1.0.0 y `eslint` 9.39.5, versiones distintas de las acordadas, y el primero modificaría
+  `package-lock.json` sin necesidad.
+
+### Cuándo se revisa
+
+- Al actualizar `shadcn`, `eslint` o `typescript-eslint`.
+- En la Fase 8, junto con la decisión de mover `shadcn` a `devDependencies` para dejar
+  `npm audit --omit=dev` limpio. Alternativa descartada por ahora: moverlo ya, porque `shadcn add`
+  deja de ser predecible.
