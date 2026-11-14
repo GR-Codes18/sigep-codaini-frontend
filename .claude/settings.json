@@ -1,10 +1,29 @@
 {
   "permissions": {
-    "allow": ["Bash(npm run test:*)", "Bash(npm run lint:*)", "Bash(npm run build:*)",
-              "Bash(npx tsc:*)", "Bash(npx eslint:*)", "Bash(npx prettier --check:*)",
-              "Bash(git status:*)", "Bash(git diff:*)", "Bash(git log:*)", "Bash(git add:*)"],
-    "ask": ["Bash(git commit:*)", "Bash(npm install:*)", "Bash(git restore:*)", "Bash(git checkout:*)"],
-    "deny": ["Bash(git push:*)", "Bash(git config:*)", "Bash(npm audit fix:*)",
-             "Bash(git add .)", "Edit(./docs/**)", "Write(./docs/**)"]
+    "allow": [
+      "Bash(npm run test:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx prettier --check:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)"
+    ],
+    "ask": [
+      "Bash(git commit:*)",
+      "Bash(npm install:*)",
+      "Bash(git restore:*)",
+      "Bash(git checkout:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Bash(git config:*)",
+      "Bash(npm audit fix:*)",
+      "Bash(git add .)",
+      "Edit(./docs/**)"
+    ]
   }
 }
