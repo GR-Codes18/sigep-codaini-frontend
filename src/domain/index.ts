@@ -131,3 +131,19 @@ export type {
   ResultadoEventoPR,
   TareaPR,
 } from './estadoPR';
+
+export {
+  CODIGO_PROYECTO_MAX,
+  CODIGO_PROYECTO_MIN,
+  CODIGOS_ID_LEGIBLE,
+  DIGITOS_MINIMOS_NUMERO,
+  formatearIdLegible,
+  siguienteNumeroTarea,
+  validarCodigoProyecto,
+} from './idLegible';
+export type {
+  CodigoIdLegible,
+  ResultadoCodigoProyecto,
+  ResultadoIdLegible,
+  ResultadoSiguienteNumero,
+} from './idLegible';
