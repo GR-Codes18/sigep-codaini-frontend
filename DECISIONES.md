@@ -986,3 +986,124 @@ reglas de convivencia»), que no se edita. Las entradas anteriores que mencionan
 - El prototipo visual que generó z ai para el panel del Administrador (otra estructura) **no es la
   base** y se descartó migrarlo. Podría servir solo como referencia visual más adelante, guardado
   **fuera de este repositorio**. Por ahora el foco son las Fases 1 a 4.
+
+## 2026-11-14 — [A+B] Fase 1, paso 5: máquina del estado del PR
+
+### API
+
+- `src/domain/estadoPR.ts` es la única fuente de la tabla de §7.4. `siguienteEstadoPR(tarea, evento)` es
+  pura y no recibe usuario: nunca cambia `Tarea.estado`, la URL ni las ramas (las escribe el servicio).
+- Eventos (`EventoPR`): `TAREA_ENVIADA_O_TERMINADA` (con `github?`), `PR_CREADO` (`NUEVO`,
+  `EXISTENTE_ABIERTO` o `EXISTENTE_FUSIONADO`), `GITHUB_INFORMA` (con `consulta`),
+  `PR_CERRADO_DESDE_SISTEMA` y `REQUIERE_PR_CAMBIADO` (con `valor`).
+- `domain/` no consulta GitHub: el resultado entra como parámetro (`ConsultaGitHub`: `ABIERTO` con
+  `conflictos`, `FUSIONADO` o `CERRADO`). `necesitaConsultaGitHub(tarea)` (`requiere_pr` y URL no nula)
+  dice al servicio cuándo debe consultar.
+- `etiquetaPRVisible(tarea)` aplica §7.3: solo en `ESPERANDO_SUPERVISION` o `TERMINADA` con `requiere_pr`.
+- `puedeCrearPullRequest` y `puedeCerrarPullRequest` reutilizan `ContextoTransicion`, `validarTexto` y
+  `TEXTO_OBLIGATORIO`. «No requiere PR» no tiene función nueva: se reutiliza `puedeCambiarRequierePR`
+  (paso 4).
+- «Llegar» es solo `ENVIAR_A_SUPERVISION` o `MARCAR_TERMINADA`. `APROBAR` no recalcula (S5).
+
+### Las 4 decisiones de los autores
+
+1. **Primera llegada sin «Requiere PR»:** `estado_pr` queda `null` (§7.4 literal). Si luego se activa la
+   opción, C1 lo pasa a `PENDIENTE`. Descartado: pasar a `PENDIENTE` siempre (dejaba un valor guardado en
+   tareas que nunca pidieron PR).
+2. **Forma de la API:** una función con unión de eventos. Descartadas: una función por evento (la tabla
+   quedaría repartida) y un parche completo con URL y ramas (mezclaría en `domain/` datos de GitHub y del
+   proyecto).
+3. **«No requiere PR»:** `estado_pr` se conserva y `etiquetaPRVisible` oculta la etiqueta; solo cambia
+   `requiere_pr`. Coherente con la decisión del paso 1 («se conserva y se oculta»).
+4. **Crear y cerrar un PR:** solo con la etiqueta visible (tarea `ESPERANDO_SUPERVISION` o `TERMINADA` con
+   `requiere_pr`). Tras devolver o reabrir, el PR se corrige en la misma rama y el mismo PR; no se cierra ni
+   se crea con la tarea `EN_PROGRESO`.
+
+### C1 resuelto
+
+- `REQUIERE_PR_CAMBIADO` con `valor: true`, tarea en `ESPERANDO_SUPERVISION` o `TERMINADA` y
+  `estado_pr === null` → `PENDIENTE`. Activar antes de llegar deja `null` (la llegada lo pasará a
+  `PENDIENTE`); activar con un `estado_pr` ya calculado no lo cambia; desactivar nunca lo cambia.
+
+### Supuestos secundarios (S1 a S5)
+
+- **S1:** GitHub no disponible al recalcular no se modela (§7.7 solo prepara el error al crear). El GitHub
+  simulado siempre responde al recalcular.
+- **S2:** `GITHUB_INFORMA` solo aplica desde `CREADO` o `CON_CONFLICTOS`. Desde `FUSIONADO` (final),
+  `CERRADO`, `PENDIENTE` o `null` responde `ESTADO_PR_NO_APLICA`. Aplica aunque la tarea esté `EN_PROGRESO`
+  o el proyecto `FINALIZADO` (GitHub manda; §7.1).
+- **S3:** un error al crear (rama inexistente, GitHub caído) no es un evento: `domain/` no cambia nada, el
+  servicio devuelve el error y la etiqueta sigue en `PENDIENTE` o `CERRADO`.
+- **S4:** al recalcular «fusionado → `PENDIENTE`» se conserva la URL anterior (§7.4 y paso 1).
+- **S5:** `APROBAR` no recalcula: §7.4 dice «Terminada (sin supervisión)» y la tarea supervisada ya llegó al
+  pasar a `ESPERANDO_SUPERVISION`.
+
+### Códigos nuevos
+
+- `TAREA_SIN_ETIQUETA_PR` (estado de la tarea sin etiqueta), `TAREA_NO_REQUIERE_PR`, `ESTADO_PR_NO_APLICA`
+  y `FALTA_CONSULTA_GITHUB` (hay URL y el servicio no pasó `github`: error de programación, nunca se
+  adivina). Se reutiliza `TEXTO_OBLIGATORIO`. Exportados como `CODIGOS_PR`; los de `puede()` se conservan.
+  `FALTA_CONSULTA_GITHUB` solo sale de `siguienteEstadoPR`, no de crear ni cerrar.
+
+### Orden de comprobación (crear y cerrar)
+
+`puede()` → estado de la tarea (`TAREA_SIN_ETIQUETA_PR`) → `requiere_pr` (`TAREA_NO_REQUIERE_PR`) →
+`estado_pr` (`ESTADO_PR_NO_APLICA`) → texto (`TEXTO_OBLIGATORIO`, solo al cerrar).
+
+- Crear solo desde `PENDIENTE` o `CERRADO`; cerrar solo desde `CREADO` o `CON_CONFLICTOS`.
+- Quien no tiene alcance recibe `FUERA_DE_ALCANCE` sin enterarse del estado del PR. Un PR `FUSIONADO` con
+  motivo vacío responde `ESTADO_PR_NO_APLICA`, no `TEXTO_OBLIGATORIO`.
+- Cerrar exige `MOTIVO` a los tres roles; crear no exige texto. `PROYECTO_EN_PAUSA` no bloquea ninguna de
+  las dos; `PROYECTO_FINALIZADO` sí (viene de `puede()`).
+
+### Aviso para la Fase 4
+
+- Tras recalcular «fusionado → `PENDIENTE`», la tarea queda con `estado_pr === 'PENDIENTE'` y
+  `url_pull_request` apuntando al PR **viejo** ya fusionado. Esa URL **no es el PR vigente**: la interfaz no
+  debe mostrarla como enlace del PR actual hasta que se cree uno nuevo. La etiqueta sale de
+  `etiquetaPRVisible`.
+
+### Pendientes para la Fase 2
+
+- El servicio simula GitHub (ramas de ejemplo, URL ficticia con el formato real, caso de error preparado) y,
+  si `necesitaConsultaGitHub(tarea)`, **siempre** pasa `github` en `TAREA_ENVIADA_O_TERMINADA`; sin eso
+  recibe `FALTA_CONSULTA_GITHUB` y debe tratarlo como error de programación.
+- Escribir en `data/` la URL y las ramas (`rama_base` del proyecto) al crear el PR; `domain/` no lo hace.
+- Registrar el evento de historial (`PULL_REQUEST_CREADO`, `PULL_REQUEST_ESTADO_ACTUALIZADO`,
+  `PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA`, `PULL_REQUEST_NO_REQUERIDO`) con autor «Sistema» en lo que viene
+  de GitHub, y las notificaciones `PULL_REQUEST_CON_CONFLICTOS` y `PULL_REQUEST_CERRADO_POR_OTRA_PERSONA`.
+- Comprobar que el servicio de «Requiere PR» llama a `siguienteEstadoPR` con `REQUIERE_PR_CAMBIADO` y guarda
+  el resultado (C1).
+
+### Pruebas y verificación
+
+- `src/domain/estadoPR.test.ts`: 43 pruebas. Tabla de §7.4 escrita a mano (evento × 6 valores de
+  `estado_pr` × 4 estados de tarea), `ConsultaGitHub` en sus 4 variantes, C1, decisiones 1, 3 y 4, los tres
+  roles, alcance, `FINALIZADO`, `INACTIVO` y el orden de comprobación.
+- Pruebas de mutación del agente: 11 mutaciones, todas detectadas (C1, recalcular fusionado, cerrar desde
+  `FUSIONADO`, crear desde `CREADO`, texto antes que `estado_pr`, visibilidad sin `requiere_pr`, adivinar
+  sin consulta, crear o cerrar sin etiqueta, decisiones 1 y 3, y orden estado-de-tarea / `requiere_pr`).
+- **Mutaciones repetidas por los autores** con `git add` / `git restore` (procedimiento de `CLAUDE.md`), las
+  3 que protegen lo central. Todas fallaron nombrando el caso y volvieron a 254 en verde al restaurar:
+  quitar la regla C1 («C1 ESPERANDO_SUPERVISION»: `null` en vez de `PENDIENTE`), recalcular fusionado →
+  `FUSIONADO` («fusionado vuelve a PENDIENTE») y validar el texto antes que `estado_pr` («motivo vacío con
+  FUSIONADO»: `TEXTO_OBLIGATORIO` en vez de `ESTADO_PR_NO_APLICA`).
+- **Corrección de proceso:** el agente hizo sus 11 mutaciones sobre una copia en el scratchpad, en vez de
+  `git add` / `git restore` con permiso. No debe repetirse: se usa el procedimiento de `CLAUDE.md` y, si un
+  paso pide permiso, se pide.
+- `npm run test` con 254 pruebas en verde; `tsc -b`, `eslint src/domain`, `prettier --check src/domain` y
+  `build` OK; `git diff -- docs` vacío.
+- Divergencias entre el código y la propuesta: las había en §7.4 (aprobar no recalcula, S5), §7.5 (decisión 4)
+  y §11 (decisión 1). Los autores las resolvieron a mano en `docs/` el 2026-11-14 (ver más abajo).
+- Commit `5aba475` (`feat: agrega la máquina del estado del PR en domain (Fase 1, paso 5)`), fusionado con
+  el PR #15 en `3d09766`.
+
+### Cambios a mano en `docs/` (hechos por los autores el 2026-11-14)
+
+- Propuesta §7.4: filas «se aprueba la tarea» (no recalcula, S5) y «se activa Requiere PR…» (C1).
+- Propuesta §11 (Tarea): `estado_pr` es nulo hasta la primera llegada **con «Requiere PR» activo**
+  (decisión 1).
+- Propuesta §7.5: con la decisión 4 no se cierra ni se crea un PR mientras la tarea está devuelta o
+  reabierta.
+- Plan §11: **revisión conjunta de los PR** (decidido el 2026-11-14, descarta la revisión cruzada), fin de la
+  división Persona A / Persona B y flujo de trabajo con un solo agente. `Tu_Rol.md` ya está actualizado.

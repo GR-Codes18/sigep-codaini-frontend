@@ -224,7 +224,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 
 **Cómo leer cada fase:** *Objetivo* · *Pasos* (cada uno se hace con el ciclo de la sección 2.1) · *Listo cuando* (criterio de terminado, incluye pruebas) · *Lee de la propuesta*. No se pasa a la fase siguiente sin cumplir el "Listo cuando" y sin OK de los autores.
 
-> **Dependencias:** 0 → 1 → 2 → 3 → 4 → 5/6/7 → 8. Las fases 1–2 (lógica y datos) y 3–4 (interfaz base) pueden hacerse **en paralelo por dos personas** una vez terminada la Fase 0 y acordados los tipos de `domain/`.
+> **Dependencias:** 0 → 1 → 2 → 3 → 4 → 5/6/7 → 8. Las fases 1–2 (lógica y datos) y 3–4 (interfaz base) se avanzan en el orden de las fases, con un solo agente.
 
 ---
 
@@ -442,13 +442,10 @@ El agente no tiene memoria entre sesiones; estos archivos sí.
 
 - **Ramas:** `main` es la versión estable y demostrable (solo recibe código de `development` al cerrar una fase). `development` es la rama de integración y pruebas. Cada paso o módulo se trabaja en una rama propia creada desde `development`: `feat/fase2-servicios-tareas`, `feat/admin-postulaciones`, `fix/...`, `test/...`.
 - **Commits:** una unidad lógica por commit; mensajes con `feat:`, `fix:`, `chore:`, `test:`, `docs:`, `refactor:`. Antes de cada commit, el agente lista los archivos que entrarán y confirma que no hay secretos ni archivos locales.
-- **Integración:** cada rama de trabajo se une a `development` mediante un Pull Request revisado por **la otra persona** (es la misma práctica que el sistema promueve; vale la pena vivirla), con las pruebas pasando. `development` se une a `main` solo cuando una fase cumple su "Listo cuando" y ambas personas lo confirman. Se etiqueta el cierre de fase en `main` (por ejemplo, `fase-2-completa`).
-- **División sugerida del trabajo en paralelo** (se puede acordar otra):
-  - Persona A: Fases 1 y 2 (`domain/`, `data/`, `services/`).
-  - Persona B: Fases 3 y 4 (acceso, layout, componentes), usando datos de ejemplo mínimos hasta que A entregue los servicios.
-  - Desde la Fase 5, repartir por módulo o por panel; antes de empezar, acordar qué componentes de `compartido/` se tocan para evitar choques.
-- **Contrato entre ambas personas:** los tipos de `domain/` (Fase 1, paso 1) se acuerdan juntos y **no se cambian sin avisar**, porque todo depende de ellos.
-- Si dos personas usan agentes de IA distintos, ambos leen este mismo archivo y los mismos `PROGRESO.md` y `DECISIONES.md` (versionados en el repositorio).
+- **Integración:** cada rama de trabajo se une a `development` mediante un Pull Request que revisan **ambos autores juntos** antes de fusionarlo (trabajan con un solo agente y avanzan una sola vez, así que no hay «la otra persona»), con las pruebas pasando. `development` se une a `main` solo cuando una fase cumple su "Listo cuando" y ambas personas lo confirman. Se etiqueta el cierre de fase en `main` (por ejemplo, `fase-2-completa`).
+- **Forma de trabajo:** Gabriel y Roxana trabajan juntos con un solo agente (Claude Code) y avanzan una sola vez, por fases: una sesión por fase y una parada por paso (el agente propone, esperan el OK, implementa con pruebas, verifica, muestra el diff y se detiene; los autores hacen el commit y el PR). Ya no hay división Persona A / Persona B. Desde la Fase 5 se avanza módulo por módulo, en orden.
+- **Contrato de tipos:** los tipos de `domain/` (Fase 1, paso 1) se acuerdan entre los autores y **no se cambian sin avisar**, porque todo depende de ellos.
+- El agente no tiene memoria entre sesiones: lee este archivo, `CLAUDE.md`, `PROGRESO.md` y `DECISIONES.md` (versionados en el repositorio) al empezar cada sesión.
 
 ---
 
