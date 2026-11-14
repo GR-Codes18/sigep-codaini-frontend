@@ -1107,3 +1107,76 @@ reglas de convivencia»), que no se edita. Las entradas anteriores que mencionan
   reabierta.
 - Plan §11: **revisión conjunta de los PR** (decidido el 2026-11-14, descarta la revisión cruzada), fin de la
   división Persona A / Persona B y flujo de trabajo con un solo agente. `Tu_Rol.md` ya está actualizado.
+
+## 2026-11-14 — [A+B] Fase 1, paso 6: ID legible
+
+### API
+
+- `src/domain/idLegible.ts` es la única fuente del ID `CODIGO-NNN`. Expone `validarCodigoProyecto(codigo,
+  codigosExistentes)`, `siguienteNumeroTarea(proyecto)` y `formatearIdLegible(codigo, numero)`, más las
+  constantes `CODIGO_PROYECTO_MIN` (3), `CODIGO_PROYECTO_MAX` (5) y `DIGITOS_MINIMOS_NUMERO` (3) y la lista
+  `CODIGOS_ID_LEGIBLE` (`CODIGO_PROYECTO_VACIO`, `CARACTERES_INVALIDOS`, `LONGITUD_INVALIDA`,
+  `CODIGO_DUPLICADO`, `NUMERO_INVALIDO`, `ULTIMO_NUMERO_INVALIDO`). Todo es puro; no toca `data/` ni
+  `services/`.
+- Orden de comprobación del código: vacío → caracteres → longitud → duplicado. El formato va siempre antes que
+  el duplicado.
+
+### Las decisiones de los autores
+
+- **D1 — Sin tope:** después de 999 el número crece (`PL2D-1000`, `PL2D-12345`). `NNN` significa «mínimo 3
+  dígitos». Descartado rechazar el 1000.º intento: la propuesta no define ningún límite de tareas por
+  proyecto (§6.6) y habríamos inventado una regla.
+- **D2 — Relleno:** `padStart(3, '0')` (`001`, `018`, `099`, `100`). Supuesto, sin alternativa razonable.
+- **D3 — Caracteres del código:** solo mayúsculas A-Z y dígitos, de 3 a 5 (`/^[A-Z0-9]{3,5}$/`). `domain/`
+  valida y **no convierte ni recorta**: `pl2d` es inválido. Si la pantalla quiere pasar a mayúsculas o recortar
+  antes de validar, lo hace ella. Descartado solo mayúsculas (rechazaría `PL2D`, el ejemplo de la propuesta) y
+  normalizar a mayúsculas dentro de `domain/` (una conversión que la propuesta no pide).
+- **D4 — Unicidad:** `validarCodigoProyecto` recibe `codigosExistentes` por parámetro. La comparación es
+  literal (`PL2D` y `pl2d` no coexisten porque el formato solo admite mayúsculas) y los proyectos
+  **FINALIZADOS cuentan**: nunca se borran, así que un código nunca se libera. **El servicio arma la lista con
+  todos los proyectos**; `domain/` no distingue estados. Descartado dejar la unicidad en el servicio: partía
+  la regla entre capas y la dejaba sin prueba en `domain/`.
+- **D5 — `domain/` devuelve, no muta:** `siguienteNumeroTarea` devuelve `{ ok, numero,
+  ultimo_numero_tarea }` y no modifica el proyecto. El número sale de `ultimo_numero_tarea + 1`, nunca de
+  `max(numero) + 1` (reutilizaría el de una tarea eliminada). Rechaza con `ULTIMO_NUMERO_INVALIDO` un
+  contador que no sea entero ≥ 0 (negativo, decimal, `NaN`, `Infinity`). `formatearIdLegible` rechaza con
+  `NUMERO_INVALIDO` un número que no sea entero ≥ 1, para no producir nunca un ID mal formado; no valida el
+  código.
+- **D6 — Espacios alrededor:** `' PL2D'`, `'PL2D '` y `'\tPL2D'` dan `CARACTERES_INVALIDOS`. Un texto vacío o
+  solo espacios da `CODIGO_PROYECTO_VACIO`; `trim()` se usa solo para elegir ese mensaje, no para recortar el
+  valor que se valida.
+
+### Descartado
+
+- **`idLegibleDeTarea(proyecto, tarea)`:** se quitó. Era un atajo sin lógica propia y sin prueba propia; el
+  servicio y la interfaz llaman a `formatearIdLegible(proyecto.codigo, tarea.numero)`.
+
+### Pruebas y verificación
+
+- `src/domain/idLegible.test.ts`: 49 pruebas (primer número, número eliminado no reutilizado, no mutación,
+  contador inválido, relleno en 1, 18, 99, 100, 999, 1000 y 12345, número inválido, caracteres, bordes de
+  longitud 2/3/5/6, espacios alrededor, unicidad con finalizados, comparación literal y orden formato →
+  duplicado con códigos mal formados que además están en la lista).
+- `npm run test`: **303 pruebas en 27 archivos** en verde; `tsc -b`, `eslint src/domain`,
+  `prettier --check src/domain` y `build` OK; `git diff -- docs` vacío.
+- **Mutaciones del agente (13), todas detectadas**, hechas con `git add` / `git restore` tras la autorización
+  de los autores: `trim()` antes del regex, duplicado antes del formato, sin validar `ultimo_numero_tarea`,
+  `ultimo + 1` → `ultimo`, ignorar el contador, mutar el proyecto, `padStart` de 2, tope en 999, longitud
+  máxima 6, longitud mínima 2, no consultar `codigosExistentes`, sin validar `numero` y regex con minúsculas.
+- **La mutación `max(numero) + 1` se simuló** (`Math.min(ultimo, 3) + 1`): `siguienteNumeroTarea` solo recibe
+  el proyecto, no la lista de tareas, así que ese error no se puede escribir en ella. Lo que protege la
+  prueba es el contrato: el número sale del contador y no de las tareas que quedan.
+- **Mutaciones repetidas por los autores** (las 3 centrales): `ultimo + 1` → `ultimo`, duplicado antes del
+  formato y `padStart` de 2. Las tres fallaron nombrando el caso.
+- Commit `9177852` (`feat: agrega la generación de ID legible en domain (Fase 1, paso 6)`).
+
+### Pendientes para la Fase 2 y posteriores
+
+- **Guardar en una sola operación:** el servicio de crear tarea escribe `ultimo_numero_tarea` del resultado
+  de `siguienteNumeroTarea` y crea la tarea con ese `numero` en la misma operación de `data/`; si falla una,
+  no queda la otra. `ultimo_numero_tarea` solo lo escribe esa generación.
+- **Código de proyecto:** el servicio de proyectos (Fase 2, paso 9) y el formulario de crear proyecto (Fase
+  5.4) deben usar `validarCodigoProyecto`, pasando los códigos de **todos** los proyectos, también los
+  finalizados. El servicio de editar proyecto rechaza cualquier cambio del código.
+- **Migrar los formateos de ID:** reemplazar los que hay en `src/compartido/` y `src/app/ejemplos/` por
+  `formatearIdLegible`, sin tocarlos en este paso.
