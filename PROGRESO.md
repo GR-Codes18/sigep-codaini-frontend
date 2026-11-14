@@ -1,14 +1,16 @@
 # PROGRESO.md — SIGEP CODAINI
 
-> **Cómo se edita este archivo:** cada persona escribe **solo en su bloque** (Persona A / Persona B).
-> El bloque «Estado general (común)» solo lo edita quien cierra una fase, avisando a la otra persona.
-> En `DECISIONES.md` solo se agregan entradas al final, con fecha y `[A]` o `[B]` en el título.
+> **Cómo se edita este archivo:** Gabo y Roxana trabajan juntos con un solo agente (Claude Code) y avanzan
+> una sola vez, por lo que no hay bloques por persona. Hay un único «Siguiente paso» y una única lista de
+> pendientes. Quien cierra un paso lo actualiza, con el hash real de `git log`.
+> En `DECISIONES.md` solo se agregan entradas al final, con fecha y autoría en el título.
 > El estado de las ramas no se anota aquí: **git es la fuente de verdad**.
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 0 cerrada. En paralelo: Persona A (Fases 1–2) y Persona B (Fases 3–4).
-- **Actualizado:** 2026-10-21, al crear la rama `chore/progreso-por-persona`.
+- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 4 terminados; las Fases 3 y 4 avanzaron todo lo que no
+  depende de `services/`. Siguiente: Fase 1, paso 5.
+- **Actualizado:** 2026-11-13, al unificar el seguimiento y pasar a Claude Code.
 
 ### Cierres de fase
 
@@ -58,68 +60,28 @@
 - **Cierre:** PR #1 fusionado en `development`, PR #2 fusionado en `main` y etiqueta `fase-0-completa`
   publicada.
 
-### Pendientes comunes
+## Siguiente paso
 
-- Confirmar el estilo de Prettier si se quiere otro distinto al propuesto (comillas simples, punto y
-  coma, ancho 100).
-- Interlineado: la especificación visual y la propuesta §13 no definen un valor; confirmar si se fija
-  uno.
-- Revisar las 7 vulnerabilidades altas de `shadcn` al actualizar esa dependencia.
+- **Antes del paso 5:** sesión de verificación en modo plan, sin escribir nada: correr `npm run lint`,
+  `npm run format:check`, `npm run test` y `npm run build` sobre `development`, y reportar qué falla, dónde y
+  si es preexistente o nuevo (`src/auth/iniciarSesion.ts` y `src/App.tsx` fallaban antes del merge).
+- **Luego:** Fase 1, paso 5 — máquina del estado del PR (§7.4), con el riesgo C1 como entrada.
+- **Rama:** nueva, desde `development` (`feat/fase1-maquina-pr`).
 
-## Persona A — Fases 1 y 2 (`domain/`, `data/`, `services/`)
+## Pasos terminados
 
-- **Fase actual:** 1, paso 4 terminado; paso 5 sin empezar.
-- **Rama:** `feat/fase1-edicion`.
-- **Siguiente paso:** Fase 1, paso 5 — máquina del estado del PR.
+### Fase 1 — `domain/`
 
-### Pasos terminados
+| Fecha | Paso | Commit / PR |
+|---|---|---|
+| 2026-10-23 | 1. Tipos, enumeraciones y constantes | `1251fb5`; docs `fd8cf78`; PR #5 fusionado en `a17099a`; docs de cierre `6233dda` |
+| 2026-10-23 | chore PR #6: `.gitattributes` y regla de `git config` | fusionado en `e4993af` |
+| 2026-10-28 | 2A. Contrato de permisos | `eb0e382`; docs `6407ec7`; plan/propuesta `5fd8f80` |
+| 2026-10-30 | 2B. `puede()`, ayudantes, fábricas y pruebas de la matriz | `2eef457`; docs `5647787`; PR #7 fusionado en `2f603cc` |
+| 2026-11-06 | 3. Transiciones de tarea y matriz de §6.2 | `66cfa34`; docs `623c287`; PR #8 fusionado en `8b7739f` |
+| 2026-11-07 | 4. Reglas de edición de tarea y de opciones | `6ea9260`; test `c210313`; docs `ab8128d`; style `35d5af2`; fusionado en `development` (merge `aa536cb`) |
 
-| Fecha | Fase | Paso | Commit / PR |
-|---|---|---|---|
-| 2026-10-23 | 1 | 1. Tipos, enumeraciones y constantes de `domain/` | `1251fb5`; docs `fd8cf78`; PR #5 fusionado en `a17099a`; docs de cierre `6233dda` |
-| 2026-10-23 | — | chore PR #6: `.gitattributes` y regla de `git config` en `AGENTS.md` | fusionado en `e4993af` |
-| 2026-10-28 | 1 | 2A. Contrato de permisos: acciones, ámbitos, contextos y resultado | `eb0e382`; docs `6407ec7`; plan/propuesta `5fd8f80` |
-| 2026-10-30 | 1 | 2B. `puede()`, ayudantes, fábricas y pruebas de la matriz | `2eef457`; docs `5647787`; PR #7 fusionado en `2f603cc` |
-| 2026-11-06 | 1 | 3. Transiciones de tarea y matriz de §6.2 | `66cfa34`; docs `623c287`; PR #8 fusionado en `8b7739f` |
-| 2026-11-07 | 1 | 4. Reglas de edición de tarea y de opciones | `6ea9260`; test `c210313`; docs `ab8128d` |
-
-### Pendientes
-
-- [x] Fase 1, paso 1: revisión de los tipos por la Persona B en el PR de `feat/fase1-tipos`.
-- [x] Fase 1, paso 2: permisos por rol (`puede()` y pruebas de la matriz de §4).
-- [x] Fase 1, paso 3: transiciones de tarea y matriz estado × rol × condición.
-- [x] Fase 1, paso 4: reglas de edición de tarea y de opciones (`requiere_supervision` y
-      `requiere_pr`), incluida la eliminación «Disponible + sin PR».
-- [ ] Fase 1, paso 2B: revisión de la Persona B del cambio de contrato de `ContextoInsight`
-      (`proyectos`) antes de fusionar.
-- [ ] Confirmar que el PR de dependencias de la Persona B (`zustand`, `zod`, `react-hook-form`, `@hookform/resolvers`, `react-router`, `date-fns`, `sonner`) se fusionó en `development`.
-- [ ] Fase 1, pasos 5–10: máquina del estado del PR, generación de ID, puntaje de postulaciones,
-      insights, indicadores y ciclo de vida.
-- [ ] Paso 5 (pendiente del paso 4): al activar «Requiere PR» en `ESPERANDO_SUPERVISION` o
-      `TERMINADA` con `estado_pr === null`, dejarlo en `PENDIENTE` (riesgo C1).
-- [ ] Fase 2: aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1).
-- [ ] Fase 4: mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
-- [ ] Fase 1: pruebas mínimas de la sección 9 del plan.
-- [ ] Fase 2, pasos 1–11: almacén, semilla, restablecer datos, utilidades y servicios por módulo,
-      consultas con alcance por rol, más sus pruebas.
-
-### Preguntas abiertas
-
-- Paso 8 (regla «Posible atraso»): el 25 % de tareas vencidas, ¿se calcula sobre el total de tareas
-  o sobre las no terminadas?
-- Paso 10 (ciclo de vida): en un proyecto FINALIZADO, `puede()` solo bloquea las 14 acciones que
-  cambian tareas; no bloquea asignar o quitar practicantes ni cambiar de supervisor. Decidir allí
-  si debe bloquearse.
-- Paso 8 (insights): definir qué 5 de las 7 reglas ve el Supervisor. El alcance por proyectos ya se
-  comprueba en `puede()` con `ContextoInsight.proyectos` (paso 2B).
-
-## Persona B — Fases 3 y 4 (acceso, layout, `compartido/`)
-
-- **Fase actual:** 4 — hecho todo lo que no depende de Persona A (pasos 1 a 5, 7 y 8).
-- **Rama:** `feature/fase3`.
-- **Siguiente paso:** esperar a Persona A para el paso 6 (detalle de tarea) y los pasos 9 a 11.
-
-### Pasos terminados
+### Fases 3 y 4 — acceso, layout y `compartido/`
 
 | Fecha | Fase | Paso | Commit / PR |
 |---|---|---|---|
@@ -136,23 +98,70 @@
 | 2026-10-24 | 4 | 1b. Modal de confirmación | `5e796d2` |
 | 2026-10-24 | 4 | 1c. Pestañas con contador, tabla compacta, búsqueda | `be181b5` |
 | 2026-10-24 | 4 | 5. Tablero Kanban | `aab2185` |
-| 2026-10-25 | 4 | 2 (insignias), 3 (tarjetas), 4 (línea de tiempo, `date-fns`), 7 (modal PR), 8 (formulario de tarea) | `7a78c98` (commit conjunto) |
-| 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/` y derivar devolución del historial | Sin commit (pendiente de aprobación) |
+| 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
+| 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-### Pendientes
+**Estado de pruebas (2026-11-13):** 211 pruebas en 25 archivos (133 de `domain/`); `build` OK (aviso de Vite
+por chunk > 500 kB, no es de seguridad).
 
-- [x] Fase 3, paso 7: borrar `src/app/pagina-prueba/` (2026-11-07).
+## Pendientes
+
+### Fase 1 (`domain/`)
+
+- [ ] Paso 5: máquina del estado del PR (§7.4). Incluye: al activar «Requiere PR» en `ESPERANDO_SUPERVISION`
+      o `TERMINADA` con `estado_pr === null`, dejarlo en `PENDIENTE` (riesgo C1).
+- [ ] Pasos 6 a 10: generación de ID, puntaje de postulaciones, insights, indicadores y ciclo de vida.
+- [ ] Pruebas mínimas de la sección 9 del plan.
+
+### Fase 2 (`data/`, `services/`)
+
+- [ ] Pasos 1 a 11: almacén, semilla, restablecer datos, utilidades y servicios por módulo, consultas con
+      alcance por rol, más sus pruebas.
+- [ ] Los servicios deben pasar SIEMPRE el texto y rechazar si `exige_texto !== null` y falta o viene vacío.
+- [ ] Aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1).
+- [ ] Aviso al responsable al editar una tarea `EN_PROGRESO`.
+- [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
+- [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
+
+### Fases 3 y 4 (interfaz)
+
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
-- [x] Mover `RaizSegunSesion` y `AccesoSiNoHaySesion` fuera de `rutas.tsx` (2026-11-07).
-- [x] Migrar `accionesProvisionales` a las transiciones y permisos de `domain/` (2026-11-07).
-- [x] Implementar `devolucionVigente` derivada del historial (2026-11-07).
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
-- [ ] Reemplazar tipos provisionales (`auth/tipos.ts`, `TareaTablero`, `EventoLinea`) cuando entre `feat/fase1-tipos`.
-- [ ] Fase 4, paso 6 (detalle de tarea) y pasos 9 a 11: esperan a Persona A.
-- [ ] PR a `development` y aviso a Persona A.
+- [ ] Reemplazar tipos provisionales (`auth/tipos.ts`, `TareaTablero`, `EventoLinea`, `TareaDetalle`,
+      `NotificacionItem`) cuando existan los servicios.
+- [ ] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
+- [ ] Fase 4, pasos 6 y 9 a 11: completar con datos reales cuando existan los servicios.
 
-### Preguntas abiertas
+### Verificaciones y cierres
 
-- ¿Persona A aprueba `@hookform/resolvers` 5.2.2 en vez de 6.0.0?
-- ¿Persona A aprueba las rutas con prefijo (`/administrador/...`)? La propuesta no las define.
-- ¿Una rama por paso desde ahora, o seguimos en `feature/fase3`?
+- [ ] Confirmar que `npm run lint` y `format:check` pasan en `development` (sesión de verificación).
+- [ ] Confirmar que el PR de dependencias (`zustand`, `zod`, `react-hook-form`, `@hookform/resolvers`,
+      `react-router`, `date-fns`, `sonner`) está fusionado en `development` (por confirmar).
+- [ ] Confirmar que Roxana revisó el cambio de contrato de `ContextoInsight` (`proyectos`) (por confirmar).
+- [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
+- [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
+      (no se usa `npm audit fix` ni `--force`).
+- [ ] Actualizar a mano `Tu_Rol.md` y el plan §11 (división A/B y flujo por paso).
+
+## Decisiones pendientes de los autores
+
+**El agente debe detenerse y preguntar con 2 o 3 opciones y trade-off (no decide solo):**
+
+- Paso 8, regla «Posible atraso»: el 25 % de tareas vencidas, ¿sobre el total o sobre las no terminadas?
+- Paso 8, insights: ¿qué 5 de las 7 reglas ve el Supervisor?
+- Paso 10, ciclo de vida: en un proyecto `FINALIZADO`, ¿se bloquea asignar o quitar practicantes y cambiar
+  de supervisor?
+
+**Decisiones de proceso y de diseño:**
+
+- ¿Se mantiene el PR revisado por «la otra persona» ahora que trabajan juntos, o basta la revisión conjunta?
+  Lo decidido va al plan §11.
+- Fase 2: ¿una sesión por fase o partirla en 2 o 3 sesiones (almacén y semilla; servicios de tareas y PR;
+  el resto)? Recomendación del asesor: partirla.
+- Estilo de Prettier si se quiere otro distinto al propuesto (comillas simples, punto y coma, ancho 100).
+- Interlineado: la especificación visual y la propuesta §13 no definen un valor.
+- Rutas con prefijo por panel (`/administrador/...`): la propuesta no define URLs.
+- `@hookform/resolvers` 5.2.2 en vez de 6.0.0 (ver DECISIONES 2026-11-07).
+- Mi perfil: Discord y GitHub del Administrador están bloqueados (la propuesta no los lista); decidir si se
+  ocultan.
+- Conversión de fechas ISO a `Date` en el borde de la interfaz con `parseISO` (propuesta de Roxana).

@@ -933,3 +933,56 @@ aviso conocido de `button.tsx`.
 - En la Fase 8, junto con la decisión de mover `shadcn` a `devDependencies` para dejar
   `npm audit --omit=dev` limpio. Alternativa descartada por ahora: moverlo ya, porque `shadcn add`
   deja de ser predecible.
+
+
+## 2026-11-13 — [A+B] Cambio de OpenCode a Claude Code y de la forma de trabajo
+
+Esta entrada reemplaza el reparto en paralelo de la entrada del 2026-10-21 («Reparto en paralelo y
+reglas de convivencia»), que no se edita. Las entradas anteriores que mencionan «Persona A»,
+«Persona B» u OpenCode conservan su redacción original.
+
+### Herramienta
+
+- **Claude Code reemplaza a OpenCode** (con modelos gratuitos). Motivo: avanzar más rápido y con menos
+  errores. OpenCode queda descartado.
+- Se **elimina `AGENTS.md`**, que traía las reglas de OpenCode. La fuente de reglas del agente es ahora
+  `CLAUDE.md`, en la raíz. Evita dos archivos de reglas que se contradigan.
+- `CLAUDE.md` precisa que el agente debe preguntar, con 2 o 3 opciones y su trade-off, ante las
+  preguntas abiertas de los pasos 8 y 10 de la Fase 1 y ante cualquier valor, regla o pantalla que la
+  propuesta no defina.
+
+### Forma de trabajo
+
+- **Ya no hay Persona A y Persona B.** Gabo y Roxana trabajan juntos con un solo agente y avanzan una
+  sola vez. `PROGRESO.md` queda con un único «Siguiente paso» y una única lista de pendientes.
+- **Una sesión por fase, una parada por paso.** Dentro de una fase el agente puede encadenar los pasos,
+  pero en cada uno: (1) dice qué entiende y plantea dudas reales; (2) espera el OK; (3) implementa con
+  pruebas; (4) corre `test`, `tsc -b`, `eslint`, `prettier --check` y `build`; (5) muestra el diff,
+  propone el commit y se detiene. Descartado pedirle «toda la fase de una»: se pierde la revisión.
+- **Fase 2:** por su tamaño (11 pasos), se recomienda abrir sesión nueva tras un commit grande;
+  `PROGRESO.md` y `DECISIONES.md` son la memoria entre sesiones. Decisión pendiente de los autores.
+- **Commits y PR:** los hacen los autores; el agente no hace `commit` ni `push` sin confirmación.
+  Ramas `feat/...`, nunca trabajo directo en `main` ni en `development`. Si el PR lo revisa la otra
+  persona o basta la revisión conjunta queda pendiente de decidir.
+- **Pruebas de mutación** en los pasos con reglas de `domain/`: se rompe una regla a propósito, el test
+  debe fallar nombrando la acción y el rol, se restaura y vuelve a pasar. Ya cazó una brecha real en el
+  paso 4 (el orden condición-texto con motivo vacío no estaba protegido).
+  - **Seguridad de la mutación:** antes de mutar se hace `git add <ruta>`, para que la versión buena
+    quede en el índice y `git restore <ruta>` no borre trabajo sin commitear.
+- Hashes en `PROGRESO.md` y `DECISIONES.md`: solo del `git log`, y después de que los autores confirmen
+  que hicieron el commit.
+
+### Permisos de Claude Code
+
+- Se configura `.claude/settings.json` para que el agente pida confirmación en `git commit`,
+  `npm install`, `git restore` y `git checkout`; y para negar `git push`, `git config`,
+  `npm audit fix`, `git add .` y la escritura en `docs/`.
+- Las reglas `Edit`/`Write` sobre `docs/` bloquean las herramientas de edición, pero no impiden que un
+  comando de shell escriba ahí: la verificación real sigue siendo `git diff -- docs` vacío.
+- La sintaxis de las reglas está **por verificar** con `/permissions` dentro de Claude Code.
+
+### z ai
+
+- El prototipo visual que generó z ai para el panel del Administrador (otra estructura) **no es la
+  base** y se descartó migrarlo. Podría servir solo como referencia visual más adelante, guardado
+  **fuera de este repositorio**. Por ahora el foco son las Fases 1 a 4.
