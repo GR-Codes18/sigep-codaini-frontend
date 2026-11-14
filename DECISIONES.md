@@ -1180,3 +1180,23 @@ reglas de convivencia»), que no se edita. Las entradas anteriores que mencionan
   finalizados. El servicio de editar proyecto rechaza cualquier cambio del código.
 - **Migrar los formateos de ID:** reemplazar los que hay en `src/compartido/` y `src/app/ejemplos/` por
   `formatearIdLegible`, sin tocarlos en este paso.
+
+### Cambios a mano en `docs/` (hechos por los autores el 2026-11-14, commit `fdfeb67`)
+
+- Propuesta §5.4 (Datos del proyecto): el código admite solo mayúsculas A-Z sin tildes y números, y es único
+  entre todos los proyectos, también los finalizados.
+- Propuesta §5.5 (ID legible): el número lleva al menos tres dígitos y no tiene tope (`PL2D-1000`).
+- Propuesta §11: fila Proyecto (`codigo`: mayúsculas A-Z y dígitos, único entre todos los proyectos, no se
+  edita) y fila Tarea (`numero` entero desde 1 y sin tope; ID con mínimo 3 dígitos).
+- Plan §5 (regla 17): mínimo de 3 dígitos sin tope, mayúsculas y dígitos, finalizados incluidos.
+- Plan §9, Fase 1: paso 6 detallado y pruebas obligatorias de IDs ampliadas (bordes del formato, código
+  inválido, duplicado, orden formato → duplicado y contador inválido).
+- Plan §9, Fase 2: paso 5 (crear tarea usa `siguienteNumeroTarea` y guarda `ultimo_numero_tarea` y `numero` en
+  una sola operación) y paso 9 (crear proyecto valida con `validarCodigoProyecto`).
+- Plan §9, Fase 5, fila 5.4: código único entre todos los proyectos, de 3 a 5 mayúsculas o dígitos.
+
+### Decisión abierta para la Fase 5.4
+
+- `domain/` no recorta espacios ni pasa a mayúsculas (D3 y D6). Si el formulario de «Nuevo proyecto» debe
+  hacerlo antes de validar, se decide en la Fase 5.4 y, entonces, se documenta en la propuesta §5.4 y en la
+  fila 5.4 del plan. Hoy no está decidido y no está escrito en `docs/`.
