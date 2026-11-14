@@ -111,3 +111,23 @@ export {
   tuvoPullRequest,
 } from './edicionTarea';
 export type { CodigoEdicion, CodigoEdicionPropio, ResultadoEdicion } from './edicionTarea';
+
+export {
+  CODIGOS_PR,
+  etiquetaPRVisible,
+  necesitaConsultaGitHub,
+  puedeCerrarPullRequest,
+  puedeCrearPullRequest,
+  siguienteEstadoPR,
+} from './estadoPR';
+export type {
+  CodigoAccionPR,
+  CodigoEventoPR,
+  CodigoPRPropio,
+  ConsultaGitHub,
+  EventoPR,
+  ResultadoAccionPR,
+  ResultadoCreacionPR,
+  ResultadoEventoPR,
+  TareaPR,
+} from './estadoPR';
