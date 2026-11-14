@@ -166,7 +166,7 @@ Estas son las reglas que el agente más fácilmente rompe. Antes de tocar tareas
 14. **Historial:** eventos inmutables, con valor anterior y nuevo, autor "Sistema" para lo automático, copia del ID y título del elemento. Nunca guarda contraseñas ni inicios de sesión.
 15. **Contraseña temporal:** franja persistente en todas las pantallas hasta que la persona la cambie; mínimo 8 caracteres.
 16. **Tablero:** la columna "Terminada" muestra las 5 más recientes + "Ver todas las terminadas"; el Practicante tiene el filtro "Solo mis tareas".
-17. **IDs legibles:** `CODIGO-NNN` (ej. `PL2D-018`); código de proyecto 3–5 caracteres, único, inmutable; un número eliminado no se reutiliza.
+17. **IDs legibles:** `CODIGO-NNN` (ej. `PL2D-018`); el número lleva mínimo 3 dígitos y no tiene tope (`PL2D-1000`); código de proyecto de 3 a 5 caracteres (solo mayúsculas A-Z y dígitos), único entre todos los proyectos (también los finalizados), inmutable; un número eliminado no se reutiliza.
 
 ---
 
@@ -261,7 +261,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 3. **Transiciones de tarea** (regla 1 de la sección 5): función única `transicionesDisponibles(tarea, usuario, proyecto)` y `puedeTransicionar(...)`, incluyendo condiciones (supervisión, pausa, motivo/nota obligatorios).
 4. **Reglas de edición de tarea y de opciones** (`requiere_supervision`, `requiere_pr`) y eliminación de tarea DISPONIBLE sin PR.
 5. **Máquina del estado del PR** (tabla de §7.4, incluyendo recálculo al devolver/reabrir y "No requiere PR").
-6. **Generación de ID legible** (`CODIGO-NNN`, número correlativo no reutilizable).
+6. **Generación de ID legible** (`CODIGO-NNN`, número correlativo no reutilizable, mínimo 3 dígitos y sin tope): validación del código del proyecto (3 a 5 caracteres, solo mayúsculas A-Z y dígitos, único contra la lista de códigos de todos los proyectos que entrega el servicio), siguiente número a partir de `ultimo_numero_tarea` sin modificarlo, y formato del ID.
 7. **Puntaje de postulaciones:** cálculo por bloques (área y especialidad), proporción, marca de revisión manual (criterio obligatorio no cumplido o banda ambigua).
 8. **Reglas de insights** (las 7, con umbrales como parámetros) y su filtrado por alcance (admin vs supervisor).
 9. **Indicadores:** avance, tiempo de ciclo, espera de supervisión, tasa de devolución, última actividad, días esperando, veces devuelta, carga.
@@ -274,7 +274,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 - Puntaje: el ejemplo 80/90 → 86; pesos que no suman 100; criterio obligatorio incumplido → marca; puntaje 50, 69, 49 y 70 en los bordes de la banda.
 - Insights: justo en el umbral y un valor por debajo; reaparición de un insight revisado (empeora o 7 días).
 - Permisos: cada fila de la matriz de §4 para cada rol; alcance (supervisor ajeno, practicante sin asignación o con fecha_baja, responsable vs. otro practicante); proyecto FINALIZADO (acciones de tareas denegadas a todos; editar reunión, enlaces y rama base permitido); usuario INACTIVO.
-- Generación de IDs: número eliminado no se reutiliza.
+- Generación de IDs: número eliminado no se reutiliza; relleno y bordes del formato (1 → `001`, 999 → `999`, 1000 → `1000`, sin tope); código de proyecto inválido (vacío, longitud 2 y 6, minúsculas, caracteres fuera de A-Z y 0-9, espacios alrededor) y duplicado (los finalizados cuentan), con el formato comprobado antes que el duplicado; `ultimo_numero_tarea` inválido (negativo, decimal, `NaN`).
 
 **Listo cuando:** todas las pruebas pasan; `domain/` no importa React ni `data/`; los autores revisaron los tipos.
 
@@ -291,11 +291,11 @@ La semilla **debe incluir casos para poder demostrar todo**:
 2. **Semilla** según la sección 8, generada por funciones con fechas relativas a hoy. Debe generar también los eventos de historial.
 3. **Restablecer datos de demostración.**
 4. **Utilidades de `services/`:** registrar evento, crear notificación (respetando "no notificar la acción propia"), simular demora, resultado de éxito/error estándar.
-5. **Servicios de tareas** (crear, editar, tomar, liberar, enviar a supervisión, terminar, aprobar, devolver, reabrir, eliminar, cambiar opciones). **Primero estos**, porque son el corazón.
+5. **Servicios de tareas** (crear, editar, tomar, liberar, enviar a supervisión, terminar, aprobar, devolver, reabrir, eliminar, cambiar opciones). **Primero estos**, porque son el corazón. Crear una tarea usa `siguienteNumeroTarea` y guarda `ultimo_numero_tarea` y el `numero` de la tarea en una sola operación.
 6. **Servicios de Pull Request** (crear con ramas de ejemplo, caso de error preparado, detectar PR existente, cerrar, "No requiere PR", recálculo).
 7. **Servicios de postulaciones** (evaluación simulada, aprobar —crea practicante con contraseña temporal—, rechazar, reconsiderar, criterios, áreas y especialidades).
 8. **Servicios de practicantes y supervisores** (asignar, quitar, finalizar práctica, reactivar, restablecer contraseña, crear supervisor, editar, reasignar proyectos, desactivar).
-9. **Servicios de proyectos** (crear, editar, cambiar supervisor, pausar, reanudar, finalizar, reactivar, reunión, enlaces, rama base). El servicio de editar proyecto rechaza cualquier cambio del código.
+9. **Servicios de proyectos** (crear, editar, cambiar supervisor, pausar, reanudar, finalizar, reactivar, reunión, enlaces, rama base). El servicio de crear proyecto valida el código con `validarCodigoProyecto`, pasando los códigos de todos los proyectos (también los finalizados); el servicio de editar proyecto rechaza cualquier cambio del código.
 10. **Servicios de cuenta** (perfil, cambiar contraseña, marcar insight revisado, notificar desde insight, marcar notificaciones leídas, configuración).
 11. **Consultas con alcance por rol:** funciones que devuelven "lo que este usuario puede ver" (proyectos, tareas, practicantes, insights). El alcance se aplica **aquí**, no en las pantallas.
 
@@ -364,7 +364,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 | **5.1 Postulaciones** | Abre en "Pendientes"; orden por puntaje; evaluación en 2 bloques con desglose; nota fija "el puntaje es una ayuda"; "Analizando…" al evaluar; Aprobar (crea practicante, muestra la contraseña temporal una sola vez), Rechazar (motivo), Reconsiderar (nota); sub-sección de criterios, áreas y especialidades (pesos suman 100; no se borra, se desactiva; no recalcula evaluaciones pasadas). Aviso sobre uso del CV. | §5.1, §10.1 |
 | **5.2 Practicantes** | Sin botón "Nuevo practicante"; atajo "Asignar a proyecto" en "Sin proyecto"; finalizar con aviso de tareas a liberar; reactivar; fecha de fin y aviso previo. | §5.2 |
 | **5.3 Supervisores** | "Nuevo supervisor"; reasignar proyectos; no desactivar con proyectos activos (mensaje con cuántos). | §5.3 |
-| **5.4 Proyectos** | Código único e inmutable; repositorio y rama base obligatorios; reunión opcional; detalle con Resumen, Tablero y Equipo; pausar/reanudar/finalizar/reactivar con nota; finalizar bloqueado con tareas esperando supervisión. | §5.4 |
+| **5.4 Proyectos** | Código único (entre todos los proyectos, también los finalizados) e inmutable, de 3 a 5 mayúsculas o dígitos; repositorio y rama base obligatorios; reunión opcional; detalle con Resumen, Tablero y Equipo; pausar/reanudar/finalizar/reactivar con nota; finalizar bloqueado con tareas esperando supervisión. | §5.4 |
 | **5.5 Tareas** | Vista transversal con filtros; ID legible; sin botones de decisión en las filas. | §5.5, §6.7 |
 | **5.6 Reportes** | Insights (7 reglas, ver detalle, marcar revisado, notificar) e Indicadores (selector de periodo, tablas por proyecto y por practicante, gráfico por área). | §5.6 |
 | **5.7 Historial** | Filtros, panel de detalle con valor anterior y nuevo, solo lectura. | §5.7 |
