@@ -62,9 +62,8 @@
 
 ## Siguiente paso
 
-- **Antes del paso 5:** sesión de verificación en modo plan, sin escribir nada: correr `npm run lint`,
-  `npm run format:check`, `npm run test` y `npm run build` sobre `development`, y reportar qué falla, dónde y
-  si es preexistente o nuevo (`src/auth/iniciarSesion.ts` y `src/App.tsx` fallaban antes del merge).
+- **Sesión de verificación: terminada (2026-11-13).** `iniciarSesion.ts` y `App.tsx` ya no fallan; el único
+  fallo era `.claude/settings.json` en `format:check`, ya corregido en `a232922`.
 - **Luego:** Fase 1, paso 5 — máquina del estado del PR (§7.4), con el riesgo C1 como entrada.
 - **Rama:** nueva, desde `development` (`feat/fase1-maquina-pr`).
 
@@ -134,7 +133,11 @@ por chunk > 500 kB, no es de seguridad).
 
 ### Verificaciones y cierres
 
-- [ ] Confirmar que `npm run lint` y `format:check` pasan en `development` (sesión de verificación).
+- [x] Confirmar que `npm run lint` y `format:check` pasan en `development` (sesión de verificación,
+      2026-11-13). `src/auth/iniciarSesion.ts` y `src/App.tsx` ya no fallan. El único fallo es
+      `.claude/settings.json` (commit `1d57175`, solo formato de Prettier); `lint` pasa con el aviso conocido
+      de `button.tsx`, `test` (211) y `build` OK. Corregido en la rama `style/formato-claude-settings`
+      con `a232922` (formatea el archivo y quita una regla `Write` inválida); `format:check` pasa.
 - [ ] Confirmar que el PR de dependencias (`zustand`, `zod`, `react-hook-form`, `@hookform/resolvers`,
       `react-router`, `date-fns`, `sonner`) está fusionado en `development` (por confirmar).
 - [ ] Confirmar que Roxana revisó el cambio de contrato de `ContextoInsight` (`proyectos`) (por confirmar).
