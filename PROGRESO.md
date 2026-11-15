@@ -8,9 +8,9 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 5 terminados; las Fases 3 y 4 avanzaron todo lo que no
-  depende de `services/`. Siguiente: Fase 1, paso 6.
-- **Actualizado:** 2026-11-14, al cerrar el paso 5 (máquina del estado del PR).
+- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 6 terminados; las Fases 3 y 4 avanzaron todo lo que no
+  depende de `services/`. Siguiente: Fase 1, paso 7.
+- **Actualizado:** 2026-11-14, al cerrar el paso 6 (ID legible).
 
 ### Cierres de fase
 
@@ -66,8 +66,11 @@
   fallo era `.claude/settings.json` en `format:check`, ya corregido en `a232922`.
 - **Paso 5: terminado (2026-11-14).** Máquina del estado del PR en `src/domain/estadoPR.ts`; el riesgo
   C1 quedó resuelto. Detalle en `DECISIONES.md`.
-- **Luego:** Fase 1, paso 6 — generación de ID legible (`CODIGO-NNN`, número correlativo no reutilizable).
-- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-generacion-id`).
+- **Paso 6: terminado (2026-11-14).** ID legible en `src/domain/idLegible.ts` (`9177852`): sin tope, mínimo
+  3 dígitos, código de 3 a 5 mayúsculas o dígitos. Detalle y pendientes de Fase 2 en `DECISIONES.md`.
+- **Luego:** Fase 1, paso 7 — puntaje de postulaciones (cálculo por bloques de área y especialidad,
+  proporción, marca de revisión manual). Leer de la propuesta §5.1 (puntaje) y §11.
+- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-puntaje-postulaciones`).
 
 ## Pasos terminados
 
@@ -82,6 +85,7 @@
 | 2026-11-06 | 3. Transiciones de tarea y matriz de §6.2 | `66cfa34`; docs `623c287`; PR #8 fusionado en `8b7739f` |
 | 2026-11-07 | 4. Reglas de edición de tarea y de opciones | `6ea9260`; test `c210313`; docs `ab8128d`; style `35d5af2`; fusionado en `development` (merge `aa536cb`) |
 | 2026-11-14 | 5. Máquina del estado del PR | `5aba475`; PR #15 fusionado en `3d09766` |
+| 2026-11-14 | 6. Generación de ID legible | `9177852` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -103,15 +107,17 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-14):** 254 pruebas en 26 archivos (176 de `domain/`); `build` OK (aviso de Vite
-por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-14):** 303 pruebas en 27 archivos; `build` OK (aviso de Vite por chunk >
+500 kB, no es de seguridad).
 
 ## Pendientes
 
 ### Fase 1 (`domain/`)
 
 - [x] Paso 5: máquina del estado del PR (§7.4), con el riesgo C1 resuelto (`5aba475`, PR #15).
-- [ ] Pasos 6 a 10: generación de ID, puntaje de postulaciones, insights, indicadores y ciclo de vida.
+- [x] Paso 6: generación de ID legible (`CODIGO-NNN`), sin tope y con el correlativo no reutilizable
+      (`9177852`).
+- [ ] Pasos 7 a 10: puntaje de postulaciones, insights, indicadores y ciclo de vida.
 - [ ] Pruebas mínimas de la sección 9 del plan.
 
 ### Fase 2 (`data/`, `services/`)
@@ -126,6 +132,10 @@ por chunk > 500 kB, no es de seguridad).
 - [ ] Aviso al responsable al editar una tarea `EN_PROGRESO`.
 - [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
+- [ ] ID legible: guardar `numero` y `ultimo_numero_tarea` en una sola operación; usar
+      `validarCodigoProyecto` (con los códigos de todos los proyectos, también finalizados) en el servicio
+      de proyectos y en el formulario de la Fase 5.4. Detalle en `DECISIONES.md` (paso 6).
+- [ ] Migrar los formateos de ID de `src/compartido/` y `src/app/ejemplos/` a `formatearIdLegible`.
 
 ### Fases 3 y 4 (interfaz)
 
