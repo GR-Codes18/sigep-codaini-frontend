@@ -147,3 +147,15 @@ export type {
   ResultadoIdLegible,
   ResultadoSiguienteNumero,
 } from './idLegible';
+
+export { CODIGOS_PUNTAJE, MOTIVOS_REVISION, calcularPuntaje } from './puntaje';
+export type {
+  BandaAmbigua,
+  CodigoPuntaje,
+  DetallePuntaje,
+  EntradaPuntaje,
+  JuicioCriterio,
+  MotivoRevision,
+  ProporcionNota,
+  ResultadoPuntaje,
+} from './puntaje';

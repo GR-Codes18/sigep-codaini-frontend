@@ -15,6 +15,7 @@ import type { Asignacion, Proyecto } from '../proyectos';
 import type { Tarea } from '../tareas';
 import type { Usuario } from '../usuarios';
 import type { AccionPermiso, ContextoPorAccion } from '../permisos';
+import type { CriterioEvaluacion } from '../postulaciones';
 
 /** IDs fijos y legibles: al fallar una prueba, el mensaje dice qué entidad era. */
 export const IDS = {
@@ -30,6 +31,9 @@ export const IDS = {
   asignacion: 'a-asignacion',
   asignacionAnterior: 'a-asignacion-anterior',
   insight: 'i-insight',
+  areaTecnica: 'at-software',
+  especialidad: 'es-backend',
+  criterio: 'c-criterio',
 } as const;
 
 const ID_POR_ROL: Record<Rol, Id> = {
@@ -111,6 +115,21 @@ export function insight(
   return {
     ids_proyecto: [IDS.proyecto],
     tipo_regla: 'PRACTICANTE_INACTIVO',
+    ...cambios,
+  };
+}
+
+/** Criterio general del área, activo y no obligatorio; la prueba ajusta lo que necesite. */
+export function criterio(cambios: Partial<CriterioEvaluacion> = {}): CriterioEvaluacion {
+  return {
+    id: IDS.criterio,
+    id_area_tecnica: IDS.areaTecnica,
+    id_especialidad: null,
+    nombre: 'Criterio de prueba',
+    tipo: 'TECNOLOGIA',
+    peso: 100,
+    obligatorio: false,
+    activo: true,
     ...cambios,
   };
 }
