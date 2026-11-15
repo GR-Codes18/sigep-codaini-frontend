@@ -1291,3 +1291,24 @@ reglas de convivencia»), que no se edita. Las entradas anteriores que mencionan
 
 - Las decisiones de este paso aún no están en la propuesta (§5.1 y §5.8) ni en el plan (§9, Fase 1, paso 7 y
   pruebas de puntaje). Los autores las actualizan a mano en otro commit.
+
+### Cambios a mano en `docs/` (hechos por los autores el 2026-11-15, commit `cec750a`)
+
+- Propuesta §5.1, «Cómo se calcula el puntaje»: al final del párrafo, cumplido = peso completo y no
+  cumplido = 0; la nota final se redondea al entero con las mitades hacia arriba (86,4 → 86; 69,5 → 70), y esa
+  nota redondeada es la que se compara con la banda.
+- Propuesta §5.1, «Reglas», viñeta «Requiere revisión manual»: la banda se compara con la nota redondeada, con
+  ambos extremos incluidos; el criterio obligatorio no cumplido solo pone la marca y no anula su bloque.
+- Propuesta §5.1, «Reglas», viñeta de los pesos: enteros mayores que 0 que suman 100; si un bloque no tiene
+  criterios activos o sus pesos no suman 100, el sistema no calcula el puntaje y devuelve un error.
+- Propuesta §5.8, fila de la banda: números enteros entre 0 y 100, mínimo menor que el máximo y ambos extremos
+  incluidos en la banda.
+- Propuesta §5.8, fila de la proporción: números enteros que deben sumar 100.
+- Propuesta §11, fila `PostulacionEvaluacion`: `puntaje_total` es un entero de 0 a 100, redondeado con las
+  mitades hacia arriba.
+- Plan §9, Fase 1, paso 7: detalle del cálculo (criterios activos por bloque, cumplido = peso completo,
+  banda y proporción por parámetro, redondeo, marca), sus errores explícitos y que no genera la justificación.
+- Plan §9, «Pruebas obligatorias», viñeta de Puntaje: redondeo y cálculo con enteros, bloque sin criterios
+  activos, obligatorio sin anular el bloque, bordes 49, 50, 69 y 70, y banda y proporción por parámetro.
+
+Con esto ya no hay divergencia entre el código y `docs/` para el paso 7.

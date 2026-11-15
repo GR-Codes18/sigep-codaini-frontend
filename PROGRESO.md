@@ -90,7 +90,7 @@
 | 2026-11-07 | 4. Reglas de edición de tarea y de opciones | `6ea9260`; test `c210313`; docs `ab8128d`; style `35d5af2`; fusionado en `development` (merge `aa536cb`) |
 | 2026-11-14 | 5. Máquina del estado del PR | `5aba475`; PR #15 fusionado en `3d09766` |
 | 2026-11-14 | 6. Generación de ID legible | `9177852` |
-| 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5` |
+| 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5`; docs `367bf3b`; docs/ a mano `cec750a` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -171,8 +171,8 @@
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
-- [ ] Actualizar a mano la propuesta (§5.1 y §5.8) y el plan (§9, Fase 1, paso 7 y pruebas de puntaje) con
-      las decisiones del paso 7 (lo hacen los autores en otro commit).
+- [x] Actualizar a mano la propuesta (§5.1, §5.8 y §11) y el plan (§9, Fase 1, paso 7 y pruebas de puntaje)
+      con las decisiones del paso 7 (hecho por los autores, 2026-11-15, `cec750a`).
 - [x] Actualizar a mano `Tu_Rol.md` (hecho por los autores, 2026-11-14).
 - [x] Actualizar a mano el plan §11 (fin de la división A/B, flujo por paso y revisión conjunta de los PR)
       y, en la propuesta, §7.4, §7.5 y §11 (Tarea) con las decisiones del paso 5 (hecho por los autores,
