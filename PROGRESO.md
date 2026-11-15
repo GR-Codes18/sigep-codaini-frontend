@@ -8,9 +8,9 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 6 terminados; las Fases 3 y 4 avanzaron todo lo que no
-  depende de `services/`. Siguiente: Fase 1, paso 7.
-- **Actualizado:** 2026-11-14, al cerrar el paso 6 (ID legible).
+- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 7 terminados; las Fases 3 y 4 avanzaron todo lo que no
+  depende de `services/`. Siguiente: Fase 1, paso 8.
+- **Actualizado:** 2026-11-15, al cerrar el paso 7 (puntaje de postulaciones).
 
 ### Cierres de fase
 
@@ -68,9 +68,13 @@
   C1 quedó resuelto. Detalle en `DECISIONES.md`.
 - **Paso 6: terminado (2026-11-14).** ID legible en `src/domain/idLegible.ts` (`9177852`): sin tope, mínimo
   3 dígitos, código de 3 a 5 mayúsculas o dígitos. Detalle y pendientes de Fase 2 en `DECISIONES.md`.
-- **Luego:** Fase 1, paso 7 — puntaje de postulaciones (cálculo por bloques de área y especialidad,
-  proporción, marca de revisión manual). Leer de la propuesta §5.1 (puntaje) y §11.
-- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-puntaje-postulaciones`).
+- **Paso 7: terminado (2026-11-15).** Puntaje de postulaciones en `src/domain/puntaje.ts` (`aeb6ea5`):
+  bloques de área y especialidad, nota redondeada, banda y proporción por parámetro, marca de revisión
+  manual. Detalle y pendientes de Fase 2 en `DECISIONES.md`.
+- **Luego:** Fase 1, paso 8 — reglas de insights (las 7, con umbrales como parámetros) y su filtrado por
+  alcance. Leer de la propuesta §5.6. Antes de implementar hay que preguntar las dos decisiones abiertas
+  del paso 8 (ver «Decisiones pendientes de los autores»).
+- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-insights`).
 
 ## Pasos terminados
 
@@ -86,6 +90,7 @@
 | 2026-11-07 | 4. Reglas de edición de tarea y de opciones | `6ea9260`; test `c210313`; docs `ab8128d`; style `35d5af2`; fusionado en `development` (merge `aa536cb`) |
 | 2026-11-14 | 5. Máquina del estado del PR | `5aba475`; PR #15 fusionado en `3d09766` |
 | 2026-11-14 | 6. Generación de ID legible | `9177852` |
+| 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -107,7 +112,7 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-14):** 303 pruebas en 27 archivos; `build` OK (aviso de Vite por chunk >
+**Estado de pruebas (2026-11-15):** 349 pruebas en 28 archivos; `build` OK (aviso de Vite por chunk >
 500 kB, no es de seguridad).
 
 ## Pendientes
@@ -117,7 +122,8 @@
 - [x] Paso 5: máquina del estado del PR (§7.4), con el riesgo C1 resuelto (`5aba475`, PR #15).
 - [x] Paso 6: generación de ID legible (`CODIGO-NNN`), sin tope y con el correlativo no reutilizable
       (`9177852`).
-- [ ] Pasos 7 a 10: puntaje de postulaciones, insights, indicadores y ciclo de vida.
+- [x] Paso 7: puntaje de postulaciones (`aeb6ea5`).
+- [ ] Pasos 8 a 10: insights, indicadores y ciclo de vida.
 - [ ] Pruebas mínimas de la sección 9 del plan.
 
 ### Fase 2 (`data/`, `services/`)
@@ -136,6 +142,10 @@
       `validarCodigoProyecto` (con los códigos de todos los proyectos, también finalizados) en el servicio
       de proyectos y en el formulario de la Fase 5.4. Detalle en `DECISIONES.md` (paso 6).
 - [ ] Migrar los formateos de ID de `src/compartido/` y `src/app/ejemplos/` a `formatearIdLegible`.
+- [ ] Puntaje: la evaluación simulada lee la banda y la proporción vigentes de `data/`, llama a
+      `calcularPuntaje` y genera la justificación; decidir qué muestra una postulación si
+      `calcularPuntaje` devuelve un error; el formulario de criterios y el de Configuración exigen enteros.
+      Detalle en `DECISIONES.md` (paso 7).
 
 ### Fases 3 y 4 (interfaz)
 
@@ -161,6 +171,8 @@
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
+- [ ] Actualizar a mano la propuesta (§5.1 y §5.8) y el plan (§9, Fase 1, paso 7 y pruebas de puntaje) con
+      las decisiones del paso 7 (lo hacen los autores en otro commit).
 - [x] Actualizar a mano `Tu_Rol.md` (hecho por los autores, 2026-11-14).
 - [x] Actualizar a mano el plan §11 (fin de la división A/B, flujo por paso y revisión conjunta de los PR)
       y, en la propuesta, §7.4, §7.5 y §11 (Tarea) con las decisiones del paso 5 (hecho por los autores,

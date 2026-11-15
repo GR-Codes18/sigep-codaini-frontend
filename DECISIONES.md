@@ -1200,3 +1200,94 @@ reglas de convivencia»), que no se edita. Las entradas anteriores que mencionan
 - `domain/` no recorta espacios ni pasa a mayúsculas (D3 y D6). Si el formulario de «Nuevo proyecto» debe
   hacerlo antes de validar, se decide en la Fase 5.4 y, entonces, se documenta en la propuesta §5.4 y en la
   fila 5.4 del plan. Hoy no está decidido y no está escrito en `docs/`.
+
+## 2026-11-15 — [A+B] Fase 1, paso 7: puntaje de postulaciones
+
+### API
+
+- `src/domain/puntaje.ts` es la única fuente del cálculo de §5.1 y §10.1: el modelo (simulado en la Fase 2)
+  solo juzga cada criterio y el **sistema** suma. `calcularPuntaje(entrada)` recibe `id_area_tecnica` e
+  `id_especialidad` del postulante, el catálogo de `criterios`, los `juicios` (`id_criterio`, `cumplido`,
+  `observacion`), la `banda` y la `proporcion`.
+- Éxito: `puntaje_area`, `puntaje_especialidad`, `puntaje_total`, `requiere_revision_manual`,
+  `motivos_revision` y `detalles` (forma de `PostulacionEvaluacionDetalle` sin `id` ni `id_evaluacion`).
+  Error: `codigo`, `mensaje` y `bloque` (`AREA`, `ESPECIALIDAD` o `null` si falla un parámetro).
+- Códigos (`CODIGOS_PUNTAJE`): `PROPORCION_INVALIDA`, `BANDA_INVALIDA`, `BLOQUE_SIN_CRITERIOS`,
+  `PESO_INVALIDO`, `PESOS_NO_SUMAN_100` y `JUICIO_FALTANTE`.
+- Tipos `BandaAmbigua` y `ProporcionNota` derivados de `ValorParametro` (sin `tipo`). No cambió ningún tipo
+  existente. Fábrica `criterio()` y los IDs `areaTecnica`, `especialidad` y `criterio` agregados a
+  `src/domain/pruebas/fabricas.ts`.
+- Orden de comprobación: proporción → banda → bloque ÁREA (sin criterios → peso inválido → suma ≠ 100 →
+  juicio faltante) → bloque ESPECIALIDAD (igual) → cálculo → marca.
+
+### Las decisiones de los autores (P1 a P7)
+
+- **P1 — Redondeo:** la nota final se redondea al entero más cercano, con las mitades hacia arriba
+  (`Math.round`: 86,4 → 86; 69,5 → 70). Se multiplica con enteros y se divide al final,
+  `(area% × a + especialidad% × b) / 100`, porque `0.3 × 11 + 0.7 × 66` da 49,4999… en coma flotante y se
+  redondearía a 49 en vez de 50. Descartados: guardar 1 decimal (la banda de enteros deja huecos como 69,1–69,9)
+  y no redondear en `domain/` (el número guardado, el visible y el comparado podrían diferir).
+- **P2 — Banda:** se compara la nota **ya redondeada**, con ambos extremos incluidos (`min ≤ nota ≤ max`):
+  49,5 → 50 lleva la marca; 69,5 → 70 no. Con 40/60 la nota nunca termina en ,5; ocurre si el Administrador
+  cambia la proporción. Descartados: comparar el valor sin redondear (69,5 fuera aunque sea menor que 70) y un
+  intervalo semiabierto (`maximo` con un significado que la pantalla no explica).
+- **P3 — Pesos que no suman 100 o bloque sin criterios activos:** error explícito, no se calcula. Pesos
+  enteros mayores que 0 (`PESO_INVALIDO` para 0, negativo, decimal o `NaN`). Descartados: normalizar a 100
+  (regla inventada que oculta un catálogo mal configurado) y calcular con marca (tercera causa que §5.1 no
+  define).
+- **P4 — Criterio obligatorio no cumplido:** solo pone la marca; aporta 0 como cualquier criterio no cumplido y
+  no anula su bloque. Descartados: bloque en 0 o un tope de nota (reglas inventadas).
+- **P5 — Banda y proporción por parámetro, obligatorios.** El servicio pasa los valores vigentes de
+  Configuración. Validación defensiva en `domain/`: proporción que suma 100 y banda con mínimo < máximo
+  (§5.8). Descartados: leer `CATALOGO_PARAMETROS` (solo es el valor inicial) y parámetros opcionales con ese
+  catálogo por defecto (si el servicio los olvida, se usan los iniciales sin aviso).
+- **P6 — `domain/` elige los criterios de cada bloque** a partir del catálogo completo: ÁREA = activos del área
+  del postulante con `id_especialidad === null`; ESPECIALIDAD = activos de su especialidad. Los inactivos o
+  ajenos se ignoran aunque tengan juicio; si a un criterio activo le falta su juicio, `JUICIO_FALTANTE`. Mismo
+  criterio que la unicidad del código en el paso 6 (D4): la regla queda entera y probada en `domain/`.
+  Descartado: que el servicio entregue los bloques ya separados.
+- **P7 — Justificación y motivos:** `domain/` **no genera la justificación** (su formato no está definido; la
+  escribe la evaluación simulada de la Fase 2, §10.1). Devuelve `motivos_revision` (`CRITERIO_OBLIGATORIO`,
+  `BANDA_AMBIGUA`), que **no se guarda** (`PostulacionEvaluacion` solo tiene el booleano): sirve para que las
+  pruebas distingan las dos causas y para preparar la semilla. Si se muestra en pantalla, se decide en la
+  Fase 5.1.
+
+### Supuestos
+
+- **Cumplido = peso completo; no cumplido = 0**, sin créditos parciales (§10.1: el modelo solo dice si se
+  cumple). El puntaje de un bloque es la suma de los pesos de sus criterios activos cumplidos.
+- **Un solo juicio por criterio:** el modelo simulado entrega exactamente uno; los duplicados no se modelan (si
+  llegaran, se toma el primero).
+- **Pesos, proporción y banda son enteros entre 0 y 100** (los pesos, además, mayores que 0). La propuesta no lo
+  dice; todos sus ejemplos usan enteros y así ninguna suma por coma flotante da 99,99 ≠ 100.
+
+### Pruebas y verificación
+
+- `src/domain/puntaje.test.ts`: 46 pruebas. Ejemplo 80/90 → 86, proporción y banda por parámetro, redondeo
+  (86,4; 69,5; 49,5), cálculo con enteros (11 y 66 con 30/70 → 50 con marca), bordes 49, 50, 69 y 70 con los
+  criterios cumplidos escritos en el nombre, criterio obligatorio en cada bloque, ambos motivos, pesos que no
+  suman 100, bloque sin criterios, criterios inactivos y ajenos, peso inválido, juicio faltante, desglose,
+  parámetros inválidos, orden de comprobación y no mutación de la entrada.
+- La prueba del cálculo con enteros detecta la forma con decimales (`(p/100) × a + …` o `0.3 × a + …`), pero no
+  la variante `a × p / 100 + b × q / 100`, que en ese caso también da 49,5 exacto.
+- El agente no ejecutó mutaciones: propuso una por prueba y las hacen los autores con `git add` /
+  `git restore`.
+- `npm run test`: **349 pruebas en 28 archivos** en verde; `tsc -b`, `eslint src/domain`,
+  `prettier --check src/domain` y `build` OK; `git diff -- docs` vacío.
+- Commit `aeb6ea5` (`feat: agrega el cálculo del puntaje de postulaciones en domain (Fase 1, paso 7)`).
+
+### Pendientes para la Fase 2 y posteriores
+
+- **Evaluación simulada (Fase 2, paso 7):** lee la banda y la proporción **vigentes** de `data/` y las pasa a
+  `calcularPuntaje`; genera la justificación; crea `PostulacionEvaluacion` y sus detalles con `id`,
+  `id_evaluacion` y `fecha_evaluacion`.
+- **Error de `calcularPuntaje`:** decidir qué muestra una postulación si el catálogo está mal configurado y no
+  se puede calcular el puntaje.
+- **Formularios:** el de criterios (Fase 5.1) exige pesos enteros mayores que 0 que sumen 100 por bloque, y el
+  de Configuración (Fase 5.8) exige banda y proporción enteras entre 0 y 100, para que los errores de `domain/`
+  no aparezcan en la práctica.
+
+### Divergencias con `docs/`
+
+- Las decisiones de este paso aún no están en la propuesta (§5.1 y §5.8) ni en el plan (§9, Fase 1, paso 7 y
+  pruebas de puntaje). Los autores las actualizan a mano en otro commit.
