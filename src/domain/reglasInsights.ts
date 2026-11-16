@@ -38,7 +38,20 @@ import { REGLAS_INSIGHT_VISIBLES, insightEnAlcance } from './permisos';
 import type { Postulante } from './postulaciones';
 import type { Asignacion, Proyecto } from './proyectos';
 import type { Tarea } from './tareas';
+import {
+  MS_POR_DIA,
+  aFechaHora,
+  diasCompletos,
+  diasEntreFechas,
+  esAhoraValido,
+  hoyEn,
+  inicioDelDia,
+  ultimaFecha,
+} from './tiempo';
 import type { Practicante, Usuario } from './usuarios';
+
+/** Las utilidades de tiempo viven en `tiempo.ts`; se reexportan para que el barril no cambie. */
+export { DESFASE_ZONA_HORARIA_MS, hoyEn } from './tiempo';
 
 /** Códigos de error de esta capa. */
 export const CODIGOS_INSIGHTS = ['AHORA_INVALIDO', 'UMBRAL_INVALIDO'] as const;
@@ -69,16 +82,8 @@ export type ResultadoInsights =
 
 export type ErrorUmbral = Extract<ResultadoInsights, { codigo: 'UMBRAL_INVALIDO' }>;
 
-/** Hora de Perú (UTC−5 todo el año): corta el día de `hoy` y de las fechas sin hora. */
-export const DESFASE_ZONA_HORARIA_MS = -5 * 60 * 60 * 1000;
-
 /** Un insight revisado reaparece a los 7 días si la condición sigue (§5.6; no es un parámetro). */
 export const DIAS_REAPARICION_INSIGHT = 7;
-
-const MS_POR_DIA = 86_400_000;
-
-/** ISO 8601 en UTC, como lo da `new Date().toISOString()` (los milisegundos son opcionales). */
-const FORMATO_AHORA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
 const RANGO_SEVERIDAD: Record<Severidad, number> = { INFORMATIVO: 1, ATENCION: 2, CRITICO: 3 };
 
@@ -147,38 +152,6 @@ export function validarUmbrales(umbrales: UmbralesInsight): { ok: true } | Error
     );
   }
   return { ok: true };
-}
-
-/** Días completos de 24 h entre dos instantes en milisegundos (6 d 23 h = 6). */
-function diasCompletos(desde: number, hasta: number): number {
-  return Math.floor((hasta - desde) / MS_POR_DIA);
-}
-
-/**
- * Fecha de calendario de `ahora` en la hora de Perú. `ahora` debe ser válido:
- * `calcularInsights` lo comprueba antes de llamarla.
- */
-export function hoyEn(ahora: FechaHora): Fecha {
-  return new Date(Date.parse(ahora) + DESFASE_ZONA_HORARIA_MS).toISOString().slice(0, 10);
-}
-
-/** Inicio del día `fecha` en la hora de Perú, en milisegundos (`NaN` si la fecha no es válida). */
-function inicioDelDia(fecha: Fecha): number {
-  return Date.parse(`${fecha}T00:00:00.000Z`) - DESFASE_ZONA_HORARIA_MS;
-}
-
-/** Días de calendario entre dos fechas (`NaN` si alguna no es válida). */
-function diasEntreFechas(desde: Fecha, hasta: Fecha): number {
-  return (Date.parse(hasta) - Date.parse(desde)) / MS_POR_DIA;
-}
-
-/** Instante del evento más reciente, o `null` si no hay eventos. */
-function ultimaFecha(eventos: readonly EventoHistorial[]): number | null {
-  return eventos.length === 0 ? null : Math.max(...eventos.map((e) => Date.parse(e.fecha)));
-}
-
-function aFechaHora(ms: number): FechaHora {
-  return new Date(ms).toISOString();
 }
 
 function textoDias(n: number): string {
@@ -531,7 +504,7 @@ export function calcularInsights(
   umbrales: UmbralesInsight,
   ahora: FechaHora,
 ): ResultadoInsights {
-  if (!FORMATO_AHORA.test(ahora) || Number.isNaN(Date.parse(ahora))) {
+  if (!esAhoraValido(ahora)) {
     return {
       ok: false,
       codigo: 'AHORA_INVALIDO',
