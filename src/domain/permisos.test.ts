@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { Rol, TipoReglaInsight } from './enumeraciones';
-import { ROLES } from './enumeraciones';
+import { ROLES, TIPOS_REGLA_INSIGHT } from './enumeraciones';
 import {
   ACCIONES_PERMISO,
   AMBITO_POR_ACCION,
@@ -721,6 +721,42 @@ describe('alcance de insights', () => {
       permitido: true,
       exige_texto: null,
     });
+  });
+
+  // Paso 8: nadie marca como revisado un insight de una regla que no ve (§9.1.4).
+  const contextoMarcar = (tipo_regla: TipoReglaInsight, ids_proyecto: string[]) => ({
+    insight: insight({ tipo_regla, ids_proyecto }),
+    proyectos: [proyecto({ id_supervisor: supervisor.id })],
+  });
+
+  it('el Supervisor no marca FIN_PRACTICA aunque el insight sea de su proyecto', () => {
+    expect(
+      puede(supervisor, 'MARCAR_INSIGHT_REVISADO', contextoMarcar('FIN_PRACTICA', [IDS.proyecto])),
+    ).toEqual({ permitido: false, codigo: 'ROL_NO_PERMITIDO' });
+  });
+
+  it('la regla se comprueba antes del alcance: POSTULACIONES sin proyectos da ROL_NO_PERMITIDO', () => {
+    expect(
+      puede(supervisor, 'MARCAR_INSIGHT_REVISADO', contextoMarcar('POSTULACIONES_SIN_DECIDIR', [])),
+    ).toEqual({ permitido: false, codigo: 'ROL_NO_PERMITIDO' });
+  });
+
+  it.each(TIPOS_REGLA_INSIGHT)('el Administrador marca %s', (tipo_regla) => {
+    expect(
+      puede(usuario('ADMINISTRADOR'), 'MARCAR_INSIGHT_REVISADO', contextoMarcar(tipo_regla, [])),
+    ).toEqual({ permitido: true, exige_texto: null });
+  });
+
+  it.each([
+    'PRACTICANTE_INACTIVO',
+    'CARGA_DESBALANCEADA',
+    'POSIBLE_ATRASO_PROYECTO',
+    'PROYECTO_SIN_ACTIVIDAD',
+    'SUPERVISION_DEMORADA',
+  ] as const)('el Supervisor marca %s en su proyecto', (tipo_regla) => {
+    expect(
+      puede(supervisor, 'MARCAR_INSIGHT_REVISADO', contextoMarcar(tipo_regla, [IDS.proyecto])),
+    ).toEqual({ permitido: true, exige_texto: null });
   });
 });
 

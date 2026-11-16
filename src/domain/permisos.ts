@@ -36,12 +36,18 @@
  * deniega como `FUERA_DE_ALCANCE` al inicio de `comprobarAlcance`, incluso para el
  * Administrador.
  *
+ * Insights: `MARCAR_INSIGHT_REVISADO` y `NOTIFICAR_DESDE_INSIGHT` comprueban primero que la regla
+ * del insight aplique al rol (`REGLAS_INSIGHT_VISIBLES` y `REGLAS_NOTIFICABLES`; si no,
+ * `ROL_NO_PERMITIDO`) y después el alcance. Marcar con una regla que el rol no ve se corrigió en el
+ * paso 8.
+ *
  * La vigencia de una asignación es `fecha_baja === null` y se calcula aquí, no en servicios ni
  * pantallas. En las acciones de proyecto, `asignaciones` son las del usuario que actúa (para el
  * Administrador y el Supervisor, `[]`).
  */
 
 import type { Id } from './comunes';
+import { TIPOS_REGLA_INSIGHT } from './enumeraciones';
 import type { Rol, TipoReglaInsight } from './enumeraciones';
 import type { Insight } from './insights';
 import type { Asignacion, Proyecto } from './proyectos';
@@ -414,6 +420,22 @@ const REGLAS_POR_ACCION: Record<AccionPermiso, ReglaAccion> = {
   RESTABLECER_DATOS_DEMOSTRACION: { roles: ['ADMINISTRADOR'] },
 };
 
+/**
+ * Reglas de insight que ve cada rol (§5.6 y §9.1.4). También limita marcarlas como revisadas:
+ * nadie marca un insight de una regla que no ve. Es la única fuente de las 5 reglas del Supervisor.
+ */
+export const REGLAS_INSIGHT_VISIBLES: Record<Rol, readonly TipoReglaInsight[]> = {
+  ADMINISTRADOR: TIPOS_REGLA_INSIGHT,
+  SUPERVISOR: [
+    'PRACTICANTE_INACTIVO',
+    'CARGA_DESBALANCEADA',
+    'POSIBLE_ATRASO_PROYECTO',
+    'PROYECTO_SIN_ACTIVIDAD',
+    'SUPERVISION_DEMORADA',
+  ],
+  PRACTICANTE: [],
+};
+
 /** Reglas de insight desde las que cada rol puede notificar (§5.6). */
 const REGLAS_NOTIFICABLES: Record<Rol, readonly TipoReglaInsight[]> = {
   ADMINISTRADOR: ['PRACTICANTE_INACTIVO', 'SUPERVISION_DEMORADA'],
@@ -649,12 +671,17 @@ function comprobarAlcance(usuario: Usuario, solicitud: SolicitudPermiso): Codigo
     case 'EDITAR_DATOS_PRACTICA':
       return solicitud.contexto.usuario_objetivo.rol === 'PRACTICANTE' ? null : 'FUERA_DE_ALCANCE';
 
-    // Insights: la regla notificable se comprueba antes del alcance porque es de rol (paso 2).
-    case 'MARCAR_INSIGHT_REVISADO':
-      return usuario.rol === 'SUPERVISOR' &&
-        !insightEnAlcance(solicitud.contexto.insight, solicitud.contexto.proyectos, usuario)
-        ? 'FUERA_DE_ALCANCE'
-        : null;
+    // Insights: la regla (visible o notificable) se comprueba antes del alcance porque es de rol.
+    case 'MARCAR_INSIGHT_REVISADO': {
+      const { insight, proyectos } = solicitud.contexto;
+      if (!REGLAS_INSIGHT_VISIBLES[usuario.rol].includes(insight.tipo_regla)) {
+        return 'ROL_NO_PERMITIDO';
+      }
+      if (usuario.rol === 'SUPERVISOR' && !insightEnAlcance(insight, proyectos, usuario)) {
+        return 'FUERA_DE_ALCANCE';
+      }
+      return null;
+    }
 
     case 'NOTIFICAR_DESDE_INSIGHT': {
       const { insight, proyectos } = solicitud.contexto;

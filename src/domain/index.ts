@@ -69,6 +69,7 @@ export {
   AMBITO_POR_ACCION,
   AMBITOS_PERMISO,
   CODIGOS_DENEGACION,
+  REGLAS_INSIGHT_VISIBLES,
   puede,
 } from './permisos';
 export type {
