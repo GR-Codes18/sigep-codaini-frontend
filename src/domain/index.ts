@@ -183,3 +183,32 @@ export type {
   ResultadoInsights,
   UmbralesInsight,
 } from './reglasInsights';
+
+export {
+  CODIGOS_INDICADORES,
+  DIAS_PERIODO_MAXIMO,
+  DIAS_PERIODO_PREDETERMINADO,
+  avanceProyecto,
+  cargaDePracticante,
+  diasEsperando,
+  enviosASupervision,
+  indicadoresParaUsuario,
+  instanteUltimoEnvio,
+  proyectosDeCarga,
+  tiempoCicloMs,
+  ultimaActividadDeProyecto,
+  ultimaActividadDeUsuario,
+  vecesDevuelta,
+} from './indicadores';
+export type {
+  CodigoIndicadores,
+  DatosIndicadores,
+  EnvioSupervision,
+  FiltroIndicadores,
+  IndicadoresPracticante,
+  IndicadoresProyecto,
+  PeriodoIndicadores,
+  Proporcion,
+  ResultadoIndicadores,
+  ResumenIndicadores,
+} from './indicadores';
