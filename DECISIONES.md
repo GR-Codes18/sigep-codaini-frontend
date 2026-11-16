@@ -1312,3 +1312,201 @@ reglas de convivencia»), que no se edita. Las entradas anteriores que mencionan
   activos, obligatorio sin anular el bloque, bordes 49, 50, 69 y 70, y banda y proporción por parámetro.
 
 Con esto ya no hay divergencia entre el código y `docs/` para el paso 7.
+
+## 2026-11-15 — [A+B] Fase 1, paso 8: reglas de insights
+
+### API y archivos
+
+- `src/domain/reglasInsights.ts` es la única fuente de las 7 reglas de §5.6. Expone:
+  - `insightsParaUsuario(usuario, datos, umbrales, revisiones, ahora)`: es la que usará el servicio.
+  - Las piezas, que se prueban por separado: `calcularInsights`, `aplicarRevisiones`,
+    `filtrarInsightsPorAlcance`, `ordenarInsights`, `validarUmbrales`, `estaVencida` y `hoyEn`.
+  - Las constantes `DESFASE_ZONA_HORARIA_MS`, `DIAS_REAPARICION_INSIGHT` y `CODIGOS_INSIGHTS`
+    (`AHORA_INVALIDO`, `UMBRAL_INVALIDO`).
+  - Los tipos `UmbralesInsight`, `ClaveUmbralInsight`, `DatosInsights`, `ResultadoInsights` y
+    `ErrorUmbral`.
+- `src/domain/reglasInsights.test.ts`: 132 pruebas.
+- `src/domain/pruebas/fabricas.ts`: fábricas `practicanteDetalle`, `evento`, `postulante` y `revision`.
+- `src/domain/index.ts`: exporta lo anterior, `REGLAS_INSIGHT_VISIBLES` e `insightEnAlcance`.
+- `src/domain/insights.ts`: solo el comentario de `ids_proyecto` (decisión 28); el tipo no cambia.
+- **Commit A** `6f61810` (`fix:`): corrección de permisos (ver «Corrección del paso 2»).
+- **Commit B** `e784e4e` (`feat:`): las reglas, las pruebas y `export` de `insightEnAlcance`.
+- `npm run test`: 495 pruebas en 29 archivos; `tsc -b`, `eslint src/domain`,
+  `prettier --check src/domain` y `build` OK; `git diff -- docs` vacío.
+- **Orden de comprobación:**
+  1. `ahora`.
+  2. Umbrales: cada clave en el orden del catálogo y después las relaciones.
+  3. Las 7 reglas, en el orden de `TIPOS_REGLA_INSIGHT`.
+  4. Alcance.
+  5. Revisiones del usuario.
+
+  Dentro de cada regla: elegibilidad → medición → umbral → severidad.
+
+### Decisiones (1 a 29)
+
+1. **25 % de vencidas sobre el total** de tareas del proyecto. Motivo: la misma base que el avance real y
+   estable al final del proyecto.
+2. **El Supervisor ve las 5 reglas de §9.1.4** (inactivo, carga, atraso, proyecto sin actividad,
+   supervisión demorada). Motivo: lo dice la propuesta y no choca con el plan.
+3. **Vencida** = `fecha_limite < hoy` (fechas `YYYY-MM-DD`) y no TERMINADA; incluye
+   ESPERANDO_SUPERVISION, y vencer hoy no es estar vencida. Motivo: decisión de los autores.
+4. **Bordes:** ≥ en días, puntos y porcentaje; carga máxima > («más de 3»); carga mínima ≤; fin de
+   práctica cuando faltan ≤ N días. Motivo: decisión de los autores.
+5. **Días completos de 24 h** (`diasCompletos`, con `Math.floor`; 6 d 23 h = 6). Motivo: decisión de los
+   autores.
+6. **`hoy` sale de `ahora`, cortado en hora de Perú (UTC−5 fijo).** Motivo: Perú no tiene horario de
+   verano y `fecha_limite` no tiene hora; cortar en UTC daría «mañana» desde las 19:00.
+7. **Una `Fecha` vale como el inicio de ese día en hora de Perú** (`YYYY-MM-DDT05:00:00.000Z`). Motivo:
+   así se compara sin ambigüedad con los eventos, que sí tienen hora.
+8. **Proyecto sin tareas:** «Posible atraso» no se evalúa. Motivo: no hay nada que medir y nunca se divide
+   entre cero.
+9. **Actividad del practicante = eventos de los que es autor.** Lo que otro hace sobre él no cuenta.
+   Motivo: §5.7.
+10. **Actividad del proyecto = todo evento con su `id_proyecto`**, de cualquier autor. Motivo: decisión
+    de los autores.
+11. **«Proyecto sin actividad»: solo proyectos ACTIVO con al menos una asignación vigente.** Motivo:
+    «con equipo» (§5.6).
+12. **«Practicante inactivo»: practicante ACTIVO con asignación vigente en un proyecto ACTIVO.** El reloj
+    arranca en lo más reciente entre su último evento propio y su asignación vigente más antigua en un
+    proyecto ACTIVO. `ids_proyecto` = sus proyectos ACTIVO vigentes. Motivo: decisión de los autores.
+13. **No se descuenta el tiempo en pausa.** Motivo: riesgo aceptado (ver abajo).
+14. **Con `fecha_fin_prevista <= fecha_inicio` no se evalúa el tramo de avance; el de vencidas sí.**
+    Motivo: el tramo de vencidas no depende de las fechas del proyecto.
+15. **El último día cuenta:** `d = (fin − inicio) + 1`; `t = min(max(hoy − inicio, 0), d)`. Comparación
+    entera: `100·t·n − 100·k·d ≥ P·d·n`. Motivo: decisión de los autores; con enteros no hay error de coma
+    flotante.
+16. **Carga: un insight por persona**, solo practicantes ACTIVO con asignación vigente en un proyecto
+    ACTIVO. El mínimo solo dispara si algún proyecto ACTIVO suyo tiene tareas DISPONIBLE. Motivo: decisión
+    de los autores.
+17. **En la carga cuentan las EN_PROGRESO de proyectos EN_PAUSA**, e `ids_proyecto` = vigentes ACTIVO y
+    EN_PAUSA. Motivo: §6.6 define la carga como todas sus tareas en progreso, el mismo número que muestran
+    Practicantes a cargo y Equipo.
+18. **Validación de los 10 umbrales con las claves existentes** (sin claves nuevas):
+    - días, enteros ≥ 1;
+    - cargas, enteros ≥ 0, con la mínima menor que la máxima;
+    - puntos y porcentaje, enteros de 1 a 100;
+    - el umbral crítico de inactividad mayor que el de atención.
+
+    El error es `UMBRAL_INVALIDO` con la clave. Motivo: decisión de los autores, como la validación
+    defensiva del paso 7.
+19. **`fecha_deteccion` de «Posible atraso» = `ahora`** en los dos tramos. Motivo: decisión de los autores.
+20. **`ahora` llega por parámetro, en ISO 8601 UTC con `Z`**; si no, el resultado es `AHORA_INVALIDO`
+    (antes que los umbrales). Motivo: un `ahora` inválido haría desaparecer todos los insights sin aviso.
+21. **«Revisado» por usuario.**
+    - Solo cuentan las revisiones de `usuario.id`.
+    - La identidad del insight es `tipo_regla` + `elemento`, y manda la revisión más reciente por fecha.
+    - Vale mientras la severidad no suba y no pasen 7 días completos.
+    - El insight revisado sigue en la lista con `revisado: true`.
+
+    Motivo: §5.6 y §11.
+22. **Cambio de severidad:**
+    - Si sube, reaparece.
+    - Si baja, o baja y vuelve a la que tenía al revisarlo, sigue revisado hasta los 7 días.
+    - Una revisión nueva reemplaza a la anterior.
+    - A los 7 días exactos reaparece.
+
+    Motivo: §5.6 («otros cambios en los datos no lo reactivan»).
+23. **Orden:** severidad, luego el más antiguo primero; desempate por el orden de las reglas y el id del
+    elemento. Motivo: confirmado por los autores.
+24. **`fecha_deteccion` de «inactivo» = referencia + umbral de atención**, también en crítico. Motivo: es
+    cuando empezó el problema.
+25. **Postulación reconsiderada:** el reloj arranca en su último `POSTULACION_RECONSIDERADA`. Motivo:
+    vuelve a estar pendiente desde ahí (§5.1).
+26. **Supervisión demorada:** desde el último `TAREA_ENVIADA_A_SUPERVISION`; sin ese evento no dispara;
+    vale en ACTIVO y EN_PAUSA. Motivo: §9.1.3.
+27. **Proyecto sin eventos:** el reloj arranca en `fecha_inicio`. Motivo: es el único inicio medible.
+28. **Fin de práctica:** todo practicante ACTIVO, tenga o no proyecto.
+    - `ids_proyecto` = vigentes no finalizados (puede ser `[]`).
+    - Termina hoy → INFORMATIVO; desde el día siguiente → CRÍTICO.
+    - Con una fecha inválida o sin detalle se omite.
+
+    Motivo: §5.2.
+29. **Textos:** `domain/` arma `titulo` y `motivo`, con plural «1 día» / «N días». Motivo: el tipo
+    `Insight` ya los tiene.
+
+### Riesgo y consecuencia aceptados
+
+- **Riesgo (decisión 13):** no se descuenta el tiempo en pausa. Un proyecto reanudado puede disparar
+  «inactivo» o «atraso» enseguida.
+- **Consecuencia:** `ids_proyecto` difiere por regla:
+  - inactivo: solo proyectos ACTIVO;
+  - carga: ACTIVO y EN_PAUSA;
+  - fin de práctica: no finalizados.
+
+  Por eso el Supervisor de un proyecto en pausa ve la carga de un practicante, pero no su inactividad.
+
+### Corrección del paso 2
+
+- `MARCAR_INSIGHT_REVISADO` ahora deniega con `ROL_NO_PERMITIDO` las reglas que el rol no ve, antes del
+  alcance. Usa la nueva constante `REGLAS_INSIGHT_VISIBLES` de `permisos.ts`: Administrador 7, Supervisor
+  5, Practicante 0.
+- Corrige la entrada del 2026-10-28, que solo exigía el alcance: un Supervisor podía marcar un insight de
+  «Fin de práctica» de su proyecto aunque no lo ve.
+- Se hizo en un commit aparte (A, `6f61810`), con 4 pruebas nuevas. Ninguna expectativa existente cambió.
+- El filtro de alcance de los insights usa la misma constante y la misma `insightEnAlcance`. La prueba L-6
+  comprueba que ver y marcar coinciden.
+
+### Nota sobre la prueba A-2
+
+- El plan proponía `(3/10 − 1/10) × 100` como ejemplo de error de coma flotante. En JavaScript ese cálculo
+  da **20 exacto**, así que **no distingue** la fórmula entera de la decimal.
+- El caso válido es 70 % − 50 %: hoy 08-nov, 1 de 2 tareas terminadas. Da `19.999999999999996` en coma
+  flotante y `400 = 400` con enteros.
+- Fue un error de ese plan, detectado al ejecutar las mutaciones: la de A-2 no hacía fallar la prueba. Se
+  corrigió la prueba antes del commit B, y los autores repitieron las mutaciones con resultado correcto.
+
+### Hallazgo H1 (Kanban)
+
+- `src/compartido/TableroKanban.tsx:54` compara un `Date` a la medianoche con `new Date()` (con hora). Una
+  tarea que vence hoy sale en rojo desde las 00:00.
+- La regla acordada (`estaVencida`) no la cuenta como vencida hasta mañana.
+- No se tocó `compartido/` en este paso; queda como pendiente.
+
+### Pendientes para la Fase 2 y posteriores
+
+- El servicio arma `UmbralesInsight` con los valores vigentes de Configuración y pasa `ahora` en ISO UTC
+  (`new Date().toISOString()`). Un `ahora` sin `Z` o mal formado da `AHORA_INVALIDO`.
+- Los dashboards (5.9 y 6.5) quitan de las alertas los insights con `revisado: true`.
+- Marcar como revisado pasa por `puede('MARCAR_INSIGHT_REVISADO', { insight, proyectos })`.
+- Los formularios de Configuración (5.8) exigen lo mismo que `validarUmbrales`.
+- El Kanban migra a `estaVencida` (H1).
+
+### Divergencias con `docs/` (pendientes; las actualizan los autores a mano)
+
+Todavía **no** están hechas. Son los 5 cambios del plan aprobado:
+
+1. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.6, nota bajo la tabla de reglas
+   («*El avance esperado de un proyecto es…*»). Agregar al final: «La duración incluye el día de fin y el
+   tiempo transcurrido cuenta los días completos desde el inicio. Si el proyecto no tiene tareas, la regla
+   no se evalúa; si su fecha de fin no es posterior a la de inicio, solo se evalúa el porcentaje de tareas
+   vencidas.»
+2. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.6, párrafo «**Fecha de detección.**». Hay dos cambios:
+   - Al final del párrafo, agregar: «; en «Posible atraso» y «Carga desbalanceada» siempre es el momento
+     del cálculo».
+   - Debajo, un párrafo nuevo «**Cómo se mide cada regla.**», con el texto del plan:
+     - Los umbrales se cumplen al alcanzarse, salvo la carga máxima.
+     - Los días son periodos completos de 24 horas y el día se corta a la medianoche en hora de Perú
+       (UTC−5).
+     - La actividad propia del practicante solo se evalúa con un proyecto activo vigente.
+     - La actividad de un proyecto es cualquier evento suyo, solo si está activo y con equipo.
+     - Vencida = fecha límite pasada y no terminada; el porcentaje se calcula sobre el total.
+     - El atraso solo se evalúa en proyectos activos.
+     - La carga incluye las tareas de proyectos en pausa, y su mínimo exige disponibles en un proyecto
+       activo.
+     - Una postulación reconsiderada cuenta desde su reconsideración.
+     - La supervisión demorada corre desde el último envío y vale también en pausa.
+     - «Fin de práctica» se evalúa a todo practicante activo, tenga o no proyecto.
+     - El tiempo en pausa no se descuenta.
+3. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.8, nota al pie de la tabla. Agregar al final la validación de
+   los umbrales de Seguimiento:
+   - días (incluida la anticipación de «Fin de práctica»), enteros desde 1;
+   - cargas, enteros desde 0, con la mínima menor que la máxima;
+   - puntos y porcentaje, de 1 a 100;
+   - el crítico de inactividad, mayor que el de atención.
+4. `docs/Propuesta_SIGEP_Codaini_v6.md`, §4, tabla «Seguimiento y sistema», fila «Marcar un insight como
+   revisado», columna Supervisor: `Sí (independiente del Administrador)` →
+   `Sí, en las cinco reglas que ve (independiente del Administrador)`.
+5. `docs/SIGEP_Plan_de_Desarrollo_y_Reglas_del_Agente.md`, §5, regla 12: después de «El Supervisor ve 5 de
+   las 7 reglas», agregar: «: practicante inactivo, carga desbalanceada, posible atraso del proyecto,
+   proyecto sin actividad y supervisión demorada (no ve «Postulaciones sin decidir» ni «Fin de práctica»,
+   y solo marca como revisadas esas 5)».
