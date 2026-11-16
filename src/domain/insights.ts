@@ -16,7 +16,8 @@ export interface Insight {
   revisado: boolean;
   /**
    * Todos los proyectos relacionados con el elemento afectado (un practicante
-   * en dos proyectos lleva ambos); `[]` solo cuando el insight es de un postulante.
+   * en dos proyectos lleva ambos). Es `[]` cuando el insight es de un postulante
+   * o de «Fin de práctica» de un practicante sin proyecto vigente.
    */
   ids_proyecto: Id[];
 }

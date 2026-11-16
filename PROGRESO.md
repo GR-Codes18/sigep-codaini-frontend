@@ -8,9 +8,9 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 7 terminados; las Fases 3 y 4 avanzaron todo lo que no
-  depende de `services/`. Siguiente: Fase 1, paso 8.
-- **Actualizado:** 2026-11-15, al cerrar el paso 7 (puntaje de postulaciones).
+- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 8 terminados; las Fases 3 y 4 avanzaron todo lo que no
+  depende de `services/`. Siguiente: Fase 1, paso 9.
+- **Actualizado:** 2026-11-15, al cerrar el paso 8 (reglas de insights).
 
 ### Cierres de fase
 
@@ -71,10 +71,15 @@
 - **Paso 7: terminado (2026-11-15).** Puntaje de postulaciones en `src/domain/puntaje.ts` (`aeb6ea5`):
   bloques de área y especialidad, nota redondeada, banda y proporción por parámetro, marca de revisión
   manual. Detalle y pendientes de Fase 2 en `DECISIONES.md`.
-- **Luego:** Fase 1, paso 8 — reglas de insights (las 7, con umbrales como parámetros) y su filtrado por
-  alcance. Leer de la propuesta §5.6. Antes de implementar hay que preguntar las dos decisiones abiertas
-  del paso 8 (ver «Decisiones pendientes de los autores»).
-- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-insights`).
+- **Paso 8: terminado (2026-11-15).** Reglas de insights en `src/domain/reglasInsights.ts`
+  (commit A `6f61810`, que corrige `MARCAR_INSIGHT_REVISADO` en `permisos.ts`; commit B `e784e4e`, con las
+  reglas). Son las 7 reglas, con los 10 umbrales como parámetro y validados, y `ahora` por parámetro con
+  el día cortado en hora de Perú (UTC−5). «Revisado» es por usuario y el alcance usa la misma fuente que
+  `puede()`. Detalle, decisiones y pendientes de la Fase 2 en `DECISIONES.md`.
+- **Luego:** Fase 1, paso 9 — indicadores (avance, tiempo de ciclo, espera de supervisión, tasa de
+  devolución, última actividad, días esperando, veces devuelta, carga). Leer de la propuesta §5.6
+  (pestaña «Indicadores»), §9.1.4 y §11.
+- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-indicadores`).
 
 ## Pasos terminados
 
@@ -91,6 +96,7 @@
 | 2026-11-14 | 5. Máquina del estado del PR | `5aba475`; PR #15 fusionado en `3d09766` |
 | 2026-11-14 | 6. Generación de ID legible | `9177852` |
 | 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5`; docs `367bf3b`; docs/ a mano `cec750a` |
+| 2026-11-15 | 8. Reglas de insights | A (permisos) `6f61810`; B (reglas) `e784e4e`; docs/ a mano `d05e278` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -112,7 +118,7 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-15):** 349 pruebas en 28 archivos; `build` OK (aviso de Vite por chunk >
+**Estado de pruebas (2026-11-15):** 495 pruebas en 29 archivos; `build` OK (aviso de Vite por chunk >
 500 kB, no es de seguridad).
 
 ## Pendientes
@@ -123,7 +129,8 @@
 - [x] Paso 6: generación de ID legible (`CODIGO-NNN`), sin tope y con el correlativo no reutilizable
       (`9177852`).
 - [x] Paso 7: puntaje de postulaciones (`aeb6ea5`).
-- [ ] Pasos 8 a 10: insights, indicadores y ciclo de vida.
+- [x] Paso 8: reglas de insights (`6f61810` y `e784e4e`).
+- [ ] Pasos 9 y 10: indicadores y ciclo de vida.
 - [ ] Pruebas mínimas de la sección 9 del plan.
 
 ### Fase 2 (`data/`, `services/`)
@@ -146,6 +153,11 @@
       `calcularPuntaje` y genera la justificación; decidir qué muestra una postulación si
       `calcularPuntaje` devuelve un error; el formulario de criterios y el de Configuración exigen enteros.
       Detalle en `DECISIONES.md` (paso 7).
+- [ ] Insights: el servicio arma `UmbralesInsight` con los valores vigentes de Configuración y pasa `ahora`
+      en ISO UTC con `Z` (`new Date().toISOString()`); si no, el resultado es `AHORA_INVALIDO`. Detalle en
+      `DECISIONES.md` (paso 8).
+- [ ] Insights: marcar como revisado pasa por `puede('MARCAR_INSIGHT_REVISADO', { insight, proyectos })`.
+- [ ] Insights: los formularios de Configuración (Fase 5.8) exigen lo mismo que `validarUmbrales`.
 
 ### Fases 3 y 4 (interfaz)
 
@@ -157,6 +169,9 @@
 - [ ] Con `estado_pr === 'PENDIENTE'` y `url_pull_request` no nula (PR fusionado recalculado), no mostrar la
       URL como el PR vigente. Usar `etiquetaPRVisible` para la etiqueta.
 - [ ] Fase 4, pasos 6 y 9 a 11: completar con datos reales cuando existan los servicios.
+- [ ] El Kanban (`TableroKanban.tsx:54`) migra a `estaVencida`: hoy marca en rojo una tarea que vence hoy
+      desde las 00:00 (hallazgo H1 del paso 8).
+- [ ] Los dashboards (Fases 5.9 y 6.5) quitan de las alertas los insights con `revisado: true`.
 
 ### Verificaciones y cierres
 
@@ -171,6 +186,10 @@
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
+- [x] Actualizar a mano `docs/` con los 5 cambios del paso 8: propuesta §5.6 (nota del avance esperado y
+      párrafo «Fecha de detección» + «Cómo se mide cada regla»), §5.8 (nota de validación de umbrales), §4
+      (fila «Marcar un insight como revisado») y plan §5, regla 12 (hecho por los autores, 2026-11-15,
+      `d05e278`).
 - [x] Actualizar a mano la propuesta (§5.1, §5.8 y §11) y el plan (§9, Fase 1, paso 7 y pruebas de puntaje)
       con las decisiones del paso 7 (hecho por los autores, 2026-11-15, `cec750a`).
 - [x] Actualizar a mano `Tu_Rol.md` (hecho por los autores, 2026-11-14).
@@ -182,8 +201,6 @@
 
 **El agente debe detenerse y preguntar con 2 o 3 opciones y trade-off (no decide solo):**
 
-- Paso 8, regla «Posible atraso»: el 25 % de tareas vencidas, ¿sobre el total o sobre las no terminadas?
-- Paso 8, insights: ¿qué 5 de las 7 reglas ve el Supervisor?
 - Paso 10, ciclo de vida: en un proyecto `FINALIZADO`, ¿se bloquea asignar o quitar practicantes y cambiar
   de supervisor?
 
@@ -200,3 +217,5 @@
 - Mi perfil: Discord y GitHub del Administrador están bloqueados (la propuesta no los lista); decidir si se
   ocultan.
 - Conversión de fechas ISO a `Date` en el borde de la interfaz con `parseISO` (propuesta de Roxana).
+- Fase 5.9: ¿los insights Informativos (fin de práctica próximo) entran en las alertas del Dashboard y en qué
+  orden?
