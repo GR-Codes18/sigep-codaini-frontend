@@ -96,7 +96,7 @@
 | 2026-11-14 | 5. Máquina del estado del PR | `5aba475`; PR #15 fusionado en `3d09766` |
 | 2026-11-14 | 6. Generación de ID legible | `9177852` |
 | 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5`; docs `367bf3b`; docs/ a mano `cec750a` |
-| 2026-11-15 | 8. Reglas de insights | A (permisos) `6f61810`; B (reglas) `e784e4e` |
+| 2026-11-15 | 8. Reglas de insights | A (permisos) `6f61810`; B (reglas) `e784e4e`; docs/ a mano `d05e278` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -186,10 +186,10 @@
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
-- [ ] Actualizar a mano `docs/` con los 5 cambios del paso 8 (por hacer, los hacen los autores): propuesta
-      §5.6 (nota del avance esperado y párrafo «Fecha de detección» + «Cómo se mide cada regla»), §5.8 (nota
-      de validación de umbrales), §4 (fila «Marcar un insight como revisado») y plan §5, regla 12. Textos
-      exactos en `DECISIONES.md` (paso 8).
+- [x] Actualizar a mano `docs/` con los 5 cambios del paso 8: propuesta §5.6 (nota del avance esperado y
+      párrafo «Fecha de detección» + «Cómo se mide cada regla»), §5.8 (nota de validación de umbrales), §4
+      (fila «Marcar un insight como revisado») y plan §5, regla 12 (hecho por los autores, 2026-11-15,
+      `d05e278`).
 - [x] Actualizar a mano la propuesta (§5.1, §5.8 y §11) y el plan (§9, Fase 1, paso 7 y pruebas de puntaje)
       con las decisiones del paso 7 (hecho por los autores, 2026-11-15, `cec750a`).
 - [x] Actualizar a mano `Tu_Rol.md` (hecho por los autores, 2026-11-14).
@@ -217,3 +217,5 @@
 - Mi perfil: Discord y GitHub del Administrador están bloqueados (la propuesta no los lista); decidir si se
   ocultan.
 - Conversión de fechas ISO a `Date` en el borde de la interfaz con `parseISO` (propuesta de Roxana).
+- Fase 5.9: ¿los insights Informativos (fin de práctica próximo) entran en las alertas del Dashboard y en qué
+  orden?

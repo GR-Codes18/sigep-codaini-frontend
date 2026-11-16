@@ -1510,3 +1510,37 @@ Todavía **no** están hechas. Son los 5 cambios del plan aprobado:
    las 7 reglas», agregar: «: practicante inactivo, carga desbalanceada, posible atraso del proyecto,
    proyecto sin actividad y supervisión demorada (no ve «Postulaciones sin decidir» ni «Fin de práctica»,
    y solo marca como revisadas esas 5)».
+
+## 2026-11-15 — [A+B] Fase 1, paso 8: cambios a mano en docs/
+
+Hechos por los autores en el commit `d05e278`:
+
+1. **Propuesta §5.6, nota del avance esperado** (bajo la tabla de reglas): la duración incluye el día de
+   fin y los días transcurridos son completos. Sin tareas, la regla no se evalúa; con fin <= inicio, solo
+   se evalúa el porcentaje de vencidas.
+2. **Propuesta §5.6, «Fecha de detección»:** en «Posible atraso» y «Carga desbalanceada» siempre es el
+   momento del cálculo. Además, un párrafo nuevo **«Cómo se mide cada regla»**, con:
+   - bordes (≥, salvo la carga máxima);
+   - días completos de 24 h, con el día cortado a la medianoche en hora de Perú (UTC−5);
+   - actividad del practicante y del proyecto;
+   - tarea vencida;
+   - carga con los proyectos en pausa;
+   - postulación reconsiderada;
+   - supervisión demorada también en pausa;
+   - fin de práctica aunque no tenga proyecto;
+   - el tiempo en pausa no se descuenta.
+3. **Propuesta §5.8, nota al pie de la tabla de parámetros:** validación de los umbrales de Seguimiento.
+4. **Propuesta §4, tabla «Seguimiento y sistema», fila «Marcar un insight como revisado»:** el Supervisor
+   marca solo en las cinco reglas que ve.
+5. **Plan §5, regla 12:** nombra las 5 reglas del Supervisor y aclara que solo marca como revisadas esas
+   5.
+
+Con esto ya no hay divergencia entre el código y docs/ para el paso 8.
+
+### Decisión pendiente para la Fase 5.9
+
+- La propuesta §5.9 («Alertas» del Dashboard del Administrador) dice «primero los críticos y luego los de
+  atención, hasta cinco» e incluye a los practicantes próximos a finalizar. Pero «Fin de práctica» próximo
+  es **Informativo**.
+- Hay que decidir si los informativos entran en las alertas y en qué orden. No se resuelve ahora ni se
+  escribe texto para docs/.
