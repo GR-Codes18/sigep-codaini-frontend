@@ -505,7 +505,7 @@ function proyectoEsDelSupervisor(proyecto: Proyecto, usuario: Usuario): boolean 
  * actúa) es suyo y está entre los `ids_proyecto` del insight. Con `ids_proyecto` vacío nunca hay
  * alcance.
  */
-function insightEnAlcance(
+export function insightEnAlcance(
   insight: Pick<Insight, 'ids_proyecto'>,
   proyectos: readonly Pick<Proyecto, 'id' | 'id_supervisor'>[],
   usuario: Usuario,

@@ -70,6 +70,7 @@ export {
   AMBITOS_PERMISO,
   CODIGOS_DENEGACION,
   REGLAS_INSIGHT_VISIBLES,
+  insightEnAlcance,
   puede,
 } from './permisos';
 export type {
@@ -160,3 +161,25 @@ export type {
   ProporcionNota,
   ResultadoPuntaje,
 } from './puntaje';
+
+export {
+  CODIGOS_INSIGHTS,
+  DESFASE_ZONA_HORARIA_MS,
+  DIAS_REAPARICION_INSIGHT,
+  aplicarRevisiones,
+  calcularInsights,
+  estaVencida,
+  filtrarInsightsPorAlcance,
+  hoyEn,
+  insightsParaUsuario,
+  ordenarInsights,
+  validarUmbrales,
+} from './reglasInsights';
+export type {
+  ClaveUmbralInsight,
+  CodigoInsights,
+  DatosInsights,
+  ErrorUmbral,
+  ResultadoInsights,
+  UmbralesInsight,
+} from './reglasInsights';

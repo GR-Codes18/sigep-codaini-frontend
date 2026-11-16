@@ -10,12 +10,13 @@
 
 import type { Id } from '../comunes';
 import type { Rol } from '../enumeraciones';
-import type { Insight } from '../insights';
+import type { EventoHistorial } from '../historial';
+import type { Insight, InsightRevision } from '../insights';
 import type { Asignacion, Proyecto } from '../proyectos';
 import type { Tarea } from '../tareas';
-import type { Usuario } from '../usuarios';
+import type { Practicante, Usuario } from '../usuarios';
 import type { AccionPermiso, ContextoPorAccion } from '../permisos';
-import type { CriterioEvaluacion } from '../postulaciones';
+import type { CriterioEvaluacion, Postulante } from '../postulaciones';
 
 /** IDs fijos y legibles: al fallar una prueba, el mensaje dice qué entidad era. */
 export const IDS = {
@@ -34,6 +35,9 @@ export const IDS = {
   areaTecnica: 'at-software',
   especialidad: 'es-backend',
   criterio: 'c-criterio',
+  postulante: 'po-postulante',
+  evento: 'e-evento',
+  revision: 'r-revision',
 } as const;
 
 const ID_POR_ROL: Record<Rol, Id> = {
@@ -130,6 +134,66 @@ export function criterio(cambios: Partial<CriterioEvaluacion> = {}): CriterioEva
     peso: 100,
     obligatorio: false,
     activo: true,
+    ...cambios,
+  };
+}
+
+/** Detalle de práctica del practicante base; la fecha de fin queda lejos de los avisos. */
+export function practicanteDetalle(cambios: Partial<Practicante> = {}): Practicante {
+  return {
+    id_usuario: IDS.practicante,
+    discord: null,
+    cuenta_github: null,
+    disponibilidad_horaria: null,
+    id_area_tecnica: IDS.areaTecnica,
+    id_especialidad: IDS.especialidad,
+    fecha_ingreso: '2026-08-01',
+    fecha_fin_prevista: '2027-03-01',
+    id_postulante: IDS.postulante,
+    ...cambios,
+  };
+}
+
+/** Evento del practicante base sobre la tarea base; la prueba ajusta autor, fecha y acción. */
+export function evento(cambios: Partial<EventoHistorial> = {}): EventoHistorial {
+  return {
+    id: IDS.evento,
+    fecha: '2026-11-14T15:00:00.000Z',
+    autor: { tipo: 'USUARIO', id_usuario: IDS.practicante },
+    tipo_accion: 'TAREA_TOMADA',
+    elemento: { tipo: 'TAREA', id: IDS.tarea, etiqueta: 'PRB-001 Tarea de prueba' },
+    id_proyecto: IDS.proyecto,
+    cambios: [],
+    nota: null,
+    ...cambios,
+  };
+}
+
+export function postulante(cambios: Partial<Postulante> = {}): Postulante {
+  return {
+    id: IDS.postulante,
+    nombre: 'Ana Torres',
+    correo: 'ana@correo.test',
+    celular: '988 888 888',
+    id_area_tecnica: IDS.areaTecnica,
+    id_especialidad: IDS.especialidad,
+    fecha_postulacion: '2026-11-01T15:00:00.000Z',
+    cv: { nombre: 'cv-ana.pdf', url: 'https://ejemplo.test/cv-ana.pdf' },
+    estado: 'PENDIENTE',
+    ...cambios,
+  };
+}
+
+/** Revisión del Administrador sobre «Practicante inactivo» del practicante base. */
+export function revision(cambios: Partial<InsightRevision> = {}): InsightRevision {
+  return {
+    id: IDS.revision,
+    tipo_regla: 'PRACTICANTE_INACTIVO',
+    elemento: { tipo: 'USUARIO', id: IDS.practicante },
+    severidad_al_revisar: 'ATENCION',
+    fecha: '2026-11-14T20:00:00.000Z',
+    id_usuario: IDS.admin,
+    nota: null,
     ...cambios,
   };
 }
