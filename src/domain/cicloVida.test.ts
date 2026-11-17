@@ -313,6 +313,14 @@ describe('finalizar proyecto', () => {
       codigo: 'AHORA_INVALIDO',
     });
   });
+
+  it('PY-11 no modifica las tareas que recibe (lista desordenada y congelada)', () => {
+    const tareas = [enCurso('b', 'p-1'), enCurso('a', 'p-1'), enCurso('c', 'p-2')];
+    const copia = JSON.parse(JSON.stringify(tareas)) as Tarea[];
+    Object.freeze(tareas);
+    finalizarProyecto(ADMIN, P1, tareas, AHORA, NOTA);
+    expect(tareas).toEqual(copia);
+  });
 });
 
 describe('desactivar supervisor', () => {
@@ -492,6 +500,19 @@ describe('quitar practicante', () => {
     expect(
       puedeQuitarPracticante(ADMIN_INACTIVO, P1, IDS.practicante, [asig('a-1', 'p-1')], []),
     ).toEqual({ ok: false, codigo: 'USUARIO_INACTIVO' });
+  });
+
+  it('QU-5 no modifica las asignaciones ni las tareas que recibe (listas desordenadas y congeladas)', () => {
+    const asignaciones = [asig('a-2', 'p-2'), asig('a-1', 'p-1')];
+    const tareas = [enCurso('t2', 'p-2'), enCurso('t1', 'p-1')];
+    const copia = JSON.parse(JSON.stringify({ asignaciones, tareas })) as {
+      asignaciones: Asignacion[];
+      tareas: Tarea[];
+    };
+    Object.freeze(asignaciones);
+    Object.freeze(tareas);
+    puedeQuitarPracticante(ADMIN, P1, IDS.practicante, asignaciones, tareas);
+    expect({ asignaciones, tareas }).toEqual(copia);
   });
 });
 

@@ -471,14 +471,35 @@ describe('proyecto FINALIZADO', () => {
     ).toEqual({ permitido: false, codigo: 'FUERA_DE_ALCANCE' });
   });
 
-  it('el Administrador sigue editando reunión, enlaces y rama base', () => {
-    const admin = usuario('ADMINISTRADOR');
+  it('reunión, enlaces, rama base y datos del proyecto siguen su fila de la matriz aunque esté FINALIZADO', () => {
+    const acciones = [
+      'CAMBIAR_RAMA_BASE',
+      'DEFINIR_REUNION',
+      'GESTIONAR_ENLACES',
+      'EDITAR_DATOS_PROYECTO',
+    ] as const;
+    // Escrito a mano desde §4: el Supervisor define reunión, enlaces y rama base, pero no edita los
+    // datos del proyecto; el Practicante no edita nada de esto.
+    const puedenEditar: Record<Rol, readonly AccionPermiso[]> = {
+      ADMINISTRADOR: acciones,
+      SUPERVISOR: ['CAMBIAR_RAMA_BASE', 'DEFINIR_REUNION', 'GESTIONAR_ENLACES'],
+      PRACTICANTE: [],
+    };
 
-    for (const accion of ['CAMBIAR_RAMA_BASE', 'DEFINIR_REUNION', 'GESTIONAR_ENLACES'] as const) {
-      expect(
-        puede(admin, accion, contextoPara(accion, admin, 'NORMAL', { estado: 'FINALIZADO' })),
-        accion,
-      ).toEqual({ permitido: true, exige_texto: null });
+    for (const rol of ROLES) {
+      const quien = usuario(rol);
+      for (const accion of acciones) {
+        const resultado = puede(
+          quien,
+          accion,
+          contextoPara(accion, quien, 'NORMAL', { estado: 'FINALIZADO' }),
+        );
+        expect(resultado, `${rol} ${accion}`).toEqual(
+          puedenEditar[rol].includes(accion)
+            ? { permitido: true, exige_texto: null }
+            : { permitido: false, codigo: 'ROL_NO_PERMITIDO' },
+        );
+      }
     }
   });
 });
