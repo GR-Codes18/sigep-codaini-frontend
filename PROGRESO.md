@@ -8,10 +8,10 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 10 y pruebas mínimas del plan §9 terminados; las Fases 3
-  y 4 avanzaron todo lo que no depende de `services/`. Siguiente: cierre de la Fase 1 (que los autores
-  revisen los tipos y se fusione) y empezar la Fase 2.
-- **Actualizado:** 2026-11-17, al cerrar las pruebas mínimas de la Fase 1.
+- **Fase actual:** Fase 2 (`data/` y `services/`), Bloque 1 (pasos 1 a 4) en curso: el paso 1 (almacén)
+  está terminado. La Fase 1 (`domain/`) está fusionada en `development` (PR #21); las Fases 3 y 4 avanzaron
+  todo lo que no depende de `services/`. Siguiente: paso 2 (semilla completa).
+- **Actualizado:** 2026-11-17, al cerrar el paso 1 de la Fase 2.
 
 ### Cierres de fase
 
@@ -97,12 +97,19 @@
   completa de transiciones, reunión/enlaces/rama base/datos del proyecto en FINALIZADO y no modificar la
   entrada en el ciclo de vida), con 9 mutaciones detectadas de 9 (`e1e112d`). Además se comprobó que `domain/`
   no importa React, Zustand, `data/` ni `services/`. Detalle en `DECISIONES.md`.
-- **Luego:** cierre de la Fase 1. Del «Listo cuando» quedan dos cosas de los autores: que revisen los tipos
-  de `domain/` y que ajusten una línea del plan (ver «Pendientes»). Los `docs/` de los pasos 9 y 10 ya están
-  al día (`3d68cc4`). Después, la Fase 2 (`data/` y `services/`); queda por decidir si se parte en sesiones
-  (ver «Decisiones pendientes»).
-- **Rama:** `feat/fase1-ciclo-de-vida` (la del paso 10 y de las pruebas mínimas); la Fase 2 sale de
-  `development` en una rama nueva.
+- **Fase 2, paso 1: terminado (2026-11-17).** Almacén en `src/data/` (`809ff44`): un solo store de Zustand
+  con las 17 colecciones, persistencia en `localStorage` (clave `sigep-datos`, versión 1), validación con
+  Zod al leer y `transaccion(operacion)` para operaciones atómicas (una sola escritura; si lanza, no se
+  escribe nada). Con datos vacíos, dañados o de otra versión regenera la semilla en silencio con un
+  `console.warn`. La semilla de este paso es **provisional** (vacía, solo con los parámetros). Las contraseñas
+  de demostración se guardan tal cual. Detalle en `DECISIONES.md`.
+- **Fase 2, bloque 1 (esta sesión):** paso 2 (semilla completa, plan §8), paso 3 (restablecer datos de
+  demostración) y paso 4 (utilidades de `services/`: resultado estándar, demora, registro de evento y
+  notificación sin avisar al autor). Se avanza paso por paso, con parada al cerrar cada uno.
+- **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
+  `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
+  por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
+- **Rama:** `feat/fase2-almacen-semilla` (sale de `development`, con la Fase 1 ya fusionada).
 
 ## Pasos terminados
 
@@ -124,6 +131,12 @@
 | 2026-11-17 | 10. Ciclo de vida | A (fechas de la práctica) `3c78c4f`; B (reglas de ciclo de vida) `2a3dc50` (incluye el cambio a mano de §9.1.4 de la propuesta); docs `3ee5277`; docs/ a mano `3d68cc4`; docs `65c58b9` |
 | 2026-11-17 | Pruebas mínimas del plan §9 (cierre de la Fase 1) | test `e1e112d` |
 
+### Fase 2 — `data/` y `services/`
+
+| Fecha | Paso | Commit / PR |
+|---|---|---|
+| 2026-11-17 | 1. Almacén persistente con recuperación segura | `809ff44`; docs (`DECISIONES.md` y `PROGRESO.md`) pendientes de commit |
+
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
 | Fecha | Fase | Paso | Commit / PR |
@@ -144,8 +157,8 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 611 pruebas en 32 archivos (54 del paso 10 y 3 de las pruebas mínimas
-de la Fase 1); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 632 pruebas en 33 archivos (21 del almacén de la Fase 2, paso 1);
+`build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -170,8 +183,14 @@ de la Fase 1); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad)
 
 ### Fase 2 (`data/`, `services/`)
 
-- [ ] Pasos 1 a 11: almacén, semilla, restablecer datos, utilidades y servicios por módulo, consultas con
+- [x] Paso 1: almacén con persistencia y recuperación segura (`809ff44`).
+- [ ] Pasos 2 a 11: semilla completa, restablecer datos, utilidades y servicios por módulo, consultas con
       alcance por rol, más sus pruebas.
+- [ ] Paso 2: la semilla debe ser coherente por construcción (el almacén valida forma y tipos, no que las
+      referencias existan); `ultimo_numero_tarea` de cada proyecto = mayor `numero` de sus tareas; parámetros
+      con `id === clave` (ya los da `crearParametros`); eventos de historial reales, no solo estados finales.
+- [ ] Mientras no haya escrituras, la semilla se regenera con la fecha de hoy en cada carga; tras la primera
+      escritura los datos quedan fijos hasta restablecer (paso 3).
 - [ ] Los servicios deben pasar SIEMPRE el texto y rechazar si `exige_texto !== null` y falta o viene vacío.
 - [ ] Aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1).
 - [ ] Servicios de PR: simular GitHub y, si `necesitaConsultaGitHub(tarea)`, pasar SIEMPRE `github` en el

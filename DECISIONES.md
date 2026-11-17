@@ -1868,3 +1868,44 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 
 - El lado «no dispara» de la carga mínima (un valor por encima del umbral) solo se prueba con «sin tareas
   disponibles». No se añadió prueba.
+
+## 2026-11-17 — [A+B] Fase 2, paso 1: almacén de datos
+
+### Qué se construyó (`src/data/`)
+
+- `tipos.ts` (`DatosAlmacen`: una colección por entidad de `domain/`; los insights no se guardan, solo su
+  revisión en `revisiones_insight`), `esquemas.ts` (Zod, cada esquema tipado contra su tipo de `domain/`),
+  `parametros.ts` (`crearParametros`: `id === clave`, valor predeterminado como copia), `semilla.ts`
+  (**provisional**: colecciones vacías + parámetros; el paso 2 la reemplaza), `almacen.ts` y `index.ts`.
+
+- **Commit:** `809ff44` (`feat: agrega el almacén persistente con recuperación segura (Fase 2, paso 1)`).
+  Verificación: 632 pruebas en 33 archivos (21 nuevas), `tsc -b`, `eslint src/data`, `prettier --check
+  src/data` y `build` OK; `git diff -- docs` vacío.
+
+### Decisiones de los autores
+
+- **Un solo store** con todas las colecciones (no uno por entidad): es la única forma de que una operación
+  atómica abarque varias entidades.
+- **`transaccion(operacion)`** en lugar de `immer` (sin dependencias nuevas) o de un setter por colección: la
+  operación es síncrona, lee los datos actuales y devuelve las colecciones nuevas; se hace un solo `set` y, por
+  tanto, una sola escritura a `localStorage`. Si lanza, no se escribe nada; `null` = sin cambios. La demora
+  simulada va fuera. Crear una tarea = devolver `tareas` y `proyectos` (con `ultimo_numero_tarea`) en la misma
+  operación.
+- **Validación con Zod completa** al leer del navegador (clave `sigep-datos`, `version` 1). Exige además todas
+  las claves del catálogo de parámetros y `id === clave`; `ultimo_numero_tarea` entero ≥ 0.
+- **Datos dañados, vacíos o de otra versión: se regenera la semilla en silencio** y se deja un `console.warn`
+  (sin aviso visible al usuario). Se pierden los cambios guardados. No se migra entre versiones: al cambiar la
+  forma de los datos se sube `VERSION_ALMACEN`.
+- **Contraseñas de demostración guardadas tal cual** (sin hash) en `localStorage` dentro de
+  `Usuario.contrasena`: son valores de demostración del prototipo, no secretos reales. Nunca van al historial.
+- Si `localStorage` está bloqueado, la app sigue funcionando en memoria sin guardar.
+
+### Detalles para pasos siguientes
+
+- Sin nada guardado no se escribe hasta el primer cambio, así que la semilla se regenera con la fecha de hoy
+  en cada carga hasta que haya una escritura; después los datos quedan fijos (el paso 3 los restablece).
+- La validación comprueba forma y tipos, **no** la integridad referencial (por ejemplo, que `id_proyecto` de una
+  tarea exista). La semilla del paso 2 debe ser coherente por construcción.
+- Solo `services/` debe escribir con `transaccion`; las pantallas leen con selectores. No hay barrera técnica
+  (es convención). Los datos recibidos no se mutan: se devuelven colecciones nuevas.
+- `src/auth/usuariosDemo.ts` y `src/app/ejemplos/` siguen intactos; su migración a la semilla es posterior.
