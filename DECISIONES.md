@@ -1909,3 +1909,100 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 - Solo `services/` debe escribir con `transaccion`; las pantallas leen con selectores. No hay barrera técnica
   (es convención). Los datos recibidos no se mutan: se devuelven colecciones nuevas.
 - `src/auth/usuariosDemo.ts` y `src/app/ejemplos/` siguen intactos; su migración a la semilla es posterior.
+
+## 2026-11-17 — [A+B] Fase 2, paso 2: semilla completa de demostración
+
+- **Commit:** `91b29e0` (`feat: agrega la semilla completa de demostración (Fase 2, paso 2)`). Verificación:
+  812 pruebas en 34 archivos (180 nuevas en `src/data/semilla.test.ts`), `tsc -b`, `eslint src/data`,
+  `prettier --check src/data` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó (`src/data/semilla.ts` y `src/data/semilla/`)
+
+- `semilla.ts` (entrada: `crearSemilla(ahora)`), `reloj.ts` (fechas «hace N días y H horas»), `registro.ts`
+  (junta eventos y notificaciones, los ordena y les pone ID), `catalogos.ts`, `personas.ts`, `proyectos.ts`,
+  `tareas.ts` y `postulaciones.ts`. `almacen.test.ts` se ajustó para usar una base vacía propia (antes asumía
+  la semilla provisional).
+- Cantidades: 1 administrador, 3 supervisores, 24 practicantes, 5 proyectos, 43 tareas, 42 postulaciones,
+  4 áreas, 9 especialidades, 53 criterios, 336 detalles de evaluación, 321 eventos, 82 notificaciones, 22
+  asignaciones, 7 enlaces y 1 revisión de insight (unos 290 KB).
+- Es determinista: con el mismo «ahora» da exactamente los mismos datos, con IDs fijos y legibles. Los instantes
+  (`FechaHora`) se restan de `ahora`, así que nunca quedan en el futuro a ninguna hora del día; las `Fecha` se
+  cortan en la hora de Perú con `hoyEn`.
+
+### Decisiones de los autores (D1 a D8, opción A en todas)
+
+- **D1 — Cifras:** cada practicante exige `id_postulante` (no nulo), así que hay 24 postulaciones aprobadas
+  (el origen de cada practicante) **más** 18 en flujo (9 pendientes, 1 reconsiderada y 8 rechazadas): 42 en
+  total. «~18» es lo que ve el Administrador en el flujo. Descartado dejar 18 en total (rompía la
+  integridad) y apuntar a postulantes inexistentes.
+- **D2 — Catálogo de áreas** (no definido en la propuesta; **provisional**, plan §12): Software (Frontend,
+  Backend, Móvil), Videojuegos (Programación de juegos, Diseño de juegos), Diseño UX/UI (Investigación UX,
+  Diseño de interfaces) y Datos e IA (Análisis de datos, Machine Learning). Cada bloque suma 100 en sus
+  criterios activos; hay un criterio desactivado («Carta de recomendación») para mostrar que no se borra.
+- **D3 — Constructor por ciclo de vida:** cada tarea es una lista de pasos con su desfase y el constructor
+  deriva estado, responsable, `fecha_termino`, `estado_pr` y eventos. Lanza un error si un guion pide un paso
+  imposible. Descartado escribir tareas y eventos a mano (~160 eventos, propenso a incoherencias).
+- **D4 — Tiempo:** instantes como `ahora − N días − H horas` y `Fecha` como el día de Perú ± N. Descartado
+  «día de calendario más hora fija» (a primera hora quedaría un evento en el futuro).
+- **D5 — Archivos:** carpeta `src/data/semilla/` con `semilla.ts` como entrada. Descartado un solo archivo de
+  unas 1.200 líneas.
+- **D6 — Cuentas de demostración:** los tres accesos rápidos conservan ID, nombre y correo de
+  `auth/usuariosDemo.ts` (`demo-admin`, `demo-supervisor`, `demo-practicante`, con correos `admin@`,
+  `supervisor@` y `practicante@codaini.demo`). `auth/` no se tocó. Una prueba verifica que coinciden.
+- **D7 — Caso de error de PR preparado (plan §8):** no se resuelve en la semilla. El modelo no tiene catálogo
+  de ramas y crear PR es el paso 6; la semilla deja tareas en `PENDIENTE` listas para crear su PR y el paso 6
+  define la rama que dispara el error. Descartado agregar una colección de ramas (cambia el contrato de
+  `domain/`).
+- **D8 — `data/` invoca reglas de `domain/`:** la semilla llama a `calcularPuntaje` (evaluaciones: puntaje,
+  marca y desglose) y a `siguienteEstadoPR` (`estado_pr`) en lugar de reimplementarlos; solo escribe los
+  «juicios». Descartado escribir los números a mano.
+
+### Contraseñas de demostración
+
+- **Todas las cuentas** (administrador, supervisores y practicantes) usan la contraseña **`demo12345`**
+  (constante `CONTRASENA_DEMO`), guardada tal cual en `Usuario.contrasena` (ver el paso 1). Los accesos
+  rápidos son `admin@codaini.demo`, `supervisor@codaini.demo` y `practicante@codaini.demo`; el resto usa
+  `nombre.apellido@codaini.demo`. Son datos de demostración, no secretos reales, y nunca van al historial
+  (una prueba lo verifica). Los nombres de personas, los repositorios (`github.com/org-demo/...`) y los
+  enlaces (`example.com`) son inventados.
+
+### Valores acordados con la propuesta del paso
+
+- Supervisores: `demo-supervisor` lleva PL2D y RSV (activos), `usr-sup-02` lleva TIE (finalizado) y DAT
+  (activo, sin practicantes) y `usr-sup-03` lleva INV (en pausa). Reparto 2/2/1.
+- Reconsideradas: no son un estado; es `PENDIENTE` con un evento `POSTULACION_RECONSIDERADA` (propuesta
+  §5.1), y la regla «postulaciones sin decidir» cuenta desde esa fecha.
+- La fecha de fin de cada práctica sale de `fechaFinPrevista` con la duración vigente (4 meses); para «cerca de
+  su fin» (Diego, fin en 9 días) y «ya la superó» (Camila, hace 6 días) `ingresoParaFin` retrocede el ingreso
+  hasta que ingreso + duración dé la fecha deseada (o la más cercana alcanzable).
+- Casos cubiertos: practicantes sin proyecto, finalizado (cuenta inactiva), en 2 proyectos, con un proyecto
+  anterior (asignación con baja), inactivos hace más de 7 y más de 14 días, con más de 3 tareas en progreso,
+  sin tareas con su proyecto con disponibles, cerca de su fin y que ya la superó, y uno nuevo con contraseña
+  temporal. Tareas en los 4 estados y con los 5 estados de PR, devuelta con nota, reabierta, vencidas, por
+  vencer, sin asignar, esperando supervisión hace más de 3 días y un proyecto con 6 terminadas. Las 7 reglas
+  de insights disparan; el Supervisor ve 5, y «revisado» es independiente por persona.
+
+### Pruebas y mutaciones
+
+- `semilla.test.ts`: 44 pruebas por cada uno de 4 «ahora» (incluidos un 29 de febrero y las primeras horas
+  del día en Perú) más 4 sueltas. Cubren forma, cantidades, integridad referencial entre las 17 colecciones,
+  contratos de la Fase 1 (`ultimo_numero_tarea`, `fecha_termino` igual al evento que cierra, `estado_pr` y
+  URL, reproducción del historial, fechas), evaluaciones recalculadas con `calcularPuntaje`, notificaciones
+  (nunca al autor) y escenarios con las funciones de insights.
+- Mutaciones del agente (10, con `git add` previo y `git restore` después; todas detectadas y restauradas):
+  `ultimo_numero_tarea` + 1, `fecha_termino` 5 ms desfasada, código de proyecto duplicado, asignación a un
+  practicante inexistente, bloque de criterios que suma 99, evento en el futuro, notificación al autor,
+  parámetro con `id` distinto de su clave, PR abierto sin URL e historial sin ordenar.
+- **Mutación 5:** falla al **generar** la semilla (`Evaluación de pos-01: Los pesos de los criterios activos
+  del bloque de la especialidad deben sumar 100`), porque `calcularPuntaje` se niega a evaluar con pesos que
+  no suman 100; la prueba «los pesos … suman 100» no llega a correr. Los autores lo aceptaron así: no hace
+  falta construir la semilla dentro de cada prueba.
+
+### Pendientes
+
+- Paso 6: definir el caso de error de PR y las ramas de ejemplo (D7).
+- Login: `iniciarSesion` debe leer de `data/` y retirar las `CUENTAS_DEMO` provisionales.
+- `ultimo_numero_tarea` de la semilla es el mayor `numero` de las tareas existentes; no hay ninguna tarea
+  eliminada al final de un proyecto. Si se agrega una, el contador quedaría por debajo del real.
+- La regla «no notificar al autor» está repetida (mínima) en `registro.ts`; la definitiva es la del paso 4.
+- El catálogo de áreas y especialidades es de ejemplo y se revisa con CODAINI (plan §12).

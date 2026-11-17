@@ -8,10 +8,11 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), Bloque 1 (pasos 1 a 4) en curso: el paso 1 (almacén)
-  está terminado. La Fase 1 (`domain/`) está fusionada en `development` (PR #21); las Fases 3 y 4 avanzaron
-  todo lo que no depende de `services/`. Siguiente: paso 2 (semilla completa).
-- **Actualizado:** 2026-11-17, al cerrar el paso 1 de la Fase 2.
+- **Fase actual:** Fase 2 (`data/` y `services/`), Bloque 1 (pasos 1 a 4) en curso: los pasos 1 (almacén) y 2
+  (semilla completa) están terminados. La Fase 1 (`domain/`) está fusionada en `development` (PR #21); las
+  Fases 3 y 4 avanzaron todo lo que no depende de `services/`. Siguiente: paso 3 (restablecer datos de
+  demostración).
+- **Actualizado:** 2026-11-17, al cerrar el paso 2 de la Fase 2.
 
 ### Cierres de fase
 
@@ -103,9 +104,17 @@
   escribe nada). Con datos vacíos, dañados o de otra versión regenera la semilla en silencio con un
   `console.warn`. La semilla de este paso es **provisional** (vacía, solo con los parámetros). Las contraseñas
   de demostración se guardan tal cual. Detalle en `DECISIONES.md`.
-- **Fase 2, bloque 1 (esta sesión):** paso 2 (semilla completa, plan §8), paso 3 (restablecer datos de
-  demostración) y paso 4 (utilidades de `services/`: resultado estándar, demora, registro de evento y
-  notificación sin avisar al autor). Se avanza paso por paso, con parada al cerrar cada uno.
+- **Fase 2, paso 2: terminado (2026-11-17).** Semilla completa en `src/data/semilla.ts` y `src/data/semilla/`
+  (`91b29e0`): 1 administrador, 3 supervisores, 24 practicantes, 5 proyectos (uno por situación), 43 tareas,
+  42 postulaciones (24 aprobadas y 18 en flujo), 4 áreas con 9 especialidades y 53 criterios, 321 eventos de
+  historial y 82 notificaciones (unos 290 KB). Se genera desde un único «ahora» (`crearSemilla(ahora)`), con
+  fechas relativas a hoy en hora de Perú, y es determinista. Tareas, `estado_pr` y eventos salen de un
+  constructor por ciclo de vida que usa `siguienteEstadoPR`; las evaluaciones, de `calcularPuntaje`; la fecha
+  de fin de cada práctica, de `fechaFinPrevista`. Decisiones D1 a D8, contraseñas de demostración
+  (`demo12345`) y detalle en `DECISIONES.md`.
+- **Fase 2, bloque 1 (resto de la sesión):** paso 3 (restablecer datos de demostración) y paso 4 (utilidades
+  de `services/`: resultado estándar, demora, registro de evento y notificación sin avisar al autor). Se
+  avanza paso por paso, con parada al cerrar cada uno.
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
   por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
@@ -135,7 +144,8 @@
 
 | Fecha | Paso | Commit / PR |
 |---|---|---|
-| 2026-11-17 | 1. Almacén persistente con recuperación segura | `809ff44`; docs (`DECISIONES.md` y `PROGRESO.md`) pendientes de commit |
+| 2026-11-17 | 1. Almacén persistente con recuperación segura | `809ff44`; docs `b317640` |
+| 2026-11-17 | 2. Semilla completa de demostración | `91b29e0`; docs (`DECISIONES.md` y `PROGRESO.md`) pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -157,8 +167,8 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 632 pruebas en 33 archivos (21 del almacén de la Fase 2, paso 1);
-`build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 812 pruebas en 34 archivos (21 del almacén y 180 de la semilla, de la
+Fase 2); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -184,13 +194,20 @@
 ### Fase 2 (`data/`, `services/`)
 
 - [x] Paso 1: almacén con persistencia y recuperación segura (`809ff44`).
-- [ ] Pasos 2 a 11: semilla completa, restablecer datos, utilidades y servicios por módulo, consultas con
-      alcance por rol, más sus pruebas.
-- [ ] Paso 2: la semilla debe ser coherente por construcción (el almacén valida forma y tipos, no que las
-      referencias existan); `ultimo_numero_tarea` de cada proyecto = mayor `numero` de sus tareas; parámetros
-      con `id === clave` (ya los da `crearParametros`); eventos de historial reales, no solo estados finales.
+- [x] Paso 2: semilla completa, coherente por construcción y con 180 pruebas (`91b29e0`).
+- [ ] Pasos 3 a 11: restablecer datos, utilidades y servicios por módulo, consultas con alcance por rol, más
+      sus pruebas.
 - [ ] Mientras no haya escrituras, la semilla se regenera con la fecha de hoy en cada carga; tras la primera
       escritura los datos quedan fijos hasta restablecer (paso 3).
+- [ ] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
+      GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
+- [ ] Login: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
+      mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
+      `CUENTAS_DEMO`.
+- [ ] Semilla: `ultimo_numero_tarea` es el mayor `numero` de las tareas existentes. Si se añade a la semilla
+      una tarea eliminada que sea la última de su proyecto, el contador quedaría por debajo del real.
+- [ ] Servicios: la regla de «no notificar al autor» está repetida (mínima) en el registro de la semilla; la
+      implementación de verdad es la del paso 4 (`services/`).
 - [ ] Los servicios deben pasar SIEMPRE el texto y rechazar si `exige_texto !== null` y falta o viene vacío.
 - [ ] Aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1).
 - [ ] Servicios de PR: simular GitHub y, si `necesitaConsultaGitHub(tarea)`, pasar SIEMPRE `github` en el
