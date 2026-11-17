@@ -248,7 +248,7 @@ Qué se puede hacer
 
 - **Restablecer contraseña:** genera una contraseña temporal, visible una sola vez, para entregarla por fuera del sistema.
 
-- **Finalizar la práctica:** pide un motivo (término de ciclo, retiro u otro) y avisa antes de confirmar: “Tiene N tareas en progreso que serán liberadas”. Al confirmar, se bloquea su acceso, sus asignaciones reciben fecha de baja y sus tareas “En progreso” pasan a “Disponible”, dejando un registro por cada una.
+- **Finalizar la práctica:** pide un motivo (término de ciclo, retiro u otro) y avisa antes de confirmar: “Tiene N tareas en progreso que serán liberadas”. Al confirmar, se bloquea su acceso, sus asignaciones reciben fecha de baja y sus tareas “En progreso” pasan a “Disponible”, dejando un registro por cada una. Las tareas «Esperando supervisión» no se liberan: siguen su curso con el supervisor.
 
 - **Reactivar:** devuelve a un practicante finalizado a “Activo”, con una nota. Sus asignaciones antiguas no se reactivan: aparece en “Sin proyecto” y se le asigna de nuevo.
 
@@ -256,9 +256,9 @@ Reglas
 
 - Los estados son dos: Activo y Finalizado. La inactividad no es un estado: se detecta como una alerta (ver 5.6).
 
-- **La fecha de fin prevista** se propone automáticamente (ingreso más 4 meses, valor configurable) y el Administrador puede cambiarla. No cierra la práctica por sí sola.
+- **La fecha de fin prevista** se propone automáticamente (ingreso más 4 meses, valor configurable de 1 a 24 meses) y el Administrador puede cambiarla. Si el mes de destino es más corto, queda su último día (31 de octubre más 4 meses es el 28 de febrero, o el 29 en año bisiesto). No cierra la práctica por sí sola.
 
-- **Aviso previo:** 14 días antes de la fecha de fin (ajustable), el sistema notifica al practicante, a los supervisores de sus proyectos y al Administrador. Si la fecha vence sin que se finalice, aparece una alerta.
+- **Aviso previo:** 14 días antes de la fecha de fin (ajustable, de 1 a 365 días), el sistema avisa una sola vez, el día en que faltan exactamente esos días. El sistema notifica al practicante, a los supervisores de sus proyectos y al Administrador. La práctica está vencida cuando hoy es posterior a la fecha de fin; el propio día de la fecha de fin todavía no lo está. Si la fecha vence sin que se finalice, aparece una alerta.
 
 - **Asignaciones con fecha de alta y de baja.** Una asignación nunca se borra: al salir de un proyecto recibe una fecha de baja, y si el practicante vuelve, se crea una asignación nueva. Así queda el historial de quién trabajó en cada proyecto y entre qué fechas. Las tareas conservan el nombre de quien las hizo aunque ya haya salido.
 
@@ -288,7 +288,7 @@ Qué se puede hacer
 
 Reglas
 
-- Todo proyecto tiene exactamente un supervisor, por eso **no se puede desactivar a un supervisor con proyectos activos**: primero se reasignan. El sistema lo bloquea e indica cuántos proyectos tiene pendientes.
+- Todo proyecto tiene exactamente un supervisor, por eso **no se puede desactivar a un supervisor con proyectos activos o en pausa: primero se reasignan. Los proyectos finalizados no cuentan.** El sistema lo bloquea e indica cuántos proyectos tiene pendientes.
 
 - Al reasignar un proyecto, sus tareas “Esperando supervisión” pasan al nuevo supervisor, porque siguen al proyecto. El proyecto reasignado deja de aparecer en el panel del supervisor anterior, pero sus acciones pasadas siguen asociadas a su nombre.
 
@@ -332,7 +332,7 @@ Reglas
 
 - **En pausa:** nadie puede tomar tareas nuevas; todo lo demás sigue igual. Quien tiene tareas en progreso puede seguir trabajándolas, y el Supervisor puede seguir aprobando o devolviendo lo que ya estaba en revisión.
 
-- **Finalizar:** se bloquea mientras haya tareas “Esperando supervisión”, porque son decisiones pendientes del supervisor. Las tareas “En progreso” se liberan automáticamente con registro. Las asignaciones de los practicantes no se cierran al finalizar el proyecto: si el Administrador lo reactiva, el equipo recupera su acceso. El sistema guarda la fecha real de finalización. El tablero queda en solo lectura, pero los datos del proyecto (reunión, enlaces, rama base, descripción, fechas y repositorio) siguen editables según el rol.
+- **Finalizar:** se bloquea mientras haya tareas “Esperando supervisión”, porque son decisiones pendientes del supervisor. Las tareas “En progreso” se liberan automáticamente con registro. Las asignaciones de los practicantes no se cierran al finalizar el proyecto: si el Administrador lo reactiva, el equipo recupera su acceso. El sistema guarda la fecha real de finalización. El tablero queda en solo lectura, pero los datos del proyecto (reunión, enlaces, rama base, descripción, fechas y repositorio) siguen editables según el rol. Un proyecto finalizado no admite asignar ni quitar practicantes ni cambiar de supervisor; si hace falta, se reactiva primero. Un proyecto se puede finalizar estando activo o en pausa.
 
 - Quedan fuera sprints, prioridades, presupuesto, clientes y etiquetas, porque no forman parte del modelo.
 
@@ -413,6 +413,7 @@ Con selector de periodo (últimos 30 días por defecto) y filtro por proyecto. M
 - **Tasa de devolución:** tareas devueltas sobre tareas enviadas a supervisión.
 
 - **Última actividad:** la última acción registrada en el Historial.
+Cómo se mide cada indicador. El periodo son días de calendario en hora de Perú (UTC−5), incluido hoy, de 1 a 365 días. Los porcentajes se redondean al entero, los promedios de tiempo se dan en días con un decimal y, si no hay datos, se muestra «Sin datos» y no cero. Una tarea cuenta como terminada en el periodo si hoy está terminada y su fecha de término cae dentro de él; una tarea reabierta sale y vuelve. El tiempo de ciclo suma solo los tramos en que alguien tuvo la tarea tomada, hasta su fecha de término: no cuenta el tiempo sin responsable tras liberarla ni el que pasó terminada antes de reabrirse. La espera de supervisión es una muestra por cada envío ya respondido (aprobado o devuelto), contada en la fecha de la respuesta. La tasa de devolución son las tareas con al menos un envío en el periodo que fue devuelto, sobre las tareas con al menos un envío en el periodo: un envío sin respuesta cuenta en el total, una tarea devuelta varias veces cuenta una vez y el periodo se mide por la fecha del envío. El avance y la última actividad no dependen del periodo. La última actividad de una persona son sus propias acciones y la de un proyecto, cualquier evento suyo. Las tareas eliminadas no cuentan en ningún indicador. En la tabla por practicante, el tiempo de ciclo es el de las tareas que terminó él, y su tasa de devolución cuenta solo los envíos que hizo él.
 
 Quedan fuera la exportación de reportes, los constructores de reportes personalizados y las comparaciones de practicantes como ranking.
 
@@ -463,8 +464,8 @@ Es una pantalla de parámetros ajustables, solo para el Administrador, organizad
 |---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
 | **Evaluación de postulaciones** | Banda de puntaje ambiguo (números enteros entre 0 y 100, el mínimo menor que el máximo; ambos extremos se incluyen en la banda)                                                                                                                                     | 50 a 69                                         |
 |                                 | Proporción de la nota entre área y especialidad (números enteros que deben sumar 100)                                                                                                                                     | 40 % / 60 %                                     |
-| **Prácticas**                   | Duración predeterminada, para proponer la fecha de fin                                                                                                                                                | 4 meses                                         |
-|                                 | Días de anticipación del aviso de fin de práctica                                                                                                                                                     | 14 días                                         |
+| **Prácticas**                   | Duración predeterminada, para proponer la fecha de fin (entero de 1 a 24 meses)                                                                                                                       | 4 meses                                         |
+|                                 | Días de anticipación del aviso de fin de práctica (entero de 1 a 365 días)                                                                                                                            | 14 días                                         |
 | **Seguimiento**                 | Umbrales de las siete reglas de insights (sección 5.6), incluida la anticipación del insight “Fin de práctica”                                                                                        | Ver tabla de la sección 5.6                     |
 | **Integraciones**               | Conexión con GitHub: estado (conectado o no), organización o cuenta conectada, fecha de la última verificación, y botones “Probar conexión” y “Reconectar”. La clave de la conexión nunca se muestra. | Diseño; en el prototipo, una tarjeta de ejemplo |
 | **Datos de demostración**       | Restablecer los datos de ejemplo a su estado original (existe solo en el prototipo)                                                                                                                   | —                                               |
@@ -473,6 +474,7 @@ Las áreas técnicas y especialidades no se configuran aquí sino dentro de Post
 
 Nota: Cada umbral de §5.6 es un parámetro propio: inactividad (7 y 14 días), carga máxima (más de 3 tareas) y mínima (0 tareas, con tareas disponibles en el proyecto), atraso (20 puntos y 25 % vencidas), proyecto sin actividad (7 días), supervisión demorada (3 días), postulaciones sin decidir (5 días) y fin de práctica (14 días). El aviso de fin de práctica de la sección Prácticas y la anticipación del insight «Fin de práctica» son parámetros distintos aunque hoy valgan lo mismo. «Vencida» no es un parámetro: es la condición de haber superado la fecha de fin. Los parámetros se agrupan en tres secciones (Evaluación, Prácticas y Seguimiento), y cada una se puede restaurar por separado. Validación de los umbrales de Seguimiento: los días (incluida la anticipación de «Fin de práctica») son enteros desde 1; las cargas son enteros desde 0, con la mínima menor que la máxima; los puntos y el porcentaje de atraso son enteros de 1 a 100; el umbral crítico de inactividad es mayor que el de atención.
 
+Validación de Prácticas: la duración es un entero de 1 a 24 meses y el aviso es un entero de 1 a 365 días.
 ### 5.9 Dashboard
 
 Es la primera pantalla del Administrador. No calcula nada propio: resume lo que ya existe en los otros módulos, de modo que haya una sola fuente de alertas. Muestra el estado actual, sin selector de periodo ni exportación (el análisis por periodo está en Reportes).
@@ -855,7 +857,7 @@ Mismas dos pestañas que el Administrador (sección 5.6), con datos solo de sus 
 
 - Tarjetas generales: tareas terminadas, tiempo promedio de ciclo y tasa de devolución. **Sin** “postulaciones decididas” ni “puntaje promedio por área”, porque vienen de postulaciones.
 
-- Tabla por proyecto y **tabla por practicante** Aparece quien tuvo una asignación a un proyecto del Supervisor que se cruza con el periodo (alta no posterior a hoy y baja vacía o desde el primer día del periodo), y sus métricas cuentan solo las tareas y eventos de esos proyectos.
+- Tabla por proyecto y **tabla por practicante.** Aparece quien tuvo una asignación a un proyecto del Supervisor que se cruza con el periodo (alta no posterior a hoy y baja vacía o desde el primer día del periodo), y sus métricas cuentan solo las tareas y eventos de esos proyectos.
 
 - No incluye el gráfico de practicantes por área, porque el Supervisor no ve el área técnica.
 
