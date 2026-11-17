@@ -2069,3 +2069,83 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   nunca al almacén.
 - Varias pestañas abiertas: el almacén no se sincroniza entre pestañas (no hay evento `storage`); la otra
   pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
+
+## 2026-11-17 — [A+B] Fase 2, paso 4: utilidades base de `services/` (cierra el Bloque 1)
+
+- **Commit:** `c2b3f47` (`feat: agrega las utilidades base de services (Fase 2, paso 4)`). Verificación: 960
+  pruebas en 43 archivos (136 nuevas en `src/services/`), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío. Se elimina `src/services/.gitkeep`.
+- Con este paso queda cerrado el **Bloque 1 de la Fase 2** (pasos 1 a 4): almacén (`809ff44`), semilla
+  (`91b29e0`), restablecer (`d3d4800`) y utilidades de `services/` (`c2b3f47`).
+
+### Qué se construyó (`src/services/`)
+
+- `resultado.ts`: `Resultado<T>` plano (`{ ok: true, valor }` / `{ ok: false, codigo, mensaje, campos? }`, igual
+  que las formas de `domain/`), `exito`, `fallo`, `denegar` (convierte `{ permitido: false, codigo }` o
+  `{ codigo, mensaje }` de `domain/`), `validarEntrada` (Zod → `DATOS_INVALIDOS` con un mensaje por campo; un
+  error de todo el formulario va en `_general`) y la tabla `MENSAJES`: 22 códigos en español (permisos,
+  transiciones, edición, Pull Request y los propios `NO_ENCONTRADO`, `DATOS_INVALIDOS`, `ERROR_INESPERADO`).
+  Los códigos de ciclo de vida, puntaje, ID e indicadores ya traen `mensaje` desde `domain/` y pasan tal cual.
+- `entorno.ts`: `Entorno { almacen, ahora(), generarId(prefijo), demoraMs }`, `ENTORNO` por defecto
+  (`useAlmacen`, `new Date()`, `${prefijo}-${crypto.randomUUID()}`, 600 ms) y `crearEntorno`.
+- `demora.ts` (`simularDemora`), `marca.ts` (`Marca { ahora, hoy }`, `crearMarca`), `actor.ts`
+  (`obtenerActor`), `etiquetas.ts` (mismo formato que la semilla: `PL2D-018 · Título`), `historial.ts`
+  (`crearEvento`, `agregarEventos`, `cambio`, `diferencias`, `autorDe`, `AUTOR_SISTEMA`), `notificaciones.ts`
+  (`crearNotificaciones`, `agregarNotificaciones`), `transaccional.ts` (`ejecutarServicio`, `conEfectos`),
+  `index.ts` y `pruebas/entorno.ts` (solo para tests).
+
+### Decisiones de los autores
+
+- **Dependencias: parámetro opcional `entorno`** al final de cada servicio (`tomarTarea(entrada, entorno =
+  ENTORNO)`). Descartado una fábrica `crearServicios(entorno)` (API más grande) y los singletons con mocks
+  globales (pruebas frágiles y con estado compartido).
+- **Demora: al inicio de cada llamada, fija** (600 ms, configurable; 0 en las pruebas) y también cuando acaba
+  en error, como una red real. Todo se valida con datos frescos tras la espera. Descartado esperar solo en los
+  éxitos (el estado de carga parpadearía) y una demora aleatoria (demostraciones impredecibles).
+- **Alcance: núcleo + ayudantes** (`ejecutarServicio`, `obtenerActor`, `validarEntrada`, `diferencias`,
+  etiquetas), además de las cuatro utilidades pedidas y la marca. Descartado dejar los ayudantes para el paso 5.
+
+### Contratos fijados sin pregunta (consecuencia de lo ya decidido)
+
+- **El actor es un `idActor`:** la sesión guarda `UsuarioSesion` (sin `estado` ni `celular`) y `puede()` pide
+  el `Usuario` completo, así que cada servicio lo resuelve **dentro de la transacción** con `obtenerActor`
+  (rol y estado vigentes, no los de la sesión).
+- **La marca de tiempo se toma dentro de la transacción, después de la demora.** Si se tomara antes, dos
+  acciones concurrentes podrían dejar el historial con fechas desordenadas. Todo lo que escribe una operación
+  (`fecha_termino`, evento, avisos) comparte ese instante; así `tiempoCicloMs` no se descarta por milisegundos.
+- **Resultado plano**, como las formas de `domain/`; **IDs `evt-<uuid>` y `ntf-<uuid>`** con `crypto.randomUUID()`
+  (el paso 1 de la Fase 1 ya asignó los UUID a `services/`; la semilla usa IDs fijos y legibles).
+- **El historial solo se agrega** (`agregarEventos` devuelve una lista nueva y conserva las referencias; no hay
+  función para editar o borrar), `id_proyecto` es obligatorio en los eventos de proyecto, tarea, Pull Request
+  y asignación, y un campo de contraseña se rechaza siempre (también en `diferencias`, que lo omite).
+- **Notificaciones:** nunca se notifica al autor (autor `USUARIO`); con autor `SISTEMA` o `null` se notifica a
+  todos; se quitan los duplicados; un destinatario inexistente o un mensaje vacío son errores de programación
+  que lanzan, y como van dentro de la transacción no se escribe nada. Qué destinatarios corresponden a cada aviso
+  lo decide cada servicio con la tabla de §8.1.
+- **Una excepción dentro de un servicio** devuelve `ERROR_INESPERADO` (mensaje genérico; el detalle va a
+  `console.error`) y no escribe nada. Una demora mal configurada se informa igual, sin lanzar.
+
+### Pruebas y mutaciones
+
+- 136 pruebas: `resultado`, `demora`, `marca`, `historial` (incluye etiquetas y `diferencias`), `notificaciones`,
+  `entorno`, `actor` y `transaccional`. La de `transaccional` incluye dos servicios de ejemplo escritos en el
+  propio test (terminar y enviar a supervisión) como contrato para los pasos 5 a 11: sobre la semilla real
+  validan con `domain/`, escriben, registran el evento y avisan al supervisor sin avisar al autor, todo con la
+  misma marca y en una sola escritura.
+- Mutaciones del agente (12, con `git add` previo y `git restore` después; todas detectadas y restauradas):
+  no excluir al autor, no quitar duplicados, que el evento use el reloj y no la marca, tomar la marca antes de
+  la demora, escribir los cambios aun con error, no atrapar excepciones, aceptar un campo de contraseña, quitar
+  la guarda de `id_proyecto`, que `agregarEventos` reemplace el historial, borrar el mensaje de un código de
+  denegación, que `simularDemora` ignore los milisegundos y que `diferencias` incluya campos sin cambio.
+- Un error del ejemplo de la prueba, no de las utilidades: el servicio de ejemplo pasaba una lista vacía de
+  asignaciones a `puede()` y rechazaba la acción. `puede()` espera las asignaciones **de quien actúa**; los
+  servicios reales deben pasarlas así.
+
+### Pendientes
+
+- Pasos 5 a 11: cada servicio recibe `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio` y suma
+  a `MENSAJES` los códigos nuevos que no traigan `mensaje` del dominio.
+- La regla de «no notificar al autor» definitiva es la de `crearNotificaciones`; el registro de la semilla
+  (`src/data/semilla/registro.ts`) conserva una copia mínima solo para generar los datos iniciales.
+- El historial queda en orden de escritura, que coincide con el cronológico porque la marca se toma dentro de
+  la transacción.
