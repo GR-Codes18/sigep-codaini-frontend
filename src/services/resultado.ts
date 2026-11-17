@@ -60,6 +60,7 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   NO_ENCONTRADO: 'No se encontró el elemento. Puede que ya no exista.',
   DATOS_INVALIDOS: 'Revisa los datos ingresados.',
   ERROR_INESPERADO: 'Ocurrió un error inesperado. Intenta de nuevo.',
+  SIN_CAMBIOS: 'No hay cambios para guardar.',
 };
 
 /** Mensaje en español de un código; uno genérico si el código no se conoce. */

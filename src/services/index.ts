@@ -1,5 +1,6 @@
 /**
- * Barril de `services/`: utilidades comunes a todos los servicios (Fase 2, paso 4).
+ * Barril de `services/`: utilidades comunes a todos los servicios (Fase 2, paso 4) y servicios por
+ * módulo (desde el paso 5).
  */
 
 export { obtenerActor } from './actor';
@@ -32,3 +33,7 @@ export {
 export type { CamposConError, ErrorServicio, Fallo, Resultado } from './resultado';
 export { conEfectos, ejecutarServicio } from './transaccional';
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
+
+// Servicios por módulo
+export { crearTarea, editarTarea, eliminarTarea } from './tareas';
+export type { EntradaCrearTarea, EntradaEditarTarea, EntradaEliminarTarea } from './tareas';
