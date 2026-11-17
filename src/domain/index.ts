@@ -212,3 +212,42 @@ export type {
   ResultadoIndicadores,
   ResumenIndicadores,
 } from './indicadores';
+
+export {
+  AVISO_MAXIMO_DIAS,
+  CODIGOS_PRACTICA,
+  DURACION_MAXIMA_MESES,
+  SITUACIONES_FIN_PRACTICA,
+  fechaFinPrevista,
+  situacionFinPractica,
+} from './practicas';
+export type {
+  CodigoPractica,
+  ErrorPractica,
+  ResultadoFechaFin,
+  ResultadoSituacionFin,
+  SituacionFinPractica,
+} from './practicas';
+
+export {
+  CODIGOS_CICLO_VIDA,
+  desactivarSupervisor,
+  finalizarPractica,
+  finalizarProyecto,
+  puedeAsignarPracticante,
+  puedeCambiarSupervisor,
+  puedeQuitarPracticante,
+} from './cicloVida';
+export type {
+  CodigoCicloVida,
+  CodigoCicloVidaPropio,
+  DatosFinalizarPractica,
+  EfectosFinalizarPractica,
+  EfectosFinalizarProyecto,
+  EfectosQuitarPracticante,
+  ErrorCicloVida,
+  ResultadoFinalizarPractica,
+  ResultadoFinalizarProyecto,
+  ResultadoQuitarPracticante,
+  ResultadoSimple,
+} from './cicloVida';

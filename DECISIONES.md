@@ -1681,3 +1681,190 @@ Todavía **no** están hechas. Son las decisiones que la propuesta y el plan no 
    métrica en ellas (D9, D14).
 3. `docs/SIGEP_Plan_de_Desarrollo_y_Reglas_del_Agente.md`, §9, Fase 1, paso 9: el detalle de lo anterior y sus
    pruebas.
+
+**Actualización (2026-11-17):** la divergencia 2 (§9.1.4, tabla por practicante) ya la escribieron los autores,
+dentro del commit `2a3dc50`. La 1 (§5.6) y la 3 (plan) las escribieron en `3d68cc4`. Con esto ya no hay
+divergencia entre el código y `docs/` para el paso 9.
+
+## 2026-11-17 — [A+B] Fase 1, paso 10: ciclo de vida
+
+### API y archivos
+
+- **Commit A** `3c78c4f` (`feat:`): `src/domain/practicas.ts`.
+  - `fechaFinPrevista(ingreso, meses)` devuelve la fecha o `MESES_INVALIDOS` / `FECHA_INVALIDA`.
+  - `situacionFinPractica(fin, ahora, avisoDias)` devuelve `EN_CURSO`, `AVISO`, `FIN_HOY` o `VENCIDA`, con
+    `dias_restantes` (negativo si ya venció), o `AHORA_INVALIDO` / `AVISO_INVALIDO` / `FECHA_INVALIDA`.
+  - Constantes `DURACION_MAXIMA_MESES` (24), `AVISO_MAXIMO_DIAS` (365) y `CODIGOS_PRACTICA`.
+  - Reutiliza `hoyEn`, `diasEntreFechas` y `esAhoraValido` de `tiempo.ts`.
+- **Commit B** `2a3dc50` (`feat:`): `src/domain/cicloVida.ts`. Todas devuelven `{ ok: true, exige_texto, … }` o
+  `{ ok: false, codigo, cantidad? }`:
+  - `finalizarPractica(usuario, objetivo, datos, ahora, texto?)`: efectos `asignaciones_a_cerrar`,
+    `fecha_baja`, `tareas_a_liberar` y `supervisores_a_avisar`.
+  - `finalizarProyecto(usuario, proyecto, tareas, ahora, texto?)`: efectos `tareas_a_liberar` y
+    `fecha_fin_real`; no trae nada sobre asignaciones.
+  - `desactivarSupervisor(usuario, objetivo, proyectos)`.
+  - `puedeAsignarPracticante`, `puedeQuitarPracticante` (efectos `asignacion_a_cerrar` y `tareas_a_liberar`)
+    y `puedeCambiarSupervisor`.
+  - Códigos propios en `CODIGOS_CICLO_VIDA` (11); se conservan los de `puede()` y `TEXTO_OBLIGATORIO`.
+- **`index.ts`:** solo se agregaron exports de `./practicas` y `./cicloVida`; no se exporta nada de
+  `./tiempo`. No se tocó `permisos.ts`, `transiciones.ts`, `reglasInsights.ts` ni `tiempo.ts`.
+- **Orden de comprobación de `cicloVida.ts`:** `ahora` (si la función lo usa) → `puede()` → proyecto
+  FINALIZADO (asignar, quitar y cambiar de supervisor) → estado de la persona o del proyecto → condición con
+  su cantidad → texto. En `practicas.ts`: `fechaFinPrevista`, meses y luego fecha; `situacionFinPractica`,
+  `ahora`, luego aviso y luego fecha.
+- **El commit B incluye también** el cambio a mano de los autores en `docs/Propuesta_SIGEP_Codaini_v6.md`
+  (§9.1.4). Quedó junto al código; se anota aquí porque CLAUDE.md pide docs después del código.
+
+### Decisiones
+
+1. **Pregunta obligatoria: un proyecto FINALIZADO bloquea asignar, quitar y cambiar de supervisor**
+   (decisión de los autores, 2026-11-17). Es historia cerrada: se reactiva para volver a permitirlo, y
+   coincide con que finalizar no cierra las asignaciones (§5.4). Descartados: bloquear solo asignar y quitar
+   (permitía editar un proyecto cerrado) y no bloquear nada (lo que hacía `puede()` hasta ahora).
+2. **El bloqueo vive en `cicloVida.ts`, no en `puede()`.** Primero `puede()` y después el estado del
+   proyecto, con el código `PROYECTO_FINALIZADO` que ya existe: el mismo patrón de los pasos 3 a 5.
+   Descartado pasar de 14 a 17 las acciones con guarda dentro de `puede()`: reabría el contrato del paso 2
+   (su prueba «solo 14») y el significado de ese código.
+3. **«Proyectos activos» de un supervisor incluye EN_PAUSA.** Desactivar se bloquea con proyectos ACTIVO o
+   EN_PAUSA y el error trae cuántos son. Los FINALIZADO y los de otro supervisor no cuentan. Motivo: una pausa
+   se reanuda y §5.4 dice que un proyecto siempre tiene un supervisor activo.
+4. **Ingreso + meses: el último día del mes.** 31-oct + 4 meses es 28-feb (o 29-feb en año bisiesto); no
+   desborda al mes siguiente. Es lo que hace `addMonths` de date-fns. Descartado desbordar al 3 de marzo.
+5. **Topes de la configuración:** duración de 1 a 24 meses y aviso de 1 a 365 días, enteros. La propuesta
+   (§5.8) no define límites; sin tope, un número enorme saca la fecha del rango de `Date`. Tampoco se acepta un
+   resultado con año mayor que 9999 (`FECHA_INVALIDA`).
+6. **Supuestos aplicados porque los autores no dijeron otra cosa (S1 a S6):**
+   - **S1:** al finalizar la práctica solo se liberan las EN_PROGRESO; las ESPERANDO_SUPERVISION se quedan
+     (§5.2 solo menciona las primeras).
+   - **S2:** un proyecto se puede finalizar desde ACTIVO o EN_PAUSA.
+   - **S3:** finalizar la práctica da baja a las asignaciones vigentes en **todos** los proyectos, también en
+     uno FINALIZADO (§5.2: «sus asignaciones reciben fecha de baja»).
+   - **S4:** asignar exige un practicante ACTIVO y sin asignación vigente en ese proyecto; una vigente en
+     otro proyecto, o una con baja en este, no lo impide.
+   - **S5:** vencida = hoy posterior a la fecha de fin; vencer hoy no cuenta. Es la regla del insight «Fin de
+     práctica» (paso 8); una prueba comprueba que las dos coinciden.
+   - **S6:** al liberar tareas por un cierre, el registro de cada una copia el motivo o la nota del cierre.
+7. **Aviso previo:** la función devuelve `dias_restantes`; no decide cuándo se notifica. El servicio emite el
+   aviso una sola vez, cuando `dias_restantes` es igual al aviso configurado.
+8. **Texto:** como en las transiciones, `undefined` en el motivo o la nota significa «todavía no se escribió»:
+   la acción queda permitida y devuelve `exige_texto` y los `efectos`, que sirven para el aviso «Tiene N
+   tareas en progreso que serán liberadas». Vacío o solo espacios es `TEXTO_OBLIGATORIO`.
+
+### Riesgo anotado, no construido
+
+- **Reactivar un proyecto con el supervisor inactivo.** Con la decisión 1 no se cambia de supervisor mientras
+  el proyecto está FINALIZADO, y `desactivarSupervisor` ignora los FINALIZADO. Un supervisor puede quedar
+  inactivo y, al reactivar su proyecto, este quedaría ACTIVO sin supervisor activo (§5.4: «siempre con un
+  supervisor activo»). La salida natural es que la reactivación exija un supervisor ACTIVO. No está en el
+  paso 10; va en los servicios de proyectos (Fase 2, paso 9).
+
+### Pruebas y mutaciones
+
+- `src/domain/practicas.test.ts` (12 pruebas) y `src/domain/cicloVida.test.ts` (42). Con ellas,
+  `npm run test` da **608 en 32 archivos**. IDs: F y V (fechas de la práctica), FP (finalizar práctica), PY
+  (finalizar proyecto), DS (desactivar supervisor), AS (asignar), QU (quitar) y CS (cambiar supervisor).
+- **Mutaciones de `practicas.ts`: 15 de 15 detectadas.** Hechas por el agente con `git restore` entre cada
+  una, mediante un script en el scratchpad (fuera del repo). Una mutación del plan era equivalente
+  (`faltan === 0` → `faltan <= 0`, porque `faltan < 0` se comprueba antes) y se sustituyó por
+  `faltan === 1`.
+- **Mutaciones de `cicloVida.ts`: 49 de 49 detectadas**, con un hallazgo. La primera corrida dio 48: **FP-11**
+  (no modifica los datos que recibe) no detectaba que `finalizarPractica` ordenase la lista de asignaciones,
+  porque tenía un solo elemento y ordenar un arreglo congelado de un elemento no escribe nada. Se reforzó con
+  listas desordenadas de dos elementos y se repitió: se detecta.
+- **Verificación** (las corrió el agente): `tsc -b`, `eslint src/domain` y `prettier --check src/domain` sin
+  errores; `npm run build` OK; `git diff -- docs` sin cambios míos; `grep -c "from './tiempo'"
+  src/domain/index.ts` da 0; el diff de pruebas contra `development` solo trae los archivos nuevos de los
+  pasos 9 y 10.
+
+### Pendientes para la Fase 2 y posteriores
+
+- **Aplicar los efectos:** bajas, `TAREA_LIBERADA` por cada tarea (autor Administrador, nota = motivo o nota
+  del cierre), `Usuario.estado` en INACTIVO con el acceso bloqueado y `fecha_fin_real`. Pasar SIEMPRE el texto.
+- **Notificaciones:** práctica finalizada con tareas liberadas (a `supervisores_a_avisar`), asignado, quitado,
+  proyecto finalizado (al equipo) y el aviso previo.
+- **`fechaFinPrevista`** al aprobar una postulación.
+- **Formularios de Configuración:** duración de 1 a 24 meses y aviso de 1 a 365 días.
+- **Reactivar un proyecto** exige un supervisor ACTIVO (ver el riesgo anotado).
+
+### Divergencias con `docs/` (pendientes; las actualizan los autores a mano)
+
+Todavía **no** están hechas. Son las decisiones que la propuesta y el plan no escriben:
+
+1. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.4: un proyecto FINALIZADO no admite asignar, quitar ni cambiar de
+   supervisor (decisión 1), y el proyecto se puede finalizar desde ACTIVO o EN_PAUSA (S2).
+2. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.3: los «proyectos activos» de un supervisor incluyen los EN_PAUSA
+   (decisión 3).
+3. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.2: ingreso + meses con el último día del mes (decisión 4); aviso
+   previo cuando faltan 14 días, que se avisa una sola vez (decisión 7).
+4. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.8: duración de 1 a 24 meses y aviso de 1 a 365 días (decisión 5).
+5. `docs/SIGEP_Plan_de_Desarrollo_y_Reglas_del_Agente.md`, §9, Fase 1, paso 10: el detalle de lo anterior y
+   sus pruebas.
+
+**Actualización (2026-11-17):** las cinco divergencias las escribieron los autores a mano en `3d68cc4`
+(propuesta §5.2, §5.3, §5.4, §5.6, §5.8 y §9.1.4, y plan §9, pasos 9 y 10, con sus viñetas de pruebas).
+Con esto ya no hay divergencia entre el código y `docs/` para los pasos 9 y 10.
+
+## 2026-11-17 — [A+B] Fase 1: repaso de las pruebas mínimas y cierre
+
+### Qué se hizo
+
+- Repaso de las «Pruebas obligatorias (casos mínimos)» del plan §9 (Fase 1) contra las pruebas existentes de
+  `domain/`, y comprobación del «Listo cuando» de la fase. Solo lectura; los únicos cambios son 3 tests.
+- **Commit de pruebas** `e1e112d` (`test:`); el commit `65c58b9` (`docs:`) registró en PROGRESO y DECISIONES
+  los cambios a mano de los pasos 9 y 10.
+
+### «Listo cuando» de la Fase 1
+
+- **Todas las pruebas pasan:** 611 en 32 archivos; `tsc -b`, `eslint src/domain`, `prettier --check
+  src/domain` y `build` sin errores.
+- **`domain/` no importa React ni `data/`:** verificado con una búsqueda sobre `src/domain/`. Ningún archivo
+  importa `react`, `react-dom`, `react-router`, `zustand`, `zod`, `date-fns` ni `data/`, `services/`, `app/`,
+  `auth/`, `compartido/` o `paneles/`. Lo único que no es relativo es `vitest`, en los tests.
+- **Los autores revisaron los tipos:** pendiente, es de los autores.
+
+### Cobertura de los mínimos del plan
+
+De los siete mínimos originales, cinco estaban cubiertos del todo: tomar en proyecto EN_PAUSA, el texto
+obligatorio, el puntaje (80/90 → 86, redondeo, enteros, pesos, bloque sin criterios, obligatorio, bordes
+49/50/69/70 y parámetros), los insights (justo en el umbral y un valor por debajo en las 7 reglas, y la
+reaparición a los 7 días o al empeorar) y los IDs. Otros dos estaban cubiertos solo en parte: la matriz de
+transiciones y los permisos con un proyecto FINALIZADO (la matriz de permisos 55×3, su alcance e INACTIVO sí
+estaban completos). Los mínimos de indicadores y de ciclo de vida (añadidos en `3d68cc4`) también estaban
+cubiertos, salvo un detalle del ciclo de vida. Quedaban tres huecos, solo de tests:
+
+1. **Matriz de transiciones.** Se probaban las 21 celdas en su estado de origen, las condiciones y un caso
+   fuera de estado. Se añadió una rejilla de las 63 celdas fuera de su estado de origen, escrita a mano desde
+   §6.2: `TRANSICION_NO_APLICA` si el rol puede la acción y el estado no coincide, el código del rol si no, y
+   `NO_ES_EL_RESPONSABLE` para el practicante con `LIBERAR`, `ENVIAR_A_SUPERVISION` o `MARCAR_TERMINADA` sobre
+   una tarea DISPONIBLE (no tiene responsable y `puede()` va antes que el estado). Comprueba además que desde
+   cada estado solo se ofrecen transiciones que salen de él.
+2. **Proyecto FINALIZADO.** Solo se probaba que el Administrador edita reunión, enlaces y rama base. Ahora los
+   tres roles con esas tres acciones y `EDITAR_DATOS_PROYECTO`, según la matriz de §4 (el Supervisor no edita
+   los datos del proyecto; el Practicante, nada). Reemplaza al test anterior.
+3. **Ciclo de vida.** «No se modifican los datos de entrada» solo se probaba en `finalizarPractica` (FP-11). Se
+   añadieron PY-11 (`finalizarProyecto`) y QU-5 (`puedeQuitarPracticante`), con listas desordenadas y
+   congeladas.
+
+### Mutaciones: 9 de 9 detectadas
+
+Hechas por el agente con `git restore` entre cada una (script en el scratchpad, fuera del repo):
+- **Rejilla:** sin comprobar el estado de origen; comprobarlo contra el estado de destino; comprobar el estado
+  antes que `puede()`.
+- **FINALIZADO:** añadir `EDITAR_DATOS_PROYECTO`, `DEFINIR_REUNION` o `GESTIONAR_ENLACES` a las acciones que
+  bloquea la guarda. La de `EDITAR_DATOS_PROYECTO` solo la detecta el test nuevo: el anterior no la cubría.
+- **Ciclo de vida:** ordenar en el sitio las tareas (PY-11) o las asignaciones y las tareas (QU-5).
+
+### Diferencia entre el plan y el código
+
+- El plan dice «Motivo/nota **faltante** cuando es obligatorio → rechazada». El dominio hace otra cosa, por la
+  decisión del paso 3: vacío o solo espacios da `TEXTO_OBLIGATORIO` (probado); si todavía no se escribió
+  (`undefined` o `{}`), la acción queda permitida y devuelve qué texto exige, para que la interfaz abra el modal.
+  Rechazar el texto que falta es del servicio (pendiente de la Fase 2, ya anotado).
+- No se cambió el comportamiento; se propone ajustar la línea del plan (lo hacen los autores a mano) con algo
+  como: «Motivo o nota obligatorio: vacío o solo espacios → rechazada (`TEXTO_OBLIGATORIO`); si todavía no se
+  escribió, la acción queda pendiente de texto y devuelve qué texto exige (el servicio la rechaza si falta).»
+
+### Aspecto menor, sin cambios
+
+- El lado «no dispara» de la carga mínima (un valor por encima del umbral) solo se prueba con «sin tareas
+  disponibles». No se añadió prueba.

@@ -150,6 +150,67 @@ describe('matriz estado × rol de §6.2', () => {
       }
     });
   }
+
+  it('rejilla completa: las 63 celdas fuera del estado de origen son TRANSICION_NO_APLICA o el código del rol', () => {
+    // 4 estados × 7 transiciones × 3 roles son 84 celdas; 21 son las de arriba, en su estado de origen.
+    const exigenResponsable: AccionTransicion[] = [
+      'LIBERAR',
+      'ENVIAR_A_SUPERVISION',
+      'MARCAR_TERMINADA',
+    ];
+    let celdasFueraDeEstado = 0;
+
+    for (const estado of ESTADOS_TAREA) {
+      for (const fila of FILAS_MATRIZ) {
+        if (fila.desde === estado) continue;
+        for (const rol of roles) {
+          const celda =
+            fila[
+              rol === 'ADMINISTRADOR'
+                ? 'admin'
+                : rol === 'SUPERVISOR'
+                  ? 'supervisor'
+                  : 'practicante'
+            ];
+          let esperado: CodigoTransicion =
+            celda === 'ROL_NO_PERMITIDO' ? 'ROL_NO_PERMITIDO' : 'TRANSICION_NO_APLICA';
+          // Una tarea DISPONIBLE no tiene responsable: `puede()` lo detecta antes que el estado.
+          if (
+            estado === 'DISPONIBLE' &&
+            rol === 'PRACTICANTE' &&
+            exigenResponsable.includes(fila.transicion)
+          ) {
+            esperado = 'NO_ES_EL_RESPONSABLE';
+          }
+
+          const t = tareaEn(estado, { requiere_supervision: fila.requiere_supervision });
+          const resultado = puedeTransicionar(t, usuario(rol), contexto(), fila.transicion);
+          expect(resultado, `${estado} + ${fila.transicion} (${rol})`).toEqual({
+            permitido: false,
+            codigo: esperado,
+          });
+          celdasFueraDeEstado += 1;
+        }
+      }
+    }
+    expect(celdasFueraDeEstado).toBe(63);
+
+    // Desde cada estado solo se ofrecen transiciones que salen de él: no se salta de
+    // DISPONIBLE a TERMINADA ni de TERMINADA a ESPERANDO_SUPERVISION.
+    for (const estado of ESTADOS_TAREA) {
+      for (const requiere_supervision of [true, false]) {
+        for (const rol of roles) {
+          const t = tareaEn(estado, { requiere_supervision });
+          for (const { transicion } of transicionesDisponibles(t, usuario(rol), contexto())) {
+            expect(
+              TRANSICIONES_TAREA[transicion].desde,
+              `${estado} (${rol}) ofrece ${transicion}`,
+            ).toBe(estado);
+          }
+        }
+      }
+    }
+  });
 });
 
 describe('condiciones de §6.2', () => {

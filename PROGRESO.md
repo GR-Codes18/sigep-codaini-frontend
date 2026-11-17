@@ -8,9 +8,10 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 9 terminados; las Fases 3 y 4 avanzaron todo lo que no
-  depende de `services/`. Siguiente: Fase 1, paso 10 (ciclo de vida).
-- **Actualizado:** 2026-11-16, al cerrar el paso 9 (indicadores).
+- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 10 y pruebas mínimas del plan §9 terminados; las Fases 3
+  y 4 avanzaron todo lo que no depende de `services/`. Siguiente: cierre de la Fase 1 (que los autores
+  revisen los tipos y se fusione) y empezar la Fase 2.
+- **Actualizado:** 2026-11-17, al cerrar las pruebas mínimas de la Fase 1.
 
 ### Cierres de fase
 
@@ -83,11 +84,25 @@
   espera de supervisión, tasa de devolución, última actividad, días esperando, veces devuelta y carga,
   con `ahora` por parámetro, periodo de 1 a 365 días y el alcance de `puede('VER_REPORTES')`. Detalle,
   decisiones, riesgos y pendientes en `DECISIONES.md`.
-- **Luego:** Fase 1, paso 10 — ciclo de vida (finalizar práctica, finalizar proyecto, desactivar
-  supervisor, fecha de fin prevista, aviso previo, vencimiento). Tiene una pregunta abierta para los
-  autores (ver «Decisiones pendientes»). Las utilidades de `src/domain/tiempo.ts` están pensadas para
-  este paso.
-- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-ciclo-de-vida`).
+- **Paso 10: terminado (2026-11-17).** Ciclo de vida en dos archivos nuevos de `domain/`:
+  - `src/domain/practicas.ts` (commit A `3c78c4f`): fecha de fin prevista (ingreso + meses, de 1 a 24, con
+    el último día del mes si el destino es más corto), aviso previo (de 1 a 365 días) y vencimiento.
+  - `src/domain/cicloVida.ts` (commit B `2a3dc50`): finalizar práctica, finalizar proyecto, desactivar
+    supervisor, y asignar, quitar y cambiar de supervisor, con el bloqueo de un proyecto FINALIZADO
+    (decisión de los autores) y sus efectos listos para que los aplique el servicio.
+
+  Detalle, decisiones, riesgos y pendientes en `DECISIONES.md`.
+- **Pruebas mínimas del plan §9: terminadas (2026-11-17).** Repaso contra las pruebas existentes: cinco de
+  los siete mínimos ya estaban cubiertos del todo y dos en parte; se añadieron tres tests para los huecos (rejilla
+  completa de transiciones, reunión/enlaces/rama base/datos del proyecto en FINALIZADO y no modificar la
+  entrada en el ciclo de vida), con 9 mutaciones detectadas de 9 (`e1e112d`). Además se comprobó que `domain/`
+  no importa React, Zustand, `data/` ni `services/`. Detalle en `DECISIONES.md`.
+- **Luego:** cierre de la Fase 1. Del «Listo cuando» quedan dos cosas de los autores: que revisen los tipos
+  de `domain/` y que ajusten una línea del plan (ver «Pendientes»). Los `docs/` de los pasos 9 y 10 ya están
+  al día (`3d68cc4`). Después, la Fase 2 (`data/` y `services/`); queda por decidir si se parte en sesiones
+  (ver «Decisiones pendientes»).
+- **Rama:** `feat/fase1-ciclo-de-vida` (la del paso 10 y de las pruebas mínimas); la Fase 2 sale de
+  `development` en una rama nueva.
 
 ## Pasos terminados
 
@@ -105,7 +120,9 @@
 | 2026-11-14 | 6. Generación de ID legible | `9177852` |
 | 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5`; docs `367bf3b`; docs/ a mano `cec750a` |
 | 2026-11-15 | 8. Reglas de insights | A (permisos) `6f61810`; B (reglas) `e784e4e`; docs/ a mano `d05e278` |
-| 2026-11-16 | 9. Indicadores | A (tiempo) `998987e`; B (indicadores) `e408893`; C (reutilización en insights) `86b0167` |
+| 2026-11-16 | 9. Indicadores | A (tiempo) `998987e`; B (indicadores) `e408893`; C (reutilización en insights) `86b0167`; docs `d156acc`; PR #20 fusionado en `8a44800` |
+| 2026-11-17 | 10. Ciclo de vida | A (fechas de la práctica) `3c78c4f`; B (reglas de ciclo de vida) `2a3dc50` (incluye el cambio a mano de §9.1.4 de la propuesta); docs `3ee5277`; docs/ a mano `3d68cc4`; docs `65c58b9` |
+| 2026-11-17 | Pruebas mínimas del plan §9 (cierre de la Fase 1) | test `e1e112d` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -127,8 +144,8 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-16):** 554 pruebas en 30 archivos (59 nuevas del paso 9); `build` OK (aviso de
-Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 611 pruebas en 32 archivos (54 del paso 10 y 3 de las pruebas mínimas
+de la Fase 1); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -140,8 +157,16 @@ Vite por chunk > 500 kB, no es de seguridad).
 - [x] Paso 7: puntaje de postulaciones (`aeb6ea5`).
 - [x] Paso 8: reglas de insights (`6f61810` y `e784e4e`).
 - [x] Paso 9: indicadores (`998987e`, `e408893` y `86b0167`).
-- [ ] Paso 10: ciclo de vida.
-- [ ] Pruebas mínimas de la sección 9 del plan.
+- [x] Paso 10: ciclo de vida (`3c78c4f` y `2a3dc50`).
+- [x] Pruebas mínimas de la sección 9 del plan (`e1e112d`).
+- [ ] Revisión de los tipos de `domain/` por los autores («Listo cuando» de la Fase 1; los tipos no se
+      cambian sin avisar).
+- [ ] Ajustar a mano el plan §9, Fase 1, pruebas obligatorias: la línea «Motivo/nota faltante cuando es
+      obligatorio → rechazada» no coincide con el dominio. Vacío o solo espacios da `TEXTO_OBLIGATORIO`; si
+      todavía no se escribió, la acción queda pendiente de texto y devuelve qué texto exige, y el servicio
+      la rechaza si falta (decisión del paso 3). Texto propuesto en `DECISIONES.md`.
+- [ ] Cierre de la Fase 1: PR a `development` y, cuando ambos autores lo confirmen, `development` → `main`
+      con la etiqueta de cierre (plan §11, por ejemplo `fase-1-completa`).
 
 ### Fase 2 (`data/`, `services/`)
 
@@ -181,6 +206,22 @@ Vite por chunk > 500 kB, no es de seguridad).
 - [ ] Indicadores: la «última actividad» de las tablas de Reportes solo cuenta eventos con proyecto del
       alcance; los eventos de cuenta (`CUENTA_*`) no entran, tampoco para el Administrador. Confirmarlo al
       construir las tablas (la función `ultimaActividadDeUsuario` sí es global para las Fases 5.2 y 5.3).
+- [ ] Ciclo de vida: los servicios aplican los efectos de `finalizarPractica`, `finalizarProyecto` y
+      `puedeQuitarPracticante`: bajas de las asignaciones, tareas EN_PROGRESO a DISPONIBLE con **un evento
+      `TAREA_LIBERADA` por cada una** (autor Administrador, nota = motivo o nota del cierre), `Usuario.estado`
+      en INACTIVO y acceso bloqueado al finalizar la práctica, y `fecha_fin_real` al finalizar el proyecto.
+      Pasan SIEMPRE el texto (motivo o nota) y rechazan si `exige_texto !== null` y falta. Detalle en
+      `DECISIONES.md` (paso 10).
+- [ ] Ciclo de vida: notificaciones de los efectos: «práctica finalizada con tareas liberadas» a
+      `supervisores_a_avisar`; asignado y quitado; proyecto finalizado al equipo; el **aviso previo** lo emite
+      el servicio una sola vez, cuando `dias_restantes === avisoDias` (`situacionFinPractica`).
+- [ ] Ciclo de vida: usar `fechaFinPrevista` al aprobar una postulación (`fecha_ingreso` + la duración vigente
+      de Configuración). Los formularios de Configuración exigen enteros: duración de 1 a 24 meses y aviso de 1
+      a 365 días (`DURACION_MAXIMA_MESES`, `AVISO_MAXIMO_DIAS`).
+- [ ] Ciclo de vida: la reactivación de un proyecto debe exigir que su supervisor esté ACTIVO. Con el bloqueo
+      de un proyecto FINALIZADO (no se cambia de supervisor) y la desactivación de supervisores (que ignora los
+      FINALIZADO), un proyecto podría reactivarse con un supervisor inactivo (§5.4: «siempre con un supervisor
+      activo»). No se construyó en el paso 10; va en los servicios de proyectos (Fase 2, paso 9).
 
 ### Fases 3 y 4 (interfaz)
 
@@ -209,11 +250,14 @@ Vite por chunk > 500 kB, no es de seguridad).
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
-- [ ] Actualizar a mano `docs/` con las decisiones del paso 9 (lo hacen los autores): propuesta §5.6
-      («Indicadores»: cuándo cuenta cada hito, tiempo de ciclo neto hasta `fecha_termino`, espera por envío
-      respondido, tasa de devolución por tareas con envío en el periodo, periodo de calendario en hora de
-      Perú de 1 a 365 días, «sin datos» y redondeo) y §9.1.4 (alcance de la tabla por practicante: asignación
-      con alta no posterior a hoy y baja nula o desde el primer día); plan §9, Fase 1, paso 9.
+- [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta
+      §9.1.4 (tabla por practicante, en `2a3dc50`) y, en `3d68cc4`, propuesta §5.6 («Cómo se mide cada
+      indicador») y plan §9, Fase 1, paso 9 con su viñeta de pruebas.
+- [x] Actualizar a mano `docs/` con las decisiones del paso 10 (hecho por los autores, 2026-11-17,
+      `3d68cc4`): propuesta §5.4 (FINALIZADO no admite asignar, quitar ni cambiar de supervisor; finalizar
+      desde ACTIVO o EN_PAUSA), §5.3 («proyectos activos» incluye EN_PAUSA), §5.2 (ingreso + meses con el
+      último día del mes, aviso previo y vencimiento) y §5.8 (duración de 1 a 24 meses y aviso de 1 a 365
+      días); plan §9, Fase 1, paso 10 con su viñeta de pruebas.
 - [x] Actualizar a mano `docs/` con los 5 cambios del paso 8: propuesta §5.6 (nota del avance esperado y
       párrafo «Fecha de detección» + «Cómo se mide cada regla»), §5.8 (nota de validación de umbrales), §4
       (fila «Marcar un insight como revisado») y plan §5, regla 12 (hecho por los autores, 2026-11-15,
@@ -229,8 +273,11 @@ Vite por chunk > 500 kB, no es de seguridad).
 
 **El agente debe detenerse y preguntar con 2 o 3 opciones y trade-off (no decide solo):**
 
-- Paso 10, ciclo de vida: en un proyecto `FINALIZADO`, ¿se bloquea asignar o quitar practicantes y cambiar
-  de supervisor?
+- ~~Paso 10, ciclo de vida: en un proyecto `FINALIZADO`, ¿se bloquea asignar o quitar practicantes y cambiar
+  de supervisor?~~ **Decidido (2026-11-17): sí, las tres.** Un proyecto finalizado es historia cerrada; al
+  reactivarlo vuelven a permitirse. Está aplicado en `src/domain/cicloVida.ts` (el bloqueo no vive en
+  `puede()`).
+- (Ninguna otra por ahora.)
 
 **Decisiones de proceso y de diseño:**
 
