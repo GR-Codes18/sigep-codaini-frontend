@@ -855,7 +855,7 @@ Mismas dos pestañas que el Administrador (sección 5.6), con datos solo de sus 
 
 - Tarjetas generales: tareas terminadas, tiempo promedio de ciclo y tasa de devolución. **Sin** “postulaciones decididas” ni “puntaje promedio por área”, porque vienen de postulaciones.
 
-- Tabla por proyecto y **tabla por practicante** (solo los de sus proyectos). La tabla por practicante se mantiene aunque exista “Practicantes a cargo”, porque aporta métricas distintas (tiempo de ciclo y tasa de devolución).
+- Tabla por proyecto y **tabla por practicante** Aparece quien tuvo una asignación a un proyecto del Supervisor que se cruza con el periodo (alta no posterior a hoy y baja vacía o desde el primer día del periodo), y sus métricas cuentan solo las tareas y eventos de esos proyectos.
 
 - No incluye el gráfico de practicantes por área, porque el Supervisor no ve el área técnica.
 

@@ -228,3 +228,26 @@ export type {
   ResultadoSituacionFin,
   SituacionFinPractica,
 } from './practicas';
+
+export {
+  CODIGOS_CICLO_VIDA,
+  desactivarSupervisor,
+  finalizarPractica,
+  finalizarProyecto,
+  puedeAsignarPracticante,
+  puedeCambiarSupervisor,
+  puedeQuitarPracticante,
+} from './cicloVida';
+export type {
+  CodigoCicloVida,
+  CodigoCicloVidaPropio,
+  DatosFinalizarPractica,
+  EfectosFinalizarPractica,
+  EfectosFinalizarProyecto,
+  EfectosQuitarPracticante,
+  ErrorCicloVida,
+  ResultadoFinalizarPractica,
+  ResultadoFinalizarProyecto,
+  ResultadoQuitarPracticante,
+  ResultadoSimple,
+} from './cicloVida';
