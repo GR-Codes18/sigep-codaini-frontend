@@ -33,6 +33,7 @@ import { TIPOS_REGLA_INSIGHT } from './enumeraciones';
 import type { Severidad, TipoReglaInsight } from './enumeraciones';
 import type { EventoHistorial } from './historial';
 import { formatearIdLegible } from './idLegible';
+import { cargaDePracticante, instanteUltimoEnvio, proyectosDeCarga } from './indicadores';
 import type { Insight, InsightRevision } from './insights';
 import { REGLAS_INSIGHT_VISIBLES, insightEnAlcance } from './permisos';
 import type { Postulante } from './postulaciones';
@@ -242,15 +243,10 @@ function reglaCargaDesbalanceada(ctx: ContextoCalculo): Insight[] {
   for (const usuario of practicantesActivos(ctx.datos)) {
     const vigentes = proyectosVigentes(usuario.id, ctx);
     const idsActivos = vigentes.filter((p) => p.estado === 'ACTIVO').map((p) => p.id);
-    const idsCarga = vigentes.filter((p) => p.estado !== 'FINALIZADO').map((p) => p.id);
+    const idsCarga = proyectosDeCarga(usuario.id, ctx.datos.asignaciones, ctx.datos.proyectos);
     if (idsActivos.length === 0) continue;
 
-    const carga = ctx.datos.tareas.filter(
-      (t) =>
-        t.id_practicante === usuario.id &&
-        t.estado === 'EN_PROGRESO' &&
-        idsCarga.includes(t.id_proyecto),
-    ).length;
+    const carga = cargaDePracticante(usuario.id, ctx.datos.tareas, idsCarga);
     const conDisponibles = vigentes.filter(
       (p) =>
         idsActivos.includes(p.id) &&
@@ -368,14 +364,7 @@ function reglaSupervisionDemorada(ctx: ContextoCalculo): Insight[] {
     const proyecto = ctx.proyectoPorId.get(tarea.id_proyecto);
     if (proyecto === undefined || proyecto.estado === 'FINALIZADO') continue;
 
-    const envio = ultimaFecha(
-      ctx.datos.historial.filter(
-        (e) =>
-          e.tipo_accion === 'TAREA_ENVIADA_A_SUPERVISION' &&
-          e.elemento.tipo === 'TAREA' &&
-          e.elemento.id === tarea.id,
-      ),
-    );
+    const envio = instanteUltimoEnvio(tarea.id, ctx.datos.historial);
     if (envio === null) continue;
     const dias = diasCompletos(envio, ctx.ahoraMs);
     if (dias < umbrales.INSIGHT_SUPERVISION_DEMORADA_DIAS) continue;
