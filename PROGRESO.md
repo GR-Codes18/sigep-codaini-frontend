@@ -8,11 +8,11 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 1 (pasos 1 a 4) terminado**: almacén, semilla
-  completa, restablecer datos de demostración y utilidades base de `services/`. La Fase 1 (`domain/`) está
-  fusionada en `development` (PR #21); las Fases 3 y 4 avanzaron todo lo que no depende de `services/`.
-  Siguiente: paso 5 (servicios de tareas), que abre el Bloque 2 de la Fase 2.
-- **Actualizado:** 2026-11-17, al cerrar el paso 4 y con él el Bloque 1 de la Fase 2.
+- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 2** (pasos 5 y 6: servicios de tareas y de Pull
+  Request). El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). El paso 5 se parte en tres
+  sub-pasos con parada y commit cada uno (D2-A): **5A terminado** (crear, editar y eliminar tareas,
+  `2c54c04`); siguen 5B (las 7 transiciones y el puerto de GitHub) y 5C (opciones y prueba de flujo).
+- **Actualizado:** 2026-11-17, al cerrar el sub-paso 5A.
 
 ### Cierres de fase
 
@@ -129,10 +129,24 @@
 - **Fase 2, Bloque 1 cerrado.** Pasos 1 a 4 en una sola sesión, con parada y commit por paso. Quedan los
   pasos 5 a 11 (servicios y consultas con alcance por rol); ver «Decisiones pendientes» sobre cómo partirlos
   en sesiones.
+- **Fase 2, paso 5: plan aprobado (2026-11-17)** con las siete decisiones en la opción A (D1 a D7; detalle en
+  `DECISIONES.md`). En resumen: carpeta `src/services/tareas/` por grupo; tres sub-pasos (5A, 5B, 5C);
+  «Requiere PR» va en el paso 5 y no en el 6; puerto `github` en `Entorno` (llega en 5B); desactivar
+  «Requiere PR» registra `PULL_REQUEST_NO_REQUERIDO` con cualquier rol; devolver o reabrir conserva al
+  responsable aunque ya no pueda trabajar; la fecha límite no se exige futura.
+- **Fase 2, sub-paso 5A: terminado (2026-11-17).** Servicios `crearTarea`, `editarTarea` y `eliminarTarea`
+  en `src/services/tareas/datosTarea.ts`, con piezas comunes en `src/services/tareas/comun.ts` (`2c54c04`).
+  Crear guarda la tarea y `ultimo_numero_tarea` en una sola transacción; editar registra solo los campos que
+  cambian y avisa al responsable si la tarea está EN_PROGRESO; eliminar quita la tarea y deja el evento con
+  el motivo. Código nuevo `SIN_CAMBIOS`. 50 pruebas nuevas y 13 mutaciones detectadas de 13. Detalle en
+  `DECISIONES.md`.
+- **Siguiente: sub-paso 5B** (tomar, liberar, enviar a supervisión, marcar terminada, aprobar, devolver y
+  reabrir, más el puerto `github` en `Entorno`). Se propone y se espera el OK antes de escribir código.
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
   por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
-- **Rama:** `feat/fase2-almacen-semilla` (sale de `development`, con la Fase 1 ya fusionada).
+- **Rama:** `feat/fase2-servicios-tareas-pr` (sale de `development`, con el Bloque 1 ya fusionado en el
+  PR #22).
 
 ## Pasos terminados
 
@@ -161,7 +175,8 @@
 | 2026-11-17 | 1. Almacén persistente con recuperación segura | `809ff44`; docs `b317640` |
 | 2026-11-17 | 2. Semilla completa de demostración | `91b29e0`; docs `b7e8d68` |
 | 2026-11-17 | 3. Restablecer datos de demostración | `d3d4800`; docs `e950907` |
-| 2026-11-17 | 4. Utilidades base de `services/` (cierra el Bloque 1) | `c2b3f47`; docs (`DECISIONES.md` y `PROGRESO.md`) pendientes de commit |
+| 2026-11-17 | 4. Utilidades base de `services/` (cierra el Bloque 1) | `c2b3f47`; docs `0a08c1d`; PR #22 fusionado en `ba4f077` |
+| 2026-11-17 | 5A. Servicios para crear, editar y eliminar tareas | `2c54c04`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -183,8 +198,9 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 960 pruebas en 43 archivos (22 del almacén, 180 de la semilla, 11 de
-restablecer y 136 de las utilidades de `services/`, de la Fase 2); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 1010 pruebas en 45 archivos (de la Fase 2: 22 del almacén, 180 de la
+semilla, 11 de restablecer, 136 de las utilidades de `services/` y 50 de los servicios de tareas del
+sub-paso 5A); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -214,6 +230,15 @@ restablecer y 136 de las utilidades de `services/`, de la Fase 2); `build` OK (a
 - [x] Paso 3: restablecer datos de demostración (acción `restablecer` del almacén) y guardado protegido
       (`d3d4800`).
 - [x] Paso 4: utilidades base de `services/` (`c2b3f47`). Cierra el Bloque 1 (pasos 1 a 4).
+- [x] Sub-paso 5A: crear, editar y eliminar tareas (`2c54c04`).
+- [ ] Sub-paso 5B: las 7 transiciones de tarea y el puerto `github` en `Entorno` (D4-A).
+- [ ] Sub-paso 5C: «Requiere supervisión», «Requiere PR» (D3-A, D5-A) y la prueba de flujo crear → tomar →
+      enviar → aprobar.
+- [ ] Ajustar a mano el plan §9, Fase 2, paso 6: «No requiere PR» pasa al paso 5 (decisión D3-A); el paso 6
+      queda con crear y cerrar PR, ramas de ejemplo, error preparado, PR existente y recálculo.
+- [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
+      a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
+      Administrador o el Supervisor la liberen con motivo.
 - [ ] Pasos 5 a 11: servicios por módulo, consultas con alcance por rol, más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
       dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos
@@ -248,12 +273,12 @@ restablecer y 136 de las utilidades de `services/`, de la Fase 2); `build` OK (a
 - [ ] Servicios de PR: simular GitHub y, si `necesitaConsultaGitHub(tarea)`, pasar SIEMPRE `github` en el
       evento `TAREA_ENVIADA_O_TERMINADA`; llamar a `siguienteEstadoPR` tras enviar/terminar, tras crear o
       cerrar el PR y tras cambiar «Requiere PR». Detalle en `DECISIONES.md` (paso 5).
-- [ ] Aviso al responsable al editar una tarea `EN_PROGRESO`.
+- [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
 - [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
-- [ ] ID legible: guardar `numero` y `ultimo_numero_tarea` en una sola operación; usar
-      `validarCodigoProyecto` (con los códigos de todos los proyectos, también finalizados) en el servicio
-      de proyectos y en el formulario de la Fase 5.4. Detalle en `DECISIONES.md` (paso 6).
+- [x] ID legible: guardar `numero` y `ultimo_numero_tarea` en una sola operación (`crearTarea`, `2c54c04`).
+- [ ] ID legible: usar `validarCodigoProyecto` (con los códigos de todos los proyectos, también finalizados)
+      en el servicio de proyectos y en el formulario de la Fase 5.4. Detalle en `DECISIONES.md` (paso 6).
 - [ ] Migrar los formateos de ID de `src/compartido/` y `src/app/ejemplos/` a `formatearIdLegible`.
 - [ ] Puntaje: la evaluación simulada lee la banda y la proporción vigentes de `data/`, llama a
       `calcularPuntaje` y genera la justificación; decidir qué muestra una postulación si
@@ -355,7 +380,9 @@ restablecer y 136 de las utilidades de `services/`, de la Fase 2); `build` OK (a
 - ~~¿Se mantiene el PR revisado por «la otra persona» o basta la revisión conjunta?~~ **Decidido
   (2026-11-14): revisión conjunta de ambos autores.** Ya está reflejado en el plan §11.
 - Fase 2: ¿una sesión por fase o partirla en 2 o 3 sesiones (almacén y semilla; servicios de tareas y PR;
-  el resto)? Recomendación del asesor: partirla.
+  el resto)? Recomendación del asesor: partirla. **En la práctica ya se parte por bloques:** el Bloque 1
+  (pasos 1 a 4) fue una sesión y el Bloque 2 (pasos 5 y 6) es otra, en la rama
+  `feat/fase2-servicios-tareas-pr`.
 - Estilo de Prettier si se quiere otro distinto al propuesto (comillas simples, punto y coma, ancho 100).
 - Interlineado: la especificación visual y la propuesta §13 no definen un valor.
 - Rutas con prefijo por panel (`/administrador/...`): la propuesta no define URLs.

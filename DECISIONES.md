@@ -2149,3 +2149,108 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   (`src/data/semilla/registro.ts`) conserva una copia mínima solo para generar los datos iniciales.
 - El historial queda en orden de escritura, que coincide con el cronológico porque la marca se toma dentro de
   la transacción.
+
+## 2026-11-17 — [A+B] Fase 2, paso 5A: servicios para crear, editar y eliminar tareas
+
+- **Commit:** `2c54c04` (`feat: agrega los servicios para crear, editar y eliminar tareas (Fase 2, paso5A)`). Verificación: 1010 pruebas en 45 archivos (50 nuevas en `src/services/tareas/`), `tsc -b`,
+  `eslint src/services`, `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Plan del paso 5 (aprobado por los autores, opción A en las siete decisiones)
+
+- **D1 — Archivos:** carpeta `src/services/tareas/` por grupo: `comun.ts`, `datosTarea.ts` (crear, editar,
+  eliminar), `transiciones.ts` (las 7 de §6.2) y `opciones.ts` (supervisión y PR). Descartados un solo
+  archivo (unas 700 líneas y un test de más de 1500) y un archivo por servicio (mucha repetición).
+- **D2 — Tamaño:** el paso 5 se parte en tres sub-pasos con parada y commit cada uno: **5A** comunes +
+  crear/editar/eliminar; **5B** las 7 transiciones + puerto de GitHub; **5C** opciones + prueba de flujo.
+  Descartado un solo commit (11 servicios no se revisan en 10 a 20 minutos, plan §2.2).
+- **D3 — «Requiere PR» va en el paso 5**, junto con «Requiere supervisión»: es una opción de la tarea, usa
+  `puedeCambiarRequierePR` y C1 solo necesita `siguienteEstadoPR` (sin GitHub). El paso 6 queda para crear y
+  cerrar PR, ramas de ejemplo, error preparado, PR existente y recálculo. El plan §9 (Fase 2, paso 6) nombra
+  «No requiere PR»: **los autores ajustan esa línea a mano**.
+- **D4 — Consulta a GitHub al volver a enviar o terminar una tarea que ya tuvo PR:** puerto `github` en
+  `Entorno`, con una implementación simulada por defecto que responde lo último que se sabe del PR (CREADO →
+  abierto sin conflictos; CON_CONFLICTOS → abierto con conflictos; FUSIONADO → fusionado; CERRADO → cerrado;
+  PENDIENTE con URL, es decir, un PR viejo ya fusionado → fusionado). Las pruebas inyectan otras respuestas y
+  el paso 6 amplía el mismo puerto. Cambia la interfaz `Entorno` del paso 4; **se construye en 5B**.
+  Descartada una función fija sin puerto (las pruebas no podrían simular un cambio en GitHub).
+- **D5 — Evento al desactivar «Requiere PR»:** con cualquier rol, `PULL_REQUEST_NO_REQUERIDO`; activar →
+  `TAREA_OPCIONES_CAMBIADAS`. El aviso `PULL_REQUEST_NO_REQUERIDO_POR_PRACTICANTE` al supervisor sale solo
+  cuando actúa el practicante (§8.1). Descartado usar dos tipos de evento para el mismo hecho según el rol.
+- **D6 — Devolver o reabrir cuando el responsable ya no puede trabajar** (INACTIVO o con la asignación de
+  baja): se conserva el responsable (literal §6.2) y el Administrador o el Supervisor liberan la tarea después,
+  con motivo. Descartados bloquear con un código nuevo (la tarea quedaría atascada: §6.2 no ofrece salida
+  hacia DISPONIBLE desde ESPERANDO_SUPERVISION ni TERMINADA) y liberar automáticamente (regla nueva). La
+  interfaz de la Fase 4 debe señalar el caso.
+- **D7 — Fecha límite:** solo se exige que sea una fecha válida; no tiene que ser futura (la propuesta no lo
+  define). Descartado exigir `≥ hoy` (regla nueva que iría en §5.5/§6.4).
+- **Supuestos sin pregunta:** sin largo máximo de título ni descripción; un motivo opcional que el practicante
+  envíe al liberar su propia tarea se guarda en `nota`; editar recibe los tres campos y `diferencias` decide
+  qué cambió.
+
+### Qué se construyó (sub-paso 5A)
+
+- `src/services/tareas/comun.ts`: esquemas de Zod (`esquemaId`, `esquemaTitulo`, `esquemaDescripcion`,
+  `esquemaFechaLimite` con `esFechaDeCalendario`, `esquemaTextoOpcional`); `cargarContextoProyecto` y
+  `cargarContextoTarea` (actor → proyecto o tarea → asignaciones **de quien actúa** con `asignacionesDe`);
+  `exigirTexto` y `textoGuardado`; `reemplazarTarea`, `referenciaTarea` (`«Menú» (PL2D-004)`) y
+  `eventoDeTarea` (autor, etiqueta `PL2D-018 · Título` e `id_proyecto` siempre presentes).
+- `src/services/tareas/datosTarea.ts`: `crearTarea`, `editarTarea` y `eliminarTarea`, con el contrato del paso 4
+  (`servicio(entrada, entorno = ENTORNO)` dentro de `ejecutarServicio`). Devuelven la `Tarea` resultante;
+  eliminar devuelve `{ id }`.
+- `src/services/tareas/index.ts` y la reexportación en `src/services/index.ts`.
+- `src/services/resultado.ts`: código nuevo `SIN_CAMBIOS` («No hay cambios para guardar.»), con su caso en
+  `resultado.test.ts`.
+
+### Decisiones de implementación
+
+- **Orden de comprobación de todos los servicios de tareas:** Zod (forma y formato) → actor → tarea o proyecto
+  → regla de `domain/` → texto ausente → `SIN_CAMBIOS` → escritura. Por eso un practicante que edita con los
+  mismos valores recibe `ROL_NO_PERMITIDO`, no `SIN_CAMBIOS`, y un actor inexistente con datos inválidos recibe
+  `DATOS_INVALIDOS`.
+- **Zod no exige contenido en el motivo ni en la nota**, solo que sean texto si vienen. Si rechazara un motivo
+  vacío, se saltaría el orden de `domain/`: eliminar una tarea EN_PROGRESO o con PR con motivo vacío debe
+  responder `TAREA_NO_ELIMINABLE` o `TAREA_YA_TIENE_PR`. El texto vacío lo rechaza `domain/`
+  (`TEXTO_OBLIGATORIO`) y el texto **ausente**, `exigirTexto` (cumple el pendiente de «el servicio pasa siempre
+  el texto y rechaza si falta»).
+- **Crear:** número de `siguienteNumeroTarea` y `ultimo_numero_tarea` del proyecto en la **misma** transacción
+  (`tareas` y `proyectos` en un solo `cambios`); un número eliminado no se reutiliza. Nace DISPONIBLE, sin
+  responsable, `requiere_supervision` en `false` y `requiere_pr` en `true` por defecto, `estado_pr` y datos de PR
+  en `null`. `EN_PAUSA` no impide crear; `FINALIZADO` sí (lo decide `puede()`). Evento `TAREA_CREADA` con el
+  cambio de estado `null` → DISPONIBLE (como la semilla); sin notificación (§8.1). Un contador inválido
+  devuelve `ULTIMO_NUMERO_INVALIDO` con el mensaje de `domain/`.
+- **Editar:** el formulario envía título, descripción y fecha límite; los textos se recortan y `diferencias`
+  registra solo lo que cambió (si no cambia nada, también tras recortar, `SIN_CAMBIOS` y no se escribe). La
+  etiqueta del evento usa el título **nuevo**; el anterior queda en `cambios`. Con `avisar_responsable`
+  (EN_PROGRESO con responsable) se envía `TAREA_EDITADA_EN_PROGRESO` al responsable, con el mismo texto que la
+  semilla.
+- **Eliminar:** la tarea sale de `tareas` (única excepción a «nada se borra»), el evento `TAREA_ELIMINADA`
+  guarda el cambio DISPONIBLE → `null` y el motivo recortado en `nota`, y `ultimo_numero_tarea` no cambia. Sin
+  notificación.
+- **Fecha límite:** `YYYY-MM-DD` y además un día que exista (`2026-02-30` no vale). El esquema de `data/` solo
+  comprueba el formato, por eso no se reutiliza.
+- Una tarea cuyo proyecto no existe (dato roto) responde `NO_ENCONTRADO`, igual que una tarea inexistente.
+
+### Pruebas y mutaciones
+
+- `comun.test.ts` (esquemas, carga del contexto, texto exigido y escritura) y `datosTarea.test.ts`; 50 pruebas
+  en total. Con la semilla real y `crearEntornoDePrueba`, cubren: éxito con una sola escritura, evento (tipo,
+  autor, etiqueta, `id_proyecto`, `cambios`, `nota` y la fecha de la marca) y notificaciones exactas; sin
+  permiso (practicante, supervisor ajeno), proyecto FINALIZADO, usuario INACTIVO, inexistentes, datos inválidos
+  por campo, motivo ausente, vacío o con solo espacios, `SIN_CAMBIOS`, y el orden de comprobación. Ninguna
+  operación fallida escribe.
+- **Mutaciones del agente (13, con `git add` previo y `git restore` después; todas detectadas y
+  restauradas):** no exigir el texto ausente; Zod que rechaza el motivo vacío (rompe el orden, 5 pruebas); no
+  guardar `ultimo_numero_tarea`; número desde `max(numero) + 1`; asignaciones de todos y no del actor;
+  `SIN_CAMBIOS` antes que el permiso; editar sin avisar al responsable; eliminar sin quitar la tarea; fecha
+  validada solo con regex; evento con el reloj y no con la marca; etiqueta con el título anterior; crear sin
+  `puede()`; motivo guardado sin recortar.
+- La mutación «crear sin `puede()`» dejó ver un título de prueba mal formado (mostraba el ID del actor en vez
+  del código esperado); se corrigió antes del commit.
+
+### Pendientes
+
+- **5B:** las 7 transiciones y el puerto `github` en `Entorno` (D4). **5C:** opciones (D3, D5) y la prueba de
+  flujo crear → tomar → enviar → aprobar.
+- Ajustar a mano el plan §9, Fase 2, paso 6 (D3).
+- Fase 4: señalar en el detalle de tarea el caso de D6 (responsable INACTIVO o con baja en una tarea
+  EN_PROGRESO).
