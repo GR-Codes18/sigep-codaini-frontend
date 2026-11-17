@@ -4,7 +4,30 @@ import { CATALOGO_PARAMETROS, type Proyecto, type Tarea, type Usuario } from '@/
 import { crearAlmacen, CLAVE_ALMACEN, VERSION_ALMACEN } from './almacen';
 import { validarDatos } from './esquemas';
 import { crearParametros } from './parametros';
-import { crearSemilla } from './semilla';
+import type { DatosAlmacen } from './tipos';
+
+/** Base vacía (solo con los parámetros): estas pruebas miran el almacén, no la semilla de demostración. */
+function crearVacia(): DatosAlmacen {
+  return {
+    usuarios: [],
+    practicantes: [],
+    supervisores: [],
+    proyectos: [],
+    enlaces_proyecto: [],
+    asignaciones: [],
+    tareas: [],
+    postulantes: [],
+    areas_tecnicas: [],
+    especialidades: [],
+    criterios: [],
+    evaluaciones: [],
+    detalles_evaluacion: [],
+    historial: [],
+    notificaciones: [],
+    revisiones_insight: [],
+    parametros: crearParametros(),
+  };
+}
 
 /** Almacenamiento en memoria que cuenta las escrituras. */
 function crearMemoria(inicial: Record<string, string> = {}) {
@@ -72,7 +95,7 @@ const tarea: Tarea = {
 };
 
 /** Crea la tarea y avanza el contador en una sola operación. */
-const crearTareaUno = (datos: ReturnType<typeof crearSemilla>) => ({
+const crearTareaUno = (datos: DatosAlmacen) => ({
   tareas: [...datos.tareas, tarea],
   proyectos: datos.proyectos.map((p) => ({ ...p, ultimo_numero_tarea: 1 })),
 });
@@ -80,7 +103,7 @@ const crearTareaUno = (datos: ReturnType<typeof crearSemilla>) => ({
 describe('almacén: semilla y parámetros', () => {
   it('parte de la semilla cuando no hay nada guardado, con id === clave', () => {
     const memoria = crearMemoria();
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     const { parametros } = almacen.getState().datos;
     expect(parametros).toHaveLength(CATALOGO_PARAMETROS.length);
     expect(parametros.every((p) => p.id === p.clave)).toBe(true);
@@ -98,17 +121,17 @@ describe('almacén: semilla y parámetros', () => {
 describe('almacén: persistencia', () => {
   it('lo escrito sobrevive a «recargar» (un almacén nuevo sobre el mismo almacenamiento)', () => {
     const memoria = crearMemoria();
-    const primero = crearAlmacen({ almacenamiento: () => memoria });
+    const primero = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     primero.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] }));
 
-    const recargado = crearAlmacen({ almacenamiento: () => memoria });
+    const recargado = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(recargado.getState().datos.usuarios).toEqual([usuario]);
     expect(memoria.valores.has(CLAVE_ALMACEN)).toBe(true);
   });
 
   it('guarda solo los datos, no las funciones', () => {
     const memoria = crearMemoria();
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     almacen.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] }));
     const guardado = JSON.parse(memoria.valores.get(CLAVE_ALMACEN) ?? '{}');
     expect(Object.keys(guardado.state)).toEqual(['datos']);
@@ -116,7 +139,7 @@ describe('almacén: persistencia', () => {
   });
 
   it('sin almacenamiento disponible (bloqueado) sigue funcionando en memoria', () => {
-    const almacen = crearAlmacen({ almacenamiento: () => undefined });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => undefined });
     almacen.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] }));
     expect(almacen.getState().datos.usuarios).toEqual([usuario]);
   });
@@ -137,47 +160,47 @@ describe('almacén: recuperación segura', () => {
 
   it('JSON ilegible: regenera la semilla, avisa y no lanza', () => {
     const memoria = crearMemoria({ [CLAVE_ALMACEN]: '{esto no es json' });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(almacen.getState().datos.parametros).toHaveLength(CATALOGO_PARAMETROS.length);
     expect(aviso).toHaveBeenCalled();
   });
 
   it('forma incorrecta (no es un objeto con datos): regenera la semilla y avisa', () => {
     const memoria = crearMemoria({ [CLAVE_ALMACEN]: guardar({ otra: 1 }) });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(almacen.getState().datos.usuarios).toEqual([]);
     expect(aviso).toHaveBeenCalled();
   });
 
   it('un registro dañado dentro de una colección invalida todo y regenera', () => {
-    const base = crearSemilla();
+    const base = crearVacia();
     const danado = { ...base, usuarios: [{ ...usuario, rol: 'SUPER_ADMIN' }] };
     const memoria = crearMemoria({ [CLAVE_ALMACEN]: guardar({ datos: danado }) });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(almacen.getState().datos.usuarios).toEqual([]);
     expect(aviso).toHaveBeenCalled();
   });
 
   it('falta una colección: regenera', () => {
-    const incompleto: Record<string, unknown> = { ...crearSemilla() };
+    const incompleto: Record<string, unknown> = { ...crearVacia() };
     delete incompleto.tareas;
     const memoria = crearMemoria({ [CLAVE_ALMACEN]: guardar({ datos: incompleto }) });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(Array.isArray(almacen.getState().datos.tareas)).toBe(true);
     expect(aviso).toHaveBeenCalled();
   });
 
   it('faltan parámetros del catálogo: regenera', () => {
-    const base = crearSemilla();
+    const base = crearVacia();
     const sinUno = { ...base, parametros: base.parametros.slice(1) };
     const memoria = crearMemoria({ [CLAVE_ALMACEN]: guardar({ datos: sinUno }) });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(almacen.getState().datos.parametros).toHaveLength(CATALOGO_PARAMETROS.length);
     expect(aviso).toHaveBeenCalled();
   });
 
   it('un parámetro con id distinto de su clave se rechaza', () => {
-    const base = crearSemilla();
+    const base = crearVacia();
     const torcido = {
       ...base,
       parametros: base.parametros.map((p, i) => (i === 0 ? { ...p, id: 'otro' } : p)),
@@ -186,19 +209,19 @@ describe('almacén: recuperación segura', () => {
   });
 
   it('versión distinta: regenera la semilla y avisa', () => {
-    const base = { ...crearSemilla(), usuarios: [usuario] };
+    const base = { ...crearVacia(), usuarios: [usuario] };
     const memoria = crearMemoria({
       [CLAVE_ALMACEN]: guardar({ datos: base }, VERSION_ALMACEN - 1),
     });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(almacen.getState().datos.usuarios).toEqual([]);
     expect(aviso).toHaveBeenCalled();
   });
 
   it('datos válidos guardados se conservan y no se avisa', () => {
-    const base = { ...crearSemilla(), usuarios: [usuario], proyectos: [proyecto] };
+    const base = { ...crearVacia(), usuarios: [usuario], proyectos: [proyecto] };
     const memoria = crearMemoria({ [CLAVE_ALMACEN]: guardar({ datos: base }) });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     expect(almacen.getState().datos.usuarios).toEqual([usuario]);
     expect(almacen.getState().datos.proyectos).toEqual([proyecto]);
     expect(aviso).not.toHaveBeenCalled();
@@ -206,17 +229,18 @@ describe('almacén: recuperación segura', () => {
 
   it('tras regenerar, el almacén sigue aceptando y guardando cambios', () => {
     const memoria = crearMemoria({ [CLAVE_ALMACEN]: '{roto' });
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     almacen.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] }));
-    expect(crearAlmacen({ almacenamiento: () => memoria }).getState().datos.usuarios).toEqual([
-      usuario,
-    ]);
+    expect(
+      crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria }).getState().datos
+        .usuarios,
+    ).toEqual([usuario]);
   });
 
   it('rechaza un ultimo_numero_tarea negativo o decimal', () => {
     for (const ultimo of [-1, 1.5]) {
       const datos = {
-        ...crearSemilla(),
+        ...crearVacia(),
         proyectos: [{ ...proyecto, ultimo_numero_tarea: ultimo }],
       };
       expect(validarDatos(datos)).toBeNull();
@@ -225,11 +249,11 @@ describe('almacén: recuperación segura', () => {
 
   it('rechaza fechas en formato incorrecto', () => {
     const malaFecha = {
-      ...crearSemilla(),
+      ...crearVacia(),
       proyectos: [{ ...proyecto, fecha_inicio: '01/10/2026' }],
     };
     const malaHora = {
-      ...crearSemilla(),
+      ...crearVacia(),
       tareas: [{ ...tarea, fecha_termino: '2026-11-01 10:00' }],
     };
     expect(validarDatos(malaFecha)).toBeNull();
@@ -242,7 +266,7 @@ describe('almacén: operaciones atómicas', () => {
     const memoria = crearMemoria();
     const almacen = crearAlmacen({
       almacenamiento: () => memoria,
-      crearSemilla: () => ({ ...crearSemilla(), proyectos: [proyecto] }),
+      crearSemilla: () => ({ ...crearVacia(), proyectos: [proyecto] }),
     });
     almacen.getState().transaccion(crearTareaUno);
     const { tareas, proyectos } = almacen.getState().datos;
@@ -253,7 +277,7 @@ describe('almacén: operaciones atómicas', () => {
 
   it('si la operación lanza un error, no se escribe nada', () => {
     const memoria = crearMemoria();
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     const antes = almacen.getState().datos;
     expect(() =>
       almacen.getState().transaccion(() => {
@@ -266,7 +290,7 @@ describe('almacén: operaciones atómicas', () => {
 
   it('devolver null significa «sin cambios» y no escribe', () => {
     const memoria = crearMemoria();
-    const almacen = crearAlmacen({ almacenamiento: () => memoria });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => memoria });
     const antes = almacen.getState().datos;
     almacen.getState().transaccion(() => null);
     expect(almacen.getState().datos).toBe(antes);
@@ -274,7 +298,7 @@ describe('almacén: operaciones atómicas', () => {
   });
 
   it('las colecciones que no se devuelven quedan intactas', () => {
-    const almacen = crearAlmacen({ almacenamiento: () => undefined });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => undefined });
     const antes = almacen.getState().datos;
     almacen.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] }));
     expect(almacen.getState().datos.parametros).toBe(antes.parametros);
@@ -282,7 +306,7 @@ describe('almacén: operaciones atómicas', () => {
   });
 
   it('cada operación ve el resultado de la anterior', () => {
-    const almacen = crearAlmacen({ almacenamiento: () => undefined });
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => undefined });
     almacen.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] }));
     almacen
       .getState()
