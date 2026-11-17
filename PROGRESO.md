@@ -92,9 +92,10 @@
     (decisión de los autores) y sus efectos listos para que los aplique el servicio.
 
   Detalle, decisiones, riesgos y pendientes en `DECISIONES.md`.
-- **Luego:** cierre de la Fase 1: comprobar su «Listo cuando» y las pruebas mínimas del plan §9, y dejar
-  los `docs/` al día (ver «Verificaciones y cierres»). Después, la Fase 2 (`data/` y `services/`); queda
-  por decidir si se parte en sesiones (ver «Decisiones pendientes»).
+- **Luego:** cierre de la Fase 1: comprobar su «Listo cuando» (todas las pruebas pasan, `domain/` no
+  importa React ni `data/`, los autores revisaron los tipos) y las pruebas mínimas del plan §9. Los `docs/`
+  de los pasos 9 y 10 ya están al día (`3d68cc4`). Después, la Fase 2 (`data/` y `services/`); queda por
+  decidir si se parte en sesiones (ver «Decisiones pendientes»).
 - **Rama:** `feat/fase1-ciclo-de-vida` (la del paso 10); la Fase 2 sale de `development` en una rama nueva.
 
 ## Pasos terminados
@@ -234,17 +235,14 @@ práctica y 42 de ciclo de vida); `build` OK (aviso de Vite por chunk > 500 kB, 
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
-- [ ] Actualizar a mano `docs/` con las decisiones del paso 9 (lo hacen los autores). **Ya hecho:** propuesta
-      §9.1.4, la tabla por practicante (alta no posterior a hoy y baja nula o desde el primer día), que
-      entró en el commit `2a3dc50`. **Falta:** propuesta §5.6 («Indicadores»: cuándo cuenta cada hito, tiempo
-      de ciclo neto hasta `fecha_termino`, espera por envío respondido, tasa de devolución por tareas con
-      envío en el periodo, periodo de calendario en hora de Perú de 1 a 365 días, «sin datos» y redondeo) y
-      plan §9, Fase 1, paso 9.
-- [ ] Actualizar a mano `docs/` con las decisiones del paso 10 (lo hacen los autores): propuesta §5.4 (un
-      proyecto FINALIZADO no admite asignar, quitar ni cambiar de supervisor; finalizar desde ACTIVO o EN_PAUSA),
-      §5.3 («proyectos activos» de un supervisor incluye EN_PAUSA), §5.2 (ingreso + meses con el último día
-      del mes; aviso previo cuando faltan 14 días) y §5.8 (duración de 1 a 24 meses y aviso de 1 a 365 días);
-      plan §9, Fase 1, paso 10.
+- [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta
+      §9.1.4 (tabla por practicante, en `2a3dc50`) y, en `3d68cc4`, propuesta §5.6 («Cómo se mide cada
+      indicador») y plan §9, Fase 1, paso 9 con su viñeta de pruebas.
+- [x] Actualizar a mano `docs/` con las decisiones del paso 10 (hecho por los autores, 2026-11-17,
+      `3d68cc4`): propuesta §5.4 (FINALIZADO no admite asignar, quitar ni cambiar de supervisor; finalizar
+      desde ACTIVO o EN_PAUSA), §5.3 («proyectos activos» incluye EN_PAUSA), §5.2 (ingreso + meses con el
+      último día del mes, aviso previo y vencimiento) y §5.8 (duración de 1 a 24 meses y aviso de 1 a 365
+      días); plan §9, Fase 1, paso 10 con su viñeta de pruebas.
 - [x] Actualizar a mano `docs/` con los 5 cambios del paso 8: propuesta §5.6 (nota del avance esperado y
       párrafo «Fecha de detección» + «Cómo se mide cada regla»), §5.8 (nota de validación de umbrales), §4
       (fila «Marcar un insight como revisado») y plan §5, regla 12 (hecho por los autores, 2026-11-15,

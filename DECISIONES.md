@@ -1683,7 +1683,8 @@ Todavía **no** están hechas. Son las decisiones que la propuesta y el plan no 
    pruebas.
 
 **Actualización (2026-11-17):** la divergencia 2 (§9.1.4, tabla por practicante) ya la escribieron los autores,
-dentro del commit `2a3dc50`. Quedan la 1 (§5.6) y la 3 (plan).
+dentro del commit `2a3dc50`. La 1 (§5.6) y la 3 (plan) las escribieron en `3d68cc4`. Con esto ya no hay
+divergencia entre el código y `docs/` para el paso 9.
 
 ## 2026-11-17 — [A+B] Fase 1, paso 10: ciclo de vida
 
@@ -1798,3 +1799,7 @@ Todavía **no** están hechas. Son las decisiones que la propuesta y el plan no 
 4. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.8: duración de 1 a 24 meses y aviso de 1 a 365 días (decisión 5).
 5. `docs/SIGEP_Plan_de_Desarrollo_y_Reglas_del_Agente.md`, §9, Fase 1, paso 10: el detalle de lo anterior y
    sus pruebas.
+
+**Actualización (2026-11-17):** las cinco divergencias las escribieron los autores a mano en `3d68cc4`
+(propuesta §5.2, §5.3, §5.4, §5.6, §5.8 y §9.1.4, y plan §9, pasos 9 y 10, con sus viñetas de pruebas).
+Con esto ya no hay divergencia entre el código y `docs/` para los pasos 9 y 10.
