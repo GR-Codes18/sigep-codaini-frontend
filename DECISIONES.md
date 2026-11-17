@@ -1803,3 +1803,68 @@ Todavía **no** están hechas. Son las decisiones que la propuesta y el plan no 
 **Actualización (2026-11-17):** las cinco divergencias las escribieron los autores a mano en `3d68cc4`
 (propuesta §5.2, §5.3, §5.4, §5.6, §5.8 y §9.1.4, y plan §9, pasos 9 y 10, con sus viñetas de pruebas).
 Con esto ya no hay divergencia entre el código y `docs/` para los pasos 9 y 10.
+
+## 2026-11-17 — [A+B] Fase 1: repaso de las pruebas mínimas y cierre
+
+### Qué se hizo
+
+- Repaso de las «Pruebas obligatorias (casos mínimos)» del plan §9 (Fase 1) contra las pruebas existentes de
+  `domain/`, y comprobación del «Listo cuando» de la fase. Solo lectura; los únicos cambios son 3 tests.
+- **Commit de pruebas** `e1e112d` (`test:`); el commit `65c58b9` (`docs:`) registró en PROGRESO y DECISIONES
+  los cambios a mano de los pasos 9 y 10.
+
+### «Listo cuando» de la Fase 1
+
+- **Todas las pruebas pasan:** 611 en 32 archivos; `tsc -b`, `eslint src/domain`, `prettier --check
+  src/domain` y `build` sin errores.
+- **`domain/` no importa React ni `data/`:** verificado con una búsqueda sobre `src/domain/`. Ningún archivo
+  importa `react`, `react-dom`, `react-router`, `zustand`, `zod`, `date-fns` ni `data/`, `services/`, `app/`,
+  `auth/`, `compartido/` o `paneles/`. Lo único que no es relativo es `vitest`, en los tests.
+- **Los autores revisaron los tipos:** pendiente, es de los autores.
+
+### Cobertura de los mínimos del plan
+
+De los siete mínimos originales, cinco estaban cubiertos del todo: tomar en proyecto EN_PAUSA, el texto
+obligatorio, el puntaje (80/90 → 86, redondeo, enteros, pesos, bloque sin criterios, obligatorio, bordes
+49/50/69/70 y parámetros), los insights (justo en el umbral y un valor por debajo en las 7 reglas, y la
+reaparición a los 7 días o al empeorar) y los IDs. Otros dos estaban cubiertos solo en parte: la matriz de
+transiciones y los permisos con un proyecto FINALIZADO (la matriz de permisos 55×3, su alcance e INACTIVO sí
+estaban completos). Los mínimos de indicadores y de ciclo de vida (añadidos en `3d68cc4`) también estaban
+cubiertos, salvo un detalle del ciclo de vida. Quedaban tres huecos, solo de tests:
+
+1. **Matriz de transiciones.** Se probaban las 21 celdas en su estado de origen, las condiciones y un caso
+   fuera de estado. Se añadió una rejilla de las 63 celdas fuera de su estado de origen, escrita a mano desde
+   §6.2: `TRANSICION_NO_APLICA` si el rol puede la acción y el estado no coincide, el código del rol si no, y
+   `NO_ES_EL_RESPONSABLE` para el practicante con `LIBERAR`, `ENVIAR_A_SUPERVISION` o `MARCAR_TERMINADA` sobre
+   una tarea DISPONIBLE (no tiene responsable y `puede()` va antes que el estado). Comprueba además que desde
+   cada estado solo se ofrecen transiciones que salen de él.
+2. **Proyecto FINALIZADO.** Solo se probaba que el Administrador edita reunión, enlaces y rama base. Ahora los
+   tres roles con esas tres acciones y `EDITAR_DATOS_PROYECTO`, según la matriz de §4 (el Supervisor no edita
+   los datos del proyecto; el Practicante, nada). Reemplaza al test anterior.
+3. **Ciclo de vida.** «No se modifican los datos de entrada» solo se probaba en `finalizarPractica` (FP-11). Se
+   añadieron PY-11 (`finalizarProyecto`) y QU-5 (`puedeQuitarPracticante`), con listas desordenadas y
+   congeladas.
+
+### Mutaciones: 9 de 9 detectadas
+
+Hechas por el agente con `git restore` entre cada una (script en el scratchpad, fuera del repo):
+- **Rejilla:** sin comprobar el estado de origen; comprobarlo contra el estado de destino; comprobar el estado
+  antes que `puede()`.
+- **FINALIZADO:** añadir `EDITAR_DATOS_PROYECTO`, `DEFINIR_REUNION` o `GESTIONAR_ENLACES` a las acciones que
+  bloquea la guarda. La de `EDITAR_DATOS_PROYECTO` solo la detecta el test nuevo: el anterior no la cubría.
+- **Ciclo de vida:** ordenar en el sitio las tareas (PY-11) o las asignaciones y las tareas (QU-5).
+
+### Diferencia entre el plan y el código
+
+- El plan dice «Motivo/nota **faltante** cuando es obligatorio → rechazada». El dominio hace otra cosa, por la
+  decisión del paso 3: vacío o solo espacios da `TEXTO_OBLIGATORIO` (probado); si todavía no se escribió
+  (`undefined` o `{}`), la acción queda permitida y devuelve qué texto exige, para que la interfaz abra el modal.
+  Rechazar el texto que falta es del servicio (pendiente de la Fase 2, ya anotado).
+- No se cambió el comportamiento; se propone ajustar la línea del plan (lo hacen los autores a mano) con algo
+  como: «Motivo o nota obligatorio: vacío o solo espacios → rechazada (`TEXTO_OBLIGATORIO`); si todavía no se
+  escribió, la acción queda pendiente de texto y devuelve qué texto exige (el servicio la rechaza si falta).»
+
+### Aspecto menor, sin cambios
+
+- El lado «no dispara» de la carga mínima (un valor por encima del umbral) solo se prueba con «sin tareas
+  disponibles». No se añadió prueba.

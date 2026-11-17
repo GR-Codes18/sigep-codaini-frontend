@@ -8,10 +8,10 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 10 terminados; las Fases 3 y 4 avanzaron todo lo que no
-  depende de `services/`. Siguiente: cerrar la Fase 1 (revisar su «Listo cuando» y las pruebas mínimas del
-  plan §9) y empezar la Fase 2.
-- **Actualizado:** 2026-11-17, al cerrar el paso 10 (ciclo de vida).
+- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 10 y pruebas mínimas del plan §9 terminados; las Fases 3
+  y 4 avanzaron todo lo que no depende de `services/`. Siguiente: cierre de la Fase 1 (que los autores
+  revisen los tipos y se fusione) y empezar la Fase 2.
+- **Actualizado:** 2026-11-17, al cerrar las pruebas mínimas de la Fase 1.
 
 ### Cierres de fase
 
@@ -92,11 +92,17 @@
     (decisión de los autores) y sus efectos listos para que los aplique el servicio.
 
   Detalle, decisiones, riesgos y pendientes en `DECISIONES.md`.
-- **Luego:** cierre de la Fase 1: comprobar su «Listo cuando» (todas las pruebas pasan, `domain/` no
-  importa React ni `data/`, los autores revisaron los tipos) y las pruebas mínimas del plan §9. Los `docs/`
-  de los pasos 9 y 10 ya están al día (`3d68cc4`). Después, la Fase 2 (`data/` y `services/`); queda por
-  decidir si se parte en sesiones (ver «Decisiones pendientes»).
-- **Rama:** `feat/fase1-ciclo-de-vida` (la del paso 10); la Fase 2 sale de `development` en una rama nueva.
+- **Pruebas mínimas del plan §9: terminadas (2026-11-17).** Repaso contra las pruebas existentes: cinco de
+  los siete mínimos ya estaban cubiertos del todo y dos en parte; se añadieron tres tests para los huecos (rejilla
+  completa de transiciones, reunión/enlaces/rama base/datos del proyecto en FINALIZADO y no modificar la
+  entrada en el ciclo de vida), con 9 mutaciones detectadas de 9 (`e1e112d`). Además se comprobó que `domain/`
+  no importa React, Zustand, `data/` ni `services/`. Detalle en `DECISIONES.md`.
+- **Luego:** cierre de la Fase 1. Del «Listo cuando» quedan dos cosas de los autores: que revisen los tipos
+  de `domain/` y que ajusten una línea del plan (ver «Pendientes»). Los `docs/` de los pasos 9 y 10 ya están
+  al día (`3d68cc4`). Después, la Fase 2 (`data/` y `services/`); queda por decidir si se parte en sesiones
+  (ver «Decisiones pendientes»).
+- **Rama:** `feat/fase1-ciclo-de-vida` (la del paso 10 y de las pruebas mínimas); la Fase 2 sale de
+  `development` en una rama nueva.
 
 ## Pasos terminados
 
@@ -115,7 +121,8 @@
 | 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5`; docs `367bf3b`; docs/ a mano `cec750a` |
 | 2026-11-15 | 8. Reglas de insights | A (permisos) `6f61810`; B (reglas) `e784e4e`; docs/ a mano `d05e278` |
 | 2026-11-16 | 9. Indicadores | A (tiempo) `998987e`; B (indicadores) `e408893`; C (reutilización en insights) `86b0167`; docs `d156acc`; PR #20 fusionado en `8a44800` |
-| 2026-11-17 | 10. Ciclo de vida | A (fechas de la práctica) `3c78c4f`; B (reglas de ciclo de vida) `2a3dc50` (incluye el cambio a mano de §9.1.4 de la propuesta) |
+| 2026-11-17 | 10. Ciclo de vida | A (fechas de la práctica) `3c78c4f`; B (reglas de ciclo de vida) `2a3dc50` (incluye el cambio a mano de §9.1.4 de la propuesta); docs `3ee5277`; docs/ a mano `3d68cc4`; docs `65c58b9` |
+| 2026-11-17 | Pruebas mínimas del plan §9 (cierre de la Fase 1) | test `e1e112d` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -137,8 +144,8 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 608 pruebas en 32 archivos (54 nuevas del paso 10: 12 de fechas de la
-práctica y 42 de ciclo de vida); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 611 pruebas en 32 archivos (54 del paso 10 y 3 de las pruebas mínimas
+de la Fase 1); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -151,7 +158,15 @@ práctica y 42 de ciclo de vida); `build` OK (aviso de Vite por chunk > 500 kB, 
 - [x] Paso 8: reglas de insights (`6f61810` y `e784e4e`).
 - [x] Paso 9: indicadores (`998987e`, `e408893` y `86b0167`).
 - [x] Paso 10: ciclo de vida (`3c78c4f` y `2a3dc50`).
-- [ ] Pruebas mínimas de la sección 9 del plan.
+- [x] Pruebas mínimas de la sección 9 del plan (`e1e112d`).
+- [ ] Revisión de los tipos de `domain/` por los autores («Listo cuando» de la Fase 1; los tipos no se
+      cambian sin avisar).
+- [ ] Ajustar a mano el plan §9, Fase 1, pruebas obligatorias: la línea «Motivo/nota faltante cuando es
+      obligatorio → rechazada» no coincide con el dominio. Vacío o solo espacios da `TEXTO_OBLIGATORIO`; si
+      todavía no se escribió, la acción queda pendiente de texto y devuelve qué texto exige, y el servicio
+      la rechaza si falta (decisión del paso 3). Texto propuesto en `DECISIONES.md`.
+- [ ] Cierre de la Fase 1: PR a `development` y, cuando ambos autores lo confirmen, `development` → `main`
+      con la etiqueta de cierre (plan §11, por ejemplo `fase-1-completa`).
 
 ### Fase 2 (`data/`, `services/`)
 
