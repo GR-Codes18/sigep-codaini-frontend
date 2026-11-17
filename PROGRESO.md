@@ -8,11 +8,11 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), Bloque 1 (pasos 1 a 4) en curso: los pasos 1 (almacén) y 2
-  (semilla completa) están terminados. La Fase 1 (`domain/`) está fusionada en `development` (PR #21); las
-  Fases 3 y 4 avanzaron todo lo que no depende de `services/`. Siguiente: paso 3 (restablecer datos de
-  demostración).
-- **Actualizado:** 2026-11-17, al cerrar el paso 2 de la Fase 2.
+- **Fase actual:** Fase 2 (`data/` y `services/`), Bloque 1 (pasos 1 a 4) en curso: los pasos 1 (almacén), 2
+  (semilla completa) y 3 (restablecer datos de demostración) están terminados. La Fase 1 (`domain/`) está
+  fusionada en `development` (PR #21); las Fases 3 y 4 avanzaron todo lo que no depende de `services/`.
+  Siguiente: paso 4 (utilidades de `services/`).
+- **Actualizado:** 2026-11-17, al cerrar el paso 3 de la Fase 2.
 
 ### Cierres de fase
 
@@ -112,9 +112,15 @@
   constructor por ciclo de vida que usa `siguienteEstadoPR`; las evaluaciones, de `calcularPuntaje`; la fecha
   de fin de cada práctica, de `fechaFinPrevista`. Decisiones D1 a D8, contraseñas de demostración
   (`demo12345`) y detalle en `DECISIONES.md`.
-- **Fase 2, bloque 1 (resto de la sesión):** paso 3 (restablecer datos de demostración) y paso 4 (utilidades
-  de `services/`: resultado estándar, demora, registro de evento y notificación sin avisar al autor). Se
-  avanza paso por paso, con parada al cerrar cada uno.
+- **Fase 2, paso 3: terminado (2026-11-17).** Restablecer datos de demostración en `src/data/almacen.ts`
+  (`d3d4800`): acción `restablecer(ahora?)` del almacén, un único `set` con una semilla nueva (una sola
+  escritura y un solo aviso, nunca una base vacía a medias). Cambia todas las colecciones, no toca otras claves
+  del navegador (sesión, tema) y no registra evento de historial. Además, `protegerEscritura` atrapa los
+  errores de `setItem` (disco lleno o modo privado): aviso con `console.warn` y la app sigue en memoria. La
+  autorización y la sesión activa quedan para el servicio del paso 10. Detalle en `DECISIONES.md`.
+- **Fase 2, bloque 1 (resto de la sesión):** paso 4 (utilidades de `services/`: resultado estándar, demora,
+  registro de evento y notificación sin avisar al autor). Se avanza paso por paso, con parada al cerrar cada
+  uno.
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
   por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
@@ -145,7 +151,8 @@
 | Fecha | Paso | Commit / PR |
 |---|---|---|
 | 2026-11-17 | 1. Almacén persistente con recuperación segura | `809ff44`; docs `b317640` |
-| 2026-11-17 | 2. Semilla completa de demostración | `91b29e0`; docs (`DECISIONES.md` y `PROGRESO.md`) pendientes de commit |
+| 2026-11-17 | 2. Semilla completa de demostración | `91b29e0`; docs `b7e8d68` |
+| 2026-11-17 | 3. Restablecer datos de demostración | `d3d4800`; docs (`DECISIONES.md` y `PROGRESO.md`) pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -167,8 +174,8 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 812 pruebas en 34 archivos (21 del almacén y 180 de la semilla, de la
-Fase 2); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 824 pruebas en 35 archivos (22 del almacén, 180 de la semilla y 11 de
+restablecer, de la Fase 2); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -195,10 +202,20 @@ Fase 2); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 - [x] Paso 1: almacén con persistencia y recuperación segura (`809ff44`).
 - [x] Paso 2: semilla completa, coherente por construcción y con 180 pruebas (`91b29e0`).
-- [ ] Pasos 3 a 11: restablecer datos, utilidades y servicios por módulo, consultas con alcance por rol, más
-      sus pruebas.
+- [x] Paso 3: restablecer datos de demostración (acción `restablecer` del almacén) y guardado protegido
+      (`d3d4800`).
+- [ ] Pasos 4 a 11: utilidades y servicios por módulo, consultas con alcance por rol, más sus pruebas.
 - [ ] Mientras no haya escrituras, la semilla se regenera con la fecha de hoy en cada carga; tras la primera
-      escritura los datos quedan fijos hasta restablecer (paso 3).
+      escritura los datos quedan fijos hasta restablecer (`restablecer`, paso 3).
+- [ ] Paso 10 (servicios de configuración): servicio `restablecerDatosDemostracion(usuario)` que valide
+      `puede('RESTABLECER_DATOS_DEMOSTRACION')` (ya existe: solo Administrador), devuelva el resultado estándar
+      y simule la demora. Contrato de la sesión activa: si el usuario sigue existiendo en la semilla nueva se
+      conserva y se refresca su copia (nombre, correo, contraseña temporal); si no existe, se cierra la sesión.
+- [ ] Fase 5.8: botón «Restablecer datos» con confirmación y la marca «solo prototipo»; tras restablecer,
+      volver al inicio para no dejar pantallas abiertas sobre registros que ya no existen. La pantalla llama al
+      servicio, nunca al almacén.
+- [ ] Varias pestañas abiertas: el almacén no se sincroniza entre pestañas (no hay evento `storage`); la otra
+      pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
 - [ ] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
       GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
 - [ ] Login: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los

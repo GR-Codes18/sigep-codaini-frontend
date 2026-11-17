@@ -2006,3 +2006,66 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   eliminada al final de un proyecto. Si se agrega una, el contador quedaría por debajo del real.
 - La regla «no notificar al autor» está repetida (mínima) en `registro.ts`; la definitiva es la del paso 4.
 - El catálogo de áreas y especialidades es de ejemplo y se revisa con CODAINI (plan §12).
+
+## 2026-11-17 — [A+B] Fase 2, paso 3: restablecer datos de demostración
+
+- **Commit:** `d3d4800` (`feat: agrega restablecer datos de demostración y protege el guardado (Fase 2,
+  paso 3)`). Verificación: 824 pruebas en 35 archivos (11 nuevas en `src/data/restablecer.test.ts` y 1 en
+  `almacen.test.ts`), `tsc -b`, `eslint src/data`, `prettier --check src/data` y `build` OK;
+  `git diff -- docs` vacío.
+
+### Qué se construyó (`src/data/almacen.ts`)
+
+- **`restablecer(ahora?)`**, acción del almacén junto a `transaccion`: un único `set({ datos: semilla(ahora) })`.
+  Una sola escritura a `localStorage` y un solo aviso a los suscriptores, así que nunca se ve una base vacía a
+  medias. Sin argumento usa la fecha de hoy. Regenera todas las colecciones (también historial,
+  notificaciones y parámetros) y no toca otras claves del navegador (`sigep-sesion`, `sigep-tema`).
+- **No registra evento de historial:** se borraría junto con el resto de los datos y el dominio no define una
+  acción del historial para ello.
+- `OpcionesAlmacen.crearSemilla` pasa a `(ahora?: Date) => DatosAlmacen` (por defecto, `crearSemilla`), para
+  poder probar con fechas distintas. El estado inicial y `migrate` siguen llamándola sin argumento.
+- **`protegerEscritura`:** envuelve el almacenamiento y atrapa los errores de `setItem` (disco lleno, modo
+  privado), con un `console.warn`. Corrige un hueco del paso 1: `persist` de Zustand lanza el error después
+  de cambiar la memoria, así que `transaccion` fallaba con los datos ya modificados. Ahora la app sigue en
+  memoria y lo escrito solo se pierde al recargar. Protege también a `transaccion` y a todos los servicios.
+
+### Decisiones de los autores
+
+- **Alcance: solo capa de datos.** El servicio autorizado (`puede('RESTABLECER_DATOS_DEMOSTRACION')`, resultado
+  estándar y demora) se construye en el paso 10 de la Fase 2, con las utilidades del paso 4. Descartado crear
+  ahora un servicio mínimo con resultado propio (habría que reescribirlo) y reordenar los pasos. La acción de
+  permiso ya existía en `domain/permisos.ts` (Administrador, GLOBAL): no se tocó `domain/`.
+- **Sesión activa (contrato para el servicio y la pantalla, no código del paso 3):** se conserva si el usuario
+  existe en la semilla nueva, refrescando su copia (nombre, correo, contraseña temporal), y se cierra si no
+  existe. Hoy basta con lo primero: el login solo conoce las 3 cuentas demo y sus IDs existen en cualquier
+  semilla. El caso «no existe» aparecerá cuando el login lea de `data/`. Descartado cerrar siempre la sesión y
+  no hacer nada.
+- **Guardado:** atrapar y avisar (`protegerEscritura`), en lugar de dejar que cada servicio atrape el error.
+
+### Pruebas y mutaciones
+
+- `restablecer.test.ts` (11 pruebas, con la semilla real y el reloj simulado): los datos modificados vuelven
+  a la semilla; usa la fecha actual (las fechas relativas se mueven con «hoy»); los parámetros vuelven a su
+  valor inicial y predeterminado; una sola escritura y sobrevive a «recargar»; es atómico (un solo aviso y
+  nunca una base vacía); no toca la sesión ni el tema; deja el sistema consistente (`validarDatos`,
+  `ultimo_numero_tarea`) y acepta operaciones después; es idempotente con el mismo «ahora»; y con
+  almacenamiento ausente, con `setItem` que falla o con lo guardado dañado no lanza.
+- Mutaciones del agente (8, con `git add` previo y `git restore` después; todas detectadas y restauradas):
+  no regenerar nada, usar una fecha fija, cambiar la memoria sin pasar por `set`, reiniciar en dos pasos, borrar
+  también `sigep-sesion`, dejar escapar el error de `setItem`, conservar los parámetros actuales y restaurar
+  solo algunas colecciones.
+- La mutación «cambiar la memoria sin pasar por `set`» no hace fallar «los datos modificados vuelven a la
+  semilla» (la asignación directa sí deja la memoria con la semilla): lo que se pierde es el aviso y la
+  persistencia, y lo detectan las pruebas de escritura única y de «recargar».
+- Un fallo de la primera ejecución fue del ayudante de la prueba (sustituía la fecha por la A cuando
+  `restablecer()` no recibía argumento) y no del código; se corrigió pasando `crearSemilla` directamente.
+
+### Pendientes
+
+- Paso 10: servicio `restablecerDatosDemostracion(usuario)` con `puede()`, resultado estándar, demora y el
+  contrato de sesión de arriba.
+- Fase 5.8: botón «Restablecer datos» con confirmación y la marca «solo prototipo»; tras restablecer, volver
+  al inicio para no dejar pantallas abiertas sobre registros que ya no existen. La pantalla llama al servicio,
+  nunca al almacén.
+- Varias pestañas abiertas: el almacén no se sincroniza entre pestañas (no hay evento `storage`); la otra
+  pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
