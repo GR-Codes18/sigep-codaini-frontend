@@ -1868,3 +1868,284 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 
 - El lado «no dispara» de la carga mínima (un valor por encima del umbral) solo se prueba con «sin tareas
   disponibles». No se añadió prueba.
+
+## 2026-11-17 — [A+B] Fase 2, paso 1: almacén de datos
+
+### Qué se construyó (`src/data/`)
+
+- `tipos.ts` (`DatosAlmacen`: una colección por entidad de `domain/`; los insights no se guardan, solo su
+  revisión en `revisiones_insight`), `esquemas.ts` (Zod, cada esquema tipado contra su tipo de `domain/`),
+  `parametros.ts` (`crearParametros`: `id === clave`, valor predeterminado como copia), `semilla.ts`
+  (**provisional**: colecciones vacías + parámetros; el paso 2 la reemplaza), `almacen.ts` y `index.ts`.
+
+- **Commit:** `809ff44` (`feat: agrega el almacén persistente con recuperación segura (Fase 2, paso 1)`).
+  Verificación: 632 pruebas en 33 archivos (21 nuevas), `tsc -b`, `eslint src/data`, `prettier --check
+  src/data` y `build` OK; `git diff -- docs` vacío.
+
+### Decisiones de los autores
+
+- **Un solo store** con todas las colecciones (no uno por entidad): es la única forma de que una operación
+  atómica abarque varias entidades.
+- **`transaccion(operacion)`** en lugar de `immer` (sin dependencias nuevas) o de un setter por colección: la
+  operación es síncrona, lee los datos actuales y devuelve las colecciones nuevas; se hace un solo `set` y, por
+  tanto, una sola escritura a `localStorage`. Si lanza, no se escribe nada; `null` = sin cambios. La demora
+  simulada va fuera. Crear una tarea = devolver `tareas` y `proyectos` (con `ultimo_numero_tarea`) en la misma
+  operación.
+- **Validación con Zod completa** al leer del navegador (clave `sigep-datos`, `version` 1). Exige además todas
+  las claves del catálogo de parámetros y `id === clave`; `ultimo_numero_tarea` entero ≥ 0.
+- **Datos dañados, vacíos o de otra versión: se regenera la semilla en silencio** y se deja un `console.warn`
+  (sin aviso visible al usuario). Se pierden los cambios guardados. No se migra entre versiones: al cambiar la
+  forma de los datos se sube `VERSION_ALMACEN`.
+- **Contraseñas de demostración guardadas tal cual** (sin hash) en `localStorage` dentro de
+  `Usuario.contrasena`: son valores de demostración del prototipo, no secretos reales. Nunca van al historial.
+- Si `localStorage` está bloqueado, la app sigue funcionando en memoria sin guardar.
+
+### Detalles para pasos siguientes
+
+- Sin nada guardado no se escribe hasta el primer cambio, así que la semilla se regenera con la fecha de hoy
+  en cada carga hasta que haya una escritura; después los datos quedan fijos (el paso 3 los restablece).
+- La validación comprueba forma y tipos, **no** la integridad referencial (por ejemplo, que `id_proyecto` de una
+  tarea exista). La semilla del paso 2 debe ser coherente por construcción.
+- Solo `services/` debe escribir con `transaccion`; las pantallas leen con selectores. No hay barrera técnica
+  (es convención). Los datos recibidos no se mutan: se devuelven colecciones nuevas.
+- `src/auth/usuariosDemo.ts` y `src/app/ejemplos/` siguen intactos; su migración a la semilla es posterior.
+
+## 2026-11-17 — [A+B] Fase 2, paso 2: semilla completa de demostración
+
+- **Commit:** `91b29e0` (`feat: agrega la semilla completa de demostración (Fase 2, paso 2)`). Verificación:
+  812 pruebas en 34 archivos (180 nuevas en `src/data/semilla.test.ts`), `tsc -b`, `eslint src/data`,
+  `prettier --check src/data` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó (`src/data/semilla.ts` y `src/data/semilla/`)
+
+- `semilla.ts` (entrada: `crearSemilla(ahora)`), `reloj.ts` (fechas «hace N días y H horas»), `registro.ts`
+  (junta eventos y notificaciones, los ordena y les pone ID), `catalogos.ts`, `personas.ts`, `proyectos.ts`,
+  `tareas.ts` y `postulaciones.ts`. `almacen.test.ts` se ajustó para usar una base vacía propia (antes asumía
+  la semilla provisional).
+- Cantidades: 1 administrador, 3 supervisores, 24 practicantes, 5 proyectos, 43 tareas, 42 postulaciones,
+  4 áreas, 9 especialidades, 53 criterios, 336 detalles de evaluación, 321 eventos, 82 notificaciones, 22
+  asignaciones, 7 enlaces y 1 revisión de insight (unos 290 KB).
+- Es determinista: con el mismo «ahora» da exactamente los mismos datos, con IDs fijos y legibles. Los instantes
+  (`FechaHora`) se restan de `ahora`, así que nunca quedan en el futuro a ninguna hora del día; las `Fecha` se
+  cortan en la hora de Perú con `hoyEn`.
+
+### Decisiones de los autores (D1 a D8, opción A en todas)
+
+- **D1 — Cifras:** cada practicante exige `id_postulante` (no nulo), así que hay 24 postulaciones aprobadas
+  (el origen de cada practicante) **más** 18 en flujo (9 pendientes, 1 reconsiderada y 8 rechazadas): 42 en
+  total. «~18» es lo que ve el Administrador en el flujo. Descartado dejar 18 en total (rompía la
+  integridad) y apuntar a postulantes inexistentes.
+- **D2 — Catálogo de áreas** (no definido en la propuesta; **provisional**, plan §12): Software (Frontend,
+  Backend, Móvil), Videojuegos (Programación de juegos, Diseño de juegos), Diseño UX/UI (Investigación UX,
+  Diseño de interfaces) y Datos e IA (Análisis de datos, Machine Learning). Cada bloque suma 100 en sus
+  criterios activos; hay un criterio desactivado («Carta de recomendación») para mostrar que no se borra.
+- **D3 — Constructor por ciclo de vida:** cada tarea es una lista de pasos con su desfase y el constructor
+  deriva estado, responsable, `fecha_termino`, `estado_pr` y eventos. Lanza un error si un guion pide un paso
+  imposible. Descartado escribir tareas y eventos a mano (~160 eventos, propenso a incoherencias).
+- **D4 — Tiempo:** instantes como `ahora − N días − H horas` y `Fecha` como el día de Perú ± N. Descartado
+  «día de calendario más hora fija» (a primera hora quedaría un evento en el futuro).
+- **D5 — Archivos:** carpeta `src/data/semilla/` con `semilla.ts` como entrada. Descartado un solo archivo de
+  unas 1.200 líneas.
+- **D6 — Cuentas de demostración:** los tres accesos rápidos conservan ID, nombre y correo de
+  `auth/usuariosDemo.ts` (`demo-admin`, `demo-supervisor`, `demo-practicante`, con correos `admin@`,
+  `supervisor@` y `practicante@codaini.demo`). `auth/` no se tocó. Una prueba verifica que coinciden.
+- **D7 — Caso de error de PR preparado (plan §8):** no se resuelve en la semilla. El modelo no tiene catálogo
+  de ramas y crear PR es el paso 6; la semilla deja tareas en `PENDIENTE` listas para crear su PR y el paso 6
+  define la rama que dispara el error. Descartado agregar una colección de ramas (cambia el contrato de
+  `domain/`).
+- **D8 — `data/` invoca reglas de `domain/`:** la semilla llama a `calcularPuntaje` (evaluaciones: puntaje,
+  marca y desglose) y a `siguienteEstadoPR` (`estado_pr`) en lugar de reimplementarlos; solo escribe los
+  «juicios». Descartado escribir los números a mano.
+
+### Contraseñas de demostración
+
+- **Todas las cuentas** (administrador, supervisores y practicantes) usan la contraseña **`demo12345`**
+  (constante `CONTRASENA_DEMO`), guardada tal cual en `Usuario.contrasena` (ver el paso 1). Los accesos
+  rápidos son `admin@codaini.demo`, `supervisor@codaini.demo` y `practicante@codaini.demo`; el resto usa
+  `nombre.apellido@codaini.demo`. Son datos de demostración, no secretos reales, y nunca van al historial
+  (una prueba lo verifica). Los nombres de personas, los repositorios (`github.com/org-demo/...`) y los
+  enlaces (`example.com`) son inventados.
+
+### Valores acordados con la propuesta del paso
+
+- Supervisores: `demo-supervisor` lleva PL2D y RSV (activos), `usr-sup-02` lleva TIE (finalizado) y DAT
+  (activo, sin practicantes) y `usr-sup-03` lleva INV (en pausa). Reparto 2/2/1.
+- Reconsideradas: no son un estado; es `PENDIENTE` con un evento `POSTULACION_RECONSIDERADA` (propuesta
+  §5.1), y la regla «postulaciones sin decidir» cuenta desde esa fecha.
+- La fecha de fin de cada práctica sale de `fechaFinPrevista` con la duración vigente (4 meses); para «cerca de
+  su fin» (Diego, fin en 9 días) y «ya la superó» (Camila, hace 6 días) `ingresoParaFin` retrocede el ingreso
+  hasta que ingreso + duración dé la fecha deseada (o la más cercana alcanzable).
+- Casos cubiertos: practicantes sin proyecto, finalizado (cuenta inactiva), en 2 proyectos, con un proyecto
+  anterior (asignación con baja), inactivos hace más de 7 y más de 14 días, con más de 3 tareas en progreso,
+  sin tareas con su proyecto con disponibles, cerca de su fin y que ya la superó, y uno nuevo con contraseña
+  temporal. Tareas en los 4 estados y con los 5 estados de PR, devuelta con nota, reabierta, vencidas, por
+  vencer, sin asignar, esperando supervisión hace más de 3 días y un proyecto con 6 terminadas. Las 7 reglas
+  de insights disparan; el Supervisor ve 5, y «revisado» es independiente por persona.
+
+### Pruebas y mutaciones
+
+- `semilla.test.ts`: 44 pruebas por cada uno de 4 «ahora» (incluidos un 29 de febrero y las primeras horas
+  del día en Perú) más 4 sueltas. Cubren forma, cantidades, integridad referencial entre las 17 colecciones,
+  contratos de la Fase 1 (`ultimo_numero_tarea`, `fecha_termino` igual al evento que cierra, `estado_pr` y
+  URL, reproducción del historial, fechas), evaluaciones recalculadas con `calcularPuntaje`, notificaciones
+  (nunca al autor) y escenarios con las funciones de insights.
+- Mutaciones del agente (10, con `git add` previo y `git restore` después; todas detectadas y restauradas):
+  `ultimo_numero_tarea` + 1, `fecha_termino` 5 ms desfasada, código de proyecto duplicado, asignación a un
+  practicante inexistente, bloque de criterios que suma 99, evento en el futuro, notificación al autor,
+  parámetro con `id` distinto de su clave, PR abierto sin URL e historial sin ordenar.
+- **Mutación 5:** falla al **generar** la semilla (`Evaluación de pos-01: Los pesos de los criterios activos
+  del bloque de la especialidad deben sumar 100`), porque `calcularPuntaje` se niega a evaluar con pesos que
+  no suman 100; la prueba «los pesos … suman 100» no llega a correr. Los autores lo aceptaron así: no hace
+  falta construir la semilla dentro de cada prueba.
+
+### Pendientes
+
+- Paso 6: definir el caso de error de PR y las ramas de ejemplo (D7).
+- Login: `iniciarSesion` debe leer de `data/` y retirar las `CUENTAS_DEMO` provisionales.
+- `ultimo_numero_tarea` de la semilla es el mayor `numero` de las tareas existentes; no hay ninguna tarea
+  eliminada al final de un proyecto. Si se agrega una, el contador quedaría por debajo del real.
+- La regla «no notificar al autor» está repetida (mínima) en `registro.ts`; la definitiva es la del paso 4.
+- El catálogo de áreas y especialidades es de ejemplo y se revisa con CODAINI (plan §12).
+
+## 2026-11-17 — [A+B] Fase 2, paso 3: restablecer datos de demostración
+
+- **Commit:** `d3d4800` (`feat: agrega restablecer datos de demostración y protege el guardado (Fase 2,
+  paso 3)`). Verificación: 824 pruebas en 35 archivos (11 nuevas en `src/data/restablecer.test.ts` y 1 en
+  `almacen.test.ts`), `tsc -b`, `eslint src/data`, `prettier --check src/data` y `build` OK;
+  `git diff -- docs` vacío.
+
+### Qué se construyó (`src/data/almacen.ts`)
+
+- **`restablecer(ahora?)`**, acción del almacén junto a `transaccion`: un único `set({ datos: semilla(ahora) })`.
+  Una sola escritura a `localStorage` y un solo aviso a los suscriptores, así que nunca se ve una base vacía a
+  medias. Sin argumento usa la fecha de hoy. Regenera todas las colecciones (también historial,
+  notificaciones y parámetros) y no toca otras claves del navegador (`sigep-sesion`, `sigep-tema`).
+- **No registra evento de historial:** se borraría junto con el resto de los datos y el dominio no define una
+  acción del historial para ello.
+- `OpcionesAlmacen.crearSemilla` pasa a `(ahora?: Date) => DatosAlmacen` (por defecto, `crearSemilla`), para
+  poder probar con fechas distintas. El estado inicial y `migrate` siguen llamándola sin argumento.
+- **`protegerEscritura`:** envuelve el almacenamiento y atrapa los errores de `setItem` (disco lleno, modo
+  privado), con un `console.warn`. Corrige un hueco del paso 1: `persist` de Zustand lanza el error después
+  de cambiar la memoria, así que `transaccion` fallaba con los datos ya modificados. Ahora la app sigue en
+  memoria y lo escrito solo se pierde al recargar. Protege también a `transaccion` y a todos los servicios.
+
+### Decisiones de los autores
+
+- **Alcance: solo capa de datos.** El servicio autorizado (`puede('RESTABLECER_DATOS_DEMOSTRACION')`, resultado
+  estándar y demora) se construye en el paso 10 de la Fase 2, con las utilidades del paso 4. Descartado crear
+  ahora un servicio mínimo con resultado propio (habría que reescribirlo) y reordenar los pasos. La acción de
+  permiso ya existía en `domain/permisos.ts` (Administrador, GLOBAL): no se tocó `domain/`.
+- **Sesión activa (contrato para el servicio y la pantalla, no código del paso 3):** se conserva si el usuario
+  existe en la semilla nueva, refrescando su copia (nombre, correo, contraseña temporal), y se cierra si no
+  existe. Hoy basta con lo primero: el login solo conoce las 3 cuentas demo y sus IDs existen en cualquier
+  semilla. El caso «no existe» aparecerá cuando el login lea de `data/`. Descartado cerrar siempre la sesión y
+  no hacer nada.
+- **Guardado:** atrapar y avisar (`protegerEscritura`), en lugar de dejar que cada servicio atrape el error.
+
+### Pruebas y mutaciones
+
+- `restablecer.test.ts` (11 pruebas, con la semilla real y el reloj simulado): los datos modificados vuelven
+  a la semilla; usa la fecha actual (las fechas relativas se mueven con «hoy»); los parámetros vuelven a su
+  valor inicial y predeterminado; una sola escritura y sobrevive a «recargar»; es atómico (un solo aviso y
+  nunca una base vacía); no toca la sesión ni el tema; deja el sistema consistente (`validarDatos`,
+  `ultimo_numero_tarea`) y acepta operaciones después; es idempotente con el mismo «ahora»; y con
+  almacenamiento ausente, con `setItem` que falla o con lo guardado dañado no lanza.
+- Mutaciones del agente (8, con `git add` previo y `git restore` después; todas detectadas y restauradas):
+  no regenerar nada, usar una fecha fija, cambiar la memoria sin pasar por `set`, reiniciar en dos pasos, borrar
+  también `sigep-sesion`, dejar escapar el error de `setItem`, conservar los parámetros actuales y restaurar
+  solo algunas colecciones.
+- La mutación «cambiar la memoria sin pasar por `set`» no hace fallar «los datos modificados vuelven a la
+  semilla» (la asignación directa sí deja la memoria con la semilla): lo que se pierde es el aviso y la
+  persistencia, y lo detectan las pruebas de escritura única y de «recargar».
+- Un fallo de la primera ejecución fue del ayudante de la prueba (sustituía la fecha por la A cuando
+  `restablecer()` no recibía argumento) y no del código; se corrigió pasando `crearSemilla` directamente.
+
+### Pendientes
+
+- Paso 10: servicio `restablecerDatosDemostracion(usuario)` con `puede()`, resultado estándar, demora y el
+  contrato de sesión de arriba.
+- Fase 5.8: botón «Restablecer datos» con confirmación y la marca «solo prototipo»; tras restablecer, volver
+  al inicio para no dejar pantallas abiertas sobre registros que ya no existen. La pantalla llama al servicio,
+  nunca al almacén.
+- Varias pestañas abiertas: el almacén no se sincroniza entre pestañas (no hay evento `storage`); la otra
+  pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
+
+## 2026-11-17 — [A+B] Fase 2, paso 4: utilidades base de `services/` (cierra el Bloque 1)
+
+- **Commit:** `c2b3f47` (`feat: agrega las utilidades base de services (Fase 2, paso 4)`). Verificación: 960
+  pruebas en 43 archivos (136 nuevas en `src/services/`), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío. Se elimina `src/services/.gitkeep`.
+- Con este paso queda cerrado el **Bloque 1 de la Fase 2** (pasos 1 a 4): almacén (`809ff44`), semilla
+  (`91b29e0`), restablecer (`d3d4800`) y utilidades de `services/` (`c2b3f47`).
+
+### Qué se construyó (`src/services/`)
+
+- `resultado.ts`: `Resultado<T>` plano (`{ ok: true, valor }` / `{ ok: false, codigo, mensaje, campos? }`, igual
+  que las formas de `domain/`), `exito`, `fallo`, `denegar` (convierte `{ permitido: false, codigo }` o
+  `{ codigo, mensaje }` de `domain/`), `validarEntrada` (Zod → `DATOS_INVALIDOS` con un mensaje por campo; un
+  error de todo el formulario va en `_general`) y la tabla `MENSAJES`: 22 códigos en español (permisos,
+  transiciones, edición, Pull Request y los propios `NO_ENCONTRADO`, `DATOS_INVALIDOS`, `ERROR_INESPERADO`).
+  Los códigos de ciclo de vida, puntaje, ID e indicadores ya traen `mensaje` desde `domain/` y pasan tal cual.
+- `entorno.ts`: `Entorno { almacen, ahora(), generarId(prefijo), demoraMs }`, `ENTORNO` por defecto
+  (`useAlmacen`, `new Date()`, `${prefijo}-${crypto.randomUUID()}`, 600 ms) y `crearEntorno`.
+- `demora.ts` (`simularDemora`), `marca.ts` (`Marca { ahora, hoy }`, `crearMarca`), `actor.ts`
+  (`obtenerActor`), `etiquetas.ts` (mismo formato que la semilla: `PL2D-018 · Título`), `historial.ts`
+  (`crearEvento`, `agregarEventos`, `cambio`, `diferencias`, `autorDe`, `AUTOR_SISTEMA`), `notificaciones.ts`
+  (`crearNotificaciones`, `agregarNotificaciones`), `transaccional.ts` (`ejecutarServicio`, `conEfectos`),
+  `index.ts` y `pruebas/entorno.ts` (solo para tests).
+
+### Decisiones de los autores
+
+- **Dependencias: parámetro opcional `entorno`** al final de cada servicio (`tomarTarea(entrada, entorno =
+  ENTORNO)`). Descartado una fábrica `crearServicios(entorno)` (API más grande) y los singletons con mocks
+  globales (pruebas frágiles y con estado compartido).
+- **Demora: al inicio de cada llamada, fija** (600 ms, configurable; 0 en las pruebas) y también cuando acaba
+  en error, como una red real. Todo se valida con datos frescos tras la espera. Descartado esperar solo en los
+  éxitos (el estado de carga parpadearía) y una demora aleatoria (demostraciones impredecibles).
+- **Alcance: núcleo + ayudantes** (`ejecutarServicio`, `obtenerActor`, `validarEntrada`, `diferencias`,
+  etiquetas), además de las cuatro utilidades pedidas y la marca. Descartado dejar los ayudantes para el paso 5.
+
+### Contratos fijados sin pregunta (consecuencia de lo ya decidido)
+
+- **El actor es un `idActor`:** la sesión guarda `UsuarioSesion` (sin `estado` ni `celular`) y `puede()` pide
+  el `Usuario` completo, así que cada servicio lo resuelve **dentro de la transacción** con `obtenerActor`
+  (rol y estado vigentes, no los de la sesión).
+- **La marca de tiempo se toma dentro de la transacción, después de la demora.** Si se tomara antes, dos
+  acciones concurrentes podrían dejar el historial con fechas desordenadas. Todo lo que escribe una operación
+  (`fecha_termino`, evento, avisos) comparte ese instante; así `tiempoCicloMs` no se descarta por milisegundos.
+- **Resultado plano**, como las formas de `domain/`; **IDs `evt-<uuid>` y `ntf-<uuid>`** con `crypto.randomUUID()`
+  (el paso 1 de la Fase 1 ya asignó los UUID a `services/`; la semilla usa IDs fijos y legibles).
+- **El historial solo se agrega** (`agregarEventos` devuelve una lista nueva y conserva las referencias; no hay
+  función para editar o borrar), `id_proyecto` es obligatorio en los eventos de proyecto, tarea, Pull Request
+  y asignación, y un campo de contraseña se rechaza siempre (también en `diferencias`, que lo omite).
+- **Notificaciones:** nunca se notifica al autor (autor `USUARIO`); con autor `SISTEMA` o `null` se notifica a
+  todos; se quitan los duplicados; un destinatario inexistente o un mensaje vacío son errores de programación
+  que lanzan, y como van dentro de la transacción no se escribe nada. Qué destinatarios corresponden a cada aviso
+  lo decide cada servicio con la tabla de §8.1.
+- **Una excepción dentro de un servicio** devuelve `ERROR_INESPERADO` (mensaje genérico; el detalle va a
+  `console.error`) y no escribe nada. Una demora mal configurada se informa igual, sin lanzar.
+
+### Pruebas y mutaciones
+
+- 136 pruebas: `resultado`, `demora`, `marca`, `historial` (incluye etiquetas y `diferencias`), `notificaciones`,
+  `entorno`, `actor` y `transaccional`. La de `transaccional` incluye dos servicios de ejemplo escritos en el
+  propio test (terminar y enviar a supervisión) como contrato para los pasos 5 a 11: sobre la semilla real
+  validan con `domain/`, escriben, registran el evento y avisan al supervisor sin avisar al autor, todo con la
+  misma marca y en una sola escritura.
+- Mutaciones del agente (12, con `git add` previo y `git restore` después; todas detectadas y restauradas):
+  no excluir al autor, no quitar duplicados, que el evento use el reloj y no la marca, tomar la marca antes de
+  la demora, escribir los cambios aun con error, no atrapar excepciones, aceptar un campo de contraseña, quitar
+  la guarda de `id_proyecto`, que `agregarEventos` reemplace el historial, borrar el mensaje de un código de
+  denegación, que `simularDemora` ignore los milisegundos y que `diferencias` incluya campos sin cambio.
+- Un error del ejemplo de la prueba, no de las utilidades: el servicio de ejemplo pasaba una lista vacía de
+  asignaciones a `puede()` y rechazaba la acción. `puede()` espera las asignaciones **de quien actúa**; los
+  servicios reales deben pasarlas así.
+
+### Pendientes
+
+- Pasos 5 a 11: cada servicio recibe `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio` y suma
+  a `MENSAJES` los códigos nuevos que no traigan `mensaje` del dominio.
+- La regla de «no notificar al autor» definitiva es la de `crearNotificaciones`; el registro de la semilla
+  (`src/data/semilla/registro.ts`) conserva una copia mínima solo para generar los datos iniciales.
+- El historial queda en orden de escritura, que coincide con el cronológico porque la marca se toma dentro de
+  la transacción.

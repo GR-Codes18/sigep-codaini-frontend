@@ -8,10 +8,11 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 10 y pruebas mínimas del plan §9 terminados; las Fases 3
-  y 4 avanzaron todo lo que no depende de `services/`. Siguiente: cierre de la Fase 1 (que los autores
-  revisen los tipos y se fusione) y empezar la Fase 2.
-- **Actualizado:** 2026-11-17, al cerrar las pruebas mínimas de la Fase 1.
+- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 1 (pasos 1 a 4) terminado**: almacén, semilla
+  completa, restablecer datos de demostración y utilidades base de `services/`. La Fase 1 (`domain/`) está
+  fusionada en `development` (PR #21); las Fases 3 y 4 avanzaron todo lo que no depende de `services/`.
+  Siguiente: paso 5 (servicios de tareas), que abre el Bloque 2 de la Fase 2.
+- **Actualizado:** 2026-11-17, al cerrar el paso 4 y con él el Bloque 1 de la Fase 2.
 
 ### Cierres de fase
 
@@ -97,12 +98,41 @@
   completa de transiciones, reunión/enlaces/rama base/datos del proyecto en FINALIZADO y no modificar la
   entrada en el ciclo de vida), con 9 mutaciones detectadas de 9 (`e1e112d`). Además se comprobó que `domain/`
   no importa React, Zustand, `data/` ni `services/`. Detalle en `DECISIONES.md`.
-- **Luego:** cierre de la Fase 1. Del «Listo cuando» quedan dos cosas de los autores: que revisen los tipos
-  de `domain/` y que ajusten una línea del plan (ver «Pendientes»). Los `docs/` de los pasos 9 y 10 ya están
-  al día (`3d68cc4`). Después, la Fase 2 (`data/` y `services/`); queda por decidir si se parte en sesiones
-  (ver «Decisiones pendientes»).
-- **Rama:** `feat/fase1-ciclo-de-vida` (la del paso 10 y de las pruebas mínimas); la Fase 2 sale de
-  `development` en una rama nueva.
+- **Fase 2, paso 1: terminado (2026-11-17).** Almacén en `src/data/` (`809ff44`): un solo store de Zustand
+  con las 17 colecciones, persistencia en `localStorage` (clave `sigep-datos`, versión 1), validación con
+  Zod al leer y `transaccion(operacion)` para operaciones atómicas (una sola escritura; si lanza, no se
+  escribe nada). Con datos vacíos, dañados o de otra versión regenera la semilla en silencio con un
+  `console.warn`. La semilla de este paso es **provisional** (vacía, solo con los parámetros). Las contraseñas
+  de demostración se guardan tal cual. Detalle en `DECISIONES.md`.
+- **Fase 2, paso 2: terminado (2026-11-17).** Semilla completa en `src/data/semilla.ts` y `src/data/semilla/`
+  (`91b29e0`): 1 administrador, 3 supervisores, 24 practicantes, 5 proyectos (uno por situación), 43 tareas,
+  42 postulaciones (24 aprobadas y 18 en flujo), 4 áreas con 9 especialidades y 53 criterios, 321 eventos de
+  historial y 82 notificaciones (unos 290 KB). Se genera desde un único «ahora» (`crearSemilla(ahora)`), con
+  fechas relativas a hoy en hora de Perú, y es determinista. Tareas, `estado_pr` y eventos salen de un
+  constructor por ciclo de vida que usa `siguienteEstadoPR`; las evaluaciones, de `calcularPuntaje`; la fecha
+  de fin de cada práctica, de `fechaFinPrevista`. Decisiones D1 a D8, contraseñas de demostración
+  (`demo12345`) y detalle en `DECISIONES.md`.
+- **Fase 2, paso 3: terminado (2026-11-17).** Restablecer datos de demostración en `src/data/almacen.ts`
+  (`d3d4800`): acción `restablecer(ahora?)` del almacén, un único `set` con una semilla nueva (una sola
+  escritura y un solo aviso, nunca una base vacía a medias). Cambia todas las colecciones, no toca otras claves
+  del navegador (sesión, tema) y no registra evento de historial. Además, `protegerEscritura` atrapa los
+  errores de `setItem` (disco lleno o modo privado): aviso con `console.warn` y la app sigue en memoria. La
+  autorización y la sesión activa quedan para el servicio del paso 10. Detalle en `DECISIONES.md`.
+- **Fase 2, paso 4: terminado (2026-11-17).** Utilidades base en `src/services/` (`c2b3f47`): resultado
+  estándar plano (`{ ok, valor }` / `{ ok: false, codigo, mensaje, campos? }`) con la tabla de mensajes en
+  español; `Entorno` (almacén, reloj, IDs y demora) que cada servicio recibe como último parámetro opcional;
+  `simularDemora`; `Marca` (un único instante por operación); `ejecutarServicio` (demora → transacción →
+  resultado, con las excepciones convertidas en `ERROR_INESPERADO`) y `conEfectos`; `obtenerActor`;
+  `crearEvento`/`agregarEventos` (el historial solo se agrega; `id_proyecto` obligatorio donde el dominio lo
+  exige; nunca una contraseña), `diferencias` y etiquetas; y `crearNotificaciones` (nunca notifica al autor).
+  Detalle en `DECISIONES.md`.
+- **Fase 2, Bloque 1 cerrado.** Pasos 1 a 4 en una sola sesión, con parada y commit por paso. Quedan los
+  pasos 5 a 11 (servicios y consultas con alcance por rol); ver «Decisiones pendientes» sobre cómo partirlos
+  en sesiones.
+- **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
+  `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
+  por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
+- **Rama:** `feat/fase2-almacen-semilla` (sale de `development`, con la Fase 1 ya fusionada).
 
 ## Pasos terminados
 
@@ -124,6 +154,15 @@
 | 2026-11-17 | 10. Ciclo de vida | A (fechas de la práctica) `3c78c4f`; B (reglas de ciclo de vida) `2a3dc50` (incluye el cambio a mano de §9.1.4 de la propuesta); docs `3ee5277`; docs/ a mano `3d68cc4`; docs `65c58b9` |
 | 2026-11-17 | Pruebas mínimas del plan §9 (cierre de la Fase 1) | test `e1e112d` |
 
+### Fase 2 — `data/` y `services/`
+
+| Fecha | Paso | Commit / PR |
+|---|---|---|
+| 2026-11-17 | 1. Almacén persistente con recuperación segura | `809ff44`; docs `b317640` |
+| 2026-11-17 | 2. Semilla completa de demostración | `91b29e0`; docs `b7e8d68` |
+| 2026-11-17 | 3. Restablecer datos de demostración | `d3d4800`; docs `e950907` |
+| 2026-11-17 | 4. Utilidades base de `services/` (cierra el Bloque 1) | `c2b3f47`; docs (`DECISIONES.md` y `PROGRESO.md`) pendientes de commit |
+
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
 | Fecha | Fase | Paso | Commit / PR |
@@ -144,8 +183,8 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 611 pruebas en 32 archivos (54 del paso 10 y 3 de las pruebas mínimas
-de la Fase 1); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 960 pruebas en 43 archivos (22 del almacén, 180 de la semilla, 11 de
+restablecer y 136 de las utilidades de `services/`, de la Fase 2); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -170,8 +209,40 @@ de la Fase 1); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad)
 
 ### Fase 2 (`data/`, `services/`)
 
-- [ ] Pasos 1 a 11: almacén, semilla, restablecer datos, utilidades y servicios por módulo, consultas con
-      alcance por rol, más sus pruebas.
+- [x] Paso 1: almacén con persistencia y recuperación segura (`809ff44`).
+- [x] Paso 2: semilla completa, coherente por construcción y con 180 pruebas (`91b29e0`).
+- [x] Paso 3: restablecer datos de demostración (acción `restablecer` del almacén) y guardado protegido
+      (`d3d4800`).
+- [x] Paso 4: utilidades base de `services/` (`c2b3f47`). Cierra el Bloque 1 (pasos 1 a 4).
+- [ ] Pasos 5 a 11: servicios por módulo, consultas con alcance por rol, más sus pruebas. Cada servicio recibe
+      `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
+      dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos
+      nuevos que no traigan `mensaje` del dominio (una prueba exige que todo código conocido tenga mensaje).
+- [ ] Mientras no haya escrituras, la semilla se regenera con la fecha de hoy en cada carga; tras la primera
+      escritura los datos quedan fijos hasta restablecer (`restablecer`, paso 3).
+- [ ] Paso 10 (servicios de configuración): servicio `restablecerDatosDemostracion(usuario)` que valide
+      `puede('RESTABLECER_DATOS_DEMOSTRACION')` (ya existe: solo Administrador), devuelva el resultado estándar
+      y simule la demora. Contrato de la sesión activa: si el usuario sigue existiendo en la semilla nueva se
+      conserva y se refresca su copia (nombre, correo, contraseña temporal); si no existe, se cierra la sesión.
+- [ ] Fase 5.8: botón «Restablecer datos» con confirmación y la marca «solo prototipo»; tras restablecer,
+      volver al inicio para no dejar pantallas abiertas sobre registros que ya no existen. La pantalla llama al
+      servicio, nunca al almacén.
+- [ ] Varias pestañas abiertas: el almacén no se sincroniza entre pestañas (no hay evento `storage`); la otra
+      pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
+- [ ] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
+      GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
+- [ ] Login: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
+      mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
+      `CUENTAS_DEMO`.
+- [ ] Semilla: `ultimo_numero_tarea` es el mayor `numero` de las tareas existentes. Si se añade a la semilla
+      una tarea eliminada que sea la última de su proyecto, el contador quedaría por debajo del real.
+- [ ] La regla de «no notificar al autor» ya vive en `crearNotificaciones` (`services/`, paso 4). El registro
+      de la semilla (`src/data/semilla/registro.ts`) conserva una copia mínima solo para generar los datos
+      iniciales; no se reutiliza en los servicios.
+- [ ] Servicios (pasos 5 a 11): `ejecutarServicio` toma la marca de tiempo **dentro** de la transacción, tras la
+      demora; el servicio que escriba `fecha_termino` debe usar `marca.ahora` y el mismo valor en el evento de
+      cierre (`TAREA_TERMINADA` o `TAREA_APROBADA`), como ya pide el pendiente de indicadores.
+- [ ] Servicios: pasar a `puede()` las asignaciones **de quien actúa** (no las de todo el proyecto).
 - [ ] Los servicios deben pasar SIEMPRE el texto y rechazar si `exige_texto !== null` y falta o viene vacío.
 - [ ] Aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1).
 - [ ] Servicios de PR: simular GitHub y, si `necesitaConsultaGitHub(tarea)`, pasar SIEMPRE `github` en el
