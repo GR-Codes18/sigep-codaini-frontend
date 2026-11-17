@@ -212,3 +212,19 @@ export type {
   ResultadoIndicadores,
   ResumenIndicadores,
 } from './indicadores';
+
+export {
+  AVISO_MAXIMO_DIAS,
+  CODIGOS_PRACTICA,
+  DURACION_MAXIMA_MESES,
+  SITUACIONES_FIN_PRACTICA,
+  fechaFinPrevista,
+  situacionFinPractica,
+} from './practicas';
+export type {
+  CodigoPractica,
+  ErrorPractica,
+  ResultadoFechaFin,
+  ResultadoSituacionFin,
+  SituacionFinPractica,
+} from './practicas';
