@@ -8,9 +8,9 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 8 terminados; las Fases 3 y 4 avanzaron todo lo que no
-  depende de `services/`. Siguiente: Fase 1, paso 9.
-- **Actualizado:** 2026-11-15, al cerrar el paso 8 (reglas de insights).
+- **Fase actual:** Fase 1 (`domain/`), pasos 1 a 9 terminados; las Fases 3 y 4 avanzaron todo lo que no
+  depende de `services/`. Siguiente: Fase 1, paso 10 (ciclo de vida).
+- **Actualizado:** 2026-11-16, al cerrar el paso 9 (indicadores).
 
 ### Cierres de fase
 
@@ -76,10 +76,18 @@
   reglas). Son las 7 reglas, con los 10 umbrales como parámetro y validados, y `ahora` por parámetro con
   el día cortado en hora de Perú (UTC−5). «Revisado» es por usuario y el alcance usa la misma fuente que
   `puede()`. Detalle, decisiones y pendientes de la Fase 2 en `DECISIONES.md`.
-- **Luego:** Fase 1, paso 9 — indicadores (avance, tiempo de ciclo, espera de supervisión, tasa de
-  devolución, última actividad, días esperando, veces devuelta, carga). Leer de la propuesta §5.6
-  (pestaña «Indicadores»), §9.1.4 y §11.
-- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-indicadores`).
+- **Paso 9: terminado (2026-11-16).** Indicadores de Reportes en `src/domain/indicadores.ts` (tres commits:
+  A `998987e` extrae las utilidades de tiempo a `src/domain/tiempo.ts`; B `e408893` con los indicadores;
+  C `86b0167`, que hace que las reglas de «supervisión demorada» y «carga desbalanceada» reutilicen
+  `instanteUltimoEnvio`, `proyectosDeCarga` y `cargaDePracticante`). Son avance, tiempo de ciclo neto,
+  espera de supervisión, tasa de devolución, última actividad, días esperando, veces devuelta y carga,
+  con `ahora` por parámetro, periodo de 1 a 365 días y el alcance de `puede('VER_REPORTES')`. Detalle,
+  decisiones, riesgos y pendientes en `DECISIONES.md`.
+- **Luego:** Fase 1, paso 10 — ciclo de vida (finalizar práctica, finalizar proyecto, desactivar
+  supervisor, fecha de fin prevista, aviso previo, vencimiento). Tiene una pregunta abierta para los
+  autores (ver «Decisiones pendientes»). Las utilidades de `src/domain/tiempo.ts` están pensadas para
+  este paso.
+- **Rama:** nueva, desde `development` (por ejemplo `feat/fase1-ciclo-de-vida`).
 
 ## Pasos terminados
 
@@ -97,6 +105,7 @@
 | 2026-11-14 | 6. Generación de ID legible | `9177852` |
 | 2026-11-15 | 7. Puntaje de postulaciones | `aeb6ea5`; docs `367bf3b`; docs/ a mano `cec750a` |
 | 2026-11-15 | 8. Reglas de insights | A (permisos) `6f61810`; B (reglas) `e784e4e`; docs/ a mano `d05e278` |
+| 2026-11-16 | 9. Indicadores | A (tiempo) `998987e`; B (indicadores) `e408893`; C (reutilización en insights) `86b0167` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -118,8 +127,8 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-15):** 495 pruebas en 29 archivos; `build` OK (aviso de Vite por chunk >
-500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-16):** 554 pruebas en 30 archivos (59 nuevas del paso 9); `build` OK (aviso de
+Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -130,7 +139,8 @@
       (`9177852`).
 - [x] Paso 7: puntaje de postulaciones (`aeb6ea5`).
 - [x] Paso 8: reglas de insights (`6f61810` y `e784e4e`).
-- [ ] Pasos 9 y 10: indicadores y ciclo de vida.
+- [x] Paso 9: indicadores (`998987e`, `e408893` y `86b0167`).
+- [ ] Paso 10: ciclo de vida.
 - [ ] Pruebas mínimas de la sección 9 del plan.
 
 ### Fase 2 (`data/`, `services/`)
@@ -158,6 +168,19 @@
       `DECISIONES.md` (paso 8).
 - [ ] Insights: marcar como revisado pasa por `puede('MARCAR_INSIGHT_REVISADO', { insight, proyectos })`.
 - [ ] Insights: los formularios de Configuración (Fase 5.8) exigen lo mismo que `validarUmbrales`.
+- [ ] Indicadores: `fecha_termino` de la tarea y la fecha del evento que la cierra (`TAREA_TERMINADA` o
+      `TAREA_APROBADA`) deben salir del **mismo instante**. Si el evento queda unos milisegundos después,
+      `tiempoCicloMs` lo descarta y el tiempo de ciclo da `null`. Detalle en `DECISIONES.md` (paso 9).
+- [ ] Indicadores: el servicio pasa `ahora` en ISO UTC con `Z` y `dias` entero de 1 a 365
+      (`DIAS_PERIODO_MAXIMO`); entrega `tareas` sin las eliminadas (el historial sí conserva sus eventos);
+      el selector de periodo de Reportes (Fase 5.6) solo ofrece valores dentro de ese rango.
+- [ ] Indicadores (Fase 5.6): las tarjetas «postulaciones decididas», «puntaje promedio por área» y el
+      gráfico de practicantes por área quedaron fuera del paso 9; hay que definir qué cuenta como «decidida
+      en el periodo» y qué evaluación entra en el promedio. Tampoco están decididas las opciones del selector
+      de periodo ni las columnas de cada tabla.
+- [ ] Indicadores: la «última actividad» de las tablas de Reportes solo cuenta eventos con proyecto del
+      alcance; los eventos de cuenta (`CUENTA_*`) no entran, tampoco para el Administrador. Confirmarlo al
+      construir las tablas (la función `ultimaActividadDeUsuario` sí es global para las Fases 5.2 y 5.3).
 
 ### Fases 3 y 4 (interfaz)
 
@@ -186,6 +209,11 @@
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
+- [ ] Actualizar a mano `docs/` con las decisiones del paso 9 (lo hacen los autores): propuesta §5.6
+      («Indicadores»: cuándo cuenta cada hito, tiempo de ciclo neto hasta `fecha_termino`, espera por envío
+      respondido, tasa de devolución por tareas con envío en el periodo, periodo de calendario en hora de
+      Perú de 1 a 365 días, «sin datos» y redondeo) y §9.1.4 (alcance de la tabla por practicante: asignación
+      con alta no posterior a hoy y baja nula o desde el primer día); plan §9, Fase 1, paso 9.
 - [x] Actualizar a mano `docs/` con los 5 cambios del paso 8: propuesta §5.6 (nota del avance esperado y
       párrafo «Fecha de detección» + «Cómo se mide cada regla»), §5.8 (nota de validación de umbrales), §4
       (fila «Marcar un insight como revisado») y plan §5, regla 12 (hecho por los autores, 2026-11-15,

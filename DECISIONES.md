@@ -1544,3 +1544,140 @@ Con esto ya no hay divergencia entre el código y docs/ para el paso 8.
   es **Informativo**.
 - Hay que decidir si los informativos entran en las alertas y en qué orden. No se resuelve ahora ni se
   escribe texto para docs/.
+
+## 2026-11-16 — [A+B] Fase 1, paso 9: indicadores
+
+### API y archivos
+
+- **Commit A** `998987e` (`refactor:`): `src/domain/tiempo.ts` recibe, sin cambiar su lógica, las utilidades
+  de tiempo del paso 8: `DESFASE_ZONA_HORARIA_MS`, `MS_POR_DIA`, `diasCompletos`, `hoyEn`, `inicioDelDia`,
+  `diasEntreFechas`, `ultimaFecha` y `aFechaHora`. La única función nueva es `esAhoraValido`, que extrae la
+  condición que `calcularInsights` ya tenía. `reglasInsights.ts` reexporta `DESFASE_ZONA_HORARIA_MS` y
+  `hoyEn`; `index.ts` no cambió y no exporta `./tiempo`, así que `hoyEn` sigue saliendo por un solo camino.
+  Las 495 pruebas previas pasaron sin tocarlas.
+- **Commit B** `e408893` (`feat:`): `src/domain/indicadores.ts`, `src/domain/indicadores.test.ts` y los
+  exports en `index.ts`.
+  - `indicadoresParaUsuario(usuario, datos, filtro, ahora)` devuelve `resumen`, `por_proyecto` y
+    `por_practicante`, o `AHORA_INVALIDO` / `PERIODO_INVALIDO`.
+  - Piezas exportadas, que usan también otras pantallas: `avanceProyecto`, `tiempoCicloMs`,
+    `enviosASupervision`, `instanteUltimoEnvio`, `diasEsperando`, `vecesDevuelta`, `proyectosDeCarga`,
+    `cargaDePracticante`, `ultimaActividadDeUsuario` y `ultimaActividadDeProyecto`.
+  - Constantes: `DIAS_PERIODO_PREDETERMINADO` (30), `DIAS_PERIODO_MAXIMO` (365) y `CODIGOS_INDICADORES`.
+- **Commit C** `86b0167` (`refactor:`): `reglaSupervisionDemorada` usa `instanteUltimoEnvio` y
+  `reglaCargaDesbalanceada` usa `proyectosDeCarga` y `cargaDePracticante`. Mismo comportamiento y mismo
+  orden de `ids_proyecto`; no se tocó ninguna prueba.
+- **Orden de comprobación de `indicadoresParaUsuario`:** `ahora` → periodo → alcance → filtro → cálculo.
+- **Pruebas:** 59 nuevas; `npm run test` da 554 en 30 archivos.
+
+### Decisiones (D1 a D15)
+
+1. **D1 — Hitos.** Tomada = `TAREA_TOMADA`; enviada = `TAREA_ENVIADA_A_SUPERVISION`; devuelta =
+   `TAREA_DEVUELTA`; terminada = la tarea que hoy está TERMINADA, anclada en su `fecha_termino`.
+   `TAREA_REABIERTA` no es una devolución. Motivo: coincide con la columna «Terminada» y con Mi historial
+   (§11); una tarea reabierta sale y vuelve.
+2. **D2 — Tiempo de ciclo neto.** Es la suma de los tramos que van de cada `TOMADA` o `REABIERTA` a la
+   siguiente `LIBERADA`, `TERMINADA` o `APROBADA`; enviar y devolver no cortan el tramo. Se mide hasta la
+   `fecha_termino` de la tarea: lo que el historial registre después no cuenta. Motivo: no suma el tiempo
+   sin responsable tras liberar ni el que pasó terminada antes de reabrir.
+3. **D3 — Espera de supervisión.** Una muestra por cada envío ya respondido, anclada en la fecha de la
+   respuesta. La espera que sigue abierta no cuenta (ya se ve en «días esperando»).
+4. **D4 — Tasa de devolución.** Tareas con al menos un envío del periodo devuelto / tareas con al menos un
+   envío en el periodo. El ancla es el envío, y no se cambia el texto de §5.6:
+   - una tarea devuelta dos veces cuenta una sola vez (ese dato lo da «veces devuelta»);
+   - un envío anterior al periodo no entra, aunque su devolución caiga dentro;
+   - una devolución anterior al periodo no cuenta, aunque la tarea se reenvíe y apruebe dentro;
+   - en la fila de un practicante, solo cuentan los envíos de los que es autor.
+5. **D5 — Periodo.** `dias` días de calendario en hora de Perú, incluido hoy, desde las 00:00 del primer día
+   hasta `ahora`. Los límites inferior y superior entran. Valor predeterminado: 30.
+6. **D6 — Sin datos y redondeo.** Sin muestras el resultado es `null` (los conteos dan 0). Las duraciones van
+   en días con un decimal y los porcentajes enteros, con las mitades hacia arriba y con cálculo entero. Las
+   proporciones llevan `numerador` y `denominador`.
+7. **D7 — `tiempo.ts`.** Las utilidades de tiempo viven en un módulo propio, porque el paso 10 las necesita.
+8. **D8 — Una sola fuente.** `instanteUltimoEnvio`, `proyectosDeCarga` y `cargaDePracticante` las usan los
+   indicadores y las reglas de insights. Descartado mantener la lógica en las reglas y copiarla.
+9. **D9 — Alcance.** Los proyectos del alcance son los que pasan `puede(usuario, 'VER_REPORTES', { proyecto })`,
+   los FINALIZADO incluidos; el Practicante o un usuario INACTIVO reciben el resultado vacío, sin error.
+   Un filtro por un proyecto ajeno devuelve vacío. Las métricas de cada fila solo cuentan tareas y eventos
+   de esos proyectos.
+10. **D10 — Fuera del paso.** «Postulaciones decididas», «puntaje promedio por área» y el gráfico de
+    practicantes por área. El resultado no tiene esos campos, así que el Supervisor nunca los recibe.
+11. **D11 — Envíos sin respuesta.** Un envío del periodo que aún no tiene respuesta **sí entra en el
+    denominador** de la tasa (lectura literal de §5.6). Consecuencia aceptada: con muchas tareas pendientes,
+    la tasa baja.
+12. **D12 — Tareas eliminadas.** Sus eventos no cuentan en ciclo, espera ni tasa: todo se calcula recorriendo
+    `datos.tareas`, así que una tarea que ya no existe nunca se mira.
+13. **D13 — Tope del periodo: 365 días** (decisión de los autores, a propuesta del agente). Sin tope, un
+    `dias` enorme saca la fecha del rango de `Date` y `toISOString` lanza `RangeError` en vez de devolver
+    `PERIODO_INVALIDO`. 365 cubre la práctica de 4 meses y un año entero. La propuesta no lo define.
+14. **D14 — Filas por practicante.** Aparece quien tiene una asignación a un proyecto del alcance que se cruza
+    con el periodo: `fecha_alta` no posterior a hoy y `fecha_baja` nula o desde el primer día. Antes solo se
+    miraba la baja, así que una asignación futura aparecía con ceros. Se comparan las `Fecha` como texto.
+15. **D15 — Última actividad en las tablas.** Solo cuenta eventos con `id_proyecto` de los proyectos visibles
+    (consecuencia de D9). Los eventos de cuenta (`CUENTA_*`) no entran, tampoco para el Administrador sin
+    filtro. `ultimaActividadDeUsuario` y `ultimaActividadDeProyecto` sí son globales cuando se llaman sueltas.
+
+### Riesgos y consecuencias aceptados
+
+- **El ciclo depende de que el evento de cierre no sea posterior a `fecha_termino`.** Si el servicio escribe
+  la tarea y el evento con dos `new Date()` distintos y el evento queda unos milisegundos después,
+  `tiempoCicloMs` lo descarta y el ciclo de esa tarea da `null` (ver pendientes de la Fase 2).
+- **La tasa baja con muchas tareas pendientes** (D11).
+- **La carga de un practicante tiene doble protección** (ver «Pruebas y mutaciones»).
+
+### Pruebas y mutaciones
+
+- `src/domain/indicadores.test.ts`: 59 pruebas con IDs por tema: periodo (P), avance (A), ciclo (C), espera
+  (E), tasa (T), tareas eliminadas (X), última actividad (U), días esperando (D), veces devuelta (V), carga
+  (K), alcance y forma (L), resumen (R) y entrada (N). Las fábricas de `src/domain/pruebas/fabricas.ts`
+  no cambiaron.
+- **Mutaciones del commit B: 63 de 64 detectadas, 0 errores.** Las hizo el agente con `git add` y
+  `git restore` tras autorización de los autores, mediante un script en el scratchpad (fuera del repo).
+  Una mutación por prueba, más variantes de P-2 (5), C-9 (2) y L-9 (2).
+- **La no detectada es L-4, y es un mutante equivalente.** La carga de un practicante se limita dos veces a
+  lo visible: con los ids de proyecto (`visibles`) y con las tareas (`tareasVisibles`). Cambiar solo una de
+  las dos no altera el resultado, porque la otra lo sostiene. Con las dos a la vez, L-4 falla. Las fugas de
+  una línea que sí detecta son `terminadasEnPeriodo(datos.tareas, …)` y
+  `ultimaActividadDeUsuario(id, datos.historial)`. La redundancia es deliberada y se conserva.
+- **X-1 y X-2:** la mutación de una línea del plan no servía (era equivalente: el recorrido va sobre
+  `tareasVisibles`). Se detectan con mutaciones de dos ediciones. **X-3** (el ciclo de una tarea eliminada) es
+  una prueba de regresión **sin mutación**, por decisión de los autores: ninguna mutación de una línea puede
+  hacer que cuente, porque el ciclo necesita la `Tarea` con su `fecha_termino`.
+- **C-9:** una reapertura sola (`REABIERTA` el día 5) no detecta la ausencia del corte en `fecha_termino`:
+  deja un tramo sin cerrar y el resultado es el mismo. La prueba añade un `TERMINADA` el día 6, que sí
+  sumaría un día de más sin el corte.
+- **Commit C:** las 4 mutaciones propuestas (en `reglaSupervisionDemorada` y `reglaCargaDesbalanceada`) las
+  hicieron los autores y confirmaron que se detectan; no se anotaron los IDs.
+- **Verificación** (salidas pegadas por los autores en cada commit):
+  - **A:** 495 pruebas, `tsc -b`, `eslint src/domain` y `prettier --check src/domain` limpios.
+  - **B:** `tsc -b`, `eslint`, `prettier --check` y `npm run build` limpios; 552 pruebas con las 57
+    primeras y 554 con los ajustes (59 nuevas); `git diff -- docs` vacío.
+  - **C (`86b0167`):** `prettier --check`, `tsc -b` y `eslint src/domain` limpios; `npm run test` con 554 en
+    30 archivos; `git diff --stat e408893 -- "src/domain/*.test.ts"` vacío (ninguna prueba tocada);
+    `git diff --stat development -- "src/domain/*.test.ts"` muestra solo `indicadores.test.ts`; `hoyEn`
+    aparece 1 vez en `index.ts` y `./tiempo` 0 veces; `git diff -- docs` vacío.
+
+### Pendientes para la Fase 2 y posteriores
+
+- **Mismo instante:** `fecha_termino` de la tarea y la fecha del evento que la cierra salen del mismo
+  instante.
+- **El servicio de Reportes** pasa `ahora` en ISO UTC con `Z` (si no, `AHORA_INVALIDO`) y `dias` entero de 1 a
+  365 (si no, `PERIODO_INVALIDO`), y entrega `tareas` sin las eliminadas.
+- **Fase 5.6:** el selector de periodo solo ofrece valores dentro de 1 a 365; las tarjetas del Administrador
+  de D10 requieren definir primero qué es una postulación «decidida en el periodo»; las columnas de cada tabla
+  no están fijadas en la propuesta; confirmar D15 al construir las tablas.
+- **Fases 5.2 y 5.3:** «última actividad» y «carga» usan `ultimaActividadDeUsuario`,
+  `ultimaActividadDeProyecto`, `proyectosDeCarga` y `cargaDePracticante`, sin copiar la lógica.
+- **Fase 7.2 (Mi historial) y 6.2 (Días esperando):** usan `vecesDevuelta` y `diasEsperando`.
+
+### Divergencias con `docs/` (pendientes; las actualizan los autores a mano)
+
+Todavía **no** están hechas. Son las decisiones que la propuesta y el plan no escriben:
+
+1. `docs/Propuesta_SIGEP_Codaini_v6.md`, §5.6, «Indicadores»: cuándo cuenta cada hito (D1), el tiempo de ciclo
+   neto hasta `fecha_termino` (D2), la espera por envío respondido (D3), la tasa de devolución por tareas con
+   un envío en el periodo (D4 y D11), el periodo de calendario en hora de Perú (D5), «sin datos» y el
+   redondeo (D6) y el tope de 365 días (D13).
+2. `docs/Propuesta_SIGEP_Codaini_v6.md`, §9.1.4: las filas de la tabla por practicante y qué cuenta cada
+   métrica en ellas (D9, D14).
+3. `docs/SIGEP_Plan_de_Desarrollo_y_Reglas_del_Agente.md`, §9, Fase 1, paso 9: el detalle de lo anterior y sus
+   pruebas.

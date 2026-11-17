@@ -33,12 +33,26 @@ import { TIPOS_REGLA_INSIGHT } from './enumeraciones';
 import type { Severidad, TipoReglaInsight } from './enumeraciones';
 import type { EventoHistorial } from './historial';
 import { formatearIdLegible } from './idLegible';
+import { cargaDePracticante, instanteUltimoEnvio, proyectosDeCarga } from './indicadores';
 import type { Insight, InsightRevision } from './insights';
 import { REGLAS_INSIGHT_VISIBLES, insightEnAlcance } from './permisos';
 import type { Postulante } from './postulaciones';
 import type { Asignacion, Proyecto } from './proyectos';
 import type { Tarea } from './tareas';
+import {
+  MS_POR_DIA,
+  aFechaHora,
+  diasCompletos,
+  diasEntreFechas,
+  esAhoraValido,
+  hoyEn,
+  inicioDelDia,
+  ultimaFecha,
+} from './tiempo';
 import type { Practicante, Usuario } from './usuarios';
+
+/** Las utilidades de tiempo viven en `tiempo.ts`; se reexportan para que el barril no cambie. */
+export { DESFASE_ZONA_HORARIA_MS, hoyEn } from './tiempo';
 
 /** Códigos de error de esta capa. */
 export const CODIGOS_INSIGHTS = ['AHORA_INVALIDO', 'UMBRAL_INVALIDO'] as const;
@@ -69,16 +83,8 @@ export type ResultadoInsights =
 
 export type ErrorUmbral = Extract<ResultadoInsights, { codigo: 'UMBRAL_INVALIDO' }>;
 
-/** Hora de Perú (UTC−5 todo el año): corta el día de `hoy` y de las fechas sin hora. */
-export const DESFASE_ZONA_HORARIA_MS = -5 * 60 * 60 * 1000;
-
 /** Un insight revisado reaparece a los 7 días si la condición sigue (§5.6; no es un parámetro). */
 export const DIAS_REAPARICION_INSIGHT = 7;
-
-const MS_POR_DIA = 86_400_000;
-
-/** ISO 8601 en UTC, como lo da `new Date().toISOString()` (los milisegundos son opcionales). */
-const FORMATO_AHORA = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{3})?Z$/;
 
 const RANGO_SEVERIDAD: Record<Severidad, number> = { INFORMATIVO: 1, ATENCION: 2, CRITICO: 3 };
 
@@ -147,38 +153,6 @@ export function validarUmbrales(umbrales: UmbralesInsight): { ok: true } | Error
     );
   }
   return { ok: true };
-}
-
-/** Días completos de 24 h entre dos instantes en milisegundos (6 d 23 h = 6). */
-function diasCompletos(desde: number, hasta: number): number {
-  return Math.floor((hasta - desde) / MS_POR_DIA);
-}
-
-/**
- * Fecha de calendario de `ahora` en la hora de Perú. `ahora` debe ser válido:
- * `calcularInsights` lo comprueba antes de llamarla.
- */
-export function hoyEn(ahora: FechaHora): Fecha {
-  return new Date(Date.parse(ahora) + DESFASE_ZONA_HORARIA_MS).toISOString().slice(0, 10);
-}
-
-/** Inicio del día `fecha` en la hora de Perú, en milisegundos (`NaN` si la fecha no es válida). */
-function inicioDelDia(fecha: Fecha): number {
-  return Date.parse(`${fecha}T00:00:00.000Z`) - DESFASE_ZONA_HORARIA_MS;
-}
-
-/** Días de calendario entre dos fechas (`NaN` si alguna no es válida). */
-function diasEntreFechas(desde: Fecha, hasta: Fecha): number {
-  return (Date.parse(hasta) - Date.parse(desde)) / MS_POR_DIA;
-}
-
-/** Instante del evento más reciente, o `null` si no hay eventos. */
-function ultimaFecha(eventos: readonly EventoHistorial[]): number | null {
-  return eventos.length === 0 ? null : Math.max(...eventos.map((e) => Date.parse(e.fecha)));
-}
-
-function aFechaHora(ms: number): FechaHora {
-  return new Date(ms).toISOString();
 }
 
 function textoDias(n: number): string {
@@ -269,15 +243,10 @@ function reglaCargaDesbalanceada(ctx: ContextoCalculo): Insight[] {
   for (const usuario of practicantesActivos(ctx.datos)) {
     const vigentes = proyectosVigentes(usuario.id, ctx);
     const idsActivos = vigentes.filter((p) => p.estado === 'ACTIVO').map((p) => p.id);
-    const idsCarga = vigentes.filter((p) => p.estado !== 'FINALIZADO').map((p) => p.id);
+    const idsCarga = proyectosDeCarga(usuario.id, ctx.datos.asignaciones, ctx.datos.proyectos);
     if (idsActivos.length === 0) continue;
 
-    const carga = ctx.datos.tareas.filter(
-      (t) =>
-        t.id_practicante === usuario.id &&
-        t.estado === 'EN_PROGRESO' &&
-        idsCarga.includes(t.id_proyecto),
-    ).length;
+    const carga = cargaDePracticante(usuario.id, ctx.datos.tareas, idsCarga);
     const conDisponibles = vigentes.filter(
       (p) =>
         idsActivos.includes(p.id) &&
@@ -395,14 +364,7 @@ function reglaSupervisionDemorada(ctx: ContextoCalculo): Insight[] {
     const proyecto = ctx.proyectoPorId.get(tarea.id_proyecto);
     if (proyecto === undefined || proyecto.estado === 'FINALIZADO') continue;
 
-    const envio = ultimaFecha(
-      ctx.datos.historial.filter(
-        (e) =>
-          e.tipo_accion === 'TAREA_ENVIADA_A_SUPERVISION' &&
-          e.elemento.tipo === 'TAREA' &&
-          e.elemento.id === tarea.id,
-      ),
-    );
+    const envio = instanteUltimoEnvio(tarea.id, ctx.datos.historial);
     if (envio === null) continue;
     const dias = diasCompletos(envio, ctx.ahoraMs);
     if (dias < umbrales.INSIGHT_SUPERVISION_DEMORADA_DIAS) continue;
@@ -531,7 +493,7 @@ export function calcularInsights(
   umbrales: UmbralesInsight,
   ahora: FechaHora,
 ): ResultadoInsights {
-  if (!FORMATO_AHORA.test(ahora) || Number.isNaN(Date.parse(ahora))) {
+  if (!esAhoraValido(ahora)) {
     return {
       ok: false,
       codigo: 'AHORA_INVALIDO',
