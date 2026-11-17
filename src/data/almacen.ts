@@ -34,12 +34,21 @@ export interface EstadoAlmacen {
    * No se deben mutar los datos recibidos: se devuelven colecciones nuevas.
    */
   transaccion: (operacion: (datos: DatosAlmacen) => CambiosAlmacen | null) => void;
+  /**
+   * Restablece los datos de demostración (solo prototipo): descarta todo lo guardado y vuelve a
+   * una semilla nueva, con las fechas relativas a `ahora` (por defecto, hoy). Es un único `set`:
+   * una sola escritura al navegador y un solo aviso a los suscriptores, así que nunca se ve una
+   * base vacía a medias. Cambia todas las colecciones (también historial y notificaciones) y no
+   * toca otras claves del navegador (sesión, tema). La autorización (`puede`) y la sesión activa
+   * son de `services/`, no de aquí.
+   */
+  restablecer: (ahora?: Date) => void;
 }
 
 export interface OpcionesAlmacen {
   nombre?: string;
   version?: number;
-  crearSemilla?: () => DatosAlmacen;
+  crearSemilla?: (ahora?: Date) => DatosAlmacen;
   /** Devuelve el almacenamiento, o `undefined` si el navegador lo bloquea. */
   almacenamiento?: () => StateStorage | undefined;
 }
@@ -53,11 +62,31 @@ function almacenamientoDelNavegador(): StateStorage | undefined {
   }
 }
 
+/**
+ * Un navegador con el disco lleno o en modo privado puede dejar leer y fallar al guardar. `persist`
+ * lanzaría el error después de cambiar la memoria; aquí se atrapa y se avisa, y la app sigue en
+ * memoria (lo escrito se pierde al recargar).
+ */
+function protegerEscritura(almacenamiento: StateStorage): StateStorage {
+  return {
+    getItem: (clave) => almacenamiento.getItem(clave),
+    removeItem: (clave) => almacenamiento.removeItem(clave),
+    setItem: (clave, valor) => {
+      try {
+        return almacenamiento.setItem(clave, valor);
+      } catch (error) {
+        console.warn('SIGEP: no se pudo guardar; los cambios siguen solo en memoria.', error);
+        return undefined;
+      }
+    },
+  };
+}
+
 export function crearAlmacen(opciones: OpcionesAlmacen = {}) {
   const {
     nombre = CLAVE_ALMACEN,
     version = VERSION_ALMACEN,
-    crearSemilla: semilla = () => crearSemilla(),
+    crearSemilla: semilla = (ahora?: Date) => crearSemilla(ahora),
     almacenamiento = almacenamientoDelNavegador,
   } = opciones;
 
@@ -70,6 +99,9 @@ export function crearAlmacen(opciones: OpcionesAlmacen = {}) {
           if (cambios === null) return;
           set({ datos: { ...get().datos, ...cambios } });
         },
+        restablecer: (ahora) => {
+          set({ datos: semilla(ahora) });
+        },
       }),
       {
         name: nombre,
@@ -79,7 +111,7 @@ export function crearAlmacen(opciones: OpcionesAlmacen = {}) {
         storage: createJSONStorage(() => {
           const disponible = almacenamiento();
           if (disponible === undefined) throw new Error('Almacenamiento no disponible');
-          return disponible;
+          return protegerEscritura(disponible);
         }),
         partialize: (estado) => ({ datos: estado.datos }),
         // Otra versión guardada: no se migra, se parte de una semilla nueva.

@@ -143,6 +143,25 @@ describe('almacén: persistencia', () => {
     almacen.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] }));
     expect(almacen.getState().datos.usuarios).toEqual([usuario]);
   });
+
+  it('si el navegador falla al guardar (disco lleno), la operación no lanza y avisa', () => {
+    const aviso = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const lleno: StateStorage = {
+      getItem: () => null,
+      setItem: () => {
+        throw new Error('QuotaExceededError');
+      },
+      removeItem: () => undefined,
+    };
+    const almacen = crearAlmacen({ crearSemilla: crearVacia, almacenamiento: () => lleno });
+    expect(() =>
+      almacen.getState().transaccion((datos) => ({ usuarios: [...datos.usuarios, usuario] })),
+    ).not.toThrow();
+    // La memoria sí cambió; lo escrito solo se pierde al recargar.
+    expect(almacen.getState().datos.usuarios).toEqual([usuario]);
+    expect(aviso).toHaveBeenCalled();
+    aviso.mockRestore();
+  });
 });
 
 describe('almacén: recuperación segura', () => {
