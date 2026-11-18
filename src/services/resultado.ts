@@ -26,8 +26,9 @@ export const MENSAJE_GENERICO = 'No se pudo completar la acción.';
 
 /**
  * Mensajes de los códigos de `domain/` que no traen texto (permisos, transiciones, edición y PR)
- * y de los propios de `services/`. Los códigos de ciclo de vida, puntaje, ID e indicadores ya
- * traen su `mensaje` y pasan tal cual por `denegar`. Cada servicio nuevo suma aquí los códigos que
+ * y de los propios de `services/`. Los códigos de puntaje, ID, indicadores y reactivación ya traen su
+ * `mensaje` y pasan tal cual por `denegar`; los de ciclo de vida solo traen el código (y a veces una
+ * cantidad), así que su mensaje está aquí. Cada servicio nuevo suma aquí los códigos que
  * necesite; una prueba exige que ningún código conocido se quede sin mensaje.
  */
 export const MENSAJES: Readonly<Record<string, string>> = {
@@ -62,6 +63,24 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   CORREO_YA_REGISTRADO: 'Ya existe una cuenta con el correo de esta postulación.',
   CONFIGURACION_INVALIDA:
     'Falta un parámetro de Configuración o no tiene el formato esperado. Restaura sus valores.',
+  // Ciclo de vida (`domain/cicloVida.ts` devuelve solo el código y, a veces, una cantidad: el mensaje
+  // lo pone `denegarCicloVida`, que agrega la cantidad donde corresponde)
+  AHORA_INVALIDO: 'La hora del sistema no es válida. Recarga la página e intenta de nuevo.',
+  PRACTICANTE_YA_FINALIZADO: 'La práctica de esta persona ya está finalizada.',
+  PROYECTO_YA_FINALIZADO: 'El proyecto ya está finalizado.',
+  TAREAS_ESPERANDO_SUPERVISION:
+    'El proyecto tiene tareas esperando supervisión: resuélvelas antes de finalizarlo.',
+  SUPERVISOR_CON_PROYECTOS:
+    'El supervisor tiene proyectos activos o en pausa: reasígnalos antes de desactivarlo.',
+  SUPERVISOR_YA_INACTIVO: 'El supervisor ya está inactivo.',
+  PRACTICANTE_NO_ACTIVO: 'Solo se puede asignar a un practicante activo.',
+  ASIGNACION_VIGENTE_EXISTENTE: 'El practicante ya está asignado a ese proyecto.',
+  ASIGNACION_NO_VIGENTE: 'El practicante no está asignado a ese proyecto.',
+  SUPERVISOR_NO_VALIDO: 'Elige un supervisor activo.',
+  MISMO_SUPERVISOR: 'Esa persona ya es el supervisor del proyecto.',
+  // Datos de la práctica
+  ESPECIALIDAD_INACTIVA: 'La especialidad elegida está inactiva. Elige una especialidad activa.',
+  FIN_ANTES_DE_INGRESO: 'La fecha de fin prevista no puede ser anterior a la fecha de ingreso.',
   // Catálogo de evaluación (áreas, especialidades y criterios)
   NOMBRE_DUPLICADO: 'Ya existe un elemento con ese nombre.',
   CRITERIOS_INCOMPLETOS:

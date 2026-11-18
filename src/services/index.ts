@@ -53,7 +53,24 @@ export type { CamposConError, ErrorServicio, Fallo, Resultado } from './resultad
 export { conEfectos, ejecutarConsulta, ejecutarServicio } from './transaccional';
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
+export { denegarCicloVida } from './cicloVida';
+
 // Servicios por módulo
+export {
+  asignarPracticantes,
+  editarDatosPractica,
+  finalizarPractica,
+  quitarPracticante,
+  reactivarPractica,
+} from './practicantes';
+export type {
+  EntradaAsignarPracticantes,
+  EntradaEditarDatosPractica,
+  EntradaFinalizarPractica,
+  EntradaQuitarPracticante,
+  EntradaReactivarPractica,
+  PracticaFinalizada,
+} from './practicantes';
 export {
   cambiarActivoAreaTecnica,
   cambiarActivoEspecialidad,
