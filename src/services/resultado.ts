@@ -57,6 +57,11 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   ESTADO_PR_NO_APLICA: 'El Pull Request no está en un estado que permita esta acción.',
   FALTA_CONSULTA_GITHUB: 'No se pudo consultar el estado del Pull Request. Intenta de nuevo.',
   RAMA_INEXISTENTE: 'La rama elegida ya no existe en GitHub. Elige otra rama.',
+  // Postulaciones (los de la decisión traen su mensaje desde `domain/`)
+  POSTULACION_YA_EVALUADA: 'Esta postulación ya tiene una evaluación y no se vuelve a calcular.',
+  CORREO_YA_REGISTRADO: 'Ya existe una cuenta con el correo de esta postulación.',
+  CONFIGURACION_INVALIDA:
+    'Falta un parámetro de Configuración o no tiene el formato esperado. Restaura sus valores.',
   // Propios de `services/`
   NO_ENCONTRADO: 'No se encontró el elemento. Puede que ya no exista.',
   DATOS_INVALIDOS: 'Revisa los datos ingresados.',

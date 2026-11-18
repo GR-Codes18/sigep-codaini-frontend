@@ -8,6 +8,8 @@
 
 import { useAlmacen, type EstadoAlmacen } from '@/data';
 import type { Id } from '@/domain';
+import { generarContrasenaTemporal } from './contrasena';
+import { EVALUADOR_SIMULADO, type PuertoEvaluador } from './evaluador';
 import { GITHUB_SIMULADO, type PuertoGitHub } from './github';
 
 /** Lo único que los servicios necesitan del almacén. */
@@ -25,6 +27,10 @@ export interface Entorno {
   demoraMs: number;
   /** GitHub (simulado en el prototipo; las pruebas inyectan otras respuestas). */
   github: PuertoGitHub;
+  /** El modelo que juzga los criterios de una postulación (simulado en el prototipo). */
+  evaluador: PuertoEvaluador;
+  /** Contraseña temporal de una cuenta nueva. */
+  generarContrasena: () => string;
 }
 
 export const DEMORA_PREDETERMINADA_MS = 600;
@@ -35,6 +41,8 @@ export const ENTORNO: Entorno = {
   generarId: (prefijo) => `${prefijo}-${crypto.randomUUID()}`,
   demoraMs: DEMORA_PREDETERMINADA_MS,
   github: GITHUB_SIMULADO,
+  evaluador: EVALUADOR_SIMULADO,
+  generarContrasena: () => generarContrasenaTemporal(),
 };
 
 /** El entorno por defecto con algunas piezas cambiadas. */

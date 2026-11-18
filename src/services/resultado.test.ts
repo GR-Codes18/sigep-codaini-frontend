@@ -67,6 +67,9 @@ describe('mensajes de los códigos de domain/', () => {
       'ERROR_INESPERADO',
       'SIN_CAMBIOS',
       'RAMA_INEXISTENTE',
+      'POSTULACION_YA_EVALUADA',
+      'CORREO_YA_REGISTRADO',
+      'CONFIGURACION_INVALIDA',
     ]) {
       expect(mensajeDe(codigo), codigo).not.toBe(MENSAJE_GENERICO);
     }

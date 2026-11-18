@@ -23,6 +23,9 @@ export type {
   SolicitudPR,
   TareaConsultable,
 } from './github';
+export { generarContrasenaTemporal } from './contrasena';
+export { EVALUADOR_SIMULADO } from './evaluador';
+export type { PuertoEvaluador } from './evaluador';
 export { etiquetaPostulante, etiquetaProyecto, etiquetaTarea, etiquetaUsuario } from './etiquetas';
 export {
   AUTOR_SISTEMA,
@@ -51,6 +54,20 @@ export { conEfectos, ejecutarConsulta, ejecutarServicio } from './transaccional'
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
 // Servicios por módulo
+export {
+  aprobarPostulacion,
+  evaluarPostulacion,
+  rechazarPostulacion,
+  reconsiderarPostulacion,
+} from './postulaciones';
+export type {
+  EntradaAprobarPostulacion,
+  EntradaEvaluarPostulacion,
+  EntradaReconsiderarPostulacion,
+  EntradaRechazarPostulacion,
+  EvaluacionCreada,
+  PostulacionAprobada,
+} from './postulaciones';
 export {
   NOTA_PR_VINCULADO,
   cerrarPullRequest,
