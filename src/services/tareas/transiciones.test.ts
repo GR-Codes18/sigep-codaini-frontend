@@ -10,7 +10,12 @@ import {
   type Usuario,
 } from '@/domain';
 import type { Entorno } from '../entorno';
-import { consultaSimulada, type PuertoGitHub, type TareaConsultable } from '../github';
+import {
+  GITHUB_SIMULADO,
+  consultaSimulada,
+  type PuertoGitHub,
+  type TareaConsultable,
+} from '../github';
 import { AHORA_DE_PRUEBA, crearEntornoDePrueba } from '../pruebas/entorno';
 import { MENSAJES, type Resultado } from '../resultado';
 import { crearTarea } from './datosTarea';
@@ -40,6 +45,7 @@ const AHORA_ISO = AHORA_DE_PRUEBA.toISOString();
 function puertoEspia(respuesta?: ConsultaGitHub) {
   const llamadas: TareaConsultable[] = [];
   const github: PuertoGitHub = {
+    ...GITHUB_SIMULADO,
     consultarPullRequest: (tarea) => {
       llamadas.push(tarea);
       return respuesta ?? consultaSimulada(tarea);

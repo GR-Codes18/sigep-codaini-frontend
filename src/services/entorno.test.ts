@@ -40,7 +40,10 @@ describe('crearEntorno', () => {
   });
 
   it('permite cambiar el puerto de GitHub', () => {
-    const github = { consultarPullRequest: () => ({ estado: 'CERRADO' as const }) };
+    const github = {
+      ...GITHUB_SIMULADO,
+      consultarPullRequest: () => ({ estado: 'CERRADO' as const }),
+    };
     expect(crearEntorno({ github }).github).toBe(github);
   });
 

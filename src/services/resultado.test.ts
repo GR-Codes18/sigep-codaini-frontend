@@ -61,7 +61,13 @@ describe('mensajes de los códigos de domain/', () => {
   });
 
   it('los códigos propios de services/ tienen mensaje', () => {
-    for (const codigo of ['NO_ENCONTRADO', 'DATOS_INVALIDOS', 'ERROR_INESPERADO', 'SIN_CAMBIOS']) {
+    for (const codigo of [
+      'NO_ENCONTRADO',
+      'DATOS_INVALIDOS',
+      'ERROR_INESPERADO',
+      'SIN_CAMBIOS',
+      'RAMA_INEXISTENTE',
+    ]) {
       expect(mensajeDe(codigo), codigo).not.toBe(MENSAJE_GENERICO);
     }
   });

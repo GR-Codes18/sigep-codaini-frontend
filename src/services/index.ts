@@ -7,8 +7,22 @@ export { obtenerActor } from './actor';
 export { simularDemora } from './demora';
 export { DEMORA_PREDETERMINADA_MS, ENTORNO, crearEntorno } from './entorno';
 export type { AlmacenServicio, Entorno } from './entorno';
-export { GITHUB_SIMULADO, consultaSimulada } from './github';
-export type { PuertoGitHub, TareaConsultable } from './github';
+export {
+  GITHUB_SIMULADO,
+  consultaSimulada,
+  crearPullRequestSimulado,
+  ramaConConflictos,
+  ramaEliminada,
+  ramasSimuladas,
+} from './github';
+export type {
+  PRConocido,
+  PuertoGitHub,
+  RepositorioPR,
+  RespuestaCrearPR,
+  SolicitudPR,
+  TareaConsultable,
+} from './github';
 export { etiquetaPostulante, etiquetaProyecto, etiquetaTarea, etiquetaUsuario } from './etiquetas';
 export {
   AUTOR_SISTEMA,
@@ -33,10 +47,16 @@ export {
   validarEntrada,
 } from './resultado';
 export type { CamposConError, ErrorServicio, Fallo, Resultado } from './resultado';
-export { conEfectos, ejecutarServicio } from './transaccional';
+export { conEfectos, ejecutarConsulta, ejecutarServicio } from './transaccional';
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
 // Servicios por módulo
+export { NOTA_PR_VINCULADO, crearPullRequest, listarRamasParaPullRequest } from './pullRequests';
+export type {
+  EntradaCrearPullRequest,
+  EntradaListarRamas,
+  PullRequestCreado,
+} from './pullRequests';
 export {
   aprobarTarea,
   cambiarRequierePR,
