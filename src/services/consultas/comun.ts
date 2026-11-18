@@ -37,6 +37,7 @@ import {
   type Proyecto,
   type Rol,
   type Tarea,
+  type TipoElemento,
   type Usuario,
 } from '@/domain';
 import { obtenerActor } from '../actor';
@@ -309,4 +310,42 @@ export function nombreDeCatalogo(
 ): { id: Id; nombre: string } | null {
   const elemento = catalogo.find((e) => e.id === id);
   return elemento === undefined ? null : { id: elemento.id, nombre: elemento.nombre };
+}
+
+// ── Elementos del sistema ────────────────────────────────────────────────────────────────────
+
+/** ¿Existe todavía el elemento que nombra un evento o un aviso? (Una tarea eliminada ya no existe.) */
+export function existeElemento(
+  datos: Pick<
+    DatosAlmacen,
+    | 'tareas'
+    | 'proyectos'
+    | 'usuarios'
+    | 'postulantes'
+    | 'areas_tecnicas'
+    | 'especialidades'
+    | 'criterios'
+    | 'parametros'
+  >,
+  tipo: TipoElemento,
+  id: Id,
+): boolean {
+  switch (tipo) {
+    case 'TAREA':
+      return datos.tareas.some((t) => t.id === id);
+    case 'PROYECTO':
+      return datos.proyectos.some((p) => p.id === id);
+    case 'USUARIO':
+      return datos.usuarios.some((u) => u.id === id);
+    case 'POSTULANTE':
+      return datos.postulantes.some((p) => p.id === id);
+    case 'AREA_TECNICA':
+      return datos.areas_tecnicas.some((a) => a.id === id);
+    case 'ESPECIALIDAD':
+      return datos.especialidades.some((e) => e.id === id);
+    case 'CRITERIO_EVALUACION':
+      return datos.criterios.some((c) => c.id === id);
+    case 'PARAMETRO_CONFIGURACION':
+      return datos.parametros.some((p) => p.id === id);
+  }
 }

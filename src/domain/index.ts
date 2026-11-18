@@ -326,3 +326,11 @@ export {
   terminadasRecientes,
 } from './consultas';
 export type { ReunionProxima, SituacionPracticante, TerminadasRecientes } from './consultas';
+
+export { indicadoresDePostulaciones } from './indicadoresPostulaciones';
+export type {
+  DatosIndicadoresPostulaciones,
+  IndicadoresPostulaciones,
+  IndicadoresPostulacionesArea,
+  PeriodoPostulaciones,
+} from './indicadoresPostulaciones';

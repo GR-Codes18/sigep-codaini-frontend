@@ -366,7 +366,7 @@ export interface ListadoPracticantesACargo {
 }
 
 /** Los proyectos del Supervisor (`VER_PRACTICANTES`), en el orden del almacén. */
-function proyectosDelSupervisor(
+export function proyectosDelSupervisor(
   datos: Pick<DatosAlmacen, 'proyectos' | 'asignaciones'>,
   actor: Usuario,
 ): Proyecto[] {

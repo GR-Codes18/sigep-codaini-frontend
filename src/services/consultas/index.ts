@@ -110,3 +110,38 @@ export type {
   PostulacionListado,
   SeccionVista,
 } from './postulaciones';
+export {
+  FILTRO_AUTOR_SISTEMA,
+  categoriaDeAccion,
+  listarHistorial,
+  obtenerLineaDeTiempo,
+} from './historial';
+export type {
+  EntradaListarHistorial,
+  EntradaObtenerLineaDeTiempo,
+  EventoDeHistorial,
+  FiltrosHistorial,
+  LineaDeTiempo,
+  ListadoHistorial,
+} from './historial';
+export { listarNotificaciones } from './notificaciones';
+export type {
+  DestinoDeNotificacion,
+  EntradaListarNotificaciones,
+  ListadoNotificaciones,
+  NotificacionVista,
+} from './notificaciones';
+export { listarInsights, obtenerIndicadores, practicantesPorArea } from './reportes';
+export type {
+  EntradaListarInsights,
+  EntradaObtenerIndicadores,
+  IndicadoresAdministrador,
+  IndicadoresPracticanteVista,
+  IndicadoresProyectoVista,
+  IndicadoresSupervisor,
+  IndicadoresVista,
+  InsightVista,
+  ListadoInsights,
+  PostulacionesPorArea,
+  PracticantesDeArea,
+} from './reportes';
