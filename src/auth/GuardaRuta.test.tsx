@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { GuardaRuta } from './GuardaRuta';
 import { useAlmacenSesion } from './almacenSesion';
-import { accesoRapido } from './iniciarSesion';
+import { sesionDePrueba } from './sesionDePrueba';
 
 function renderEn(ruta: string) {
   render(
@@ -31,13 +31,13 @@ describe('GuardaRuta', () => {
   });
 
   it('deja pasar a un rol en su propio panel', () => {
-    useAlmacenSesion.setState({ usuario: accesoRapido('PRACTICANTE') });
+    useAlmacenSesion.setState({ usuario: sesionDePrueba('PRACTICANTE') });
     renderEn('/practicante/inicio');
     expect(screen.getByText('Inicio practicante')).toBeInTheDocument();
   });
 
   it('redirige a su inicio si entra al panel de otro rol', () => {
-    useAlmacenSesion.setState({ usuario: accesoRapido('PRACTICANTE') });
+    useAlmacenSesion.setState({ usuario: sesionDePrueba('PRACTICANTE') });
     renderEn('/administrador/dashboard');
     expect(screen.getByText('Inicio practicante')).toBeInTheDocument();
     expect(screen.queryByText('Dashboard admin')).not.toBeInTheDocument();

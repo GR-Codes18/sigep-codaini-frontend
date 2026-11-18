@@ -1,19 +1,13 @@
 import type { Rol, UsuarioSesion } from './tipos';
 
-// Credenciales de DEMOSTRACIÓN del prototipo (no son secretos reales).
-// PROVISIONAL: se reemplazan por la semilla de data/ cuando exista.
-export const CONTRASENA_DEMO = 'demo12345';
-
-export type CuentaDemo = UsuarioSesion & { contrasena: string };
-
-export const CUENTAS_DEMO: Record<Rol, CuentaDemo> = {
+/** Sesiones de las cuentas de demostración de la semilla. **Solo las importan los tests.** */
+const SESIONES: Record<Rol, UsuarioSesion> = {
   ADMINISTRADOR: {
     id: 'demo-admin',
     nombre: 'Administrador Demo',
     correo: 'admin@codaini.demo',
     rol: 'ADMINISTRADOR',
     debe_cambiar_contrasena: false,
-    contrasena: CONTRASENA_DEMO,
   },
   SUPERVISOR: {
     id: 'demo-supervisor',
@@ -21,7 +15,6 @@ export const CUENTAS_DEMO: Record<Rol, CuentaDemo> = {
     correo: 'supervisor@codaini.demo',
     rol: 'SUPERVISOR',
     debe_cambiar_contrasena: false,
-    contrasena: CONTRASENA_DEMO,
   },
   PRACTICANTE: {
     id: 'demo-practicante',
@@ -29,6 +22,7 @@ export const CUENTAS_DEMO: Record<Rol, CuentaDemo> = {
     correo: 'practicante@codaini.demo',
     rol: 'PRACTICANTE',
     debe_cambiar_contrasena: false,
-    contrasena: CONTRASENA_DEMO,
   },
 };
+
+export const sesionDePrueba = (rol: Rol): UsuarioSesion => ({ ...SESIONES[rol] });

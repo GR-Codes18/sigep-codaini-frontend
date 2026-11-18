@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { CUENTAS_DEMO } from '@/auth/usuariosDemo';
+import { sesionDePrueba } from '@/auth/sesionDePrueba';
 import {
   CATALOGO_PARAMETROS,
   ESTADOS_PR,
   ESTADOS_TAREA,
+  ROLES,
   calcularPuntaje,
   devolucionVigente,
   estaVencida,
@@ -172,13 +173,14 @@ describe.each(AHORAS)('semilla con ahora = %s', (fecha) => {
       }
     });
 
-    it('los tres accesos rápidos conservan el ID, el correo, el nombre y la contraseña de auth', () => {
-      for (const cuenta of Object.values(CUENTAS_DEMO)) {
+    it('los tres accesos rápidos tienen el ID, el correo, el nombre y la contraseña de demostración', () => {
+      for (const rol of ROLES) {
+        const cuenta = sesionDePrueba(rol);
         const usuario = usuarioDe(cuenta.id);
         expect(usuario.correo).toBe(cuenta.correo);
         expect(usuario.nombre).toBe(cuenta.nombre);
         expect(usuario.rol).toBe(cuenta.rol);
-        expect(usuario.contrasena).toBe(cuenta.contrasena);
+        expect(usuario.estado).toBe('ACTIVO');
         expect(usuario.contrasena).toBe(CONTRASENA_DEMO);
       }
     });

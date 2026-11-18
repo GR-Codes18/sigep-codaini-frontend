@@ -4,6 +4,9 @@ import userEvent from '@testing-library/user-event';
 import { PaginaAcceso } from './PaginaAcceso';
 import { useAlmacenSesion } from './almacenSesion';
 
+// Los servicios simulan una demora de red de 600 ms.
+const ESPERA = { timeout: 3000 };
+
 describe('PaginaAcceso', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -33,7 +36,9 @@ describe('PaginaAcceso', () => {
     await user.type(screen.getByLabelText('Correo'), 'admin@codaini.demo');
     await user.type(screen.getByLabelText('Contraseña'), 'incorrecta');
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('Correo o contraseña incorrectos');
+    expect(await screen.findByRole('alert', {}, ESPERA)).toHaveTextContent(
+      'Correo o contraseña incorrectos',
+    );
     expect(useAlmacenSesion.getState().usuario).toBeNull();
   });
 
@@ -43,7 +48,7 @@ describe('PaginaAcceso', () => {
     await user.type(screen.getByLabelText('Correo'), 'supervisor@codaini.demo');
     await user.type(screen.getByLabelText('Contraseña'), 'demo12345');
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
-    await waitFor(() => expect(useAlmacenSesion.getState().usuario).not.toBeNull());
+    await waitFor(() => expect(useAlmacenSesion.getState().usuario).not.toBeNull(), ESPERA);
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('SUPERVISOR');
   });
 
@@ -51,7 +56,7 @@ describe('PaginaAcceso', () => {
     const user = userEvent.setup();
     render(<PaginaAcceso />);
     await user.click(screen.getByRole('button', { name: 'Entrar como Practicante' }));
-    await waitFor(() => expect(useAlmacenSesion.getState().usuario).not.toBeNull());
+    await waitFor(() => expect(useAlmacenSesion.getState().usuario).not.toBeNull(), ESPERA);
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('PRACTICANTE');
   });
 });

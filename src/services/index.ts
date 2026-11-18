@@ -55,13 +55,27 @@ export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
 export { denegarCicloVida } from './cicloVida';
 export {
+  LARGO_MINIMO_CONTRASENA,
+  accesoRapido,
+  aSesionUsuario,
+  cambiarMiContrasena,
   correoEnUso,
+  editarMiPerfil,
   esquemaCelular,
   esquemaCorreo,
+  iniciarSesion,
   normalizarCorreo,
   restablecerContrasena,
 } from './cuentas';
-export type { ContrasenaRestablecida, EntradaRestablecerContrasena } from './cuentas';
+export type {
+  ContrasenaRestablecida,
+  EntradaAccesoRapido,
+  EntradaCambiarMiContrasena,
+  EntradaEditarMiPerfil,
+  EntradaIniciarSesion,
+  EntradaRestablecerContrasena,
+  SesionUsuario,
+} from './cuentas';
 
 // Servicios por módulo
 export {
