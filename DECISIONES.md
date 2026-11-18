@@ -3135,3 +3135,107 @@ dos sub-pasos: **9A** (este: datos del proyecto) y **9B** (ciclo de vida y super
   el error del código se muestra en su campo; editar no ofrece el código; la reunión se quita enviando día y hora vacíos.
 - **Autores, a mano en `docs/`:** propuesta §5.4 con los supuestos del paso 9 (repositorio, rama base, reunión y enlaces
   editables en un proyecto finalizado, quitar la reunión avisa, reactivar no avisa).
+
+---
+
+## 2026-11-18 — [A+B] Fase 2, paso 9B: cambiar supervisor, pausar, reanudar, finalizar y reactivar proyectos (cierra el paso 9)
+
+Commits de código: `e15e4f5` (reglas de estado en `domain/`) y `12efa20` (servicios de 9B). Docs de 9A: `a3b124f`.
+
+### Decisiones del paso 9 que se aplican aquí
+
+- **G2-A — reactivar un proyecto no avisa.** §8.1 no lo lista y no existe un tipo `PROYECTO_REACTIVADO`; no se reutiliza
+  `PROYECTO_REANUDADO` ni se cambia el contrato de `domain/`. El equipo recupera su acceso porque las asignaciones nunca se
+  cerraron. Los autores pueden sumar esa fila a §8.1.
+- **G4-A — `reasignarProyectosDeSupervisor`:** una lista atómica (todo o nada) de pares `{ idProyecto, idNuevoSupervisor }`
+  de proyectos **no finalizados** del supervisor indicado; el servicio no exige reasignar todos (la pantalla propone todos
+  los activos y en pausa). Cumple F1-A: es el atajo que permite desactivar a un supervisor con proyectos.
+- **E4-B como precedente:** la regla de estado vive en `domain/` (`estadoProyecto.ts`), en un archivo aparte y sin tocar
+  `cicloVida.ts` ni `reactivacion.ts`, para que servicio y pantalla consulten la misma regla.
+
+### Qué se construyó
+
+- `src/domain/estadoProyecto.ts` (+ prueba) y su reexportación en `src/domain/index.ts`:
+  - `puedePausarProyecto` (ACTIVO → EN_PAUSA), `puedeReanudarProyecto` (EN_PAUSA → ACTIVO) y
+    `puedeReactivarProyecto(usuario, proyecto, supervisor, texto?)` (FINALIZADO → ACTIVO, exigiendo un supervisor
+    SUPERVISOR y ACTIVO). Las tres piden una nota y siguen el orden `puede()` → estado → (reactivar) supervisor → nota.
+  - `accionesDeEstadoDisponibles(estado)`: los botones que la pantalla puede mostrar (activo: pausar y finalizar; en
+    pausa: reanudar y finalizar; finalizado: reactivar).
+  - Códigos propios con su mensaje: `PROYECTO_NO_ACTIVO`, `PROYECTO_NO_EN_PAUSA`, `PROYECTO_NO_FINALIZADO` y
+    `SUPERVISOR_DEL_PROYECTO_INACTIVO`. Finalizar sigue en `cicloVida.ts` (`finalizarProyecto`, del paso 10 de la Fase 1).
+- `src/services/proyectos/estado.ts`: `pausarProyecto`, `reanudarProyecto`, `finalizarProyecto` y `reactivarProyecto`.
+- `src/services/proyectos/supervisor.ts`: `cambiarSupervisor` y `reasignarProyectosDeSupervisor`.
+- `src/services/cicloVida.ts`: `denegarCicloVida` acepta también los errores de estado de proyecto.
+- `src/services/resultado.ts`: `PROYECTO_NO_ES_DEL_SUPERVISOR`. Los cuatro códigos de estado traen su mensaje desde `domain/`.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → proyecto → regla de `domain/` (`puede()` incluido) → nota ausente (`exigirTexto`) → una sola
+  escritura. Solo el Administrador; las cuatro acciones de estado exigen **nota**.
+- **Pausar y reanudar:** cambian el estado y dejan `PROYECTO_PAUSADO` o `PROYECTO_REANUDADO` con `estado` anterior y nuevo
+  y la nota recortada; avisan al equipo (supervisor y practicantes activos con asignación vigente, sin quien actúa; el
+  Administrador no es del equipo). No tocan tareas ni asignaciones.
+- **Finalizar** (desde ACTIVO o EN_PAUSA, con `finalizarProyecto` de `domain/cicloVida.ts`): se bloquea con tareas
+  ESPERANDO_SUPERVISION y el mensaje trae la cantidad («2 tareas esperando supervisión», «1 tarea…»); libera las
+  EN_PROGRESO con un `TAREA_LIBERADA` por cada una (nota = la del cierre) y fija `fecha_fin_real` con el día de Perú
+  (`marca.hoy`, vía el dominio). **No cierra las asignaciones.** Eventos: `PROYECTO_FINALIZADO` (cambios `estado` y
+  `fecha_fin_real`) primero y luego las liberaciones. Avisos: `PROYECTO_FINALIZADO` al equipo y `TAREA_LIBERADA` a cada
+  responsable (misma regla F3-A que al quitar a un practicante). No se escribe la colección `tareas` si no hay nada que
+  liberar. Con el proyecto finalizado, `puede()` deniega las acciones de tareas a todos (`PROYECTO_FINALIZADO`).
+- **Reactivar:** vuelve a ACTIVO y deja `fecha_fin_real` en `null`; evento `PROYECTO_REACTIVADO` con los dos cambios y la
+  nota; **sin avisos** (G2-A). Un supervisor inactivo (un proyecto finalizado puede haberlo quedado, porque desactivar a un
+  supervisor ignora los proyectos finalizados) da `SUPERVISOR_DEL_PROYECTO_INACTIVO`: hay que reactivar primero al
+  supervisor. Las tareas liberadas al finalizar se quedan DISPONIBLES.
+- **`cambiarSupervisor`:** `puedeCambiarSupervisor` (solo Administrador; no un proyecto finalizado; el nuevo debe ser un
+  supervisor ACTIVO y distinto). El supervisor es un dato del proyecto, así que las tareas que esperan supervisión pasan al
+  nuevo sin tocarlas. Evento `PROYECTO_SUPERVISOR_CAMBIADO` (supervisor anterior → nuevo, por nombre); avisos
+  `ASIGNADO_A_PROYECTO` al nuevo y `QUITADO_DE_PROYECTO` al anterior (§8.1).
+- **`reasignarProyectosDeSupervisor`:** comparte con `cambiarSupervisor` la pieza interna (`aplicarCambio`: evento y avisos
+  por proyecto) y deja además un `SUPERVISOR_PROYECTOS_REASIGNADOS` sobre el supervisor saliente (con los códigos de los
+  proyectos). Un proyecto repetido en la lista es `DATOS_INVALIDOS`; uno que no es del supervisor,
+  `PROYECTO_NO_ES_DEL_SUPERVISOR` (con `campos` `reasignaciones.N`); el permiso y las reglas del dominio se comprueban antes
+  que la pertenencia.
+- **Hallazgo de las pruebas:** en las pruebas de «sin nota», un parámetro por defecto del ayudante convertía `undefined` en
+  una nota válida; se corrigió y las cuatro pruebas pasaron a detectar la falta de nota.
+
+### Pruebas y mutaciones
+
+- 117 pruebas nuevas (1.942 en 79 archivos en total): 35 de la regla de `domain/` (rejilla estado × acción, nota, supervisor
+  activo y botones) y 82 de los servicios (permisos de las cuatro acciones de estado con tabla común, éxito exacto de
+  cada una, bloqueo con tareas esperando y su cantidad, finalizar desde la pausa, sin tareas en progreso, fecha real en
+  hora de Perú, reactivar con supervisor inactivo, cambiar supervisor y reasignar, todo o nada); y la prueba de flujo
+  **crear proyecto → asignar → tareas → pausar → finalizar → reasignar → desactivar al supervisor → reactivar el
+  proyecto (falla) → reactivar al supervisor → reactivar el proyecto → el practicante vuelve a tomar la tarea**.
+- **Mutaciones del agente (33, con `git add` previo y `git restore` después; todas detectadas y restauradas):** 11 en
+  `domain/estadoProyecto` (pausar, reanudar y reactivar sin `puede()`; cada acción desde un estado que no corresponde;
+  reactivar con el supervisor inactivo y con una cuenta que no es de supervisor; pausar sin exigir la nota vacía;
+  estado nuevo equivocado y botones) y 22 en `services` (ignorar la regla del dominio, sin exigir la nota ausente en las
+  cuatro acciones, sin avisar al equipo, finalizar sin liberar, cerrando las asignaciones, con la fecha real en UTC y sin
+  avisar al equipo ni al responsable, reactivar sin limpiar la fecha real, avisando y mirando a la persona equivocada
+  como supervisor, cambiar supervisor sin la regla, sin cambiar el supervisor y sin avisar al nuevo o al anterior, y
+  reasignar que no es todo o nada, de otro supervisor, con el evento equivocado, sin el evento de cada proyecto y con el
+  mismo proyecto dos veces). Una mutación sobre el autor del aviso de pausar y reanudar no se contó: el Administrador nunca
+  es del equipo, así que no tiene efecto observable (el autor excluido sí se prueba en `definirReunion`).
+
+### Cierre del paso 9 (servicios de proyectos)
+
+- **Tres commits de código:** `30b27ab` (9A), `e15e4f5` y `12efa20` (9B); docs de 9A `a3b124f`.
+- **13 servicios:** 7 de datos (crear, editar, rama base, reunión y tres de enlaces) y 6 de estado y supervisor (cambiar
+  supervisor, reasignar, pausar, reanudar, finalizar y reactivar), más la regla de `domain/estadoProyecto.ts`, los esquemas
+  reutilizables para la Fase 5.4 y `equipoDelProyecto`. 281 pruebas nuevas y 64 mutaciones detectadas de 64.
+- **Pendientes del plan que se cierran:** `reasignarProyectosDeSupervisor` (F1-A), `finalizarProyecto` con sus efectos y
+  avisos, `reactivarProyecto` exigiendo supervisor activo y el uso de `validarCodigoProyecto` en el servicio (9A).
+- **Con esto terminan los servicios de los módulos de negocio del Bloque 3** (postulaciones, catálogo de evaluación,
+  practicantes, supervisores y proyectos). Quedan el paso 10 (cuenta y configuración) y el 11 (consultas con alcance por rol).
+
+### Pendientes
+
+- **Paso 10:** `iniciarSesion` lee de `data/` (así `INACTIVO` bloquea de verdad) y llama a `emitirAvisosFinDePractica`; Mi
+  perfil reutiliza `esquemaCorreo`, `esquemaCelular` y `correoEnUso`; el cambio de contraseña propia va en
+  `src/services/cuentas/` y no deja la contraseña en el historial; marcar insight revisado, notificar desde un insight,
+  marcar notificaciones leídas y la configuración.
+- **Paso 11:** consultas con alcance por rol para las pantallas (proyectos, tareas, practicantes, supervisores e insights).
+- **Fase 5.3:** la pantalla propone reasignar todos los proyectos activos o en pausa del supervisor antes de desactivarlo.
+- **Fase 5.4:** los botones de estado salen de `accionesDeEstadoDisponibles`; reactivar avisa que primero hay que reactivar
+  al supervisor si está inactivo; finalizar muestra el bloqueo por tareas esperando o la cantidad de tareas que se liberan;
+  reactivar no avisa al equipo (G2-A).

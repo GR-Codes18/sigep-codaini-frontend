@@ -8,15 +8,17 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: pasos 7 y 8 terminados.** **7A:**
+- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: pasos 7, 8 y 9 terminados.** **7A:**
   evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`). **7B:** áreas técnicas,
   especialidades y criterios (`3368603` y `5eb54a4`). **8A:** asignar, quitar, finalizar y reactivar practicantes y
   editar los datos de su práctica (`861c5f3` y `df57b0d`). **8B:** supervisores, restablecer contraseña y aviso de fin
-  de práctica (`a52fe0c`). **9A:** crear y editar proyectos, rama base, reunión y enlaces (`30b27ab`). El Bloque 2
-  (pasos 5 y 6, servicios de tareas y de Pull Request) está fusionado en `development` (PR #23) y el Bloque 1
-  (pasos 1 a 4) en el PR #22. Siguiente: el **sub-paso 9B** (cambiar supervisor, `reasignarProyectosDeSupervisor`,
-  pausar, reanudar, finalizar y reactivar proyectos), luego los pasos 10 y 11.
-- **Actualizado:** 2026-11-18, al cerrar el sub-paso 9A (rama `feat/fase2-servicios-modulos`).
+  de práctica (`a52fe0c`). **9A:** crear y editar proyectos, rama base, reunión y enlaces (`30b27ab`). **9B:**
+  cambiar supervisor, reasignar los proyectos de un supervisor, pausar, reanudar, finalizar y reactivar proyectos
+  (`e15e4f5` y `12efa20`). El Bloque 2 (pasos 5 y 6, servicios de tareas y de Pull Request) está fusionado en
+  `development` (PR #23) y el Bloque 1 (pasos 1 a 4) en el PR #22. Siguiente: el **paso 10** (servicios de cuenta y de
+  configuración) y el **paso 11** (consultas con alcance por rol).
+- **Actualizado:** 2026-11-18, al cerrar el sub-paso 9B y con él el paso 9 (rama
+  `feat/fase2-servicios-modulos`).
 
 ### Cierres de fase
 
@@ -250,10 +252,23 @@
   de **todos** los proyectos y sin normalizar el código; `editarDatosProyecto` rechaza cambiarlo (`CODIGO_INMUTABLE`).
   Códigos nuevos: `CODIGO_INMUTABLE` y `FIN_ANTES_DE_INICIO`. 164 pruebas nuevas y 31 mutaciones detectadas de 31.
   Detalle en `DECISIONES.md`.
-- **Siguiente:** implementar el **sub-paso 9B** (propuesta ya aprobada): reglas de estado en
-  `src/domain/estadoProyecto.ts` y `cambiarSupervisor`, `reasignarProyectosDeSupervisor`, `pausarProyecto`,
-  `reanudarProyecto`, `finalizarProyecto` y `reactivarProyecto`; después, los pasos 10 (cuenta y configuración) y 11
-  (consultas con alcance por rol).
+- **Fase 2, sub-paso 9B: terminado (2026-11-18).** Reglas de estado en `src/domain/estadoProyecto.ts` (`e15e4f5`):
+  `puedePausarProyecto`, `puedeReanudarProyecto`, `puedeReactivarProyecto` (exige supervisor ACTIVO) y
+  `accionesDeEstadoDisponibles`, con los códigos `PROYECTO_NO_ACTIVO`, `PROYECTO_NO_EN_PAUSA`,
+  `PROYECTO_NO_FINALIZADO` y `SUPERVISOR_DEL_PROYECTO_INACTIVO`. Y seis servicios en `src/services/proyectos/`
+  (`12efa20`): `pausarProyecto`, `reanudarProyecto`, `finalizarProyecto` y `reactivarProyecto` (`estado.ts`), y
+  `cambiarSupervisor` y `reasignarProyectosDeSupervisor` (`supervisor.ts`). Finalizar libera las tareas en progreso con
+  un `TAREA_LIBERADA` por cada una, avisa al equipo y a cada responsable, fija `fecha_fin_real` y no cierra las
+  asignaciones; reactivar no avisa (G2-A) y limpia `fecha_fin_real`; reasignar es una lista atómica (G4-A). Código
+  nuevo: `PROYECTO_NO_ES_DEL_SUPERVISOR`. Prueba de flujo `src/services/proyectos/flujo.test.ts` de punta a punta.
+  117 pruebas nuevas (35 en `domain/`) y 33 mutaciones detectadas de 33. Detalle en `DECISIONES.md`.
+- **Fase 2, paso 9: terminado (2026-11-18).** Servicios de proyectos (9A y 9B): 13 servicios, 281 pruebas nuevas y 64
+  mutaciones detectadas de 64, en tres commits de código (`30b27ab`, `e15e4f5` y `12efa20`); docs de 9A `a3b124f`.
+  Con esto **terminan los servicios de módulos de negocio del Bloque 3** (postulaciones, catálogo, practicantes,
+  supervisores y proyectos); quedan los pasos 10 (cuenta y configuración) y 11 (consultas con alcance por rol).
+- **Siguiente:** propuesta y OK del **paso 10** (servicios de cuenta —perfil, cambiar contraseña, marcar insight
+  revisado, notificar desde un insight, marcar notificaciones leídas— y de configuración, más el cableado del login) y,
+  después, el **paso 11** (consultas con alcance por rol).
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»).
 - **Rama:** `feat/fase2-servicios-modulos` (sale de `development`, con el Bloque 2 ya fusionado en el PR #23).
@@ -295,7 +310,8 @@
 | 2026-11-17 | 7B. Áreas técnicas, especialidades y criterios de evaluación (cierra el paso 7) | A (validación del bloque en `domain/`) `3368603`; B (servicios) `5eb54a4`; docs `752aad3` |
 | 2026-11-17 | 8A. Asignar, quitar, finalizar y reactivar practicantes; editar datos de la práctica | A (reglas de reactivación en `domain/`) `861c5f3`; B (servicios) `df57b0d`; docs `14e94cb` |
 | 2026-11-17 | 8B. Supervisores, restablecer contraseña y aviso de fin de práctica (cierra el paso 8) | `a52fe0c`; docs `cdbbb26` |
-| 2026-11-18 | 9A. Crear y editar proyectos, rama base, reunión y enlaces | `30b27ab`; docs pendientes de commit |
+| 2026-11-18 | 9A. Crear y editar proyectos, rama base, reunión y enlaces | `30b27ab`; docs `a3b124f` |
+| 2026-11-18 | 9B. Cambiar supervisor, reasignar proyectos, pausar, reanudar, finalizar y reactivar proyectos (cierra el paso 9) | A (reglas de estado en `domain/`) `e15e4f5`; B (servicios) `12efa20`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -317,11 +333,12 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-18):** 1825 pruebas en 75 archivos (de la Fase 2: 22 del almacén, 180 de la
+**Estado de pruebas (2026-11-18):** 1942 pruebas en 79 archivos (de la Fase 2: 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
 —50 en 5A, 82 en 5B y 33 en 5C—, 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—, 110
 del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—, 127 del sub-paso 8A —19 en
-`domain/`—, 105 del sub-paso 8B y 164 del sub-paso 9A, estas dos últimas todas en `services/`);
+`domain/`—, 105 del sub-paso 8B, 164 del sub-paso 9A y 117 del sub-paso 9B —35 en `domain/`—, las de 8B y 9A todas
+en `services/`);
 `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
@@ -393,15 +410,17 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       `src/services/cuentas/validaciones.ts` para que Mi perfil (paso 10) las reutilice.
 - [x] Sub-paso 9A: `crearProyecto`, `editarDatosProyecto`, `cambiarRamaBase`, `definirReunion`, `agregarEnlace`,
       `editarEnlace` y `quitarEnlace` (`30b27ab`).
-- [ ] Sub-paso 9B (queda): reglas de estado en `src/domain/estadoProyecto.ts` (`puedePausarProyecto`,
-      `puedeReanudarProyecto`, `puedeReactivarProyecto` y `accionesDeEstadoDisponibles`) y los servicios
-      `cambiarSupervisor`, `reasignarProyectosDeSupervisor` (G4-A: lista atómica de proyectos no finalizados del
-      supervisor), `pausarProyecto`, `reanudarProyecto`, `finalizarProyecto` (con `finalizarProyecto` de
-      `domain/cicloVida.ts`, tareas liberadas con un `TAREA_LIBERADA` por cada una y avisos al equipo) y
-      `reactivarProyecto` (exige supervisor ACTIVO; sin aviso, G2-A). Reutiliza `equipoDelProyecto`, `eventoDeProyecto` y
-      `reemplazarProyecto` de `src/services/proyectos/comun.ts`, `liberarTareasDe` y `denegarCicloVida`.
-- [ ] Paso 9B: la pantalla de supervisores (Fase 5.3) depende de `reasignarProyectosDeSupervisor` para poder
-      desactivar a un supervisor con proyectos (hoy `desactivarSupervisor` solo responde `SUPERVISOR_CON_PROYECTOS`).
+- [x] Sub-paso 9B: reglas de estado en `src/domain/estadoProyecto.ts` (`e15e4f5`) y los servicios `cambiarSupervisor`,
+      `reasignarProyectosDeSupervisor` (G4-A), `pausarProyecto`, `reanudarProyecto`, `finalizarProyecto` y
+      `reactivarProyecto` (exige supervisor ACTIVO; sin aviso, G2-A) (`12efa20`). **Paso 9 terminado.**
+- [x] `reasignarProyectosDeSupervisor` (F1-A): ya permite, en una sola operación, dejar a un supervisor sin proyectos para
+      poder desactivarlo (una prueba lo recorre: reasignar todos → `desactivarSupervisor`). Para la **Fase 5.3**: la
+      pantalla propone todos los proyectos activos o en pausa del supervisor y exige elegir un nuevo supervisor para cada
+      uno; el servicio no lo exige (G4-A), y `desactivarSupervisor` avisa cuántos quedan.
+- [ ] Fase 5.4 (Proyectos): los botones de estado salen de `accionesDeEstadoDisponibles(estado)` (reactivar además exige un
+      supervisor activo: si no, el mensaje dice que primero se reactive al supervisor); pausar, reanudar, finalizar y
+      reactivar piden una nota; finalizar muestra el aviso con la cantidad de tareas esperando supervisión (bloqueo) o la
+      de tareas en progreso que se liberarán (el servicio las calcula con `finalizarProyecto` de `domain/`).
 - [ ] Fase 5.4 (Proyectos): los formularios usan los esquemas de `src/services/proyectos/esquemas.ts` y ponen el código en
       mayúsculas y sin espacios **antes** de enviarlo (el servicio no lo normaliza, G1/9A); crear muestra el error del
       código en `campos.codigo`; editar no ofrece el código; la reunión se quita enviando día y hora vacíos; reactivar no
@@ -427,7 +446,7 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       liberadas» (el servicio las calcula con `finalizarPractica` de `domain/`); la contraseña temporal de
       restablecer se muestra una sola vez; editar datos propone la nueva fecha de fin con `fechaFinPrevista` y envía
       ambas fechas (F5-A); reactivar no cambia la fecha de fin, que puede quedar vencida (F4-A).
-- [ ] Pasos 9B a 11 (Bloque 3; los pasos 5, 6, 7 y 8 y el sub-paso 9A ya están terminados): servicios por módulo, consultas con
+- [ ] Pasos 10 y 11 (Bloque 3; los pasos 5 a 9 ya están terminados): servicios por módulo, consultas con
       alcance por rol (pueden usar `ejecutarConsulta`), más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
       dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos
@@ -504,27 +523,29 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
 - [ ] Indicadores: la «última actividad» de las tablas de Reportes solo cuenta eventos con proyecto del
       alcance; los eventos de cuenta (`CUENTA_*`) no entran, tampoco para el Administrador. Confirmarlo al
       construir las tablas (la función `ultimaActividadDeUsuario` sí es global para las Fases 5.2 y 5.3).
-- [ ] Ciclo de vida: los servicios aplican los efectos de `finalizarPractica`, `finalizarProyecto` y
-      `puedeQuitarPracticante`: bajas de las asignaciones, tareas EN_PROGRESO a DISPONIBLE con **un evento
+- [ ] Ciclo de vida (queda solo el bloqueo real del acceso, paso 10): los servicios aplican los efectos de
+      `finalizarPractica`, `finalizarProyecto` y `puedeQuitarPracticante`: bajas de las asignaciones, tareas EN_PROGRESO a DISPONIBLE con **un evento
       `TAREA_LIBERADA` por cada una** (autor Administrador, nota = motivo o nota del cierre), `Usuario.estado`
       en INACTIVO y acceso bloqueado al finalizar la práctica, y `fecha_fin_real` al finalizar el proyecto.
       Pasan SIEMPRE el texto (motivo o nota) y rechazan si `exige_texto !== null` y falta. Detalle en
-      `DECISIONES.md` (paso 10). **Hecho para quitar un practicante y finalizar su práctica** en 8A (`df57b0d`);
-      queda `finalizarProyecto` (paso 9) y el bloqueo real del acceso (paso 10).
+      `DECISIONES.md` (paso 10). **Hecho para quitar un practicante y finalizar su práctica** en 8A (`df57b0d`) y
+      **para finalizar un proyecto** en 9B (`12efa20`: tareas liberadas con un evento por cada una y `fecha_fin_real`);
+      queda el bloqueo real del acceso (paso 10).
 - [ ] Ciclo de vida: notificaciones de los efectos: «práctica finalizada con tareas liberadas» a
       `supervisores_a_avisar`; asignado y quitado; proyecto finalizado al equipo; el **aviso previo** lo emite
       el servicio una sola vez, cuando `dias_restantes === avisoDias` (`situacionFinPractica`). **Hechos en 8A:**
       práctica finalizada (un aviso por supervisor y proyecto afectado), asignado y quitado (más un aviso por
-      cada tarea liberada). **El aviso previo está hecho en 8B** (`emitirAvisosFinDePractica`, `a52fe0c`); queda el
-      proyecto finalizado (paso 9).
+      cada tarea liberada). **El aviso previo está hecho en 8B** (`emitirAvisosFinDePractica`, `a52fe0c`) y **el
+      proyecto finalizado en 9B** (`12efa20`: al equipo, más un aviso `TAREA_LIBERADA` a cada responsable).
+      **Completo**, salvo llamar al aviso previo al iniciar sesión (paso 10).
 - [x] Ciclo de vida: usar `fechaFinPrevista` al aprobar una postulación (`fecha_ingreso` + la duración vigente
       de Configuración) (`aprobarPostulacion`, `debd47e`). Los formularios de Configuración exigen enteros: duración de 1 a 24 meses y aviso de 1
       a 365 días (`DURACION_MAXIMA_MESES`, `AVISO_MAXIMO_DIAS`).
-- [ ] Ciclo de vida: la reactivación de un proyecto debe exigir que su supervisor esté ACTIVO. Con el bloqueo
+- [x] Ciclo de vida: la reactivación de un proyecto debe exigir que su supervisor esté ACTIVO. Con el bloqueo
       de un proyecto FINALIZADO (no se cambia de supervisor) y la desactivación de supervisores (que ignora los
       FINALIZADO), un proyecto podría reactivarse con un supervisor inactivo (§5.4: «siempre con un supervisor
-      activo»). No se construyó en el paso 10; va en los servicios de proyectos (Fase 2, paso 9): **queda para 9B**
-      (`reactivarProyecto` con `SUPERVISOR_DEL_PROYECTO_INACTIVO`).
+      activo»). **Hecho en 9B** (`reactivarProyecto` con `SUPERVISOR_DEL_PROYECTO_INACTIVO`, regla en
+      `domain/estadoProyecto.ts`, `e15e4f5` y `12efa20`).
 
 ### Fases 3 y 4 (interfaz)
 
