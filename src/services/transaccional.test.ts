@@ -8,7 +8,7 @@ import { crearMarca } from './marca';
 import { crearNotificaciones } from './notificaciones';
 import { AHORA_DE_PRUEBA, crearEntornoDePrueba } from './pruebas/entorno';
 import { fallo } from './resultado';
-import { conEfectos, ejecutarServicio } from './transaccional';
+import { conEfectos, ejecutarConsulta, ejecutarServicio } from './transaccional';
 
 /**
  * Dos servicios de ejemplo, escritos aquí solo para probar el contrato que usarán los pasos 5 a 11:
@@ -396,6 +396,67 @@ describe('ejecutarServicio', () => {
       const resultado = await terminarEjemplo(entorno, 'fantasma', TAREA_SIN_SUPERVISION);
       expect(resultado).toMatchObject({ ok: false, codigo: 'NO_ENCONTRADO' });
       expect(escrituras()).toBe(antes);
+    });
+  });
+});
+
+describe('ejecutarConsulta', () => {
+  it('devuelve el valor leído y nunca escribe', async () => {
+    const { entorno, almacen, escrituras } = crearEntornoDePrueba();
+    const datosAntes = almacen.getState().datos;
+    const antes = escrituras();
+
+    const resultado = await ejecutarConsulta(entorno, ({ datos, marca }) => ({
+      ok: true,
+      valor: { tareas: datos.tareas.length, ahora: marca.ahora },
+    }));
+
+    expect(resultado).toEqual({
+      ok: true,
+      valor: { tareas: datosAntes.tareas.length, ahora: AHORA_DE_PRUEBA.toISOString() },
+    });
+    expect(almacen.getState().datos).toBe(datosAntes);
+    expect(escrituras()).toBe(antes);
+  });
+
+  it('un error de la consulta pasa tal cual y no escribe', async () => {
+    const { entorno, escrituras } = crearEntornoDePrueba();
+    const antes = escrituras();
+    expect(await ejecutarConsulta(entorno, () => fallo('ROL_NO_PERMITIDO'))).toEqual(
+      fallo('ROL_NO_PERMITIDO'),
+    );
+    expect(escrituras()).toBe(antes);
+  });
+
+  it('una excepción devuelve ERROR_INESPERADO y avisa en consola', async () => {
+    const consola = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { entorno, almacen } = crearEntornoDePrueba();
+    const datosAntes = almacen.getState().datos;
+    const resultado = await ejecutarConsulta(entorno, () => {
+      throw new Error('algo se rompió');
+    });
+    expect(resultado).toMatchObject({ ok: false, codigo: 'ERROR_INESPERADO' });
+    expect(consola).toHaveBeenCalled();
+    expect(almacen.getState().datos).toBe(datosAntes);
+    consola.mockRestore();
+  });
+
+  describe('demora', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('espera la demora antes de leer', async () => {
+      const { entorno } = crearEntornoDePrueba({ demoraMs: 600 });
+      const operacion = vi.fn(() => ({ ok: true as const, valor: 1 }));
+      const promesa = ejecutarConsulta(entorno, operacion);
+      await vi.advanceTimersByTimeAsync(599);
+      expect(operacion).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      expect(await promesa).toEqual({ ok: true, valor: 1 });
     });
   });
 });

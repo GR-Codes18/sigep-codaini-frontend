@@ -2149,3 +2149,492 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   (`src/data/semilla/registro.ts`) conserva una copia mínima solo para generar los datos iniciales.
 - El historial queda en orden de escritura, que coincide con el cronológico porque la marca se toma dentro de
   la transacción.
+
+## 2026-11-17 — [A+B] Fase 2, paso 5A: servicios para crear, editar y eliminar tareas
+
+- **Commit:** `2c54c04` (`feat: agrega los servicios para crear, editar y eliminar tareas (Fase 2, paso5A)`). Verificación: 1010 pruebas en 45 archivos (50 nuevas en `src/services/tareas/`), `tsc -b`,
+  `eslint src/services`, `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Plan del paso 5 (aprobado por los autores, opción A en las siete decisiones)
+
+- **D1 — Archivos:** carpeta `src/services/tareas/` por grupo: `comun.ts`, `datosTarea.ts` (crear, editar,
+  eliminar), `transiciones.ts` (las 7 de §6.2) y `opciones.ts` (supervisión y PR). Descartados un solo
+  archivo (unas 700 líneas y un test de más de 1500) y un archivo por servicio (mucha repetición).
+- **D2 — Tamaño:** el paso 5 se parte en tres sub-pasos con parada y commit cada uno: **5A** comunes +
+  crear/editar/eliminar; **5B** las 7 transiciones + puerto de GitHub; **5C** opciones + prueba de flujo.
+  Descartado un solo commit (11 servicios no se revisan en 10 a 20 minutos, plan §2.2).
+- **D3 — «Requiere PR» va en el paso 5**, junto con «Requiere supervisión»: es una opción de la tarea, usa
+  `puedeCambiarRequierePR` y C1 solo necesita `siguienteEstadoPR` (sin GitHub). El paso 6 queda para crear y
+  cerrar PR, ramas de ejemplo, error preparado, PR existente y recálculo. El plan §9 (Fase 2, paso 6) nombra
+  «No requiere PR»: **los autores ajustan esa línea a mano**.
+- **D4 — Consulta a GitHub al volver a enviar o terminar una tarea que ya tuvo PR:** puerto `github` en
+  `Entorno`, con una implementación simulada por defecto que responde lo último que se sabe del PR (CREADO →
+  abierto sin conflictos; CON_CONFLICTOS → abierto con conflictos; FUSIONADO → fusionado; CERRADO → cerrado;
+  PENDIENTE con URL, es decir, un PR viejo ya fusionado → fusionado). Las pruebas inyectan otras respuestas y
+  el paso 6 amplía el mismo puerto. Cambia la interfaz `Entorno` del paso 4; **se construye en 5B**.
+  Descartada una función fija sin puerto (las pruebas no podrían simular un cambio en GitHub).
+- **D5 — Evento al desactivar «Requiere PR»:** con cualquier rol, `PULL_REQUEST_NO_REQUERIDO`; activar →
+  `TAREA_OPCIONES_CAMBIADAS`. El aviso `PULL_REQUEST_NO_REQUERIDO_POR_PRACTICANTE` al supervisor sale solo
+  cuando actúa el practicante (§8.1). Descartado usar dos tipos de evento para el mismo hecho según el rol.
+- **D6 — Devolver o reabrir cuando el responsable ya no puede trabajar** (INACTIVO o con la asignación de
+  baja): se conserva el responsable (literal §6.2) y el Administrador o el Supervisor liberan la tarea después,
+  con motivo. Descartados bloquear con un código nuevo (la tarea quedaría atascada: §6.2 no ofrece salida
+  hacia DISPONIBLE desde ESPERANDO_SUPERVISION ni TERMINADA) y liberar automáticamente (regla nueva). La
+  interfaz de la Fase 4 debe señalar el caso.
+- **D7 — Fecha límite:** solo se exige que sea una fecha válida; no tiene que ser futura (la propuesta no lo
+  define). Descartado exigir `≥ hoy` (regla nueva que iría en §5.5/§6.4).
+- **Supuestos sin pregunta:** sin largo máximo de título ni descripción; un motivo opcional que el practicante
+  envíe al liberar su propia tarea se guarda en `nota`; editar recibe los tres campos y `diferencias` decide
+  qué cambió.
+
+### Qué se construyó (sub-paso 5A)
+
+- `src/services/tareas/comun.ts`: esquemas de Zod (`esquemaId`, `esquemaTitulo`, `esquemaDescripcion`,
+  `esquemaFechaLimite` con `esFechaDeCalendario`, `esquemaTextoOpcional`); `cargarContextoProyecto` y
+  `cargarContextoTarea` (actor → proyecto o tarea → asignaciones **de quien actúa** con `asignacionesDe`);
+  `exigirTexto` y `textoGuardado`; `reemplazarTarea`, `referenciaTarea` (`«Menú» (PL2D-004)`) y
+  `eventoDeTarea` (autor, etiqueta `PL2D-018 · Título` e `id_proyecto` siempre presentes).
+- `src/services/tareas/datosTarea.ts`: `crearTarea`, `editarTarea` y `eliminarTarea`, con el contrato del paso 4
+  (`servicio(entrada, entorno = ENTORNO)` dentro de `ejecutarServicio`). Devuelven la `Tarea` resultante;
+  eliminar devuelve `{ id }`.
+- `src/services/tareas/index.ts` y la reexportación en `src/services/index.ts`.
+- `src/services/resultado.ts`: código nuevo `SIN_CAMBIOS` («No hay cambios para guardar.»), con su caso en
+  `resultado.test.ts`.
+
+### Decisiones de implementación
+
+- **Orden de comprobación de todos los servicios de tareas:** Zod (forma y formato) → actor → tarea o proyecto
+  → regla de `domain/` → texto ausente → `SIN_CAMBIOS` → escritura. Por eso un practicante que edita con los
+  mismos valores recibe `ROL_NO_PERMITIDO`, no `SIN_CAMBIOS`, y un actor inexistente con datos inválidos recibe
+  `DATOS_INVALIDOS`.
+- **Zod no exige contenido en el motivo ni en la nota**, solo que sean texto si vienen. Si rechazara un motivo
+  vacío, se saltaría el orden de `domain/`: eliminar una tarea EN_PROGRESO o con PR con motivo vacío debe
+  responder `TAREA_NO_ELIMINABLE` o `TAREA_YA_TIENE_PR`. El texto vacío lo rechaza `domain/`
+  (`TEXTO_OBLIGATORIO`) y el texto **ausente**, `exigirTexto` (cumple el pendiente de «el servicio pasa siempre
+  el texto y rechaza si falta»).
+- **Crear:** número de `siguienteNumeroTarea` y `ultimo_numero_tarea` del proyecto en la **misma** transacción
+  (`tareas` y `proyectos` en un solo `cambios`); un número eliminado no se reutiliza. Nace DISPONIBLE, sin
+  responsable, `requiere_supervision` en `false` y `requiere_pr` en `true` por defecto, `estado_pr` y datos de PR
+  en `null`. `EN_PAUSA` no impide crear; `FINALIZADO` sí (lo decide `puede()`). Evento `TAREA_CREADA` con el
+  cambio de estado `null` → DISPONIBLE (como la semilla); sin notificación (§8.1). Un contador inválido
+  devuelve `ULTIMO_NUMERO_INVALIDO` con el mensaje de `domain/`.
+- **Editar:** el formulario envía título, descripción y fecha límite; los textos se recortan y `diferencias`
+  registra solo lo que cambió (si no cambia nada, también tras recortar, `SIN_CAMBIOS` y no se escribe). La
+  etiqueta del evento usa el título **nuevo**; el anterior queda en `cambios`. Con `avisar_responsable`
+  (EN_PROGRESO con responsable) se envía `TAREA_EDITADA_EN_PROGRESO` al responsable, con el mismo texto que la
+  semilla.
+- **Eliminar:** la tarea sale de `tareas` (única excepción a «nada se borra»), el evento `TAREA_ELIMINADA`
+  guarda el cambio DISPONIBLE → `null` y el motivo recortado en `nota`, y `ultimo_numero_tarea` no cambia. Sin
+  notificación.
+- **Fecha límite:** `YYYY-MM-DD` y además un día que exista (`2026-02-30` no vale). El esquema de `data/` solo
+  comprueba el formato, por eso no se reutiliza.
+- Una tarea cuyo proyecto no existe (dato roto) responde `NO_ENCONTRADO`, igual que una tarea inexistente.
+
+### Pruebas y mutaciones
+
+- `comun.test.ts` (esquemas, carga del contexto, texto exigido y escritura) y `datosTarea.test.ts`; 50 pruebas
+  en total. Con la semilla real y `crearEntornoDePrueba`, cubren: éxito con una sola escritura, evento (tipo,
+  autor, etiqueta, `id_proyecto`, `cambios`, `nota` y la fecha de la marca) y notificaciones exactas; sin
+  permiso (practicante, supervisor ajeno), proyecto FINALIZADO, usuario INACTIVO, inexistentes, datos inválidos
+  por campo, motivo ausente, vacío o con solo espacios, `SIN_CAMBIOS`, y el orden de comprobación. Ninguna
+  operación fallida escribe.
+- **Mutaciones del agente (13, con `git add` previo y `git restore` después; todas detectadas y
+  restauradas):** no exigir el texto ausente; Zod que rechaza el motivo vacío (rompe el orden, 5 pruebas); no
+  guardar `ultimo_numero_tarea`; número desde `max(numero) + 1`; asignaciones de todos y no del actor;
+  `SIN_CAMBIOS` antes que el permiso; editar sin avisar al responsable; eliminar sin quitar la tarea; fecha
+  validada solo con regex; evento con el reloj y no con la marca; etiqueta con el título anterior; crear sin
+  `puede()`; motivo guardado sin recortar.
+- La mutación «crear sin `puede()`» dejó ver un título de prueba mal formado (mostraba el ID del actor en vez
+  del código esperado); se corrigió antes del commit.
+
+### Pendientes
+
+- **5B:** las 7 transiciones y el puerto `github` en `Entorno` (D4). **5C:** opciones (D3, D5) y la prueba de
+  flujo crear → tomar → enviar → aprobar.
+- Ajustar a mano el plan §9, Fase 2, paso 6 (D3).
+- Fase 4: señalar en el detalle de tarea el caso de D6 (responsable INACTIVO o con baja en una tarea
+  EN_PROGRESO).
+
+## 2026-11-17 — [A+B] Fase 2, paso 5B: las 7 transiciones de tarea y el puerto de GitHub simulado
+
+- **Commit:** `2726b9a` (`feat: agrega las transiciones de tarea y el puerto de GitHub simulado (Fase 2, paso 5B)`). Verificación: 1092 pruebas en 47 archivos (82 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó
+
+- `src/services/github.ts`: `PuertoGitHub` (`consultarPullRequest(tarea): ConsultaGitHub`), `TareaConsultable`
+  (`url_pull_request` y `estado_pr`), `consultaSimulada` y `GITHUB_SIMULADO`. El paso 6 amplía el mismo puerto
+  con listar ramas, crear y cerrar.
+- `src/services/entorno.ts`: `Entorno` gana `github: PuertoGitHub`; `ENTORNO.github = GITHUB_SIMULADO`.
+  `crearEntornoDePrueba` acepta `github` (por defecto, la simulación).
+- `src/services/tareas/transiciones.ts`: `tomarTarea`, `liberarTarea`, `enviarTareaASupervision`,
+  `marcarTareaTerminada`, `aprobarTarea`, `devolverTarea` y `reabrirTarea` (entradas `EntradaTransicion`,
+  `EntradaLiberar` con `motivo?` y `EntradaConNota` con `nota?`). Todas devuelven la `Tarea` resultante.
+- Reexportaciones en `src/services/tareas/index.ts` y `src/services/index.ts`. Sin códigos nuevos en
+  `MENSAJES`.
+
+### Decisiones aprobadas en la propuesta de 5B
+
+- **Simulación de GitHub (D4-A):** responde lo último que el sistema sabe del PR: CREADO → abierto sin
+  conflictos; CON_CONFLICTOS → abierto con conflictos; FUSIONADO → fusionado; CERRADO → cerrado; PENDIENTE con
+  URL (PR viejo ya fusionado y recalculado, S4) → fusionado. Una URL sin `estado_pr` es un dato imposible y
+  lanza (`ERROR_INESPERADO`).
+- **Puerto síncrono que recibe la tarea:** la operación de `ejecutarServicio` corre dentro de la transacción
+  del almacén (síncrona) y S1 dice que el GitHub simulado siempre responde al recalcular. Recibe la tarea y no
+  solo la URL porque la simulación necesita el último `estado_pr`. Con un backend real se reemplaza toda la
+  capa `services/`.
+- **`fecha_termino` no va en `cambios`**, como en la semilla: ya es igual a la fecha del evento.
+- **`FALTA_CONSULTA_GITHUB` se devuelve como fallo** con el mensaje que ya tenía en `MENSAJES` (no como
+  excepción) y no escribe nada. Es inalcanzable mientras el servicio consulte cuando `necesitaConsultaGitHub`
+  lo pide.
+
+### Decisiones de implementación
+
+- **Un ayudante privado, `ejecutarTransicion`**, con el orden de 5A: Zod → `cargarContextoTarea` →
+  `puedeTransicionar` (puede → estado → condición → texto vacío) → `exigirTexto` (texto ausente) → efecto
+  propio → evento + aviso → una sola escritura con `conEfectos`. Las 7 funciones exportadas solo declaran su
+  efecto (plan §4.4: una función por acción).
+- **El ayudante pone y registra el cambio de `estado`** (siempre primero en `cambios`); el efecto devuelve la
+  tarea nueva, los cambios extra (responsable, `estado_pr`), la `nota` y el aviso.
+- **Mapeo (sigue la semilla):**
+
+  | Servicio | Tarea | `cambios` | `nota` | Aviso (§8.1) |
+  |---|---|---|---|---|
+  | tomar | EN_PROGRESO, responsable = actor | estado; responsable `null` → nombre | — | ninguno |
+  | liberar | DISPONIBLE, sin responsable; PR, URL y ramas se conservan | estado; responsable nombre → `null` | motivo recortado (opcional para el practicante) | `TAREA_LIBERADA` → responsable |
+  | enviar | ESPERANDO_SUPERVISION, `estado_pr` recalculado | estado; + `estado_pr` si cambia | — | `TAREA_ENVIADA_A_SUPERVISION` → supervisor |
+  | terminar | TERMINADA, `fecha_termino = marca.ahora`, `estado_pr` recalculado | estado; + `estado_pr` si cambia | — | ninguno |
+  | aprobar | TERMINADA, `fecha_termino = marca.ahora` (sin recalcular PR, S5) | estado | — | `TAREA_APROBADA` → responsable |
+  | devolver | EN_PROGRESO, mismo responsable (D6-A) | estado | nota recortada | `TAREA_DEVUELTA` → responsable |
+  | reabrir | EN_PROGRESO, mismo responsable (D6-A), `fecha_termino = null` | estado | nota recortada | `TAREA_REABIERTA` → responsable |
+
+- **El aviso va al responsable anterior a la transición.** `crearNotificaciones` descarta al autor, así que
+  liberar la tarea propia no avisa a nadie, sin una regla aparte. Con D6-A, un responsable INACTIVO recibe el
+  aviso igual (solo se exige que exista).
+- **PR al llegar:** el puerto se consulta solo si `necesitaConsultaGitHub(tarea)` (requiere PR y ya hubo URL);
+  sin URL, `domain/` da PENDIENTE sin consultar; sin «Requiere PR», `estado_pr` se conserva. El cambio de
+  `estado_pr` va en el mismo evento de la transición (autor, el practicante), sin un
+  `PULL_REQUEST_ESTADO_ACTUALIZADO` aparte. La URL y las ramas no se tocan.
+- **La marca «Devuelta con observaciones»** se sigue derivando con `devolucionVigente`; no se guarda nada
+  nuevo. Las pruebas comprueban que liberar y volver a tomar la conservan y que volver a enviar la apaga.
+- **El texto se pasa siempre a `puedeTransicionar`** (pendiente de la Fase 1), aunque `exigirTexto` también
+  rechaza el vacío: así la regla del texto queda en `domain/` y el servicio solo añade el caso «ausente».
+
+### Pruebas y mutaciones
+
+- `transiciones.test.ts`: éxito de cada una (tarea, una sola escritura, evento exacto y avisos exactos);
+  condiciones de §6.2 (estado equivocado, tomar en EN_PAUSA, liberar/aprobar en EN_PAUSA permitidos, enviar sin
+  supervisión, terminar con supervisión); quién (roles, supervisor ajeno, sin asignación, con baja, no
+  responsable); textos ausentes, vacíos o con solo espacios; orden alcance → estado → texto; PR (primera
+  llegada, sin «Requiere PR», las 4 respuestas de GitHub con un puerto inyectado que cuenta las llamadas,
+  aprobar sin consultar); `fecha_termino` igual a la fecha del evento y en `null` al reabrir; D6-A; un caso
+  real de la semilla (reabrir `PL2D-001`, con PR fusionado, y volver a terminar → PENDIENTE con la URL vieja); y
+  una matriz común a las 7 (FINALIZADO, INACTIVO, inexistentes, ID vacío). La prueba del ciclo de la marca
+  adelanta el reloj entre pasos para no depender del desempate de eventos con el mismo instante.
+- `github.test.ts`: las 5 respuestas de la simulación, su efecto con `siguienteEstadoPR` y el dato imposible.
+  `entorno.test.ts`: el puerto por defecto y que `crearEntorno` lo conserva o lo cambia.
+- **Mutaciones del agente (11, con `git add` previo y `git restore` después):** 10 detectadas y restauradas
+  (no pasar `github`; consultar siempre; aprobar recalcula el PR; `fecha_termino` con el reloj; reabrir no
+  limpia `fecha_termino`; devolver quita al responsable; tomar no asigna al actor; no exigir el motivo ausente;
+  la simulación responde abierto para PENDIENTE con URL; el aviso de liberar va al actor).
+- La mutación «la simulación responde abierto para PENDIENTE con URL» pareció sobrevivir en la primera pasada
+  porque el script solo corría `src/services/tareas`; sobre `src/services` la detectan 2 pruebas de
+  `github.test.ts`.
+- **Mutación equivalente:** quitar el texto de la llamada a `puedeTransicionar` no cambia ningún resultado,
+  porque `exigirTexto` corre justo después y también rechaza el texto vacío (el orden estado → texto se
+  mantiene). No se puede detectar con pruebas; se conserva el texto en la llamada por el pendiente acordado.
+  La misma redundancia existe en `eliminarTarea` (5A).
+
+### Pendientes
+
+- **5C:** «Requiere supervisión» y «Requiere PR» (D3, D5, C1 con `siguienteEstadoPR` y el aviso al supervisor)
+  y la prueba de flujo crear → tomar → enviar → aprobar.
+- **Paso 6:** ampliar `PuertoGitHub` con listar ramas, crear y cerrar PR, y el caso de error preparado.
+- **Semilla (opcional):** ninguna tarea EN_PROGRESO tiene un PR previo, así que el recálculo al volver a
+  llegar no se ve en la demostración sin reabrir antes una tarea con PR.
+
+## 2026-11-17 — [A+B] Fase 2, paso 5C: opciones de la tarea y prueba de flujo (cierra el paso 5)
+
+- **Commit:** `98ead18` (`feat: agrega los servicios de opciones de tarea y la prueba de flujo (Fase 2, paso 5C)`). Verificación: 1125 pruebas en 49 archivos (33 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó
+
+- `src/services/tareas/opciones.ts`: `cambiarRequiereSupervision` (`EntradaRequiereSupervision`: `idActor`,
+  `idTarea`, `valor`) y `cambiarRequierePR` (`EntradaRequierePR`: lo mismo más `motivo?`). `valor` es el valor
+  deseado (`true` = activar). Devuelven la `Tarea` resultante.
+- `src/services/tareas/flujo.test.ts`: flujo completo por código con servicios reales y la semilla real.
+- Reexportaciones en `src/services/tareas/index.ts` y `src/services/index.ts`. Sin códigos nuevos (se
+  reutilizan `SIN_CAMBIOS`, `TAREA_NO_EDITABLE`, `TAREA_YA_TIENE_PR` y `TEXTO_OBLIGATORIO`).
+
+### Decisiones de implementación
+
+- **Orden de `cambiarRequiereSupervision`:** Zod → contexto → `puedeCambiarRequiereSupervision` (`puede()` y
+  estado: solo DISPONIBLE o EN_PROGRESO, si no `TAREA_NO_EDITABLE`) → `SIN_CAMBIOS` → escritura. Evento
+  `TAREA_OPCIONES_CAMBIADAS` con el cambio en Sí/No; sin aviso (§8.1 no lo lista).
+- **Orden de `cambiarRequierePR`:** Zod → contexto → `puedeCambiarRequierePR` (`puede()` → PR existente →
+  motivo vacío) → `exigirTexto` (motivo ausente) → `SIN_CAMBIOS` → `siguienteEstadoPR` (C1) → escritura. Por
+  ese orden, un practicante que intenta activar recibe `ROL_NO_PERMITIDO` aunque ya esté activo; un practicante
+  que desactiva una tarea con PR sin motivo recibe `TAREA_YA_TIENE_PR`; y uno que desactiva algo ya desactivado
+  sin motivo recibe `TEXTO_OBLIGATORIO`, no `SIN_CAMBIOS`.
+- **C1 sobre la tarea original:** el evento `REQUIERE_PR_CAMBIADO` solo mira el estado de la tarea y
+  `estado_pr`, no `requiere_pr`. Activar en ESPERANDO_SUPERVISION o TERMINADA con `estado_pr === null` →
+  PENDIENTE, con el cambio de `estado_pr` en el mismo evento que el de `requiere_pr`; activar antes de llegar
+  deja `null`; activar con un `estado_pr` ya calculado lo conserva; desactivar nunca lo cambia (la etiqueta la
+  oculta `etiquetaPRVisible`).
+- **Mapeo (D5-A):**
+
+  | Caso | `TipoAccionHistorial` | `cambios` | `nota` | Aviso (§8.1) |
+  |---|---|---|---|---|
+  | Requiere supervisión | `TAREA_OPCIONES_CAMBIADAS` | `requiere_supervision` | — | ninguno |
+  | Requiere PR, activar (Admin o Supervisor) | `TAREA_OPCIONES_CAMBIADAS` | `requiere_pr` (+ `estado_pr` si C1 lo cambia) | motivo si lo escribieron | ninguno |
+  | Requiere PR, desactivar (Admin o Supervisor) | `PULL_REQUEST_NO_REQUERIDO` | `requiere_pr` | motivo si lo escribieron | ninguno |
+  | Requiere PR, desactivar (practicante responsable) | `PULL_REQUEST_NO_REQUERIDO` | `requiere_pr` | motivo recortado (obligatorio) | `PULL_REQUEST_NO_REQUERIDO_POR_PRACTICANTE` → supervisor del proyecto |
+
+- **El aviso se decide por el rol** (`actor.rol === 'PRACTICANTE'`) y no por `exige_texto`, para que se lea
+  igual que §8.1; el practicante solo puede desactivar. El texto del aviso («{nombre} marcó «X» (PL2D-010) como
+  «No requiere PR».») es nuevo: la semilla no tiene ninguno de este tipo.
+
+### Prueba de flujo
+
+- **Flujo principal:** el Supervisor crea una tarea con supervisión → el practicante demo la toma y la envía
+  (llega en PENDIENTE) → el Supervisor la aprueba. Comprueba la tarea final (TERMINADA, `fecha_termino` igual
+  al último evento, `ultimo_numero_tarea` + 1), el historial en orden (`TAREA_CREADA`, `TAREA_TOMADA`,
+  `TAREA_ENVIADA_A_SUPERVISION`, `TAREA_APROBADA`, con autor, etiqueta e `id_proyecto`), exactamente 2 avisos
+  nuevos en todo el sistema (el envío al Supervisor y la aprobación al practicante), y que los indicadores de
+  `domain/` leen bien lo escrito: `tiempoCicloMs` igual al tiempo entre tomar y aprobar, `vecesDevuelta` 0,
+  `devolucionVigente` falso y la etiqueta PENDIENTE.
+- **Variante con devolución:** crear → tomar → enviar → devolver → enviar → aprobar: `vecesDevuelta` 1, la marca
+  «Devuelta» se enciende al devolver y se apaga al reenviar, la nota de la devolución queda en el evento y llegan
+  los 4 avisos esperados.
+- **Variante «No requiere PR»:** el practicante lo marca mientras la tarea espera supervisión; la etiqueta deja
+  de verse, `estado_pr` se conserva y el supervisor recibe el aviso.
+- El reloj avanza un minuto entre pasos para que el historial quede en orden cronológico real.
+
+### Pruebas y mutaciones
+
+- `opciones.test.ts` (30 pruebas): los dos roles que pueden, los estados permitidos y prohibidos, C1 en sus
+  cuatro casos (con dos casos reales de la semilla: `PL2D-002`, TERMINADA sin «Requiere PR», pasa a PENDIENTE;
+  `PL2D-001`, con PR fusionado, responde `TAREA_YA_TIENE_PR`), desactivar con los tres roles, motivo ausente,
+  vacío o con solo espacios, PR existente (también cerrado) antes que el texto, `SIN_CAMBIOS` y su orden,
+  alcance, FINALIZADO, INACTIVO, inexistentes y `valor` inválido. `flujo.test.ts`: 3 pruebas.
+- En la primera corrida falló una sola prueba, y era de la propia prueba (buscaba la primera devolución de todo
+  el historial, que era de la semilla); se corrigió filtrando por la tarea.
+- **Mutaciones del agente (11, con `git add` previo y `git restore` después):** 10 detectadas y restauradas
+  (`SIN_CAMBIOS` antes que el permiso; sin `SIN_CAMBIOS` en «Requiere PR»; no llamar a `siguienteEstadoPR`;
+  desactivar registra `TAREA_OPCIONES_CAMBIADAS`; avisar también si desactiva el Administrador; nunca avisar;
+  no exigir el motivo ausente; `SIN_CAMBIOS` antes que `exigirTexto`; no guardar el motivo; aviso al responsable
+  en vez de al supervisor).
+- **Mutación equivalente (anticipada en la propuesta):** pasar a `siguienteEstadoPR` la tarea con
+  `requiere_pr` ya cambiado da el mismo resultado, porque `REQUIERE_PR_CAMBIADO` no lee ese campo. No se puede
+  detectar con pruebas; se usa la tarea original y un comentario lo explica en el código.
+
+### Cierre del paso 5 (servicios de tareas)
+
+- **Tres commits de código:** 5A `2c54c04` (crear, editar, eliminar), 5B `2726b9a` (las 7 transiciones y el
+  puerto de GitHub) y 5C `98ead18` (opciones y prueba de flujo); docs `b6683dd` y `ed6a6bc`.
+- **Doce servicios** en `src/services/tareas/` (`datosTarea.ts`, `transiciones.ts`, `opciones.ts`, con
+  `comun.ts`), el puerto `github` en `Entorno` (`src/services/github.ts`) y 165 pruebas nuevas. Mutaciones:
+  13 de 13 en 5A, 10 de 11 en 5B y 10 de 11 en 5C (las 2 restantes, equivalentes).
+- **Pendientes del plan del paso 5 que quedan cumplidos:** guardar `numero` y `ultimo_numero_tarea` juntos;
+  avisar al responsable al editar una tarea EN_PROGRESO; `fecha_termino` y el evento de cierre con la misma
+  marca; pasar siempre `github` al volver a llegar; aplicar C1 al cambiar «Requiere PR»; avisar al supervisor
+  cuando el practicante desactiva «Requiere PR»; y, en todos los servicios de tareas, pasar las asignaciones de
+  quien actúa y rechazar el texto ausente.
+- **Queda para los autores (a mano):** ajustar el plan §9, Fase 2, paso 6 (D3: «No requiere PR» ya está en el
+  paso 5).
+- **Queda para la Fase 4:** señalar en el detalle de tarea el caso de D6-A (responsable INACTIVO o con baja en
+  una tarea EN_PROGRESO).
+
+### Pendientes
+
+- **Paso 6 (servicios de Pull Request):** crear el PR con ramas de ejemplo, el caso de error preparado (plan
+  §8), detectar un PR existente, cerrar el PR y el recálculo, ampliando el mismo `PuertoGitHub`.
+
+## 2026-11-17 — [A+B] Fase 2, paso 6A: listar ramas y crear Pull Request con GitHub simulado
+
+- **Commit:** `59dc320` (`feat: agrega listar ramas y crear Pull Request con GitHub simulado (Fase 2, paso 6A)`). Verificación: 1161 pruebas en 50 archivos (36 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Plan del paso 6 (aprobado por los autores, opción A en las siete decisiones)
+
+- **P1 — Catálogo de ramas de ejemplo:** derivado del proyecto, sin datos nuevos: una
+  `feature/<código>-NNN` por cada número de 1 a `ultimo_numero_tarea` (el formato de la semilla) más las dos
+  ramas especiales de P2 y P5. La rama base no se lista. Sirve para cualquier proyecto, también los que se
+  creen en la Fase 5. Descartados una lista escrita a mano por repositorio (los proyectos nuevos caerían en una
+  genérica) y una colección de ramas en `data/` (cambia el contrato; el paso 2, D7, ya la descartó).
+- **P2 — Caso de error preparado (plan §8):** «rama inexistente». La rama `feature/<código>-rama-eliminada`
+  aparece en la lista pero GitHub la rechaza con `RAMA_INEXISTENTE` (simula una rama borrada entre listar y
+  crear); una rama fuera del catálogo responde lo mismo. Determinista; la ventana no se cierra y al reintentar
+  con otra rama funciona. Descartados «GitHub no disponible» siempre en un proyecto (bloquearía crear PR ahí) o
+  solo en el primer intento (estado oculto, impredecible tras recargar).
+- **P3 — PR que ya existía (§7.5):** se detecta en los datos. Si **otra** tarea del proyecto tiene un PR con la
+  misma rama de origen y base: abierto (CREADO o CON_CONFLICTOS) → `EXISTENTE_ABIERTO`, se vincula su URL y
+  conserva sus conflictos; FUSIONADO (o PENDIENTE con URL, un PR viejo ya fusionado) → `EXISTENTE_FUSIONADO`;
+  CERRADO → no bloquea, como en GitHub. El PR anterior de la propia tarea no cuenta (tras «fusionado →
+  PENDIENTE» las correcciones van en un PR nuevo, §7.4). Descartados una rama especial teatral con URL fija y no
+  modelarlo (incumple §7.5).
+- **P4 — Evento al vincular:** `PULL_REQUEST_CREADO` con la nota «Ya existía un PR para estas ramas; se
+  vinculó.» y `vinculado: true` en el resultado, para que la pantalla muestre el aviso de §7.5. Descartado
+  `PULL_REQUEST_ESTADO_ACTUALIZADO` (ese tipo se reserva a lo que informa GitHub, con autor Sistema).
+- **P5 — Conflictos al crear (§7.5):** la rama `feature/<código>-con-conflictos` crea el PR y, en la misma
+  operación, el Sistema lo pasa a CON_CONFLICTOS y avisa al practicante. Descartado no modelarlo.
+- **P6 — Sin servicio de sincronización con GitHub** (fusión o cierre en GitHub, resolución de conflictos):
+  con backend llega por webhooks (§7.6); la semilla trae tareas en cada etiqueta (§7.7) y el recálculo al
+  volver a llegar ya está en 5B. Descartados un `sincronizarPullRequest` que con la simulación nunca cambiaría
+  nada y controles de demostración (pantalla no definida).
+- **P7 — Dos sub-pasos:** 6A (puerto, `ejecutarConsulta`, listar ramas y crear PR) y 6B (cerrar PR, flujo
+  final y cierre del Bloque 2).
+- **Riesgo aceptado (P3-A):** si dos tareas comparten un PR vinculado y una lo cierra, la otra conserva su
+  etiqueta hasta que vuelva a llegar; sin webhooks no hay forma de propagarlo.
+
+### Qué se construyó (sub-paso 6A)
+
+- `src/services/github.ts`: `PuertoGitHub` con las cuatro operaciones de §7.6 (`consultarPullRequest`,
+  `listarRamas`, `crearPullRequest`, `cerrarPullRequest`); tipos `RepositorioPR`, `PRConocido` (con la marca
+  `propio`), `SolicitudPR` y `RespuestaCrearPR`; simulación `ramasSimuladas`, `ramaEliminada`,
+  `ramaConConflictos` y `crearPullRequestSimulado`; `GITHUB_SIMULADO` con las cuatro (cerrar siempre acepta:
+  §7.5 no define errores al cerrar). Sigue siendo síncrono y sin estado propio: todo llega por parámetro.
+- `src/services/transaccional.ts`: `ejecutarConsulta(entorno, operacion)`, igual que `ejecutarServicio`
+  (demora, datos vigentes, una marca, excepciones → `ERROR_INESPERADO`) pero la transacción siempre termina en
+  `null`: nunca escribe. Lo reutilizarán las consultas con alcance del paso 11.
+- `src/services/pullRequests/pullRequests.ts`: `listarRamasParaPullRequest` (`Resultado<string[]>`) y
+  `crearPullRequest` (`Resultado<{ tarea, vinculado }>`), con `NOTA_PR_VINCULADO`; barril en
+  `src/services/pullRequests/index.ts` y reexportación en `src/services/index.ts`.
+- `src/services/resultado.ts`: código nuevo `RAMA_INEXISTENTE` («La rama elegida ya no existe en GitHub. Elige
+  otra rama.»).
+
+### Decisiones de implementación
+
+- **Orden de crear:** Zod (rama y título no vacíos; descripción opcional) → contexto → `puedeCrearPullRequest`
+  (responsable, alcance, FINALIZADO, etiqueta visible, PR en PENDIENTE o CERRADO) → `github.crearPullRequest`;
+  si GitHub da error, se devuelve sin escribir nada y la etiqueta sigue igual (S3) → `siguienteEstadoPR`
+  (`PR_CREADO`) → si hay conflictos, `siguienteEstadoPR` (`GITHUB_INFORMA`) → una sola escritura. GitHub no se
+  consulta si el permiso falla (lo comprueba un puerto espía).
+- **Listar** usa el mismo permiso que crear (solo quien puede abrir el modal) y `ejecutarConsulta`.
+- **La rama base es siempre `proyecto.rama_base`**; la tarea guarda URL, `rama_origen`, `rama_base` y
+  `estado_pr`. El título y la descripción solo van a GitHub (§11 no tiene esos campos en la tarea).
+- **Numeración de la URL:** `…/pull/<mayor número conocido del proyecto + 1>`. El PR propio no cuenta como
+  existente pero **sí** cuenta para numerar, así que nunca se repite un número (por eso `PRConocido` lleva
+  `propio`).
+- **Un PENDIENTE con URL cuenta como fusionado**, igual que en la consulta de 5B (es el PR viejo tras recalcular
+  «fusionado → PENDIENTE»).
+- **Eventos:** `PULL_REQUEST_CREADO` (autor, el practicante) con `diferencias` sobre `estado_pr`,
+  `url_pull_request`, `rama_origen` y `rama_base` (solo lo que cambia: al crear de nuevo desde CERRADO con la
+  misma rama solo aparecen el estado y la URL). Con conflictos, un segundo evento
+  `PULL_REQUEST_ESTADO_ACTUALIZADO` con autor **Sistema** (CREADO → CON_CONFLICTOS) y el aviso
+  `PULL_REQUEST_CON_CONFLICTOS` al practicante, también del Sistema: por eso le llega aunque él creó el PR (con
+  su nombre de autor, `crearNotificaciones` lo descartaría). Sin aviso al crear (§8.1).
+- Para que compilaran, los puertos de prueba de 5B (`entorno.test.ts`, `transiciones.test.ts`) parten ahora de
+  `GITHUB_SIMULADO`; su lógica no cambió.
+
+### Pruebas y mutaciones
+
+- `github.test.ts`: catálogo (formato, especiales, sin la base, proyecto nuevo, número 1000), `RAMA_INEXISTENTE`
+  (rama eliminada, fuera del catálogo y la base), URL siguiente (contando el PR propio), conflictos, las cuatro
+  situaciones de un PR existente, abierto antes que fusionado y lo que no bloquea (cerrado, propio, otra base,
+  otra rama). `transaccional.test.ts`: `ejecutarConsulta` (valor sin escritura, error tal cual, excepción y
+  demora).
+- `pullRequests.test.ts` (con la semilla real): estados de partida; listar (catálogo sin escritura y permiso
+  sin consultar GitHub); crear nuevo (evento exacto, una sola escritura, sin aviso), desde CERRADO, PR propio
+  fusionado no vinculado, recortes y rama base del proyecto; el error preparado con reintento; vincular abierto,
+  fusionado y con conflictos; conflictos al crear (dos eventos y el aviso del Sistema); quién, estado, EN_PAUSA,
+  FINALIZADO, INACTIVO, inexistentes y datos inválidos.
+- **Mutaciones del agente (9, sobre `src/services` completo, con `git add` previo y `git restore` después; todas
+  detectadas y restauradas):** escribir aunque GitHub dé error; no usar la rama base del proyecto; contar el PR
+  propio como existente; que el PR cerrado bloquee; sin el segundo evento de conflictos; aviso de conflictos con
+  el practicante como autor; URL que repite un número; listar sin comprobar el permiso; `ejecutarConsulta` que
+  escribe.
+
+### Pendientes
+
+- **6B:** `cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre del Bloque 2.
+- **Ajustes a mano en `docs/`:** plan §9, Fase 2, paso 6 (D3: «No requiere PR» ya está en el paso 5) y plan §8
+  (el caso de error preparado es «rama inexistente», con las ramas de ejemplo de P1 y P5).
+
+## 2026-11-17 — [A+B] Fase 2, paso 6B: cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2)
+
+- **Commit:** `9600f46` (`feat: agrega cerrar Pull Request y el flujo de punta a punta (Fase 2, paso 6B)`).
+  Verificación: 1177 pruebas en 50 archivos (16 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó
+
+- `src/services/pullRequests/pullRequests.ts`: `cerrarPullRequest` (`EntradaCerrarPR`: `idActor`, `idTarea`,
+  `motivo?`), que devuelve la `Tarea` resultante. Reexportado en `src/services/pullRequests/index.ts` y
+  `src/services/index.ts`. Sin códigos nuevos.
+- `src/services/tareas/flujo.test.ts`: flujo de punta a punta terminando en `crearPullRequest` y la variante
+  cerrar → crear de nuevo. `valor()` pasa a ser genérico para leer el resultado de `crearPullRequest`.
+
+### Decisiones de implementación
+
+- **Orden de cerrar:** Zod → contexto → `puedeCerrarPullRequest` (`puede()`: responsable, Supervisor del
+  proyecto o Administrador, alcance y FINALIZADO → etiqueta visible → PR en CREADO o CON_CONFLICTOS → motivo
+  vacío) → `exigirTexto` (motivo ausente) → `github.cerrarPullRequest(url)` → `siguienteEstadoPR`
+  (`PR_CERRADO_DESDE_SISTEMA`) → una sola escritura. Por ese orden, un PR FUSIONADO o PENDIENTE con motivo vacío
+  responde `ESTADO_PR_NO_APLICA`, no `TEXTO_OBLIGATORIO`.
+- **GitHub se llama solo después de los permisos y del motivo:** una solicitud rechazada nunca deja un PR
+  cerrado en GitHub con la tarea sin cambios (lo comprueba un puerto espía en todos los casos de error).
+- **Solo cambia `estado_pr` a CERRADO;** la URL y las ramas se conservan (§7.5: luego se puede «crear nuevo
+  PR», y un cerrado no bloquea, P3-A). Una URL nula con el PR abierto es un dato roto: lanza y termina en
+  `ERROR_INESPERADO` sin escribir.
+- **Evento y aviso:** `PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA` (autor, quien cierra) con `estado_pr` → CERRADO y
+  el motivo recortado en `nota`; `PULL_REQUEST_CERRADO_POR_OTRA_PERSONA` al responsable con el texto de la
+  semilla («Cerraron el Pull Request de «X» (ID).»), que `crearNotificaciones` descarta si lo cerró él mismo.
+- **EN_PAUSA no impide cerrar** (como crear: `puede()` solo bloquea FINALIZADO).
+- Las pruebas de flujo calculan la URL esperada desde los datos (mayor número conocido + 1), sin fijar números.
+
+### Pruebas y mutaciones
+
+- `pullRequests.test.ts` (14 pruebas de cerrar): el practicante cierra su PR (evento exacto, una escritura,
+  sin aviso, el puerto recibe la URL), Supervisor y Administrador cierran uno ajeno (aviso exacto al
+  responsable), desde CON_CONFLICTOS, crear de nuevo después de cerrar (URL siguiente), EN_PAUSA, motivo ausente
+  / vacío / con solo espacios, FUSIONADO y PENDIENTE (también con motivo vacío), supervisor ajeno, otro
+  practicante, practicante con baja, tarea EN_PROGRESO, sin «Requiere PR», FINALIZADO, INACTIVO, inexistentes y
+  datos inválidos; en todos los errores ni se escribe ni se llama a GitHub.
+- `flujo.test.ts` (2 pruebas): crear → tomar → enviar → aprobar → crear PR (tarea TERMINADA y CREADO, rama base
+  del proyecto, 5 eventos en orden con la misma etiqueta y proyecto, y siguen siendo solo 2 avisos: crear un PR
+  no avisa); y la variante con cierre por el Supervisor (aviso al practicante, nota del motivo) y un PR nuevo con
+  el número siguiente.
+- **Mutaciones del agente (4, sobre `src/services` completo, con `git add` previo y `git restore` después;
+  todas detectadas y restauradas):** no exigir el motivo ausente; aviso de cierre al actor en vez del
+  responsable; cerrar sin llamar al puerto; borrar la URL al cerrar.
+
+### Cierre del paso 6 (servicios de Pull Request)
+
+- **Dos commits de código:** 6A `59dc320` (puerto ampliado, `ejecutarConsulta`, listar ramas y crear PR) y 6B
+  `9600f46` (cerrar PR y flujo de punta a punta); docs `465a147`. 52 pruebas nuevas; mutaciones 9 de 9 en 6A y
+  4 de 4 en 6B.
+- `PuertoGitHub` queda completo con las cuatro operaciones de §7.6 (consultar, listar ramas, crear y cerrar),
+  simulado sin estado propio y determinista.
+- Todos los eventos de §7.4 tienen servicio: llegar (5B), crear o detectar existente (6A), conflictos al crear
+  (6A), cerrar desde el sistema (6B) y «Requiere PR» (5C). Lo que GitHub informa por su cuenta (fusión, cierre o
+  resolución de conflictos en GitHub) queda para un backend con webhooks (P6-A).
+
+### Cierre del Bloque 2 de la Fase 2 (pasos 5 y 6)
+
+- **Cinco commits de código:** `2c54c04` (5A), `2726b9a` (5B), `98ead18` (5C), `59dc320` (6A) y `9600f46`
+  (6B); docs `b6683dd`, `ed6a6bc`, `6c8e32f` y `465a147` (y el de este cierre). Rama
+  `feat/fase2-servicios-tareas-pr`.
+- **15 servicios:** 12 de tareas (crear, editar, eliminar, las 7 transiciones y las 2 opciones) y 3 de Pull
+  Request (listar ramas, crear y cerrar), más el puerto de GitHub simulado y `ejecutarConsulta`. 217 pruebas
+  nuevas (165 del paso 5 y 52 del paso 6).
+- **Mutaciones:** 48 en total (13 en 5A, 11 en 5B, 11 en 5C, 9 en 6A y 4 en 6B): 46 detectadas y 2
+  equivalentes (sin efecto observable, explicadas en 5B y 5C).
+- **«Listo cuando» de la Fase 2:** queda cubierta por código la parte de tareas y PR del flujo (crear tarea →
+  tomar → enviar → aprobar → crear PR), con historial y notificaciones coherentes. «Aprobar postulación →
+  asignar» llega con los pasos 7 y 8 (Bloque 3).
+- **Decisiones del bloque:** D1 a D7 (paso 5) y P1 a P7 (paso 6), todas en la opción A.
+
+### Pendientes
+
+- **Autores:** commit de documentación de este cierre y PR del Bloque 2 a `development`, revisado por ambos.
+- **Ajustes a mano en `docs/`:** plan §9, Fase 2, paso 6 (D3) y plan §8 (caso de error «rama inexistente» y
+  ramas de ejemplo, P1, P2 y P5).
+- **Fase 4:** señalar en el detalle de tarea el caso de D6-A (responsable INACTIVO o con baja en una tarea
+  EN_PROGRESO); la pantalla de «Crear Pull Request» usa `listarRamasParaPullRequest` y muestra el aviso de
+  §7.5 cuando `vinculado` es `true`.
+- **Riesgo aceptado (P3-A):** un PR vinculado y compartido por dos tareas, cerrado desde una, no se propaga a
+  la otra hasta que vuelva a llegar.
+- **Bloque 3 (pasos 7 a 11):** postulaciones, practicantes y supervisores, proyectos, cuenta y consultas con
+  alcance por rol, en una sesión nueva desde `development`.
