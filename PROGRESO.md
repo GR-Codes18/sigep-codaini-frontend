@@ -12,8 +12,8 @@
   consultas con alcance por rol. El cierre y los sub-pasos constan en el historial inferior.
 - **Fase 4 — componentes compartidos: construidos y probados; conexión a `services/consultas/` en curso.** Los pasos 1 a 11
   están construidos y probados en aislamiento. Las acciones ya pasan por `services/`, pero las pantallas aún leen el almacén
-  directamente; faltan Mi perfil y retirar `src/app/ejemplos/` (sub-pasos d y e). `FormularioTarea` solo tiene pantalla
-  anfitriona para editar (el detalle); crear espera a los módulos 5.4 y 5.5. Se cierra al terminar esos sub-pasos.
+  directamente; falta mover `PaginaDesarrollo` y retirar `src/app/ejemplos/` (sub-paso e). `FormularioTarea` solo tiene
+  pantalla anfitriona para editar (el detalle); crear espera a los módulos 5.4 y 5.5. Se cierra al terminar ese sub-paso.
 - **Conexión de pantallas, sub-paso 0: terminado (2026-11-18, `83b1315`).** La interfaz usa los servicios de la Fase 2
   (`cuentas/` y `seguimiento/`) y se retiraron los duplicados de la Fase 4.
 - **Conexión de pantallas, sub-paso a): terminado (2026-11-18, `0ed86c9`).** Adaptadores puros en `src/app/adaptadores/`
@@ -30,10 +30,16 @@
   terminadas» con búsqueda y se edita una tarea con `FormularioTarea`. Incluye la señal D6-A como regla de `domain/`
   (`motivosDeAtencionDelResponsable`) y los campos `atencion_responsable` y `proyecto.rama_base` de `obtenerTarea`. Se retiraron
   `accionesDeTarea.ts` y `datos.ts` de `ejemplos/`.
-- **Verificación (en `7354f39`):** 3.017 pruebas en 112 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+- **Conexión de pantallas, sub-paso d): terminado (2026-11-18, `f2bb209`).** Mi perfil lee con la consulta nueva `obtenerMiPerfil`
+  y guarda con `editarMiPerfil` y `cambiarMiContrasena`. Qué campos tiene cada rol y cuáles edita lo decide la regla
+  `camposDelPerfil` de `domain/` (con `puede()`): el Practicante, los seis; el Supervisor, nombre y correo en solo lectura y
+  celular, Discord y GitHub editables; el Administrador, nombre, correo y celular (Discord, GitHub y disponibilidad no existen
+  para su rol y no se muestran). El formulario reutiliza `esquemaCorreo` y `esquemaCelular` del servicio (H3 resuelto). La
+  página pasó a `src/app/perfil/` y se retiró el bloque «Asignaciones y responsabilidades», que no está en §8.2.
+- **Verificación (en `f2bb209`):** 3.068 pruebas en 114 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el sub-paso c) (`7354f39`).
-- **Siguiente paso:** sub-paso d) de la conexión de pantallas (Mi perfil y sesión), y después e);
+- **Actualizado:** 2026-11-18, tras el sub-paso d) (`f2bb209`).
+- **Siguiente paso:** sub-paso e) de la conexión de pantallas (mover `PaginaDesarrollo` y retirar `ejemplos/`);
   al terminar, Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
@@ -359,7 +365,7 @@
 - **Siguiente:** **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
   y se retira `src/app/ejemplos/`. La integración de las ramas de interfaz con el Bloque 3 de `development` ya está hecha
   (`48abbbc`). Va en sub-pasos, cada uno con su commit: **0** unificar servicios y acceso (hecho, `83b1315`); **a**
-  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas» (hecho, `7269ba6`); **c** detalle de tarea y Kanban (hecho, `7354f39`); **d** Mi perfil y sesión; **e** retirar
+  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas» (hecho, `7269ba6`); **c** detalle de tarea y Kanban (hecho, `7354f39`); **d** Mi perfil y sesión (hecho, `f2bb209`); **e** retirar
   `ejemplos/`. Después sigue la Fase 5, módulo 5.1 (Postulaciones).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
@@ -442,9 +448,12 @@
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso a). Adaptadores de las consultas a los componentes compartidos en `src/app/adaptadores/` (`tarea`, `tablero`, `eventos`, `notificacion`) y tabla de rutas de las notificaciones | `0ed86c9` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso b). Campana y «Ver todas» leen con `listarNotificaciones` (hook `useNotificaciones`); `CampanaNotificaciones` recibe `noLeidas`; se retira `notificacionVista.ts` | `7269ba6` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso c). Detalle de tarea, Kanban y «Ver todas las terminadas» con `obtenerTarea`, `obtenerTableroProyecto` y `listarTerminadasDeProyecto`; mapeador de acciones; editar con `FormularioTarea`; regla D6-A en `domain/` (`responsableTarea.ts`); se retiran `accionesDeTarea.ts` y `datos.ts` de `ejemplos/` | `7354f39` |
+| 2026-11-18 | 4 | Conexión de pantallas, sub-paso d). Mi perfil con `obtenerMiPerfil` y la regla `camposDelPerfil` de `domain/` (campos por rol y cuáles se editan); `PaginaPerfil` pasa a `src/app/perfil/`; el formulario reutiliza `esquemaCorreo` y `esquemaCelular` (H3); se retiran `responsabilidadesPerfil.ts` y el bloque de responsabilidades | `f2bb209` |
 
-**Estado de pruebas (2026-11-18, en `7354f39`):** 3.017 pruebas en 112 archivos, todas aprobadas (`npx vitest run`); antes eran
-2.937 en 109 (`7269ba6`): el sub-paso c) sumó 80 netas (23 de la regla D6-A y de la consulta; el resto de adaptadores,
+**Estado de pruebas (2026-11-18, en `f2bb209`):** 3.068 pruebas en 114 archivos, todas aprobadas (`npx vitest run`); antes eran
+3.017 en 112 (`7354f39`): el sub-paso d) sumó 51 netas (regla de `domain/`, consulta, adaptador, formulario y página de Mi
+perfil, y se retiraron las de `PaginaPerfil` y `responsabilidadesPerfil` de `ejemplos/`). Antes, 2.937 en 109 (`7269ba6`): el
+sub-paso c) (`7354f39`) sumó 80 netas (23 de la regla D6-A y de la consulta; el resto de adaptadores,
 mapeador, `useConsulta`, listado de terminadas, detalle, tablero y `PaginaDesarrollo`) y retiró las de `accionesDeTarea`. Antes,
 2.915 en 108 (`0ed86c9`): el sub-paso b) agregó 23 pruebas y retiró 1 (la de `notificacionVista`). Antes, 2.871 en 104
 (`83b1315`): el sub-paso a) sumó 44 pruebas en 4 archivos. Y antes, 2.890 en 108 (`48abbbc`): el sub-paso 0 retiró 23
@@ -562,11 +571,13 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [x] Fase 3/4 (sesión): `GuardaRuta` revalida la sesión guardada contra el almacén (`useSesionActiva`, `a4d2e54`): exige que la
       cuenta exista, esté ACTIVO y conserve el rol, cierra la sesión si no y refresca el resumen persistido. Lo cubren las
       pruebas de `GuardaRuta.test.tsx` (cuenta inactiva, cambio de rol y refresco).
-- [ ] Fase 4 (Mi perfil): `editarMiPerfil` y `cambiarMiContrasena` devuelven la `SesionUsuario` nueva y la pantalla la
-      aplica con `abrirSesion` (si no, la barra superior y la franja de contraseña temporal no se refrescan). Los errores
-      vienen por campo en `campos` (`nombre`, `correo`, `celular`, `discord`, `cuenta_github`, `disponibilidad_horaria`,
-      `contrasenaActual`, `contrasenaNueva`, `confirmacion`). Discord y GitHub vacíos quitan el dato. El Administrador no
-      tiene Discord, GitHub ni disponibilidad: el servicio rechaza esos campos (ver «Decisiones pendientes»).
+- [x] Fase 4 (Mi perfil): hecho en el sub-paso d) (`f2bb209`). `editarMiPerfil` y `cambiarMiContrasena` devuelven la
+      `SesionUsuario` nueva y la pantalla la aplica con `abrirSesion` (si no, la barra superior y la franja de contraseña
+      temporal no se refrescan). Los errores vienen por campo en `campos` (`nombre`, `correo`, `celular`, `discord`,
+      `cuenta_github`, `disponibilidad_horaria`, `contrasenaActual`, `contrasenaNueva`, `confirmacion`; el formulario usa
+      los mismos nombres, salvo los de la contraseña, que la página renombra). Discord, GitHub y disponibilidad vacíos quitan
+      el dato. El Administrador no tiene Discord, GitHub ni disponibilidad: esos campos **no existen para su rol** y no se
+      muestran.
 - [ ] Fase 4 (campana) y Reportes (5.6 y 6.4): la campana usa `marcarNotificacionLeida` al abrir un aviso y
       `marcarTodasLeidas`; Reportes usa `marcarInsightRevisado` (`INSIGHT_YA_REVISADO` desactiva el botón) y
       `notificarDesdeInsight` (sin campo libre; el aviso de supervisión demorada apunta a la tarea).
@@ -639,15 +650,15 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
 
 - [x] Las mutaciones de la interfaz pasan por `services/` y la página de desarrollo temporal es un contenedor de integración sin
-      simulaciones locales. Las lecturas del tablero y del detalle usan `services/consultas/` desde el sub-paso c) (`7354f39`); la
-      de Mi perfil sigue leyendo el almacén (sub-paso d).
+      simulaciones locales. Las lecturas del tablero y del detalle usan `services/consultas/` desde el sub-paso c) (`7354f39`) y
+      la de Mi perfil, desde el sub-paso d) (`f2bb209`).
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
 
 - [ ] **Conectar las pantallas y retirar `src/app/ejemplos/`** (en curso, sub-pasos 0 a e). Cada pantalla llama a `services/`
       (acciones) y a `src/services/consultas/` (lecturas) y no filtra ni decide nada. Ya están retirados `accionesDeTarea.ts` y
-      `datos.ts` (`7354f39`); `almacenNotificaciones.ts` ya no existía. Quedan `responsabilidadesPerfil.ts` y la reescritura
-      de `PaginaPerfil` (sub-paso d), y mover `PaginaDesarrollo` y borrar la carpeta (sub-paso e). `PaginaDesarrollo` se conserva
-      como contenedor hasta la Fase 7.
+      `datos.ts` (`7354f39`); `almacenNotificaciones.ts` ya no existía; `responsabilidadesPerfil.ts` y `PaginaPerfil` ya salieron
+      de `ejemplos/` (`f2bb209`). Queda mover `PaginaDesarrollo` y borrar la carpeta (sub-paso e). `PaginaDesarrollo` se
+      conserva como contenedor hasta la Fase 7.
 - [x] Fase 3 y 4 (adaptadores): hecho en el sub-paso a) (`0ed86c9`). Las consultas devuelven la forma de `domain/` (snake_case y
       fechas ISO) y los adaptadores de `src/app/adaptadores/` las convierten a los tipos de los componentes compartidos
       (`TareaDetalle`, `TareaTablero`, `EventoLinea`, `NotificacionItem`), con `parseISO` en el borde. Esos cuatro tipos se
@@ -745,9 +756,9 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 
 - [x] Conexión de pantallas, sub-paso 0 (`83b1315`): la interfaz usa `cuentas/` y `seguimiento/`; regresión H2 resuelta (el acceso
       vuelve a llamar a `emitirAvisosFinDePractica`, F6-A).
-- [ ] H3 (Mi perfil): `src/compartido/esquemasPerfil.ts` conserva la regex laxa del celular (`^\+?[0-9 ]{7,15}$`); el servicio ya exige
-      9 dígitos que empiezan con 9 (F7-A) y lo rechaza, pero el formulario no. Se resuelve en el sub-paso d) reutilizando
-      `esquemaCelular` y `esquemaCorreo` de `services/`.
+- [x] H3 (Mi perfil): resuelto en el sub-paso d) (`f2bb209`). El formulario ya no tiene la regex laxa del celular: reutiliza
+      `esquemaCelular` (9 dígitos que empiezan con 9, F7-A) y `esquemaCorreo` de `services/`, y el mínimo de la contraseña usa
+      `LARGO_MINIMO_CONTRASENA`. Discord, GitHub y disponibilidad los valida el servicio y su error sale junto al campo.
 - [ ] `ACCESO_RAPIDO_NO_DISPONIBLE` (`services/resultado.ts` y `resultado.test.ts`) quedó sin uso tras el sub-paso 0; decidir si se retira.
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
@@ -818,8 +829,9 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - Interlineado: la especificación visual y la propuesta §13 no definen un valor.
 - Rutas con prefijo por panel (`/administrador/...`): la propuesta no define URLs.
 - `@hookform/resolvers` 5.2.2 en vez de 6.0.0 (ver DECISIONES 2026-11-07).
-- Mi perfil: Discord y GitHub del Administrador están bloqueados (la propuesta no los lista); decidir si se
-  ocultan.
+- ~~Mi perfil: Discord y GitHub del Administrador están bloqueados (la propuesta no los lista); decidir si se
+  ocultan.~~ **Decidido (2026-11-18, D8-A):** se ocultan; no existen para su rol. Lo aplica la regla `camposDelPerfil` de
+  `domain/` (sub-paso d, `f2bb209`).
 - Conversión de fechas ISO a `Date` en el borde de la interfaz con `parseISO` (propuesta de Roxana).
 - ~~Fase 5.9: ¿los insights Informativos (fin de práctica próximo) entran en las alertas del Dashboard y en qué
   orden?~~ **Decidido (2026-11-18, Q6-A del paso 11):** orden de `ordenarInsights` (Crítico, Atención, Informativo), sin los

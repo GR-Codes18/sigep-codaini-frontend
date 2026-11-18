@@ -3759,3 +3759,42 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   documentadas. (2) §6.8 describe «Ver todas las terminadas» como un listado con búsqueda; hoy es una vista del contenedor temporal
   hasta los módulos de las Fases 5 a 7. (3) «Solo mis tareas» actúa sobre las terminadas que muestra el tablero (las 5 más recientes):
   conviene decidir si debe actuar sobre todas.
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso d): Mi perfil y sesión
+
+- **Commit:** `f2bb209` (Mi perfil conectado a `obtenerMiPerfil` y a los servicios de cuentas).
+- **Consulta nueva `obtenerMiPerfil`.** Hasta ahora ninguna consulta daba a una persona sus propios datos (`obtenerPracticante` es solo del
+  Administrador), así que `PaginaPerfil` leía el almacén. Se amplió `services/consultas/` (Fase 2): cada persona recibe **solo su cuenta**,
+  sea cual sea su rol, sin parámetro para pedir la de otra. Trae los bloques de lectura de §8.2: rol, estado y fecha de alta; para el
+  Practicante, área, especialidad y fechas de práctica; los datos personales; y los campos del formulario. Nunca devuelve la contraseña
+  ni la postulación de origen. Un usuario INACTIVO recibe `USUARIO_INACTIVO`, y un Practicante o Supervisor sin su detalle (o sin su
+  área o especialidad) recibe `NO_ENCONTRADO` en vez de un perfil a medias.
+- **Regla `camposDelPerfil` en `domain/` (`src/domain/perfil.ts`).** Decide qué campos **existen** para el rol y cuáles son **editables**, con
+  `puede(EDITAR_*_PROPIO)`; antes era una tabla escrita a mano en la pantalla que duplicaba los permisos. Practicante: los seis campos,
+  todos editables. Supervisor: nombre y correo de solo lectura («los fija el Administrador», §8.2) y celular, Discord y GitHub editables.
+  Administrador: nombre, correo y celular. Un usuario INACTIVO conserva sus campos pero no edita ninguno. Alternativa descartada: la
+  tabla en la página.
+- **Discord, GitHub y disponibilidad del Administrador (D8-A).** No se muestran: no existen en su modelo (no tiene registro de practicante
+  ni de supervisor). Mostrarlos bloqueados y vacíos hacía pensar en un error. Cierra la pregunta pendiente de «Decisiones pendientes».
+  Alternativa descartada: dejarlos bloqueados.
+- **Validación en el formulario (H3).** El correo y el celular reutilizan `esquemaCorreo` y `esquemaCelular` del servicio (9 dígitos que
+  empiezan con 9, F7-A), y el mínimo de la contraseña usa `LARGO_MINIMO_CONTRASENA`: desaparece la regex laxa del celular que dejaba pasar
+  números que el servicio rechazaba. Discord, GitHub y disponibilidad los valida el servicio y su error sale junto al campo. Solo se
+  validan los campos editables, así que un dato de solo lectura no bloquea guardar los demás.
+- **Formulario.** Todos los campos son texto con los nombres de los datos (`cuenta_github`, `disponibilidad_horaria`), así los errores del
+  servicio llegan al campo sin renombrar (solo se renombran los de la contraseña). La página envía únicamente los campos editables que
+  cambiaron (el servicio rechaza uno prohibido aunque no cambie); sin cambios devuelve `SIN_CAMBIOS`; vaciar Discord, GitHub o la
+  disponibilidad quita el dato. `PerfilUsuario` ya no reinicia el formulario cuando llegan los mismos valores en un objeto nuevo
+  (una consulta repetida no borra lo que se está escribiendo) y sí lo reinicia cuando cambian de verdad. Un `null` se muestra como vacío,
+  nunca como «null».
+- **Sesión.** `editarMiPerfil` y `cambiarMiContrasena` devuelven la `SesionUsuario` y la página la aplica con `abrirSesion`: la barra
+  superior y la franja de contraseña temporal se refrescan. `GuardaRuta` ya revalidaba la cuenta contra el almacén (`a4d2e54`).
+- **«Asignaciones y responsabilidades» (D7-A).** Se retiró: §8.2 define tres bloques y ese no estaba (regla de oro del plan §1). Con ello
+  salen `responsabilidadesPerfil.ts` y su cálculo de alcance en la pantalla.
+- **Ubicación.** `PaginaPerfil` pasa de `src/app/ejemplos/` a `src/app/perfil/`.
+- **Mutaciones.** 19 mutaciones, 18 detectadas y 1 equivalente (la disponibilidad usa el permiso del celular: el único rol que tiene ese
+  campo es el Practicante y para él ambos permisos dan el mismo resultado). Aplicadas con un script que restaura los archivos, sin Git.
+- **Pruebas.** 3.017 → 3.068 en 114 archivos (+51 netas): regla de `domain/` (9), consulta (12), adaptador (6), formulario (18) y página (19),
+  menos las de `PaginaPerfil` y `responsabilidadesPerfil` de `ejemplos/`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** §8.2 no dice que el Supervisor ve su nombre y correo en solo
+  lectura dentro del formulario (hoy son campos bloqueados); conviene aclararlo. El resto de §8.2 coincide con lo implementado.

@@ -104,8 +104,6 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   DATOS_INVALIDOS: 'Revisa los datos ingresados.',
   ERROR_INESPERADO: 'Ocurrió un error inesperado. Intenta de nuevo.',
 
-  ACCESO_RAPIDO_NO_DISPONIBLE:
-    'El acceso rápido no está disponible. Restablece los datos de demostración o inicia sesión.',
   CONTRASENA_ACTUAL_INVALIDA: 'La contraseña actual no es correcta.',
 
   SIN_CAMBIOS: 'No hay cambios para guardar.',
