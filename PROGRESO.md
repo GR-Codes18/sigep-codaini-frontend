@@ -13,11 +13,11 @@
 - **Fase 4 — componentes compartidos: terminada (2026-11-18).** Pasos 1 a 5 registrados; pasos 6 a 10 conectados
   con servicios y almacén; paso 11 completado con la limpieza de la página de desarrollo temporal. La vista integra
   detalle de tarea, Pull Requests, formulario, notificaciones y perfil.
-- **Verificación de Fase 2:** 2,836 pruebas en 99 archivos; `tsc -b` y `npm run build` correctos.
-- **Verificación de Fase 4:** 1,223 pruebas en 58 archivos; TypeScript, Prettier y compilación de producción OK.
-  ESLint sin errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB.
-- **Actualizado:** 2026-11-18. Se conservan ambos cierres sin consultar Git ni anotar hashes nuevos.
-- **Siguiente paso:** Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
+- **Verificación (en `48abbbc`):** 2.890 pruebas en 108 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+  errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-18, tras la integración `48abbbc`.
+- **Siguiente paso:** conectar las pantallas a `services/` y `services/consultas/` y retirar `src/app/ejemplos/`; después,
+  Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
 
@@ -339,14 +339,14 @@
   `src/services/tareas/flujo.test.ts`; los servicios tienen caso exitoso, sin permiso, datos inválidos e inexistente;
   el alcance (un supervisor no obtiene datos de un proyecto ajeno; un practicante no recibe correo ni celular de un
   compañero) está probado campo por campo en las consultas; y restablecer la semilla deja el sistema consistente (paso 3).
-- **Siguiente:** **revisar e integrar** las ramas de interfaz `feat/fase3-interfaz-conexion` (2 commits) y `feat/fase4-vistas-lectura`
-  (5 commits), y **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
-  y se retira `src/app/ejemplos/`. Parten de `development` del 2026-11-17 (la de Fase 3 desde el PR #22, la de Fase 4 desde el PR #23) y hoy `development`
-  las supera por 47 y 36 commits, así que hay que revisarlas contra `development` y resolver conflictos antes de integrarlas.
+- **Siguiente:** **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
+  y se retira `src/app/ejemplos/`. La integración de las ramas de interfaz con el Bloque 3 de `development` ya está hecha
+  (`48abbbc`); después sigue la Fase 5, módulo 5.1 (Postulaciones).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
-- **Rama:** `feat/fase2-cuenta-consultas` (sale de `development` tras fusionar el paso 9, PR #24). Antes:
-  `feat/fase2-servicios-modulos`.
+- **Rama:** `feat/fase4-vistas-lectura`, que contiene el merge `48abbbc` (Bloque 3 de la Fase 2 integrado con las Fases 3 y 4,
+  sobre la base `9286694`, punta de `development` con el PR #30).
+- **Integración (2026-11-18):** Integración del Bloque 3 de la Fase 2 en las ramas de interfaz — `48abbbc`.
 
 ## Pasos terminados
 
@@ -416,14 +416,14 @@
 | 2026-10-24 | 4 | 1c. Pestañas con contador, tabla compacta, búsqueda | `be181b5` |
 | 2026-10-24 | 4 | 5. Tablero Kanban | `aab2185` |
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
-| 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
-| 2026-11-18 | 4 | 6–11. Integración de detalle, PR, formulario, notificaciones y perfil; limpieza final de la página temporal | sin hash (no consultado por restricción) |
+| 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | eliminación `d0f35ce` (PR #9, `8316b1b`); devolución `70f6510`; redirecciones y acciones `6eb2516`; docs `9d644dd`; PR #10 fusionado en `884b2e9` |
+| 2026-11-18 | 4 | 6–11. Integración de detalle, PR, formulario, notificaciones y perfil; limpieza final de la página temporal | `4d7b47d` (tablero y detalle con la semilla) y `a4d2e54` (cierre de la Fase 4) |
+| 2026-11-18 | 3–4 | Integración del Bloque 3 de la Fase 2 en las ramas de interfaz | `48abbbc` |
 
-**Estado de pruebas (2026-11-18):** 1,223 pruebas en 58 archivos, todas aprobadas. `tsc -b`, Prettier y
-`npm run build` OK. ESLint sin errores (un aviso conocido en `button.tsx`); Vite avisa que el chunk principal
-supera 500 kB.
-
-**Estado de pruebas (2026-11-18):** 2836 pruebas en 99 archivos (de la Fase 2: 22 del almacén, 180 de la
+**Estado de pruebas (2026-11-18, en `48abbbc`):** 2.890 pruebas en 108 archivos, todas aprobadas (`npx vitest run`).
+`npx tsc -b` y `npx prettier --check .` sin errores; `npx eslint .` con 0 errores y el aviso conocido en
+`src/compartido/ui/button.tsx`; `npm run build` OK (Vite avisa que el chunk principal supera 500 kB). Desglose de la
+Fase 2 (2.836 pruebas en 99 archivos antes de la integración): 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
 —50 en 5A, 82 en 5B y 33 en 5C—, 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—, 110
 del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—, 127 del sub-paso 8A —19 en
@@ -431,7 +431,8 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
 `auth/iniciarSesion`), 73 del 10B, 93 del 10C parte 1 —todas en `domain/`— y 70 del 10C parte 2; las de 8B, 9A, 10A, 10B y
 10C parte 2 todas en `services/`; y 588 del paso 11: 79 de 11A parte 1 —todas en `domain/`—, 99 de 11A parte 2, 92 de 11B
 —9 en `domain/`—, 133 de 11C, 125 de 11D —17 en `domain/`— y 60 de 11E);
-`build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 108).
+
 ## Pendientes
 
 ### Fase 1 (`domain/`)
@@ -482,8 +483,6 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
 - [x] Fase 4 (detalle de tarea): se señala el caso D6-A en que una tarea EN_PROGRESO conserva como responsable
       a un practicante INACTIVO o con la asignación de baja; Administrador o Supervisor pueden identificar que
       deben liberarla con motivo.
-- [ ] Pasos 7 a 11 (Bloque 3; los pasos 5 y 6 ya están terminados): servicios por módulo, consultas con
-
 - [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
       a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
       Administrador o el Supervisor la liberen con motivo.
@@ -580,18 +579,12 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
 - [x] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
       GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
-
-- [x] Login: `iniciarSesion` consulta los usuarios del almacén por medio de `services/autenticacion.ts`;
-      `CUENTAS_DEMO` se retiró y los accesos rápidos usan IDs estables (`0307f83`).
-
       Definido en 6A (`59dc320`): «rama inexistente» con `feature/<código>-rama-eliminada` (P2-A) y el
       catálogo `feature/<código>-NNN` (P1-A).
-- [x] Login: `iniciarSesion` consulta la semilla a través de `services/autenticacion.ts`; se retiraron las
-      cuentas duplicadas y los accesos rápidos conservan IDs estables (`0307f83`).
-
-- [x] Login: hecho en 10A (`d8f89b4`); `auth/usuariosDemo.ts` ya no existe (queda `auth/sesionDePrueba.ts`, solo para tests). Antes: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
-      mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
-      `CUENTAS_DEMO`.
+- [x] Login: `iniciarSesion` consulta los usuarios del almacén por medio de `services/autenticacion.ts`
+      (`0307f83`) y, desde 10A (`d8f89b4`), delega en el servicio de `src/services/cuentas/`. `CUENTAS_DEMO` y las
+      cuentas duplicadas se retiraron, los accesos rápidos usan IDs estables y `auth/usuariosDemo.ts` ya no existe
+      (queda `auth/sesionDePrueba.ts`, solo para tests).
 - [ ] Semilla: `ultimo_numero_tarea` es el mayor `numero` de las tareas existentes. Si se añade a la semilla
       una tarea eliminada que sea la última de su proyecto, el contador quedaría por debajo del real.
 - [ ] La regla de «no notificar al autor» ya vive en `crearNotificaciones` (`services/`, paso 4). El registro
@@ -727,15 +720,6 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       la página de desarrollo temporal conectados con los servicios y el almacén.
 - [x] El Kanban usa `estaVencida` para el resaltado de fechas límite y no marca como vencida una tarea que
       vence hoy.
-- [ ] Los dashboards (Fases 5.9 y 6.5) quitan de las alertas los insights con `revisado: true`.
-- [ ] Reemplazar tipos provisionales (`auth/tipos.ts`, `TareaTablero`, `EventoLinea`, `TareaDetalle`,
-      `NotificacionItem`) cuando existan los servicios.
-- [ ] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
-- [ ] Con `estado_pr === 'PENDIENTE'` y `url_pull_request` no nula (PR fusionado recalculado), no mostrar la
-      URL como el PR vigente. Usar `etiquetaPRVisible` para la etiqueta.
-- [ ] Fase 4, pasos 6 y 9 a 11: completar con datos reales cuando existan los servicios.
-- [ ] El Kanban (`TableroKanban.tsx:54`) migra a `estaVencida`: hoy marca en rojo una tarea que vence hoy
-      desde las 00:00 (hallazgo H1 del paso 8).
 - [x] Los dashboards (Fases 5.9 y 6.5) quitan de las alertas los insights con `revisado: true`. Hecho en 11E (`006022d`):
       `obtenerDashboardAdministrador` y `obtenerDashboardSupervisor` ya los excluyen (tope 5); la pantalla solo muestra lo que devuelven.
 
