@@ -10,10 +10,11 @@ import type { StateStorage } from 'zustand/middleware';
 import { crearAlmacen } from '@/data';
 import { crearSemilla } from '@/data/semilla';
 import type { Entorno } from '../entorno';
+import { GITHUB_SIMULADO, type PuertoGitHub } from '../github';
 
 export const AHORA_DE_PRUEBA = new Date('2026-11-17T18:30:00.000Z');
 
-export function crearEntornoDePrueba(opciones: { demoraMs?: number } = {}) {
+export function crearEntornoDePrueba(opciones: { demoraMs?: number; github?: PuertoGitHub } = {}) {
   let escrituras = 0;
   const valores = new Map<string, string>();
   const memoria: StateStorage = {
@@ -38,6 +39,7 @@ export function crearEntornoDePrueba(opciones: { demoraMs?: number } = {}) {
     ahora: () => actual,
     generarId: (prefijo) => `${prefijo}-t${String(++contador).padStart(3, '0')}`,
     demoraMs: opciones.demoraMs ?? 0,
+    github: opciones.github ?? GITHUB_SIMULADO,
   };
 
   return {

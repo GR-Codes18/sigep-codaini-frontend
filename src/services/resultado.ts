@@ -56,13 +56,18 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   TAREA_NO_REQUIERE_PR: 'Esta tarea no requiere Pull Request.',
   ESTADO_PR_NO_APLICA: 'El Pull Request no está en un estado que permita esta acción.',
   FALTA_CONSULTA_GITHUB: 'No se pudo consultar el estado del Pull Request. Intenta de nuevo.',
+  RAMA_INEXISTENTE: 'La rama elegida ya no existe en GitHub. Elige otra rama.',
   // Propios de `services/`
   NO_ENCONTRADO: 'No se encontró el elemento. Puede que ya no exista.',
   DATOS_INVALIDOS: 'Revisa los datos ingresados.',
   ERROR_INESPERADO: 'Ocurrió un error inesperado. Intenta de nuevo.',
+<<<<<<< HEAD
   CREDENCIALES_INVALIDAS: 'Correo o contraseña incorrectos',
   ACCESO_RAPIDO_NO_DISPONIBLE:
     'El acceso rápido no está disponible. Restablece los datos de demostración o inicia sesión.',
+=======
+  SIN_CAMBIOS: 'No hay cambios para guardar.',
+>>>>>>> origin/development
 };
 
 /** Mensaje en español de un código; uno genérico si el código no se conoce. */

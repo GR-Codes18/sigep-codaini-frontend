@@ -55,6 +55,32 @@ export async function ejecutarServicio<T>(
 }
 
 /**
+ * Ejecución de una consulta: demora → lectura → resultado, **sin escribir nada**.
+ *
+ * Igual que `ejecutarServicio` (demora al inicio, datos vigentes tras la espera, una marca de tiempo y
+ * las excepciones convertidas en `ERROR_INESPERADO`), pero la operación solo devuelve un `Resultado`:
+ * la transacción siempre termina en `null`, así que nunca hay escritura. Lo usan las consultas que
+ * deben pasar por permisos (las ramas de un PR; las consultas con alcance del paso 11).
+ */
+export async function ejecutarConsulta<T>(
+  entorno: Entorno,
+  operacion: (contexto: ContextoOperacion) => Resultado<T>,
+): Promise<Resultado<T>> {
+  try {
+    await simularDemora(entorno.demoraMs);
+    const caja: { resultado: Resultado<T> | null } = { resultado: null };
+    entorno.almacen.getState().transaccion((datos) => {
+      caja.resultado = operacion({ datos, marca: crearMarca(entorno.ahora()), entorno });
+      return null;
+    });
+    return caja.resultado ?? fallo('ERROR_INESPERADO');
+  } catch (error) {
+    console.error('SIGEP: error inesperado en una consulta.', error);
+    return fallo('ERROR_INESPERADO');
+  }
+}
+
+/**
  * Suma los eventos y las notificaciones a los cambios de la operación, para escribirlos junto con
  * ellos en la misma operación atómica. No cambia el historial ni las notificaciones originales.
  */
