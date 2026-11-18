@@ -87,6 +87,33 @@ export interface ListadoPostulaciones {
   };
 }
 
+/** Las postulaciones con su puntaje y su marca, por puntaje de mayor a menor (el ranking de §5.1). */
+export function filasDePostulaciones(
+  datos: Pick<DatosAlmacen, 'postulantes' | 'evaluaciones' | 'areas_tecnicas' | 'especialidades'>,
+): PostulacionListado[] {
+  return datos.postulantes
+    .map((p): PostulacionListado => {
+      const evaluacion = evaluacionDe(datos, p.id);
+      return {
+        id: p.id,
+        nombre: p.nombre,
+        correo: p.correo,
+        area: nombreDeCatalogo(datos.areas_tecnicas, p.id_area_tecnica),
+        especialidad: nombreDeCatalogo(datos.especialidades, p.id_especialidad),
+        fecha_postulacion: p.fecha_postulacion,
+        estado: p.estado,
+        puntaje: evaluacion?.puntaje_total ?? null,
+        requiere_revision_manual: evaluacion?.requiere_revision_manual ?? false,
+      };
+    })
+    .sort(
+      (a, b) =>
+        (b.puntaje ?? -1) - (a.puntaje ?? -1) ||
+        a.fecha_postulacion.localeCompare(b.fecha_postulacion) ||
+        a.id.localeCompare(b.id),
+    );
+}
+
 export function listarPostulaciones(
   entrada: EntradaConActor,
   entorno: Entorno = ENTORNO,
@@ -99,27 +126,7 @@ export function listarPostulaciones(
     const modulo = exigirPermisoDeModulo(actor.valor, 'VER_POSTULACIONES');
     if (!modulo.ok) return modulo;
 
-    const postulaciones = datos.postulantes
-      .map((p): PostulacionListado => {
-        const evaluacion = evaluacionDe(datos, p.id);
-        return {
-          id: p.id,
-          nombre: p.nombre,
-          correo: p.correo,
-          area: nombreDeCatalogo(datos.areas_tecnicas, p.id_area_tecnica),
-          especialidad: nombreDeCatalogo(datos.especialidades, p.id_especialidad),
-          fecha_postulacion: p.fecha_postulacion,
-          estado: p.estado,
-          puntaje: evaluacion?.puntaje_total ?? null,
-          requiere_revision_manual: evaluacion?.requiere_revision_manual ?? false,
-        };
-      })
-      .sort(
-        (a, b) =>
-          (b.puntaje ?? -1) - (a.puntaje ?? -1) ||
-          a.fecha_postulacion.localeCompare(b.fecha_postulacion) ||
-          a.id.localeCompare(b.id),
-      );
+    const postulaciones = filasDePostulaciones(datos);
 
     const por = (estado: EstadoPostulacion) => postulaciones.filter((p) => p.estado === estado);
     return {

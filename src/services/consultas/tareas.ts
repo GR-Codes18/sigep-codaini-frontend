@@ -30,6 +30,7 @@ import {
   type Fecha,
   type FechaHora,
   type Id,
+  type Proyecto,
   type Tarea,
   type Usuario,
 } from '@/domain';
@@ -69,6 +70,30 @@ export interface ListadoTareas {
   contadores: Record<EstadoTarea | 'TODAS', number>;
 }
 
+/** Una fila del listado de tareas: la tarjeta con su proyecto y los días que lleva esperando supervisión. */
+export function aTareaListado(
+  datos: Pick<DatosAlmacen, 'usuarios' | 'historial'>,
+  actor: Pick<Usuario, 'id' | 'rol'>,
+  proyecto: Proyecto,
+  tarea: Tarea,
+  hoy: Fecha,
+  ahora: FechaHora,
+): TareaListado {
+  return {
+    ...aTareaConProyecto(datos, actor, proyecto, tarea, hoy),
+    dias_esperando: diasEsperando(tarea, datos.historial, ahora),
+  };
+}
+
+/** La cola de revisión: la que más tiempo lleva esperando primero (`dias_esperando` nulo, al final). */
+export function porMasTiempoEsperando(a: TareaListado, b: TareaListado): number {
+  return (
+    (b.dias_esperando ?? -1) - (a.dias_esperando ?? -1) ||
+    a.proyecto.codigo.localeCompare(b.proyecto.codigo) ||
+    a.numero - b.numero
+  );
+}
+
 /** La vista transversal de tareas (§5.5, §9.1.3), con el alcance de quien consulta. */
 export function listarTareas(
   entrada: EntradaConActor,
@@ -82,10 +107,9 @@ export function listarTareas(
 
     const hoy = hoyEn(marca.ahora);
     const tareas = tareasVisibles(datos, actor.valor)
-      .map(({ tarea, proyecto }): TareaListado => ({
-        ...aTareaConProyecto(datos, actor.valor, proyecto, tarea, hoy),
-        dias_esperando: diasEsperando(tarea, datos.historial, marca.ahora),
-      }))
+      .map(({ tarea, proyecto }) =>
+        aTareaListado(datos, actor.valor, proyecto, tarea, hoy, marca.ahora),
+      )
       .sort((a, b) => a.proyecto.codigo.localeCompare(b.proyecto.codigo) || a.numero - b.numero);
 
     const contadores = { TODAS: tareas.length } as ListadoTareas['contadores'];
@@ -278,12 +302,32 @@ export function listarMiHistorial(
 // ── Inicio del Practicante ───────────────────────────────────────────────────────────────────
 
 /** Mis tareas en un proyecto vigente (asignación vigente y proyecto no FINALIZADO). */
-function misTareasVigentes(
+export function misTareasVigentes(
   datos: Pick<DatosAlmacen, 'tareas' | 'proyectos' | 'asignaciones'>,
   yo: Usuario,
 ): Tarea[] {
   const vigentes = new Map(proyectosVisibles(datos, yo).map((p) => [p.id, p]));
   return datos.tareas.filter((t) => t.id_practicante === yo.id && vigentes.has(t.id_proyecto));
+}
+
+/** Sus tareas en progreso de los proyectos vigentes, en el orden de §9.2.3 (devueltas, vencidas, fecha límite). */
+export function tareasEnCursoDe(datos: DatosAlmacen, yo: Usuario, hoy: Fecha): TareaConProyecto[] {
+  const mias = misTareasVigentes(datos, yo);
+  const devueltas = new Set(
+    mias.filter((t) => devolucionVigente(t.id, datos.historial)).map((t) => t.id),
+  );
+  return ordenarTareasEnCurso(mias, devueltas).flatMap((tarea): TareaConProyecto[] => {
+    const proyecto = datos.proyectos.find((p) => p.id === tarea.id_proyecto);
+    return proyecto === undefined ? [] : [aTareaConProyecto(datos, yo, proyecto, tarea, hoy)];
+  });
+}
+
+/** Sus tareas con la etiqueta de PR visible Pendiente o Con conflictos, en proyectos vigentes. */
+export function prsPorAtenderDe(datos: DatosAlmacen, yo: Usuario, hoy: Fecha): TareaConProyecto[] {
+  return prPorAtender(misTareasVigentes(datos, yo)).flatMap((tarea): TareaConProyecto[] => {
+    const proyecto = datos.proyectos.find((p) => p.id === tarea.id_proyecto);
+    return proyecto === undefined ? [] : [aTareaConProyecto(datos, yo, proyecto, tarea, hoy)];
+  });
 }
 
 export interface MisTareasEnCurso {
@@ -305,16 +349,7 @@ export function listarMisTareasEnCurso(
     if (!rol.ok) return rol;
     const yo = actor.valor;
 
-    const hoy = hoyEn(marca.ahora);
-    const mias = misTareasVigentes(datos, yo);
-    const devueltas = new Set(
-      mias.filter((t) => devolucionVigente(t.id, datos.historial)).map((t) => t.id),
-    );
-    const tareas = ordenarTareasEnCurso(mias, devueltas).flatMap((tarea): TareaConProyecto[] => {
-      const proyecto = datos.proyectos.find((p) => p.id === tarea.id_proyecto);
-      return proyecto === undefined ? [] : [aTareaConProyecto(datos, yo, proyecto, tarea, hoy)];
-    });
-    return { ok: true, valor: { tareas } };
+    return { ok: true, valor: { tareas: tareasEnCursoDe(datos, yo, hoyEn(marca.ahora)) } };
   });
 }
 
@@ -341,13 +376,6 @@ export function listarPullRequestsPorAtender(
     if (!rol.ok) return rol;
     const yo = actor.valor;
 
-    const hoy = hoyEn(marca.ahora);
-    const tareas = prPorAtender(misTareasVigentes(datos, yo)).flatMap(
-      (tarea): TareaConProyecto[] => {
-        const proyecto = datos.proyectos.find((p) => p.id === tarea.id_proyecto);
-        return proyecto === undefined ? [] : [aTareaConProyecto(datos, yo, proyecto, tarea, hoy)];
-      },
-    );
-    return { ok: true, valor: { tareas } };
+    return { ok: true, valor: { tareas: prsPorAtenderDe(datos, yo, hoyEn(marca.ahora)) } };
   });
 }

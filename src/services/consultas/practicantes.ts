@@ -75,7 +75,7 @@ function finDe(fechaFin: Fecha, ahora: FechaHora, aviso: number): FinDePractica 
 }
 
 /** Los practicantes con su cuenta, en el orden del almacén. */
-function practicantesConCuenta(
+export function practicantesConCuenta(
   datos: Pick<DatosAlmacen, 'practicantes' | 'usuarios'>,
 ): Array<{ detalle: Practicante; usuario: Usuario }> {
   return datos.practicantes.flatMap((detalle) => {
@@ -415,6 +415,17 @@ function filaACargo(
   };
 }
 
+/** Las personas de los proyectos de `actor` (Supervisor), una fila por persona y por nombre. */
+export function practicantesACargoDe(
+  datos: DatosAlmacen,
+  actor: Usuario,
+): PracticanteACargoListado[] {
+  const proyectos = proyectosDelSupervisor(datos, actor);
+  return practicantesConCuenta(datos)
+    .flatMap(({ detalle, usuario }) => filaACargo(datos, proyectos, usuario, detalle) ?? [])
+    .sort(porNombre);
+}
+
 /**
  * Solo Supervisor (§9.1.2): las personas con una asignación, vigente o con baja, en alguno de sus proyectos.
  * Sin ninguna, éxito con la lista vacía. No trae el área técnica ni la postulación de origen.
@@ -431,10 +442,7 @@ export function listarPracticantesACargo(
     const rol = exigirRol(actor.valor, ['SUPERVISOR']);
     if (!rol.ok) return rol;
 
-    const proyectos = proyectosDelSupervisor(datos, actor.valor);
-    const practicantes = practicantesConCuenta(datos)
-      .flatMap(({ detalle, usuario }) => filaACargo(datos, proyectos, usuario, detalle) ?? [])
-      .sort(porNombre);
+    const practicantes = practicantesACargoDe(datos, actor.valor);
 
     return {
       ok: true,

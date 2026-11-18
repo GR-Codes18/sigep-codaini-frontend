@@ -22,14 +22,16 @@ import {
   puede,
   type IndicadoresPostulacionesArea,
   type IndicadoresPracticante,
+  type FechaHora,
   type IndicadoresProyecto,
   type Id,
   type Insight,
   type PeriodoIndicadores,
   type ResumenIndicadores,
+  type Usuario,
 } from '@/domain';
 import { ENTORNO, type Entorno } from '../entorno';
-import { denegar, fallo, validarEntrada, type Resultado } from '../resultado';
+import { denegar, exito, fallo, validarEntrada, type Resultado } from '../resultado';
 import { esquemaId } from '../tareas/comun';
 import { calcularInsightsVigentes } from '../seguimiento/comun';
 import { ejecutarConsulta } from '../transaccional';
@@ -63,6 +65,44 @@ export interface ListadoInsights {
 const esquemaEntradaInsights = z.object({ idActor: esquemaId, id_proyecto: esquemaId.optional() });
 export type EntradaListarInsights = z.input<typeof esquemaEntradaInsights>;
 
+/**
+ * Los insights que `yo` puede ver, con su revisión, sus permisos y los proyectos recortados a su alcance. Es la
+ * receta única que usan el listado de Reportes y los Dashboards (§5.6, §5.9, §9.1.5).
+ */
+export function insightsVisibles(
+  datos: DatosAlmacen,
+  yo: Usuario,
+  ahora: FechaHora,
+): Resultado<InsightVista[]> {
+  const calculados = calcularInsightsVigentes(datos, ahora);
+  if (!calculados.ok) return calculados;
+
+  const visibles = filtrarInsightsPorAlcance(calculados.valor, yo, datos.proyectos);
+  const conRevision = aplicarRevisiones(visibles, datos.revisiones_insight, yo.id, ahora);
+  const propios = new Set(
+    yo.rol === 'SUPERVISOR' ? proyectosDelSupervisor(datos, yo).map((p) => p.id) : null,
+  );
+
+  return exito(
+    conRevision.map((insight): InsightVista => {
+      // Los permisos se deciden con el insight completo; solo después se recorta lo que se entrega.
+      const contexto = { insight, proyectos: datos.proyectos };
+      const idsProyecto =
+        yo.rol === 'SUPERVISOR'
+          ? insight.ids_proyecto.filter((id) => propios.has(id))
+          : insight.ids_proyecto;
+      return {
+        ...insight,
+        ids_proyecto: idsProyecto,
+        proyectos: datos.proyectos.filter((p) => idsProyecto.includes(p.id)).map(resumenDeProyecto),
+        puede_marcar_revisado:
+          !insight.revisado && puede(yo, 'MARCAR_INSIGHT_REVISADO', contexto).permitido,
+        puede_notificar: puede(yo, 'NOTIFICAR_DESDE_INSIGHT', contexto).permitido,
+      };
+    }),
+  );
+}
+
 export function listarInsights(
   entrada: EntradaListarInsights,
   entorno: Entorno = ENTORNO,
@@ -84,35 +124,11 @@ export function listarInsights(
       if (!permiso.permitido) return denegar(permiso);
     }
 
-    const calculados = calcularInsightsVigentes(datos, marca.ahora);
-    if (!calculados.ok) return calculados;
-
-    const visibles = filtrarInsightsPorAlcance(calculados.valor, yo, datos.proyectos);
-    const conRevision = aplicarRevisiones(visibles, datos.revisiones_insight, yo.id, marca.ahora);
-    const propios = new Set(
-      yo.rol === 'SUPERVISOR' ? proyectosDelSupervisor(datos, yo).map((p) => p.id) : null,
+    const todos = insightsVisibles(datos, yo, marca.ahora);
+    if (!todos.ok) return todos;
+    const insights = todos.valor.filter(
+      (i) => idFiltro === undefined || i.ids_proyecto.includes(idFiltro),
     );
-
-    const insights = conRevision
-      .map((insight): InsightVista => {
-        // Los permisos se deciden con el insight completo; solo después se recorta lo que se entrega.
-        const contexto = { insight, proyectos: datos.proyectos };
-        const idsProyecto =
-          yo.rol === 'SUPERVISOR'
-            ? insight.ids_proyecto.filter((id) => propios.has(id))
-            : insight.ids_proyecto;
-        return {
-          ...insight,
-          ids_proyecto: idsProyecto,
-          proyectos: datos.proyectos
-            .filter((p) => idsProyecto.includes(p.id))
-            .map(resumenDeProyecto),
-          puede_marcar_revisado:
-            !insight.revisado && puede(yo, 'MARCAR_INSIGHT_REVISADO', contexto).permitido,
-          puede_notificar: puede(yo, 'NOTIFICAR_DESDE_INSIGHT', contexto).permitido,
-        };
-      })
-      .filter((i) => idFiltro === undefined || i.ids_proyecto.includes(idFiltro));
 
     return {
       ok: true,

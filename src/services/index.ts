@@ -251,6 +251,12 @@ export type {
 
 // Consultas con alcance por rol (paso 11)
 export {
+  MAXIMO_ALERTAS,
+  MAXIMO_POR_REVISAR,
+  MAXIMO_POSTULACIONES,
+  obtenerDashboardAdministrador,
+  obtenerDashboardSupervisor,
+  obtenerInicioPracticante,
   FILTRO_AUTOR_SISTEMA,
   categoriaDeAccion,
   listarHistorial,
@@ -284,6 +290,15 @@ export {
   obtenerTarea,
 } from './consultas';
 export type {
+  AlertasDeResumen,
+  AvanceDeProyecto,
+  DashboardAdministrador,
+  DashboardSupervisor,
+  DashboardSupervisorVacio,
+  InicioPracticante,
+  InicioPracticanteVacio,
+  ReunionDeResumen,
+  TareasEsperando,
   DestinoDeNotificacion,
   EntradaListarHistorial,
   EntradaListarInsights,

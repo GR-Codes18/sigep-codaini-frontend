@@ -145,3 +145,22 @@ export type {
   PostulacionesPorArea,
   PracticantesDeArea,
 } from './reportes';
+export {
+  MAXIMO_ALERTAS,
+  MAXIMO_POR_REVISAR,
+  MAXIMO_POSTULACIONES,
+  obtenerDashboardAdministrador,
+  obtenerDashboardSupervisor,
+  obtenerInicioPracticante,
+} from './dashboards';
+export type {
+  AlertasDeResumen,
+  AvanceDeProyecto,
+  DashboardAdministrador,
+  DashboardSupervisor,
+  DashboardSupervisorVacio,
+  InicioPracticante,
+  InicioPracticanteVacio,
+  ReunionDeResumen,
+  TareasEsperando,
+} from './dashboards';
