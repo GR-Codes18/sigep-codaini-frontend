@@ -26,7 +26,13 @@ export type {
 export { generarContrasenaTemporal } from './contrasena';
 export { EVALUADOR_SIMULADO } from './evaluador';
 export type { PuertoEvaluador } from './evaluador';
-export { etiquetaPostulante, etiquetaProyecto, etiquetaTarea, etiquetaUsuario } from './etiquetas';
+export {
+  etiquetaParametro,
+  etiquetaPostulante,
+  etiquetaProyecto,
+  etiquetaTarea,
+  etiquetaUsuario,
+} from './etiquetas';
 export {
   AUTOR_SISTEMA,
   agregarEventos,
@@ -78,6 +84,18 @@ export type {
 } from './cuentas';
 
 // Servicios por módulo
+export {
+  guardarConfiguracionSeccion,
+  restablecerDatosDemostracion,
+  restaurarSeccionConfiguracion,
+} from './configuracion';
+export type {
+  DatosRestablecidos,
+  EntradaGuardarConfiguracionSeccion,
+  EntradaRestablecerDatosDemostracion,
+  EntradaRestaurarConfiguracionSeccion,
+  SeccionGuardada,
+} from './configuracion';
 export {
   calcularInsightsVigentes,
   marcarInsightRevisado,

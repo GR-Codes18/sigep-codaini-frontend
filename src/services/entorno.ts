@@ -12,9 +12,12 @@ import { generarContrasenaTemporal } from './contrasena';
 import { EVALUADOR_SIMULADO, type PuertoEvaluador } from './evaluador';
 import { GITHUB_SIMULADO, type PuertoGitHub } from './github';
 
-/** Lo único que los servicios necesitan del almacén. */
+/**
+ * Lo único que los servicios necesitan del almacén: leer y escribir con `transaccion`, y `restablecer` (solo lo usa
+ * `restablecerDatosDemostracion`).
+ */
 export interface AlmacenServicio {
-  getState: () => Pick<EstadoAlmacen, 'transaccion'>;
+  getState: () => Pick<EstadoAlmacen, 'transaccion' | 'restablecer'>;
 }
 
 export interface Entorno {
