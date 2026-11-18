@@ -12,8 +12,10 @@
   Request). El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). **Paso 5 terminado** en tres
   sub-pasos con parada y commit cada uno (D2-A): 5A (crear, editar y eliminar, `2c54c04`), 5B (las 7
   transiciones y el puerto de GitHub, `2726b9a`) y 5C (opciones de la tarea y prueba de flujo, `98ead18`).
-  Sigue el paso 6 (servicios de Pull Request), que cierra el Bloque 2.
-- **Actualizado:** 2026-11-17, al cerrar el sub-paso 5C y con él el paso 5.
+  El paso 6 (servicios de Pull Request, que cierra el Bloque 2) se parte en dos sub-pasos (P7-A): **6A
+  terminado** (listar ramas y crear el PR, `59dc320`); sigue 6B (cerrar el PR, el flujo final y el cierre del
+  Bloque 2).
+- **Actualizado:** 2026-11-17, al cerrar el sub-paso 6A.
 
 ### Cierres de fase
 
@@ -158,9 +160,17 @@
 - **Fase 2, paso 5: terminado (2026-11-17).** Los 12 servicios de tareas (crear, editar, eliminar, las 7
   transiciones y las 2 opciones) en `src/services/tareas/`, el puerto `github` en `Entorno` y 165 pruebas
   nuevas, en tres commits de código: `2c54c04`, `2726b9a` y `98ead18`.
-- **Siguiente: paso 6** (servicios de Pull Request: crear con ramas de ejemplo, caso de error preparado,
-  detectar PR existente, cerrar y recálculo; amplía el mismo `PuertoGitHub`). Se propone y se espera el OK
-  antes de escribir código.
+- **Fase 2, paso 6: plan aprobado (2026-11-17)** con las siete decisiones en la opción A (P1 a P7; detalle en
+  `DECISIONES.md`): catálogo de ramas derivado del proyecto, caso de error preparado «rama inexistente» con una
+  rama especial, PR existente detectado en los datos, vincularlo registra `PULL_REQUEST_CREADO` con nota,
+  conflictos al crear con otra rama especial, sin servicio de sincronización con GitHub y dos sub-pasos.
+- **Fase 2, sub-paso 6A: terminado (2026-11-17).** `PuertoGitHub` con las cuatro operaciones de §7.6 y su
+  simulación (`src/services/github.ts`), `ejecutarConsulta` (consulta con demora y sin escritura) y los
+  servicios `listarRamasParaPullRequest` y `crearPullRequest` en `src/services/pullRequests/` (`59dc320`).
+  Código nuevo `RAMA_INEXISTENTE`. 36 pruebas nuevas y 9 mutaciones detectadas de 9. Detalle en
+  `DECISIONES.md`.
+- **Siguiente: sub-paso 6B** (`cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre
+  del Bloque 2). Se propone y se espera el OK antes de escribir código.
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
   por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
@@ -197,7 +207,8 @@
 | 2026-11-17 | 4. Utilidades base de `services/` (cierra el Bloque 1) | `c2b3f47`; docs `0a08c1d`; PR #22 fusionado en `ba4f077` |
 | 2026-11-17 | 5A. Servicios para crear, editar y eliminar tareas | `2c54c04`; docs `b6683dd` |
 | 2026-11-17 | 5B. Las 7 transiciones de tarea y el puerto de GitHub simulado | `2726b9a`; docs `ed6a6bc` |
-| 2026-11-17 | 5C. Opciones de la tarea y prueba de flujo (cierra el paso 5) | `98ead18`; docs pendientes de commit |
+| 2026-11-17 | 5C. Opciones de la tarea y prueba de flujo (cierra el paso 5) | `98ead18`; docs `6c8e32f` |
+| 2026-11-17 | 6A. Listar ramas y crear Pull Request con GitHub simulado | `59dc320`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -219,9 +230,10 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 1125 pruebas en 49 archivos (de la Fase 2: 22 del almacén, 180 de la
-semilla, 11 de restablecer, 136 de las utilidades de `services/` y 165 de los servicios de tareas del paso 5:
-50 en 5A, 82 en 5B y 33 en 5C); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 1161 pruebas en 50 archivos (de la Fase 2: 22 del almacén, 180 de la
+semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
+—50 en 5A, 82 en 5B y 33 en 5C— y 36 del sub-paso 6A); `build` OK (aviso de Vite por chunk > 500 kB, no es de
+seguridad).
 
 ## Pendientes
 
@@ -258,8 +270,16 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/` y 165 de los se
       `PL2D-001`, PR fusionado); hoy solo lo cubren las pruebas.
 - [x] Sub-paso 5C: «Requiere supervisión», «Requiere PR» (D3-A, D5-A) y la prueba de flujo crear → tomar →
       enviar → aprobar (`98ead18`). **Paso 5 terminado.**
+- [x] Sub-paso 6A: listar ramas y crear Pull Request (P1 a P5) con `ejecutarConsulta` (`59dc320`).
+- [ ] Sub-paso 6B: `cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre del
+      Bloque 2 (PR a `development`, lo hacen los autores).
 - [ ] Ajustar a mano el plan §9, Fase 2, paso 6: «No requiere PR» pasa al paso 5 (decisión D3-A); el paso 6
       queda con crear y cerrar PR, ramas de ejemplo, error preparado, PR existente y recálculo.
+- [ ] Ajustar a mano el plan §8 (y la propuesta §7.7 si lo quieren explícito): el caso de error de PR
+      preparado es «rama inexistente», con la rama de ejemplo `feature/<código>-rama-eliminada` (P2-A); las
+      ramas de ejemplo son `feature/<código>-NNN` más `…-con-conflictos` (P1-A, P5-A).
+- [ ] Riesgo aceptado (P3-A): si dos tareas comparten un PR vinculado y una lo cierra, la otra conserva su
+      etiqueta hasta que vuelva a llegar a supervisión o a terminada.
 - [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
       a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
       Administrador o el Supervisor la liberen con motivo.
@@ -279,8 +299,10 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/` y 165 de los se
       servicio, nunca al almacén.
 - [ ] Varias pestañas abiertas: el almacén no se sincroniza entre pestañas (no hay evento `storage`); la otra
       pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
-- [ ] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
+- [x] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
       GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
+      Definido en 6A (`59dc320`): «rama inexistente» con `feature/<código>-rama-eliminada` (P2-A) y el
+      catálogo `feature/<código>-NNN` (P1-A).
 - [ ] Login: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
       mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
       `CUENTAS_DEMO`.
@@ -304,7 +326,8 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/` y 165 de los se
       evento `TAREA_ENVIADA_O_TERMINADA`; llamar a `siguienteEstadoPR` tras enviar/terminar, tras crear o
       cerrar el PR y tras cambiar «Requiere PR». Detalle en `DECISIONES.md` (paso 5). **Hecho para enviar y
       terminar** en 5B (`2726b9a`, puerto `entorno.github`) y **tras cambiar «Requiere PR»** en 5C (`98ead18`,
-      C1); falta tras crear o cerrar el PR (paso 6, que amplía el mismo puerto con ramas, crear y cerrar).
+      C1) y **tras crear el PR** en 6A (`59dc320`, `PR_CREADO` y `GITHUB_INFORMA` por conflictos); falta tras
+      cerrar el PR (6B).
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
 - [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.

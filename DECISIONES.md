@@ -2450,3 +2450,104 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 
 - **Paso 6 (servicios de Pull Request):** crear el PR con ramas de ejemplo, el caso de error preparado (plan
   §8), detectar un PR existente, cerrar el PR y el recálculo, ampliando el mismo `PuertoGitHub`.
+
+## 2026-11-17 — [A+B] Fase 2, paso 6A: listar ramas y crear Pull Request con GitHub simulado
+
+- **Commit:** `59dc320` (`feat: agrega listar ramas y crear Pull Request con GitHub simulado (Fase 2, paso 6A)`). Verificación: 1161 pruebas en 50 archivos (36 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Plan del paso 6 (aprobado por los autores, opción A en las siete decisiones)
+
+- **P1 — Catálogo de ramas de ejemplo:** derivado del proyecto, sin datos nuevos: una
+  `feature/<código>-NNN` por cada número de 1 a `ultimo_numero_tarea` (el formato de la semilla) más las dos
+  ramas especiales de P2 y P5. La rama base no se lista. Sirve para cualquier proyecto, también los que se
+  creen en la Fase 5. Descartados una lista escrita a mano por repositorio (los proyectos nuevos caerían en una
+  genérica) y una colección de ramas en `data/` (cambia el contrato; el paso 2, D7, ya la descartó).
+- **P2 — Caso de error preparado (plan §8):** «rama inexistente». La rama `feature/<código>-rama-eliminada`
+  aparece en la lista pero GitHub la rechaza con `RAMA_INEXISTENTE` (simula una rama borrada entre listar y
+  crear); una rama fuera del catálogo responde lo mismo. Determinista; la ventana no se cierra y al reintentar
+  con otra rama funciona. Descartados «GitHub no disponible» siempre en un proyecto (bloquearía crear PR ahí) o
+  solo en el primer intento (estado oculto, impredecible tras recargar).
+- **P3 — PR que ya existía (§7.5):** se detecta en los datos. Si **otra** tarea del proyecto tiene un PR con la
+  misma rama de origen y base: abierto (CREADO o CON_CONFLICTOS) → `EXISTENTE_ABIERTO`, se vincula su URL y
+  conserva sus conflictos; FUSIONADO (o PENDIENTE con URL, un PR viejo ya fusionado) → `EXISTENTE_FUSIONADO`;
+  CERRADO → no bloquea, como en GitHub. El PR anterior de la propia tarea no cuenta (tras «fusionado →
+  PENDIENTE» las correcciones van en un PR nuevo, §7.4). Descartados una rama especial teatral con URL fija y no
+  modelarlo (incumple §7.5).
+- **P4 — Evento al vincular:** `PULL_REQUEST_CREADO` con la nota «Ya existía un PR para estas ramas; se
+  vinculó.» y `vinculado: true` en el resultado, para que la pantalla muestre el aviso de §7.5. Descartado
+  `PULL_REQUEST_ESTADO_ACTUALIZADO` (ese tipo se reserva a lo que informa GitHub, con autor Sistema).
+- **P5 — Conflictos al crear (§7.5):** la rama `feature/<código>-con-conflictos` crea el PR y, en la misma
+  operación, el Sistema lo pasa a CON_CONFLICTOS y avisa al practicante. Descartado no modelarlo.
+- **P6 — Sin servicio de sincronización con GitHub** (fusión o cierre en GitHub, resolución de conflictos):
+  con backend llega por webhooks (§7.6); la semilla trae tareas en cada etiqueta (§7.7) y el recálculo al
+  volver a llegar ya está en 5B. Descartados un `sincronizarPullRequest` que con la simulación nunca cambiaría
+  nada y controles de demostración (pantalla no definida).
+- **P7 — Dos sub-pasos:** 6A (puerto, `ejecutarConsulta`, listar ramas y crear PR) y 6B (cerrar PR, flujo
+  final y cierre del Bloque 2).
+- **Riesgo aceptado (P3-A):** si dos tareas comparten un PR vinculado y una lo cierra, la otra conserva su
+  etiqueta hasta que vuelva a llegar; sin webhooks no hay forma de propagarlo.
+
+### Qué se construyó (sub-paso 6A)
+
+- `src/services/github.ts`: `PuertoGitHub` con las cuatro operaciones de §7.6 (`consultarPullRequest`,
+  `listarRamas`, `crearPullRequest`, `cerrarPullRequest`); tipos `RepositorioPR`, `PRConocido` (con la marca
+  `propio`), `SolicitudPR` y `RespuestaCrearPR`; simulación `ramasSimuladas`, `ramaEliminada`,
+  `ramaConConflictos` y `crearPullRequestSimulado`; `GITHUB_SIMULADO` con las cuatro (cerrar siempre acepta:
+  §7.5 no define errores al cerrar). Sigue siendo síncrono y sin estado propio: todo llega por parámetro.
+- `src/services/transaccional.ts`: `ejecutarConsulta(entorno, operacion)`, igual que `ejecutarServicio`
+  (demora, datos vigentes, una marca, excepciones → `ERROR_INESPERADO`) pero la transacción siempre termina en
+  `null`: nunca escribe. Lo reutilizarán las consultas con alcance del paso 11.
+- `src/services/pullRequests/pullRequests.ts`: `listarRamasParaPullRequest` (`Resultado<string[]>`) y
+  `crearPullRequest` (`Resultado<{ tarea, vinculado }>`), con `NOTA_PR_VINCULADO`; barril en
+  `src/services/pullRequests/index.ts` y reexportación en `src/services/index.ts`.
+- `src/services/resultado.ts`: código nuevo `RAMA_INEXISTENTE` («La rama elegida ya no existe en GitHub. Elige
+  otra rama.»).
+
+### Decisiones de implementación
+
+- **Orden de crear:** Zod (rama y título no vacíos; descripción opcional) → contexto → `puedeCrearPullRequest`
+  (responsable, alcance, FINALIZADO, etiqueta visible, PR en PENDIENTE o CERRADO) → `github.crearPullRequest`;
+  si GitHub da error, se devuelve sin escribir nada y la etiqueta sigue igual (S3) → `siguienteEstadoPR`
+  (`PR_CREADO`) → si hay conflictos, `siguienteEstadoPR` (`GITHUB_INFORMA`) → una sola escritura. GitHub no se
+  consulta si el permiso falla (lo comprueba un puerto espía).
+- **Listar** usa el mismo permiso que crear (solo quien puede abrir el modal) y `ejecutarConsulta`.
+- **La rama base es siempre `proyecto.rama_base`**; la tarea guarda URL, `rama_origen`, `rama_base` y
+  `estado_pr`. El título y la descripción solo van a GitHub (§11 no tiene esos campos en la tarea).
+- **Numeración de la URL:** `…/pull/<mayor número conocido del proyecto + 1>`. El PR propio no cuenta como
+  existente pero **sí** cuenta para numerar, así que nunca se repite un número (por eso `PRConocido` lleva
+  `propio`).
+- **Un PENDIENTE con URL cuenta como fusionado**, igual que en la consulta de 5B (es el PR viejo tras recalcular
+  «fusionado → PENDIENTE»).
+- **Eventos:** `PULL_REQUEST_CREADO` (autor, el practicante) con `diferencias` sobre `estado_pr`,
+  `url_pull_request`, `rama_origen` y `rama_base` (solo lo que cambia: al crear de nuevo desde CERRADO con la
+  misma rama solo aparecen el estado y la URL). Con conflictos, un segundo evento
+  `PULL_REQUEST_ESTADO_ACTUALIZADO` con autor **Sistema** (CREADO → CON_CONFLICTOS) y el aviso
+  `PULL_REQUEST_CON_CONFLICTOS` al practicante, también del Sistema: por eso le llega aunque él creó el PR (con
+  su nombre de autor, `crearNotificaciones` lo descartaría). Sin aviso al crear (§8.1).
+- Para que compilaran, los puertos de prueba de 5B (`entorno.test.ts`, `transiciones.test.ts`) parten ahora de
+  `GITHUB_SIMULADO`; su lógica no cambió.
+
+### Pruebas y mutaciones
+
+- `github.test.ts`: catálogo (formato, especiales, sin la base, proyecto nuevo, número 1000), `RAMA_INEXISTENTE`
+  (rama eliminada, fuera del catálogo y la base), URL siguiente (contando el PR propio), conflictos, las cuatro
+  situaciones de un PR existente, abierto antes que fusionado y lo que no bloquea (cerrado, propio, otra base,
+  otra rama). `transaccional.test.ts`: `ejecutarConsulta` (valor sin escritura, error tal cual, excepción y
+  demora).
+- `pullRequests.test.ts` (con la semilla real): estados de partida; listar (catálogo sin escritura y permiso
+  sin consultar GitHub); crear nuevo (evento exacto, una sola escritura, sin aviso), desde CERRADO, PR propio
+  fusionado no vinculado, recortes y rama base del proyecto; el error preparado con reintento; vincular abierto,
+  fusionado y con conflictos; conflictos al crear (dos eventos y el aviso del Sistema); quién, estado, EN_PAUSA,
+  FINALIZADO, INACTIVO, inexistentes y datos inválidos.
+- **Mutaciones del agente (9, sobre `src/services` completo, con `git add` previo y `git restore` después; todas
+  detectadas y restauradas):** escribir aunque GitHub dé error; no usar la rama base del proyecto; contar el PR
+  propio como existente; que el PR cerrado bloquee; sin el segundo evento de conflictos; aviso de conflictos con
+  el practicante como autor; URL que repite un número; listar sin comprobar el permiso; `ejecutarConsulta` que
+  escribe.
+
+### Pendientes
+
+- **6B:** `cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre del Bloque 2.
+- **Ajustes a mano en `docs/`:** plan §9, Fase 2, paso 6 (D3: «No requiere PR» ya está en el paso 5) y plan §8
+  (el caso de error preparado es «rama inexistente», con las ramas de ejemplo de P1 y P5).
