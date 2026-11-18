@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { proyecto, usuario } from '@/domain/pruebas/fabricas';
+import { proyecto, tarea as tareaDominio, usuario } from '@/domain/pruebas/fabricas';
+import { exito, fallo } from '@/services';
 import { DetalleTarea, type TareaDetalle } from './DetalleTarea';
 import { accionesDeTarea } from '@/app/ejemplos/accionesDeTarea';
 
@@ -129,12 +130,15 @@ describe('DetalleTarea', () => {
   ])('$etiqueta como supervisor exige $campo antes de ejecutar', async (caso) => {
     const user = userEvent.setup();
     const onEjecutar = vi.fn().mockResolvedValue(undefined);
+    const ejecutarServicio = vi.fn(async () => exito(tareaDominio()));
     const supervisor = usuario('SUPERVISOR');
     const acciones = accionesDeTarea(caso.tarea, {
       usuario: supervisor,
       proyecto: proyecto({ id: 'pl2d', id_supervisor: supervisor.id }),
       asignaciones: [],
-    });
+    }).map((accion) =>
+      accion.clave === caso.accion ? { ...accion, ejecutar: ejecutarServicio } : accion,
+    );
 
     render(
       <DetalleTarea tarea={caso.tarea} acciones={acciones} eventos={[]} onEjecutar={onEjecutar} />,
@@ -149,6 +153,37 @@ describe('DetalleTarea', () => {
 
     await user.type(within(dialogo).getByLabelText(caso.campo), 'Revisar el trabajo');
     await user.click(confirmar);
-    await waitFor(() => expect(onEjecutar).toHaveBeenCalledWith(caso.accion, 'Revisar el trabajo'));
+    await waitFor(() => expect(ejecutarServicio).toHaveBeenCalledWith('Revisar el trabajo'));
+    expect(onEjecutar).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('mantiene abierto el modal y muestra el error controlado del servicio', async () => {
+    const user = userEvent.setup();
+    const ejecutarServicio = vi.fn(async () => fallo('TAREA_YA_TIENE_PR'));
+    render(
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          {
+            clave: 'no_requiere_pr',
+            etiqueta: 'No requiere PR',
+            pedirMotivo: { etiqueta: 'Motivo', obligatorio: true },
+            ejecutar: ejecutarServicio,
+          },
+        ]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'No requiere PR' }));
+    const dialogo = screen.getByRole('dialog');
+    await user.type(within(dialogo).getByLabelText('Motivo'), 'Ya tiene PR');
+    await user.click(within(dialogo).getByRole('button', { name: 'No requiere PR' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La tarea ya tiene o tuvo un Pull Request: no se puede hacer este cambio.',
+    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

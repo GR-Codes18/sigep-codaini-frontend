@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, type SetStateAction } from 'react';
+import type { DatosPerfilCuenta } from '@/services';
+import type { Resultado } from '@/services';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
 import { Label } from '@/compartido/ui/label';
@@ -16,8 +18,8 @@ interface Props {
   valores: DatosPerfil;
   /** Qué campos puede editar este rol (propuesta §8.2). */
   editables: CampoPerfil[];
-  onGuardarPerfil: (datos: DatosPerfil) => Promise<void>;
-  onCambiarContrasena: (datos: DatosContrasena) => Promise<void>;
+  onGuardarPerfil: (datos: DatosPerfil) => Promise<Resultado<DatosPerfilCuenta>>;
+  onCambiarContrasena: (datos: DatosContrasena) => Promise<Resultado<void>>;
 }
 
 const ETIQUETAS: Record<CampoPerfil, string> = {
@@ -29,8 +31,6 @@ const ETIQUETAS: Record<CampoPerfil, string> = {
   disponibilidad: 'Disponibilidad (horas por semana)',
 };
 
-const GENERICO = 'No se pudo guardar. Inténtalo de nuevo.';
-
 export function PerfilUsuario({
   cuenta,
   valores,
@@ -38,7 +38,7 @@ export function PerfilUsuario({
   onGuardarPerfil,
   onCambiarContrasena,
 }: Props) {
-  const [datos, setDatos] = useState<DatosPerfil>(valores);
+  const [formulario, setFormulario] = useState({ origen: valores, datos: valores });
   const [errores, setErrores] = useState<Partial<Record<string, string>>>({});
   const [errorPerfil, setErrorPerfil] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
@@ -47,6 +47,18 @@ export function PerfilUsuario({
   const [erroresClave, setErroresClave] = useState<Partial<Record<string, string>>>({});
   const [errorClave, setErrorClave] = useState<string | null>(null);
   const [cambiando, setCambiando] = useState(false);
+
+  if (formulario.origen !== valores) {
+    setFormulario({ origen: valores, datos: valores });
+  }
+  const datos = formulario.datos;
+
+  function setDatos(actualizacion: SetStateAction<DatosPerfil>) {
+    setFormulario((actual) => ({
+      ...actual,
+      datos: typeof actualizacion === 'function' ? actualizacion(actual.datos) : actualizacion,
+    }));
+  }
 
   // Campos de solo lectura para este rol (se muestran, pero no se editan).
   const campos = (Object.keys(ETIQUETAS) as CampoPerfil[]).filter(
@@ -61,17 +73,20 @@ export function PerfilUsuario({
       const c = r.error.flatten().fieldErrors as Record<string, string[] | undefined>;
       const conError: Record<string, string> = {};
       for (const k of editables) if (c[k]?.[0]) conError[k] = c[k]![0];
-      if (Object.keys(conError).length > 0) {
-        setErrores(conError);
-        return;
-      }
+      setErrores(conError);
+      setErrorPerfil('Revisa los datos ingresados.');
+      return;
     }
     setErrores({});
     setGuardando(true);
     try {
-      await onGuardarPerfil(datos);
-    } catch (err) {
-      setErrorPerfil(err instanceof Error && err.message ? err.message : GENERICO);
+      const resultado = await onGuardarPerfil(r.data);
+      if (!resultado.ok) {
+        setErrorPerfil(resultado.mensaje);
+        setErrores(resultado.campos ?? {});
+        return;
+      }
+      setDatos(resultado.valor);
     } finally {
       setGuardando(false);
     }
@@ -93,10 +108,17 @@ export function PerfilUsuario({
     setErroresClave({});
     setCambiando(true);
     try {
-      await onCambiarContrasena(r.data);
+      const resultado = await onCambiarContrasena(r.data);
+      if (!resultado.ok) {
+        setErrorClave(resultado.mensaje);
+        setErroresClave({
+          actual: resultado.campos?.actual,
+          nueva: resultado.campos?.nueva,
+          confirmacion: resultado.campos?.confirmacion,
+        });
+        return;
+      }
       setClave({ actual: '', nueva: '', confirmacion: '' });
-    } catch (err) {
-      setErrorClave(err instanceof Error && err.message ? err.message : GENERICO);
     } finally {
       setCambiando(false);
     }

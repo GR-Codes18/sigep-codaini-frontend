@@ -14,8 +14,8 @@ const valores = {
 const base = {
   cuenta: [{ etiqueta: 'Rol', valor: 'Supervisor' }],
   valores,
-  onGuardarPerfil: async () => {},
-  onCambiarContrasena: async () => {},
+  onGuardarPerfil: async () => ({ ok: true as const, valor: { ...valores, disponibilidad: 20 } }),
+  onCambiarContrasena: async () => ({ ok: true as const, valor: undefined }),
 };
 
 describe('PerfilUsuario', () => {
@@ -29,7 +29,10 @@ describe('PerfilUsuario', () => {
 
   it('valida el correo al guardar', async () => {
     const user = userEvent.setup();
-    const onGuardarPerfil = vi.fn();
+    const onGuardarPerfil = vi.fn().mockResolvedValue({
+      ok: true,
+      valor: { ...valores, disponibilidad: 20 },
+    });
     render(
       <PerfilUsuario
         {...base}
@@ -47,7 +50,7 @@ describe('PerfilUsuario', () => {
 
   it('exige contraseña nueva de 8+ caracteres, distinta y confirmada', async () => {
     const user = userEvent.setup();
-    const onCambiarContrasena = vi.fn();
+    const onCambiarContrasena = vi.fn().mockResolvedValue({ ok: true, valor: undefined });
     render(<PerfilUsuario {...base} onCambiarContrasena={onCambiarContrasena} editables={[]} />);
     await user.type(screen.getByLabelText('Contraseña actual'), 'demo12345');
     await user.type(screen.getByLabelText('Nueva contraseña'), 'corta');
@@ -60,7 +63,7 @@ describe('PerfilUsuario', () => {
 
   it('cambia la contraseña con datos válidos', async () => {
     const user = userEvent.setup();
-    const onCambiarContrasena = vi.fn().mockResolvedValue(undefined);
+    const onCambiarContrasena = vi.fn().mockResolvedValue({ ok: true, valor: undefined });
     render(<PerfilUsuario {...base} onCambiarContrasena={onCambiarContrasena} editables={[]} />);
     await user.type(screen.getByLabelText('Contraseña actual'), 'demo12345');
     await user.type(screen.getByLabelText('Nueva contraseña'), 'nueva-clave-1');
@@ -71,5 +74,32 @@ describe('PerfilUsuario', () => {
       nueva: 'nueva-clave-1',
       confirmacion: 'nueva-clave-1',
     });
+  });
+
+  it('muestra el error devuelto por el servicio y conserva los datos editados', async () => {
+    const user = userEvent.setup();
+    const onGuardarPerfil = vi.fn().mockResolvedValue({
+      ok: false,
+      codigo: 'CORREO_YA_REGISTRADO',
+      mensaje: 'Este correo ya está asociado a otra cuenta.',
+      campos: { correo: 'Este correo ya está asociado a otra cuenta.' },
+    });
+    render(
+      <PerfilUsuario
+        {...base}
+        onGuardarPerfil={onGuardarPerfil}
+        editables={['nombre', 'correo', 'celular']}
+      />,
+    );
+    const nombre = screen.getByLabelText('Nombre');
+    await user.clear(nombre);
+    await user.type(nombre, 'Ana Nueva');
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Este correo ya está asociado a otra cuenta.',
+    );
+    expect(screen.getByLabelText('Correo')).toHaveAttribute('aria-invalid', 'true');
+    expect(nombre).toHaveValue('Ana Nueva');
   });
 });

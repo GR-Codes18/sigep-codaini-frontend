@@ -12,7 +12,8 @@ export const esquemaPerfil = z.object({
   disponibilidad: z.coerce
     .number()
     .int('Debe ser un número entero')
-    .positive('Debe ser mayor que 0'),
+    .positive('Debe ser mayor que 0')
+    .nullable(),
 });
 export type DatosPerfil = z.infer<typeof esquemaPerfil>;
 export type CampoPerfil = keyof DatosPerfil;

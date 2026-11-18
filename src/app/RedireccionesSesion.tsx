@@ -1,15 +1,15 @@
 import { Navigate } from 'react-router';
 import { PaginaAcceso } from '@/auth/PaginaAcceso';
-import { useAlmacenSesion } from '@/auth/almacenSesion';
+import { useSesionActiva } from '@/auth/useSesionActiva';
 import { INICIO_POR_ROL } from '@/auth/rutasPorRol';
 
 export function RaizSegunSesion() {
-  const usuario = useAlmacenSesion((s) => s.usuario);
-  return <Navigate to={usuario ? INICIO_POR_ROL[usuario.rol] : '/acceso'} replace />;
+  const { sesion } = useSesionActiva();
+  return <Navigate to={sesion ? INICIO_POR_ROL[sesion.rol] : '/acceso'} replace />;
 }
 
 export function AccesoSiNoHaySesion() {
-  const usuario = useAlmacenSesion((s) => s.usuario);
-  if (usuario) return <Navigate to={INICIO_POR_ROL[usuario.rol]} replace />;
+  const { sesion } = useSesionActiva();
+  if (sesion) return <Navigate to={INICIO_POR_ROL[sesion.rol]} replace />;
   return <PaginaAcceso />;
 }

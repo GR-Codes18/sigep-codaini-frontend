@@ -1,7 +1,13 @@
-import { describe, expect, it } from 'vitest';
-import { asignacion, proyecto, usuario } from '@/domain/pruebas/fabricas';
+import { describe, expect, it, vi } from 'vitest';
+import { asignacion, proyecto, tarea as tareaDominio, usuario } from '@/domain/pruebas/fabricas';
+import { cerrarPullRequest, eliminarTarea, exito } from '@/services';
 import type { TareaDetalle } from '@/compartido/DetalleTarea';
 import { accionesDeTarea } from './accionesDeTarea';
+
+vi.mock('@/services', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/services')>();
+  return { ...actual, cerrarPullRequest: vi.fn(), eliminarTarea: vi.fn() };
+});
 
 const detalle = (cambios: Partial<TareaDetalle> = {}): TareaDetalle => ({
   id: 't-tarea',
@@ -52,11 +58,10 @@ describe('accionesDeTarea', () => {
 
   it('solo el supervisor del proyecto puede aprobar o devolver', () => {
     const esperando = detalle({ estado: 'ESPERANDO_SUPERVISION', requiereSupervision: true });
+    const accionesSupervisor = claves(esperando, { ...contexto, usuario: usuario('SUPERVISOR') });
 
-    expect(claves(esperando, { ...contexto, usuario: usuario('SUPERVISOR') })).toEqual([
-      'aprobar',
-      'devolver',
-    ]);
+    expect(accionesSupervisor).toContain('aprobar');
+    expect(accionesSupervisor).toContain('devolver');
     expect(claves(esperando)).not.toContain('aprobar');
   });
 
@@ -106,7 +111,7 @@ describe('accionesDeTarea', () => {
     );
   });
 
-  it('muestra «No requiere PR» deshabilitada al practicante responsable elegible en EN_PROGRESO', () => {
+  it('permite al practicante responsable indicar que no requiere PR en EN_PROGRESO', () => {
     const enProgreso = detalle({
       estado: 'EN_PROGRESO',
       idPracticante: contexto.usuario.id,
@@ -117,26 +122,90 @@ describe('accionesDeTarea', () => {
 
     expect(accion).toMatchObject({
       etiqueta: 'No requiere PR',
-      deshabilitada: true,
-      avisoDeshabilitacion: expect.stringContaining('servicio de tareas'),
       pedirMotivo: { etiqueta: 'Motivo', obligatorio: true },
     });
+    expect(accion?.deshabilitada).not.toBe(true);
   });
 
-  it('no muestra «No requiere PR» fuera de EN_PROGRESO, a otros roles o si ya hubo PR', () => {
+  it('muestra «No requiere PR» solo si el cambio está permitido y todavía no hay PR', () => {
     const enProgreso = detalle({
       estado: 'EN_PROGRESO',
       idPracticante: contexto.usuario.id,
     });
 
     expect(claves({ ...enProgreso, estado: 'DISPONIBLE' })).not.toContain('no_requiere_pr');
-    expect(claves(enProgreso, { ...contexto, usuario: usuario('SUPERVISOR') })).not.toContain(
+    expect(claves(enProgreso, { ...contexto, usuario: usuario('SUPERVISOR') })).toContain(
       'no_requiere_pr',
     );
     expect(
       claves({ ...enProgreso, urlPr: 'https://github.com/codaini/pl2d/pull/1' }),
     ).not.toContain('no_requiere_pr');
     expect(claves(enProgreso, { ...contexto, asignaciones: [] })).not.toContain('no_requiere_pr');
+  });
+
+  it('ofrece cerrar un PR abierto con motivo y conecta el servicio de cierre', async () => {
+    const supervisor = usuario('SUPERVISOR');
+    const tarea = detalle({
+      estado: 'TERMINADA',
+      estadoPr: 'CREADO',
+      idPracticante: contexto.usuario.id,
+      ramaOrigen: 'feat/tarea',
+      ramaBase: 'main',
+      urlPr: 'https://github.com/codaini/proyecto-prueba/pull/1',
+    });
+    const accion = accionesDeTarea(tarea, {
+      ...contexto,
+      usuario: supervisor,
+    }).find((item) => item.clave === 'cerrar_pr');
+
+    vi.mocked(cerrarPullRequest).mockResolvedValue(exito(tareaDominio()));
+    expect(accion).toMatchObject({
+      etiqueta: 'Cerrar Pull Request',
+      destructivo: true,
+      pedirMotivo: { etiqueta: 'Motivo', obligatorio: true },
+    });
+    await accion?.ejecutar?.('Ya no se necesita');
+    expect(cerrarPullRequest).toHaveBeenCalledWith({
+      idActor: supervisor.id,
+      idTarea: tarea.id,
+      motivo: 'Ya no se necesita',
+    });
+  });
+
+  it('conecta la eliminación con el servicio y pasa el motivo obligatorio', async () => {
+    const administrador = usuario('ADMINISTRADOR');
+    const tarea = detalle();
+    const accion = accionesDeTarea(tarea, {
+      ...contexto,
+      usuario: administrador,
+    }).find((item) => item.clave === 'eliminar');
+
+    vi.mocked(eliminarTarea).mockResolvedValue(exito({ id: tarea.id }));
+    expect(accion).toMatchObject({
+      etiqueta: 'Eliminar',
+      destructivo: true,
+      pedirMotivo: { etiqueta: 'Motivo', obligatorio: true },
+      mensajeExito: 'Tarea eliminada',
+    });
+    await accion?.ejecutar?.('Tarea duplicada');
+    expect(eliminarTarea).toHaveBeenCalledWith({
+      idActor: administrador.id,
+      idTarea: tarea.id,
+      motivo: 'Tarea duplicada',
+    });
+  });
+
+  it('permite crear un nuevo PR cuando el anterior está cerrado', () => {
+    const cerrada = detalle({
+      estado: 'TERMINADA',
+      estadoPr: 'CERRADO',
+      idPracticante: contexto.usuario.id,
+      ramaOrigen: 'feat/tarea',
+      ramaBase: 'main',
+      urlPr: 'https://github.com/codaini/proyecto-prueba/pull/1',
+    });
+
+    expect(claves(cerrada)).toContain('crear_pr');
   });
 
   it('no muestra acciones al usuario inactivo', () => {

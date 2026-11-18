@@ -1,25 +1,72 @@
 import { useState } from 'react';
+import { z } from 'zod';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
 import { Label } from '@/compartido/ui/label';
 import { Textarea } from '@/compartido/ui/textarea';
-import { esquemaTarea, type DatosTarea } from './esquemaTarea';
+import type { Tarea } from '@/domain';
+import { crearTarea, editarTarea, type Fallo, type Resultado } from '@/services';
+import { esquemaEdicionTarea, esquemaTarea, type DatosTarea } from './esquemaTarea';
 
-interface Props {
-  modo: 'crear' | 'editar';
+interface PropsComunes {
+  idActor: string;
   proyectos: { id: string; nombre: string }[];
   valoresIniciales?: Partial<DatosTarea>;
-  onGuardar: (datos: DatosTarea) => Promise<void>;
+  onGuardada?: (tarea: Tarea) => void;
   onCancelar: () => void;
 }
 
+type Props = PropsComunes &
+  ({ modo: 'crear'; idTarea?: never } | { modo: 'editar'; idTarea: string });
+
 const MENSAJE_GENERICO = 'No se pudo guardar la tarea. Inténtalo de nuevo.';
+
+function erroresDesdeServicio(fallo: Fallo): Partial<Record<keyof DatosTarea, string>> {
+  const campos = fallo.campos;
+  return {
+    idProyecto: campos?.idProyecto,
+    titulo: campos?.titulo,
+    descripcion: campos?.descripcion,
+    fechaLimite: campos?.fecha_limite ?? campos?.fechaLimite,
+    requiereSupervision: campos?.requiere_supervision ?? campos?.requiereSupervision,
+    requierePr: campos?.requiere_pr ?? campos?.requierePr,
+  };
+}
+
+function erroresDesdeValidacion(error: z.ZodError): Partial<Record<keyof DatosTarea, string>> {
+  const errores: Partial<Record<keyof DatosTarea, string>> = {};
+  for (const issue of error.issues) {
+    switch (issue.path[0]) {
+      case 'idProyecto':
+        errores.idProyecto ??= issue.message;
+        break;
+      case 'titulo':
+        errores.titulo ??= issue.message;
+        break;
+      case 'descripcion':
+        errores.descripcion ??= issue.message;
+        break;
+      case 'fechaLimite':
+        errores.fechaLimite ??= issue.message;
+        break;
+      case 'requiereSupervision':
+        errores.requiereSupervision ??= issue.message;
+        break;
+      case 'requierePr':
+        errores.requierePr ??= issue.message;
+        break;
+    }
+  }
+  return errores;
+}
 
 export function FormularioTarea({
   modo,
+  idActor,
+  idTarea,
   proyectos,
   valoresIniciales,
-  onGuardar,
+  onGuardada,
   onCancelar,
 }: Props) {
   const [datos, setDatos] = useState<DatosTarea>({
@@ -40,21 +87,53 @@ export function FormularioTarea({
   async function enviar(e: React.SyntheticEvent) {
     e.preventDefault();
     setErrorGeneral(null);
-    const resultado = esquemaTarea.safeParse(datos);
-    if (!resultado.success) {
-      const c = resultado.error.flatten().fieldErrors;
-      setErrores({
-        idProyecto: c.idProyecto?.[0],
-        titulo: c.titulo?.[0],
-        descripcion: c.descripcion?.[0],
-        fechaLimite: c.fechaLimite?.[0],
-      });
-      return;
-    }
-    setErrores({});
-    setGuardando(true);
+    let resultado: Resultado<Tarea>;
     try {
-      await onGuardar(resultado.data);
+      if (modo === 'crear') {
+        const validacion = esquemaTarea.safeParse(datos);
+        if (!validacion.success) {
+          setErrores(erroresDesdeValidacion(validacion.error));
+          return;
+        }
+        setErrores({});
+        setGuardando(true);
+        resultado = await crearTarea({
+          idActor,
+          idProyecto: validacion.data.idProyecto,
+          titulo: validacion.data.titulo,
+          descripcion: validacion.data.descripcion,
+          fecha_limite: validacion.data.fechaLimite,
+          requiere_supervision: validacion.data.requiereSupervision,
+          requiere_pr: validacion.data.requierePr,
+        });
+      } else {
+        const validacion = esquemaEdicionTarea.safeParse(datos);
+        if (!validacion.success) {
+          setErrores(erroresDesdeValidacion(validacion.error));
+          return;
+        }
+        setErrores({});
+        setGuardando(true);
+        resultado = await editarTarea({
+          idActor,
+          idTarea,
+          titulo: validacion.data.titulo,
+          descripcion: validacion.data.descripcion,
+          fecha_limite: validacion.data.fechaLimite,
+        });
+      }
+      if (!resultado.ok) {
+        const erroresCampos = erroresDesdeServicio(resultado);
+        setErrores(erroresCampos);
+        setErrorGeneral(
+          resultado.campos?._general ??
+            (Object.values(erroresCampos).some(Boolean) ? null : resultado.mensaje),
+        );
+        setGuardando(false);
+        return;
+      }
+      onGuardada?.(resultado.valor);
+      onCancelar();
     } catch (err) {
       setErrorGeneral(err instanceof Error && err.message ? err.message : MENSAJE_GENERICO);
       setGuardando(false);
@@ -120,26 +199,28 @@ export function FormularioTarea({
         {errores.fechaLimite && <p className="text-xs text-danger-text">{errores.fechaLimite}</p>}
       </div>
 
-      <div className="space-y-2">
-        <label className="flex items-center gap-2 text-sm text-text">
-          <input
-            type="checkbox"
-            checked={datos.requiereSupervision}
-            onChange={(e) => cambiar('requiereSupervision', e.target.checked)}
-            disabled={guardando}
-          />
-          Requiere supervisión
-        </label>
-        <label className="flex items-center gap-2 text-sm text-text">
-          <input
-            type="checkbox"
-            checked={datos.requierePr}
-            onChange={(e) => cambiar('requierePr', e.target.checked)}
-            disabled={guardando}
-          />
-          Requiere PR
-        </label>
-      </div>
+      {modo === 'crear' && (
+        <div className="space-y-2">
+          <label className="flex items-center gap-2 text-sm text-text">
+            <input
+              type="checkbox"
+              checked={datos.requiereSupervision}
+              onChange={(e) => cambiar('requiereSupervision', e.target.checked)}
+              disabled={guardando}
+            />
+            Requiere supervisión
+          </label>
+          <label className="flex items-center gap-2 text-sm text-text">
+            <input
+              type="checkbox"
+              checked={datos.requierePr}
+              onChange={(e) => cambiar('requierePr', e.target.checked)}
+              disabled={guardando}
+            />
+            Requiere PR
+          </label>
+        </div>
+      )}
 
       {errorGeneral && (
         <p role="alert" className="text-sm text-danger-text">

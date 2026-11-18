@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router';
-import { useAlmacenSesion } from '@/auth/almacenSesion';
+import { useSesionActiva } from '@/auth/useSesionActiva';
 import { MENU_POR_ROL } from '@/app/menus';
 import { cn } from '@/compartido/utils';
 
 export function BarraLateral() {
-  const rol = useAlmacenSesion((s) => s.usuario?.rol);
+  const { sesion } = useSesionActiva();
+  const rol = sesion?.rol;
   if (!rol) return null;
 
   return (

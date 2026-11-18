@@ -12,6 +12,8 @@ import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo, type EventoLinea } from '@/compartido/LineaTiempo';
 import { ModalConfirmacion, type OpcionMotivo } from '@/compartido/ModalConfirmacion';
 import { Button } from '@/compartido/ui/button';
+import { useAlmacen } from '@/data';
+import type { Resultado } from '@/services';
 
 export interface TareaDetalle {
   id: string;
@@ -43,6 +45,8 @@ export interface AccionTarea {
   pedirMotivo?: OpcionMotivo;
   deshabilitada?: boolean;
   avisoDeshabilitacion?: string;
+  mensajeExito?: string;
+  ejecutar?: (motivo?: string) => Promise<Resultado<unknown>>;
 }
 
 interface Props {
@@ -55,6 +59,22 @@ interface Props {
 
 export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
   const [pendiente, setPendiente] = useState<AccionTarea | null>(null);
+  const estadoResponsable = useAlmacen((estado) =>
+    tarea.idPracticante === null
+      ? null
+      : (estado.datos.usuarios.find((usuario) => usuario.id === tarea.idPracticante)?.estado ??
+        null),
+  );
+  const asignacionVigente = useAlmacen(
+    (estado) =>
+      tarea.idPracticante !== null &&
+      estado.datos.asignaciones.some(
+        (asignacion) =>
+          asignacion.id_practicante === tarea.idPracticante &&
+          asignacion.id_proyecto === tarea.idProyecto &&
+          asignacion.fecha_baja === null,
+      ),
+  );
   const estadoPrVisible = etiquetaPRVisible({
     estado: tarea.estado,
     requiere_pr: tarea.requierePr,
@@ -62,6 +82,10 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
   });
   const urlPrVisible =
     estadoPrVisible !== null && estadoPrVisible !== 'PENDIENTE' ? tarea.urlPr : undefined;
+  const requiereAtencionResponsable =
+    tarea.estado === 'EN_PROGRESO' &&
+    tarea.idPracticante !== null &&
+    (estadoResponsable !== 'ACTIVO' || !asignacionVigente);
 
   async function alHacerClic(accion: AccionTarea) {
     if (accion.deshabilitada) return;
@@ -70,10 +94,25 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
       return;
     }
     try {
-      await onEjecutar(accion.clave);
+      await ejecutarAccion(accion);
     } catch (e) {
       toast.error(e instanceof Error && e.message ? e.message : 'No se pudo completar la acción.');
     }
+  }
+
+  async function ejecutarAccion(accion: AccionTarea, motivo?: string) {
+    if (!accion.ejecutar) {
+      if (motivo === undefined) {
+        await onEjecutar(accion.clave);
+      } else {
+        await onEjecutar(accion.clave, motivo);
+      }
+      return;
+    }
+
+    const resultado = await accion.ejecutar(motivo);
+    if (!resultado.ok) throw new Error(resultado.mensaje);
+    toast.success(accion.mensajeExito ?? 'Acción aplicada');
   }
 
   return (
@@ -96,6 +135,25 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
             Observaciones del supervisor
           </h2>
           <p className="mt-1 text-sm text-text">{tarea.observacion}</p>
+        </section>
+      )}
+
+      {requiereAtencionResponsable && (
+        <section
+          role="status"
+          className="rounded-xl bg-state-warning-bg p-4 text-state-warning-text"
+        >
+          <h2 className="text-sm font-semibold">Revisar el responsable de la tarea</h2>
+          <p className="mt-1 text-sm">
+            {estadoResponsable === 'INACTIVO'
+              ? 'La cuenta del responsable está inactiva. '
+              : estadoResponsable === null
+                ? 'No se encontró la cuenta del responsable. '
+                : ''}
+            {!asignacionVigente &&
+              'El responsable ya no tiene una asignación vigente en este proyecto. '}
+            Un Administrador o Supervisor puede liberar la tarea con un motivo.
+          </p>
         </section>
       )}
 
@@ -178,7 +236,7 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
           etiquetaConfirmar={pendiente.etiqueta}
           destructivo={pendiente.destructivo}
           pedirMotivo={pendiente.pedirMotivo ?? false}
-          onConfirmar={(motivo) => onEjecutar(pendiente.clave, motivo)}
+          onConfirmar={(motivo) => ejecutarAccion(pendiente, motivo)}
         />
       )}
     </article>

@@ -65,6 +65,8 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   CREDENCIALES_INVALIDAS: 'Correo o contraseña incorrectos',
   ACCESO_RAPIDO_NO_DISPONIBLE:
     'El acceso rápido no está disponible. Restablece los datos de demostración o inicia sesión.',
+  CORREO_YA_REGISTRADO: 'Este correo ya está asociado a otra cuenta.',
+  CONTRASENA_ACTUAL_INVALIDA: 'La contraseña actual no es correcta.',
 
   SIN_CAMBIOS: 'No hay cambios para guardar.',
 };

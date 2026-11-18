@@ -1,10 +1,10 @@
 import { Info } from 'lucide-react';
 import { Link } from 'react-router';
-import { useAlmacenSesion } from '@/auth/almacenSesion';
+import { useSesionActiva } from '@/auth/useSesionActiva';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 
 export function FranjaContrasenaTemporal() {
-  const usuario = useAlmacenSesion((s) => s.usuario);
+  const { usuario } = useSesionActiva();
 
   if (!usuario || usuario.rol === 'ADMINISTRADOR' || !usuario.debe_cambiar_contrasena) {
     return null;

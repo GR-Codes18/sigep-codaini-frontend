@@ -8,21 +8,19 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 1 (pasos 1 a 4) terminado**: almacén, semilla
-  completa, restablecer datos de demostración y utilidades base de `services/`. La Fase 1 (`domain/`) está
-  fusionada en `development` (PR #21); las Fases 3 y 4 avanzaron todo lo que no depende de `services/`.
-  Siguiente: paso 5 (servicios de tareas), que abre el Bloque 2 de la Fase 2.
-- **Actualizado:** 2026-11-17, tras registrar la migración de autenticación en `feat/fase3-interfaz-conexion`
-  (commit `0307f83`).
-
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 2 (pasos 5 y 6) terminado**: servicios de tareas
-  y de Pull Request. El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). **Paso 5** en tres
-  sub-pasos (D2-A): 5A (crear, editar y eliminar, `2c54c04`), 5B (las 7 transiciones y el puerto de GitHub,
-  `2726b9a`) y 5C (opciones de la tarea y prueba de flujo, `98ead18`). **Paso 6** en dos sub-pasos (P7-A): 6A
-  (listar ramas y crear el PR, `59dc320`) y 6B (cerrar el PR y el flujo de punta a punta, `9600f46`).
-  Siguiente: PR del Bloque 2 a `development` (lo abren y revisan los autores) y, después, el Bloque 3 (pasos 7
-  a 11).
-- **Actualizado:** 2026-11-17, al cerrar el sub-paso 6B y con él el paso 6 y el Bloque 2.
+- **Fase 4 — componentes compartidos: terminada (2026-11-18).** Pasos 1 a 5 ya registrados; pasos 6 a 10
+  conectados con los servicios y el almacén; paso 11 completado con la limpieza de la página de desarrollo
+  temporal. La vista integra detalle de tarea, Pull Requests, formulario, notificaciones y perfil.
+- **Fase 2 — Bloque 2 (pasos 5 y 6): terminado.** Servicios de tareas y Pull Request implementados; el
+  historial detallado y los commits de código constan abajo. Este registro no afirma que el PR del bloque se
+  haya fusionado.
+- **Fase 2 — Bloque 3 (pasos 7 a 11): no se declara cerrado en esta actualización.** La integración de
+  notificaciones y perfil utiliza servicios reales, pero queda pendiente reconciliar el estado global de los
+  servicios de ese bloque antes de registrar su cierre.
+- **Verificación de la integración (2026-11-18):** 1,223 pruebas en 58 archivos; TypeScript, Prettier y
+  compilación de producción OK. ESLint sin errores, con su aviso conocido en `button.tsx`; Vite conserva el
+  aviso de chunk mayor a 500 kB.
+- **Actualizado:** 2026-11-18. Se registran los cierres de Fase 4 y Bloque 2 sin consultar Git ni anotar hash.
 
 ### Cierres de fase
 
@@ -256,11 +254,11 @@
 | 2026-10-24 | 4 | 5. Tablero Kanban | `aab2185` |
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
+| 2026-11-18 | 4 | 6–11. Integración de detalle, PR, formulario, notificaciones y perfil; limpieza final de la página temporal | sin hash (no consultado por restricción) |
 
-**Estado de pruebas (2026-11-17):** 1177 pruebas en 50 archivos (de la Fase 2: 22 del almacén, 180 de la
-semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
-—50 en 5A, 82 en 5B y 33 en 5C— y 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—);
-`build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-18):** 1,223 pruebas en 58 archivos, todas aprobadas. `tsc -b`, Prettier y
+`npm run build` OK. ESLint sin errores (un aviso conocido en `button.tsx`); Vite avisa que el chunk principal
+supera 500 kB.
 
 ## Pendientes
 
@@ -308,9 +306,9 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
       ramas de ejemplo son `feature/<código>-NNN` más `…-con-conflictos` (P1-A, P5-A).
 - [ ] Riesgo aceptado (P3-A): si dos tareas comparten un PR vinculado y una lo cierra, la otra conserva su
       etiqueta hasta que vuelva a llegar a supervisión o a terminada.
-- [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
-      a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
-      Administrador o el Supervisor la liberen con motivo.
+- [x] Fase 4 (detalle de tarea): se señala el caso D6-A en que una tarea EN_PROGRESO conserva como responsable
+      a un practicante INACTIVO o con la asignación de baja; Administrador o Supervisor pueden identificar que
+      deben liberarla con motivo.
 - [ ] Pasos 7 a 11 (Bloque 3; los pasos 5 y 6 ya están terminados): servicios por módulo, consultas con
       alcance por rol (pueden usar `ejecutarConsulta`), más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
@@ -335,9 +333,8 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
 
       Definido en 6A (`59dc320`): «rama inexistente» con `feature/<código>-rama-eliminada` (P2-A) y el
       catálogo `feature/<código>-NNN` (P1-A).
-- [ ] Login: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
-      mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
-      `CUENTAS_DEMO`.
+- [x] Login: `iniciarSesion` consulta la semilla a través de `services/autenticacion.ts`; se retiraron las
+      cuentas duplicadas y los accesos rápidos conservan IDs estables (`0307f83`).
 
 - [ ] Semilla: `ultimo_numero_tarea` es el mayor `numero` de las tareas existentes. Si se añade a la semilla
       una tarea eliminada que sea la última de su proyecto, el contador quedaría por debajo del real.
@@ -363,7 +360,8 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
       C1), **tras crear el PR** en 6A (`59dc320`, `PR_CREADO` y `GITHUB_INFORMA` por conflictos) y **tras
       cerrarlo** en 6B (`9600f46`, `PR_CERRADO_DESDE_SISTEMA`). Completo.
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
-- [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
+- [x] Paso explícito: migrar las pantallas integradas de `src/app/ejemplos/` a `services/` y a selectores del
+      almacén; la página de desarrollo temporal queda como contenedor de integración, sin simulaciones locales.
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
 - [x] ID legible: guardar `numero` y `ultimo_numero_tarea` en una sola operación (`crearTarea`, `2c54c04`).
 - [ ] ID legible: usar `validarCodigoProyecto` (con los códigos de todos los proyectos, también finalizados)
@@ -415,12 +413,13 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
 - [ ] Reemplazar tipos provisionales (`TareaTablero`, `EventoLinea`, `TareaDetalle`,
       `NotificacionItem`) cuando existan los servicios. `auth/tipos.ts` ya reutiliza `Rol` y `Usuario`
       de `domain/` (`0307f83`).
-- [ ] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
-- [ ] Con `estado_pr === 'PENDIENTE'` y `url_pull_request` no nula (PR fusionado recalculado), no mostrar la
-      URL como el PR vigente. Usar `etiquetaPRVisible` para la etiqueta.
-- [ ] Fase 4, pasos 6 y 9 a 11: completar con datos reales cuando existan los servicios.
-- [ ] El Kanban (`TableroKanban.tsx:54`) migra a `estaVencida`: hoy marca en rojo una tarea que vence hoy
-      desde las 00:00 (hallazgo H1 del paso 8).
+- [x] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
+- [x] Con `estado_pr === 'PENDIENTE'` y `url_pull_request` no nula (PR fusionado recalculado), no mostrar la
+      URL como el PR vigente; la etiqueta se resuelve con `etiquetaPRVisible`.
+- [x] Fase 4, pasos 6 a 11: detalle, creación y cierre de PR, formulario, notificaciones, perfil y limpieza de
+      la página de desarrollo temporal conectados con los servicios y el almacén.
+- [x] El Kanban usa `estaVencida` para el resaltado de fechas límite y no marca como vencida una tarea que
+      vence hoy.
 - [ ] Los dashboards (Fases 5.9 y 6.5) quitan de las alertas los insights con `revisado: true`.
 
 ### Verificaciones y cierres
