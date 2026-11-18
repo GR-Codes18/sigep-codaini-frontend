@@ -3041,3 +3041,97 @@ Commit de código: `a52fe0c` (solo `services/`; usa las reglas de `domain/` que 
 - **Paso 11:** consultas con alcance por rol para las pantallas de practicantes y supervisores.
 - **Fase 5.3:** «Nuevo supervisor» y «Restablecer contraseña» muestran la contraseña temporal una sola vez; desactivar
   muestra el mensaje con la cantidad de proyectos.
+
+---
+
+## 2026-11-18 — [A+B] Fase 2, paso 9A: crear y editar proyectos, reunión y enlaces
+
+Commit de código: `30b27ab` (solo `services/`; `domain/` no cambia). Docs de 8B: `cdbbb26`. El paso 9 se parte en
+dos sub-pasos: **9A** (este: datos del proyecto) y **9B** (ciclo de vida y supervisor, con una regla nueva de `domain/`).
+
+### Decisiones aprobadas del paso 9 (todas en la opción A)
+
+- **G1-A — forma de `repositorio_url`:** `https://github.com/{organización}/{repositorio}`, sin «/» final ni «.git»
+  (`esquemaRepositorio`). La URL de cada Pull Request se arma con él (`${repositorio_url}/pull/N`, en `github.ts` y en
+  la semilla), así que una dirección con «/» final o de otro sitio produciría PR mal formados. Descartado: cualquier
+  URL http(s).
+- **G2-A — reactivar un proyecto no avisa.** §8.1 no lo lista y no existe un tipo `PROYECTO_REACTIVADO`; no se
+  reutiliza `PROYECTO_REANUDADO` ni se cambia el contrato de `domain/`. Los autores pueden sumar esa fila a §8.1 más
+  adelante. (Se aplica en 9B.)
+- **G3-A — reunión semanal:** se puede definir, cambiar y **quitar** (día y hora juntos, o los dos en `null`); cada
+  cambio avisa al equipo, también al quitarla («quedó sin definir»). Descartado: no poder quitarla.
+- **G4-A — `reasignarProyectosDeSupervisor` (9B):** una lista atómica (todo o nada) de proyectos no finalizados del
+  supervisor; la pantalla propone todos los activos o en pausa. Descartado: exigir reasignar todos desde el servicio.
+- **Supuestos menores confirmados:** (1) el nombre del proyecto es editable por el Administrador (el historial
+  conserva la etiqueta anterior); (2) `fecha_fin_prevista ≥ fecha_inicio`; (3) la rama base no lleva espacios; (4) los
+  enlaces se pueden quitar de verdad (el evento `PROYECTO_ENLACE_QUITADO` deja el rastro); (5) un nombre de proyecto
+  repetido se permite (solo el código es único); (6) cambiar el repositorio no recalcula las URL de PR ya guardadas.
+- **E4-B como precedente (para 9B):** la regla de estado de pausar, reanudar y reactivar va en un archivo nuevo de
+  `domain/` (`estadoProyecto.ts`), sin tocar `cicloVida.ts` ni `reactivacion.ts`.
+
+### Qué se construyó
+
+- `src/services/proyectos/`:
+  - `comun.ts`: `cargarContextoProyecto`, **`equipoDelProyecto`** (supervisor y practicantes **activos** con asignación
+    vigente, sin repetidos; `crearNotificaciones` descarta después a quien hizo la acción), `textoReunion`
+    («lunes a las 10:00»), `eventoDeProyecto` y `reemplazarProyecto`.
+  - `esquemas.ts`: esquemas Zod reutilizables por los formularios de la Fase 5.4 (nombre, descripción, fechas de
+    calendario, repositorio, rama base, día y hora de reunión, y enlaces) y `exigirReunionCompleta`.
+  - `datos.ts`: `crearProyecto`, `editarDatosProyecto` y `cambiarRamaBase`; `reunion.ts`: `definirReunion`;
+    `enlaces.ts`: `agregarEnlace`, `editarEnlace` y `quitarEnlace`; e `index.ts`.
+- `src/services/resultado.ts`: `CODIGO_INMUTABLE` y `FIN_ANTES_DE_INICIO`. Los códigos de `validarCodigoProyecto` traen
+  su mensaje desde `domain/`.
+- `src/services/index.ts` reexporta los siete servicios, los esquemas y las dos piezas reutilizables.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → proyecto → `puede()` → reglas propias → «sin cambios» → una sola escritura.
+- **`crearProyecto`** (solo el Administrador): el supervisor debe existir, ser SUPERVISOR y estar ACTIVO
+  (`SUPERVISOR_NO_VALIDO`: «siempre con un supervisor activo», §5.4). El código se valida con **`validarCodigoProyecto`**
+  contra los códigos de **todos** los proyectos (también los finalizados) y **tal como llega**: no se recorta ni se pasa
+  a mayúsculas (`tmv` y ` TMV ` fallan; lo normaliza la pantalla); el error sale con el mensaje del dominio y en
+  `campos.codigo`. El proyecto nace ACTIVO, sin equipo, con `ultimo_numero_tarea: 0` y `fecha_fin_real: null`; deja
+  `PROYECTO_CREADO` (con el supervisor como cambio) y un aviso `ASIGNADO_A_PROYECTO` al supervisor («Te asignaron como
+  supervisor del proyecto X.», como la semilla). Con reunión opcional (día y hora juntos) no hay aviso extra: el equipo
+  está vacío.
+- **`editarDatosProyecto`** (solo el Administrador, también con el proyecto FINALIZADO): nombre, descripción, fechas y
+  repositorio. **El código no cambia nunca:** uno distinto da `CODIGO_INMUTABLE`; uno igual se ignora (un formulario puede
+  mandarlo todo); si solo viene el código, `DATOS_INVALIDOS`. `fecha_fin_prevista ≥ fecha_inicio` se comprueba con los
+  valores que quedarían (también si solo cambia una). Un cambio de nombre, descripción o fechas es `PROYECTO_EDITADO`
+  y uno de repositorio, `PROYECTO_REPOSITORIO_CAMBIADO`, con el mismo instante. No avisa a nadie (§8.1) y no toca las
+  tareas.
+- **`cambiarRamaBase`** (Administrador y Supervisor del proyecto, también con el proyecto FINALIZADO):
+  `PROYECTO_RAMA_BASE_CAMBIADA`; la misma rama es `SIN_CAMBIOS`.
+- **`definirReunion`** (Administrador y Supervisor del proyecto, también con el proyecto FINALIZADO): el evento guarda
+  el valor anterior y el nuevo como texto («lunes a las 10:00», `null` si no hay); el aviso `REUNION_SEMANAL_CAMBIADA`
+  va al equipo sin quien lo hizo (si lo define el Supervisor, no se avisa a sí mismo; el Administrador no es del equipo).
+- **Enlaces** (Administrador y Supervisor del proyecto, también con el proyecto FINALIZADO): nombre y dirección http(s)
+  (`javascript:` y `ftp:` se rechazan); un enlace de otro proyecto es `NO_ENCONTRADO`; ninguno avisa a nadie. Quitar borra
+  el enlace (es configuración; el evento deja el rastro).
+- **Hallazgo de la semilla:** `pry-pl2d` ya tiene `ultimo_numero_tarea: 21` y rama base `develop`; las pruebas leen los
+  valores de la semilla en vez de suponerlos.
+
+### Pruebas y mutaciones
+
+- 164 pruebas nuevas (1.825 en 75 archivos en total): esquemas (repositorio, rama, hora, día, fechas, enlaces y reunión
+  completa); crear (éxito exacto, código repetido también contra un finalizado, sin normalizar, supervisor inexistente,
+  inactivo o de otro rol, fechas, reunión incompleta, y que el proyecto nuevo ya sirve para asignar y crear una tarea
+  `TMV-001`); editar (los dos eventos con el mismo instante, `CODIGO_INMUTABLE`, un proyecto finalizado, fechas con una
+  sola cambiada); rama base; reunión (definir, cambiar, quitar, equipo sin bajas ni cuentas inactivas, autor excluido); y
+  enlaces (permisos de los tres, otro proyecto, direcciones inválidas).
+- **Mutaciones del agente (31, con `git add` previo y `git restore` después; todas detectadas y restauradas):** crear
+  sin `puede()`, sin comprobar el código, normalizándolo, con supervisor inactivo o que no lo es, con el contador o el
+  estado equivocados, sin avisar y con el fin antes del inicio; editar aceptando el código, sin permiso, sin el evento de
+  repositorio, con el fin antes del inicio y sin `SIN_CAMBIOS`; rama base sin permiso y sin `SIN_CAMBIOS`; reunión sin
+  permiso, avisando al autor, con practicantes dados de baja o cuentas inactivas en el equipo, sin avisar al quitarla y
+  sin `SIN_CAMBIOS`; enlaces sin permiso y de otro proyecto (editar y quitar); y los esquemas (repositorio con «/» o
+  «.git», hora 24:xx, rama con espacios, protocolo de enlace y reunión con día sin hora).
+
+### Pendientes
+
+- **9B:** reglas de estado en `domain/` (`estadoProyecto.ts`) y `cambiarSupervisor`, `reasignarProyectosDeSupervisor`,
+  `pausarProyecto`, `reanudarProyecto`, `finalizarProyecto` y `reactivarProyecto` (exige supervisor activo, sin aviso).
+- **Fase 5.4:** los formularios usan los esquemas de `esquemas.ts` y envían el código ya en mayúsculas y sin espacios;
+  el error del código se muestra en su campo; editar no ofrece el código; la reunión se quita enviando día y hora vacíos.
+- **Autores, a mano en `docs/`:** propuesta §5.4 con los supuestos del paso 9 (repositorio, rama base, reunión y enlaces
+  editables en un proyecto finalizado, quitar la reunión avisa, reactivar no avisa).
