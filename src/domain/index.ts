@@ -84,6 +84,7 @@ export {
   REGLAS_INSIGHT_VISIBLES,
   insightEnAlcance,
   puede,
+  puedeEnRol,
 } from './permisos';
 export type {
   AccionPermiso,
@@ -309,3 +310,18 @@ export type {
   ResultadoQuitarPracticante,
   ResultadoSimple,
 } from './cicloVida';
+
+export { ACCIONES_TAREA_ADICIONALES, accionesDeTarea } from './accionesTarea';
+export type { AccionDeTarea, AccionDisponible, AccionTareaAdicional } from './accionesTarea';
+
+export {
+  TERMINADAS_EN_TABLERO,
+  ordenarReuniones,
+  ordenarTareasEnCurso,
+  ordenarTerminadas,
+  prPorAtender,
+  proximaReunion,
+  situacionPracticante,
+  terminadasRecientes,
+} from './consultas';
+export type { ReunionProxima, SituacionPracticante, TerminadasRecientes } from './consultas';

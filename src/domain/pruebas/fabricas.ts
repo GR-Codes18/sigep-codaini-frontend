@@ -423,6 +423,9 @@ const CONTEXTOS: ConstructorContexto = {
   CAMBIAR_CONTRASENA_PROPIA: ({ usuario: usuarioQueActua }) => ({
     usuario_objetivo: usuarioQueActua,
   }),
+  VER_POSTULACIONES: () => ({}),
+  VER_SUPERVISORES: () => ({}),
+  VER_DIRECTORIO_PRACTICANTES: () => ({}),
   // Seguimiento y sistema
   VER_REPORTES: ({ proyecto: proyectoDelContexto }) => ({ proyecto: proyectoDelContexto }),
   MARCAR_INSIGHT_REVISADO: ({ insight: insightDelContexto, proyectosDelUsuario }) => ({
