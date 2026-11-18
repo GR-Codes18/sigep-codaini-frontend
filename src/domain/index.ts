@@ -164,6 +164,22 @@ export type {
   TransicionPostulacion,
 } from './decisionPostulacion';
 
+export {
+  ACCIONES_ESTADO_PROYECTO,
+  CODIGOS_ESTADO_PROYECTO,
+  accionesDeEstadoDisponibles,
+  puedePausarProyecto,
+  puedeReactivarProyecto,
+  puedeReanudarProyecto,
+} from './estadoProyecto';
+export type {
+  AccionEstadoProyecto,
+  CodigoEstadoProyecto,
+  CodigoEstadoProyectoPropio,
+  ErrorEstadoProyecto,
+  ResultadoEstadoProyecto,
+} from './estadoProyecto';
+
 export { CODIGOS_REACTIVACION, reactivarPractica, reactivarSupervisor } from './reactivacion';
 export type {
   CodigoReactivacion,
