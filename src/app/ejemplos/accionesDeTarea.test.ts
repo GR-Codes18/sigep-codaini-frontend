@@ -4,7 +4,8 @@ import type { TareaDetalle } from '@/compartido/DetalleTarea';
 import { accionesDeTarea } from './accionesDeTarea';
 
 const detalle = (cambios: Partial<TareaDetalle> = {}): TareaDetalle => ({
-  id: 'PRB-001',
+  id: 't-tarea',
+  idLegible: 'PRB-001',
   numero: 1,
   titulo: 'Tarea de prueba',
   descripcion: 'Descripción',
@@ -12,9 +13,10 @@ const detalle = (cambios: Partial<TareaDetalle> = {}): TareaDetalle => ({
   idProyecto: 'p-proyecto',
   proyecto: 'Proyecto de prueba',
   idPracticante: null,
-  fechaLimite: new Date(2026, 10, 30),
+  fechaLimite: '2026-11-30',
   requiereSupervision: false,
   requierePr: true,
+  estadoPr: null,
   ...cambios,
 });
 
@@ -102,6 +104,39 @@ describe('accionesDeTarea', () => {
     expect(claves(esperando, { ...contexto, usuario: usuario('SUPERVISOR') })).not.toContain(
       'crear_pr',
     );
+  });
+
+  it('muestra «No requiere PR» deshabilitada al practicante responsable elegible en EN_PROGRESO', () => {
+    const enProgreso = detalle({
+      estado: 'EN_PROGRESO',
+      idPracticante: contexto.usuario.id,
+    });
+    const accion = accionesDeTarea(enProgreso, contexto).find(
+      (item) => item.clave === 'no_requiere_pr',
+    );
+
+    expect(accion).toMatchObject({
+      etiqueta: 'No requiere PR',
+      deshabilitada: true,
+      avisoDeshabilitacion: expect.stringContaining('servicio de tareas'),
+      pedirMotivo: { etiqueta: 'Motivo', obligatorio: true },
+    });
+  });
+
+  it('no muestra «No requiere PR» fuera de EN_PROGRESO, a otros roles o si ya hubo PR', () => {
+    const enProgreso = detalle({
+      estado: 'EN_PROGRESO',
+      idPracticante: contexto.usuario.id,
+    });
+
+    expect(claves({ ...enProgreso, estado: 'DISPONIBLE' })).not.toContain('no_requiere_pr');
+    expect(claves(enProgreso, { ...contexto, usuario: usuario('SUPERVISOR') })).not.toContain(
+      'no_requiere_pr',
+    );
+    expect(
+      claves({ ...enProgreso, urlPr: 'https://github.com/codaini/pl2d/pull/1' }),
+    ).not.toContain('no_requiere_pr');
+    expect(claves(enProgreso, { ...contexto, asignaciones: [] })).not.toContain('no_requiere_pr');
   });
 
   it('no muestra acciones al usuario inactivo', () => {

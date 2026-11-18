@@ -12,7 +12,8 @@
   completa, restablecer datos de demostración y utilidades base de `services/`. La Fase 1 (`domain/`) está
   fusionada en `development` (PR #21); las Fases 3 y 4 avanzaron todo lo que no depende de `services/`.
   Siguiente: paso 5 (servicios de tareas), que abre el Bloque 2 de la Fase 2.
-- **Actualizado:** 2026-11-17, al cerrar el paso 4 y con él el Bloque 1 de la Fase 2.
+- **Actualizado:** 2026-11-17, tras registrar la migración de autenticación en `feat/fase3-interfaz-conexion`
+  (commit `0307f83`).
 
 ### Cierres de fase
 
@@ -126,6 +127,12 @@
   `crearEvento`/`agregarEventos` (el historial solo se agrega; `id_proyecto` obligatorio donde el dominio lo
   exige; nunca una contraseña), `diferencias` y etiquetas; y `crearNotificaciones` (nunca notifica al autor).
   Detalle en `DECISIONES.md`.
+- **Migración del acceso a la semilla: terminada (2026-11-17).** `src/services/autenticacion.ts` consulta
+  los usuarios del almacén; `src/auth/iniciarSesion.ts` delega en el servicio y `PaginaAcceso.tsx` muestra
+  los errores de acceso. Se eliminan las cuentas duplicadas de `auth/usuariosDemo.ts`, se conservan los
+  accesos rápidos por IDs estables y se bloquean las cuentas INACTIVAS sin revelar si existen. La sesión
+  sigue guardando solo el resumen sin contraseña. Commit `0307f83`; verificación: 966 pruebas, `tsc -b`,
+  ESLint, Prettier y `build` OK (aviso conocido de chunk mayor a 500 kB). Detalle en `DECISIONES.md`.
 - **Fase 2, Bloque 1 cerrado.** Pasos 1 a 4 en una sola sesión, con parada y commit por paso. Quedan los
   pasos 5 a 11 (servicios y consultas con alcance por rol); ver «Decisiones pendientes» sobre cómo partirlos
   en sesiones.
@@ -231,9 +238,8 @@ restablecer y 136 de las utilidades de `services/`, de la Fase 2); `build` OK (a
       pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
 - [ ] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
       GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
-- [ ] Login: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
-      mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
-      `CUENTAS_DEMO`.
+- [x] Login: `iniciarSesion` consulta los usuarios del almacén por medio de `services/autenticacion.ts`;
+      `CUENTAS_DEMO` se retiró y los accesos rápidos usan IDs estables (`0307f83`).
 - [ ] Semilla: `ultimo_numero_tarea` es el mayor `numero` de las tareas existentes. Si se añade a la semilla
       una tarea eliminada que sea la última de su proyecto, el contador quedaría por debajo del real.
 - [ ] La regla de «no notificar al autor» ya vive en `crearNotificaciones` (`services/`, paso 4). El registro
@@ -298,8 +304,9 @@ restablecer y 136 de las utilidades de `services/`, de la Fase 2); `build` OK (a
 
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
-- [ ] Reemplazar tipos provisionales (`auth/tipos.ts`, `TareaTablero`, `EventoLinea`, `TareaDetalle`,
-      `NotificacionItem`) cuando existan los servicios.
+- [ ] Reemplazar tipos provisionales (`TareaTablero`, `EventoLinea`, `TareaDetalle`,
+      `NotificacionItem`) cuando existan los servicios. `auth/tipos.ts` ya reutiliza `Rol` y `Usuario`
+      de `domain/` (`0307f83`).
 - [ ] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
 - [ ] Con `estado_pr === 'PENDIENTE'` y `url_pull_request` no nula (PR fusionado recalculado), no mostrar la
       URL como el PR vigente. Usar `etiquetaPRVisible` para la etiqueta.

@@ -2149,3 +2149,21 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   (`src/data/semilla/registro.ts`) conserva una copia mínima solo para generar los datos iniciales.
 - El historial queda en orden de escritura, que coincide con el cronológico porque la marca se toma dentro de
   la transacción.
+
+## 2026-11-17 — [A+B] Autenticación simulada desde el almacén
+
+- **Commit:** `0307f83` (`feat(auth): integrar inicio de sesión con servicios de fase 2 y actualizar interfaz`).
+- `src/services/autenticacion.ts` consulta `entorno.almacen.getState().datos.usuarios`; es una consulta de solo
+  lectura, con demora simulada y un `Entorno` inyectable para pruebas. Amplía `AlmacenServicio` para exponer
+  los datos junto con `transaccion`.
+- `iniciarSesion` delega en el servicio. Las credenciales incorrectas, inexistentes o de una cuenta INACTIVA
+  comparten `CREDENCIALES_INVALIDAS` y el mismo mensaje. El acceso rápido consulta por IDs fijos de la semilla,
+  valida también el rol y devuelve `ACCESO_RAPIDO_NO_DISPONIBLE` si la cuenta falta o está INACTIVA.
+- `usuariosDemo.ts` deja de duplicar cuentas y contraseñas; conserva solo el mapa de roles a IDs de acceso
+  rápido. `UsuarioSesion` usa los tipos `Rol` y `Usuario` de `domain/`. `almacenSesion.ts` no cambia: conserva
+  la validación y persistencia de un resumen sin contraseña.
+- `semilla.test.ts` comprueba directamente las tres cuentas previstas y ya no importa desde `auth/`, evitando
+  invertir la dependencia entre `data/` y `auth/`.
+- Verificación: 966 pruebas en 44 archivos; `tsc -b`, ESLint y Prettier pasan; `npm run build` pasa con el
+  aviso existente de chunk mayor a 500 kB. No se modificaron los servicios de mutación de tareas ni otras
+  mutaciones del almacén.

@@ -1,6 +1,10 @@
-import { format } from 'date-fns';
 import type { AccionTransicion, Asignacion, Proyecto, Tarea, Usuario } from '@/domain';
-import { puede, transicionesDisponibles } from '@/domain';
+import {
+  puede,
+  puedeCambiarRequierePR,
+  TEXTO_OBLIGATORIO,
+  transicionesDisponibles,
+} from '@/domain';
 import type { AccionTarea, TareaDetalle } from '@/compartido/DetalleTarea';
 
 interface ContextoAcciones {
@@ -25,7 +29,7 @@ function aTareaDominio(tarea: TareaDetalle): Tarea {
     numero: tarea.numero,
     titulo: tarea.titulo,
     descripcion: tarea.descripcion,
-    fecha_limite: format(tarea.fechaLimite, 'yyyy-MM-dd'),
+    fecha_limite: tarea.fechaLimite,
     id_proyecto: tarea.idProyecto,
     id_practicante: tarea.idPracticante,
     estado: tarea.estado,
@@ -35,7 +39,7 @@ function aTareaDominio(tarea: TareaDetalle): Tarea {
     rama_origen: tarea.ramaOrigen ?? null,
     rama_base: tarea.ramaBase ?? null,
     url_pull_request: tarea.urlPr ?? null,
-    fecha_termino: null,
+    fecha_termino: tarea.fechaTermino ?? null,
   };
 }
 
@@ -60,6 +64,24 @@ export function accionesDeTarea(tarea: TareaDetalle, contexto: ContextoAcciones)
     ...PRESENTACION_TRANSICION[transicion],
     ...(exige_texto ? { pedirMotivo: textoExigido(exige_texto) } : {}),
   }));
+
+  const reglaDesactivarPR =
+    contexto.usuario.rol === 'PRACTICANTE' && tarea.estado === 'EN_PROGRESO' && tarea.requierePr
+      ? puedeCambiarRequierePR(tareaDominio, contexto.usuario, contextoPermiso, false)
+      : null;
+  if (
+    reglaDesactivarPR !== null &&
+    (reglaDesactivarPR.permitido ||
+      (!reglaDesactivarPR.permitido && reglaDesactivarPR.codigo === TEXTO_OBLIGATORIO))
+  ) {
+    acciones.push({
+      clave: 'no_requiere_pr',
+      etiqueta: 'No requiere PR',
+      pedirMotivo: textoExigido('MOTIVO'),
+      deshabilitada: true,
+      avisoDeshabilitacion: 'Disponible cuando se conecte el servicio de tareas.',
+    });
+  }
 
   if (
     tarea.estado === 'DISPONIBLE' &&

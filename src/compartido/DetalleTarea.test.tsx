@@ -6,7 +6,8 @@ import { DetalleTarea, type TareaDetalle } from './DetalleTarea';
 import { accionesDeTarea } from '@/app/ejemplos/accionesDeTarea';
 
 const tarea: TareaDetalle = {
-  id: 'PL2D-003',
+  id: 'tar-pl2d-003',
+  idLegible: 'PL2D-003',
   numero: 3,
   titulo: 'Tablero Kanban',
   descripcion: 'Cuatro columnas',
@@ -14,9 +15,10 @@ const tarea: TareaDetalle = {
   idProyecto: 'pl2d',
   proyecto: 'Plataforma 2D',
   idPracticante: 'demo-practicante',
-  fechaLimite: new Date(2026, 10, 30),
+  fechaLimite: '2026-11-30',
   requiereSupervision: true,
   requierePr: true,
+  estadoPr: null,
 };
 
 describe('DetalleTarea', () => {
@@ -40,6 +42,51 @@ describe('DetalleTarea', () => {
     expect(screen.queryByRole('button', { name: 'Devolver' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Aprobar' }));
     expect(onEjecutar).toHaveBeenCalledWith('aprobar');
+  });
+
+  it('muestra una acción deshabilitada con aviso y no la ejecuta', async () => {
+    const user = userEvent.setup();
+    const onEjecutar = vi.fn().mockResolvedValue(undefined);
+    render(
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          {
+            clave: 'no_requiere_pr',
+            etiqueta: 'No requiere PR',
+            deshabilitada: true,
+            avisoDeshabilitacion: 'Disponible cuando se conecte el servicio de tareas.',
+          },
+        ]}
+        eventos={[]}
+        onEjecutar={onEjecutar}
+      />,
+    );
+    const boton = screen.getByRole('button', { name: 'No requiere PR' });
+    expect(boton).toBeDisabled();
+    expect(screen.getByText('Disponible cuando se conecte el servicio de tareas.')).toBeVisible();
+    await user.click(boton);
+    expect(onEjecutar).not.toHaveBeenCalled();
+  });
+
+  it('muestra la etiqueta Pendiente y oculta una URL antigua del PR', () => {
+    render(
+      <DetalleTarea
+        tarea={{
+          ...tarea,
+          estado: 'TERMINADA',
+          estadoPr: 'PENDIENTE',
+          urlPr: 'https://github.com/codaini/pl2d/pull/12',
+          ramaOrigen: 'feat/pl2d-003',
+          ramaBase: 'main',
+        }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
   });
 
   it('una acción con nota obligatoria abre el modal y envía la nota', async () => {
