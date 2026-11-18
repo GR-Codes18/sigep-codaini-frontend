@@ -8,15 +8,13 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: sub-paso 7A terminado** (evaluar,
-  aprobar, rechazar y reconsiderar postulaciones; `42c0b25` y `debd47e`). El Bloque 2 (pasos 5 y 6, servicios de
-  tareas y de Pull Request) está fusionado en `development` (PR #23). El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). **Paso 5** en tres
-  sub-pasos (D2-A): 5A (crear, editar y eliminar, `2c54c04`), 5B (las 7 transiciones y el puerto de GitHub,
-  `2726b9a`) y 5C (opciones de la tarea y prueba de flujo, `98ead18`). **Paso 6** en dos sub-pasos (P7-A): 6A
-  (listar ramas y crear el PR, `59dc320`) y 6B (cerrar el PR y el flujo de punta a punta, `9600f46`).
-  Siguiente: PR del Bloque 2 a `development` (lo abren y revisan los autores) y, después, el Bloque 3 (pasos 7
-  a 11).
-- **Actualizado:** 2026-11-17, al cerrar el sub-paso 7A (rama `feat/fase2-servicios-modulos`).
+- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: paso 7 terminado** (servicios de
+  postulaciones y del catálogo de evaluación). **7A:** evaluar, aprobar, rechazar y reconsiderar postulaciones
+  (`42c0b25` y `debd47e`). **7B:** áreas técnicas, especialidades y criterios (`3368603` y `5eb54a4`). El Bloque 2
+  (pasos 5 y 6, servicios de tareas y de Pull Request) está fusionado en `development` (PR #23) y el Bloque 1
+  (pasos 1 a 4) en el PR #22. Siguiente: el **paso 8** (practicantes y supervisores), luego los pasos 9 a 11.
+- **Actualizado:** 2026-11-17, al cerrar el sub-paso 7B y con él el paso 7 (rama
+  `feat/fase2-servicios-modulos`).
 
 ### Cierres de fase
 
@@ -195,9 +193,17 @@
   `evaluador`, `generarContrasena` y 3 códigos nuevos (`debd47e`). Aprobar crea la cuenta y la práctica en una
   escritura, sin asignar a un proyecto y sin notificar a nadie (§8.1). 110 pruebas nuevas y 17 mutaciones
   detectadas de 17. Detalle en `DECISIONES.md`.
-- **Siguiente:** propuesta y OK del **sub-paso 7B** (áreas técnicas, especialidades y criterios de evaluación) y,
-  después, los pasos 8 a 11 del Bloque 3 (practicantes y supervisores, proyectos, cuenta y consultas con alcance
-  por rol).
+- **Fase 2, sub-paso 7B: plan aprobado (2026-11-17)** con las decisiones C1-B, C2-B y C3 en la opción
+  recomendada y los supuestos confirmados; detalle en `DECISIONES.md`. En resumen: `guardarCriteriosDeBloque`
+  guarda el bloque completo en una operación (la regla de los 100 puntos se comprueba al final); áreas y
+  especialidades nacen inactivas y se activan solo con su bloque válido; la validación es una función pura de
+  `domain/`; nombres únicos por nivel; sin cascadas; la especialidad no cambia de área; sin límite de largo.
+- **Fase 2, sub-paso 7B: terminado (2026-11-17).** `validarBloqueCriterios` en
+  `src/domain/criteriosBloque.ts` (`3368603`) y 7 servicios en `src/services/catalogoEvaluacion/` (`5eb54a4`):
+  crear, editar y activar o desactivar áreas y especialidades, y `guardarCriteriosDeBloque`. 142 pruebas nuevas
+  (32 en `domain/`) y 17 mutaciones detectadas de 17. Con esto **termina el paso 7**. Detalle en `DECISIONES.md`.
+- **Siguiente:** propuesta y OK del **paso 8** (servicios de practicantes y supervisores) y, después, los pasos 9
+  a 11 del Bloque 3 (proyectos, cuenta y consultas con alcance por rol).
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»).
 - **Rama:** `feat/fase2-servicios-modulos` (sale de `development`, con el Bloque 2 ya fusionado en el PR #23).
@@ -235,7 +241,8 @@
 | 2026-11-17 | 5C. Opciones de la tarea y prueba de flujo (cierra el paso 5) | `98ead18`; docs `6c8e32f` |
 | 2026-11-17 | 6A. Listar ramas y crear Pull Request con GitHub simulado | `59dc320`; docs `465a147` |
 | 2026-11-17 | 6B. Cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2) | `9600f46`; docs `03d246c`; PR #23 fusionado en `34e0656` |
-| 2026-11-17 | 7A. Evaluar, aprobar, rechazar y reconsiderar postulaciones | A (regla en `domain/`) `42c0b25`; B (servicios) `debd47e`; docs pendientes de commit |
+| 2026-11-17 | 7A. Evaluar, aprobar, rechazar y reconsiderar postulaciones | A (regla en `domain/`) `42c0b25`; B (servicios) `debd47e`; docs `801a992` |
+| 2026-11-17 | 7B. Áreas técnicas, especialidades y criterios de evaluación (cierra el paso 7) | A (validación del bloque en `domain/`) `3368603`; B (servicios) `5eb54a4`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -257,10 +264,10 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 1287 pruebas en 56 archivos (de la Fase 2: 22 del almacén, 180 de la
+**Estado de pruebas (2026-11-17):** 1429 pruebas en 61 archivos (de la Fase 2: 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
-—50 en 5A, 82 en 5B y 33 en 5C—, 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B— y 110
-del sub-paso 7A, 12 de ellas en `domain/`);
+—50 en 5A, 82 en 5B y 33 en 5C—, 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—, 110
+del sub-paso 7A —12 en `domain/`— y 142 del sub-paso 7B —32 en `domain/`—);
 `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
@@ -314,13 +321,17 @@ del sub-paso 7A, 12 de ellas en `domain/`);
       a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
       Administrador o el Supervisor la liberen con motivo.
 - [x] Sub-paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`).
-- [ ] Sub-paso 7B: áreas técnicas, especialidades y criterios de evaluación (crear, editar, activar y
-      desactivar); pendiente su propuesta.
+- [x] Sub-paso 7B: áreas técnicas, especialidades y criterios de evaluación (crear, editar, activar y
+      desactivar) (`3368603` y `5eb54a4`). **Paso 7 terminado.**
+- [ ] Fase 5.1 (formularios de criterios): el editor de un bloque llama a `guardarCriteriosDeBloque` con el
+      bloque completo (los criterios no se borran: se desactivan), muestra «Suma actual: N/100» con
+      `sumaPesosActivos` y `validarBloqueCriterios`, y ofrece activar un área o especialidad solo cuando su
+      bloque es válido. Nacen inactivas.
 - [ ] Fase 5.1: cómo se muestra «Analizando…» (la semilla ya evalúa a todos y `evaluarPostulacion` solo se
       dispara por código), el mensaje cuando la evaluación falla y la contraseña temporal visible una sola vez.
 - [ ] Ajustar a mano la propuesta §5.1/§5.2: la fecha de ingreso de un practicante nuevo es el día de la
       aprobación (hora de Perú) y la de fin se calcula con la duración vigente (supuesto confirmado en 7A).
-- [ ] Pasos 7B a 11 (Bloque 3; los pasos 5, 6 y 7A ya están terminados): servicios por módulo, consultas con
+- [ ] Pasos 8 a 11 (Bloque 3; los pasos 5, 6 y 7 ya están terminados): servicios por módulo, consultas con
       alcance por rol (pueden usar `ejecutarConsulta`), más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
       dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos

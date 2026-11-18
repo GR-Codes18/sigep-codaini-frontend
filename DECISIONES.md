@@ -2729,3 +2729,89 @@ en dos sub-pasos: 7A (este) y 7B (áreas técnicas, especialidades y criterios; 
   aprobación (hora de Perú) y la de fin se calcula con la duración vigente.
 - **Paso 8:** `editarDatosPractica` (fecha de ingreso y de fin), restablecer contraseña y asignar al proyecto.
 - **7B:** áreas técnicas, especialidades y criterios (propuesta aparte).
+
+---
+
+## 2026-11-17 — [A+B] Fase 2, paso 7B: áreas técnicas, especialidades y criterios de evaluación (cierra el paso 7)
+
+Commits de código: `3368603` (validación del bloque en `domain/`) y `5eb54a4` (servicios de 7B).
+
+### Decisiones aprobadas (todas en la opción recomendada)
+
+- **C1-B — el bloque se guarda completo.** `guardarCriteriosDeBloque` recibe el estado deseado de un bloque (el
+  general de un área o el de una especialidad): crea los criterios sin `id`, edita los demás, activa o
+  desactiva, y valida **una sola vez, al final**, que los criterios activos sean enteros mayores que 0 y sumen
+  100. Así repartir 30/70 → 40/60 no pasa por una suma distinta de 100. Como nada se borra, la lista debe traer
+  **todos** los criterios existentes del bloque: si falta alguno, `CRITERIOS_INCOMPLETOS` (nombra el que falta).
+  Descartadas: validar en cada acción individual (impide cualquier reparto) y un CRUD libre que valide solo al
+  evaluar (el bloque puede quedar roto sin que nadie lo vea y, con E3-A, las evaluaciones fallarían en silencio).
+- **C2-B — áreas y especialidades nacen inactivas.** Solo se activan cuando su propio bloque de criterios activos
+  es válido. Un bloque sin criterios activos solo se admite si su especialidad (o su área) está inactiva; con
+  criterios activos siempre valen los 100 puntos. Descartado dejarlas nacer activas con un catálogo que no
+  puede calcular.
+- **C3 — la regla vive en `domain/`.** `validarBloqueCriterios(criterios, bloque)` (y `sumaPesosActivos`) en
+  `src/domain/criteriosBloque.ts`, con los **mismos códigos y mensajes** que `calcularPuntaje`
+  (`BLOQUE_SIN_CRITERIOS`, `PESO_INVALIDO`, `PESOS_NO_SUMAN_100`). La pantalla puede mostrar «Suma actual: N/100»
+  con la misma regla. **No se modificó `puntaje.ts` ni ningún tipo**; una prueba compara las dos funciones sobre
+  9 casos × 2 bloques para que no se separen.
+- **Supuestos confirmados** (no están en los docs): nombres únicos por nivel (áreas entre sí; especialidades
+  dentro de su área; criterios dentro de su bloque), sin distinguir mayúsculas ni espacios de más
+  (`NOMBRE_DUPLICADO`); **sin cascadas** al desactivar; la especialidad no cambia de área; sin límite de largo
+  en los nombres.
+- **Activación independiente (confirmada tras la entrega):** activar una especialidad solo valida su propio
+  bloque; **no** exige que su área esté activa, y activar un área no activa ni desactiva sus especialidades.
+
+### Qué se construyó
+
+- `src/domain/criteriosBloque.ts` (+ prueba) y su reexportación en `src/domain/index.ts`.
+- `src/services/catalogoEvaluacion/`: `comun.ts` (permiso, bloques de un área o especialidad, normalización de
+  nombres, evento del catálogo), `areas.ts` y `especialidades.ts` (`crear*`, `editar*` y `cambiarActivo*`),
+  `criterios.ts` (`guardarCriteriosDeBloque`) e `index.ts`: **7 servicios**.
+- `src/services/pruebas/almacen.ts` (solo para tests): `prepararPrueba` y `sinEscritura`.
+- Códigos nuevos en `MENSAJES`: `NOMBRE_DUPLICADO`, `CRITERIOS_INCOMPLETOS`, `CRITERIO_DE_OTRO_BLOQUE` y
+  `ESPECIALIDAD_DE_OTRA_AREA`; los de bloque pasan con el mensaje del dominio.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → `puede('GESTIONAR_CRITERIOS_EVALUACION')` (solo Administrador, sin texto) → entidades →
+  reglas propias (nombre único, bloque válido) → «sin cambios» → una sola escritura. Ningún servicio notifica
+  (§8.1).
+- **Eventos:** `AREA_TECNICA_*`, `ESPECIALIDAD_*` y `CRITERIO_*`, con `id_proyecto` nulo. Al guardar un bloque,
+  **un evento por cambio**: `CRITERIO_CREADO` (con nombre, tipo, peso, obligatorio y activo), `CRITERIO_EDITADO`
+  (solo nombre, tipo, peso y obligatorio) y `CRITERIO_ACTIVADO` o `CRITERIO_DESACTIVADO`; un criterio editado y
+  activado a la vez deja dos eventos, en ese orden, y todos comparten el instante.
+- **La especialidad no cambia de área:** `editarEspecialidad` usa una entrada estricta (`z.strictObject`); un
+  campo de área en la entrada da `DATOS_INVALIDOS`.
+- **El peso se valida solo en los criterios activos** (como `calcularPuntaje`): un criterio inactivo puede
+  conservar un peso que no sirva, y la regla vuelve a exigirse al activarlo.
+- **Las evaluaciones ya hechas no se tocan:** guardar un bloque deja `evaluaciones` y `detalles_evaluacion`
+  intactos (cada detalle guarda su copia del nombre y el peso); una evaluación posterior usa los pesos nuevos.
+- Los criterios nuevos se agregan al final de la colección; los demás conservan su lugar.
+
+### Pruebas y mutaciones
+
+- 142 pruebas nuevas (1.429 en 61 archivos en total): 32 de `validarBloqueCriterios` y su contraste con
+  `calcularPuntaje`; 110 de los servicios (permisos de los siete, nombres duplicados por nivel, activación con
+  bloque válido e inválido, el reparto de pesos en una sola operación, un evento por cambio, criterios
+  incompletos o de otro bloque, evaluaciones que no se recalculan y el flujo crear área → crear especialidad →
+  configurar bloques → activar → evaluar).
+- **Mutaciones del agente (17, con `git add` previo y `git restore` después; todas detectadas y restauradas):**
+  sin `puede()`; suma ≤ 100 aceptada; peso 0; peso decimal; omitir criterios existentes; un solo evento por
+  bloque; activar un área y una especialidad con el bloque inválido; área y especialidad que nacen activas;
+  nombres sensibles a mayúsculas; guardar el bloque borrando el desglose de las evaluaciones; aceptar criterios
+  de otro bloque; guardar aunque no sume 100; `CRITERIO_EDITADO` cuando solo cambió `activo`; entrada no
+  estricta en especialidad; bloque vacío con el dueño activo; nombre de especialidad único en todo el catálogo;
+  sin `SIN_CAMBIOS`.
+
+### Cierre del paso 7 (postulaciones y catálogo de evaluación)
+
+- **Cuatro commits de código:** `42c0b25` y `debd47e` (7A), `3368603` y `5eb54a4` (7B); docs `801a992` (7A).
+- **11 servicios nuevos:** 4 de postulaciones (evaluar, aprobar, rechazar y reconsiderar) y 7 del catálogo; más
+  dos funciones puras de `domain/` (`puedeDecidirPostulacion` y `validarBloqueCriterios`), el puerto `evaluador`
+  y `generarContrasena` en `Entorno`. 252 pruebas nuevas y 34 mutaciones detectadas de 34.
+
+### Pendientes
+
+- **Fase 5.1:** el editor de criterios llama a `guardarCriteriosDeBloque` con el bloque completo (se desactiva,
+  no se borra), muestra «Suma actual: N/100» y solo ofrece activar un área o especialidad con su bloque válido.
+- **Paso 8:** practicantes y supervisores (propuesta aparte).
