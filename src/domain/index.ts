@@ -65,6 +65,18 @@ export type {
   ValorParametro,
 } from './configuracion';
 export {
+  CODIGOS_CONFIGURACION,
+  clavesDeSeccion,
+  validarSeccionConfiguracion,
+} from './configuracionValidacion';
+export type {
+  CampoConfiguracion,
+  CodigoConfiguracion,
+  ErrorConfiguracion,
+  ResultadoConfiguracion,
+  ValoresConfiguracion,
+} from './configuracionValidacion';
+export {
   ACCIONES_PERMISO,
   AMBITO_POR_ACCION,
   AMBITOS_PERMISO,
