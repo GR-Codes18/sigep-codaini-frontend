@@ -1,5 +1,6 @@
-import { PaginaPrueba } from '@/app/pagina-prueba/PaginaPrueba';
+import { RouterProvider } from 'react-router';
+import { router } from '@/app/rutas';
 
 export default function App() {
-  return <PaginaPrueba />;
+  return <RouterProvider router={router} />;
 }

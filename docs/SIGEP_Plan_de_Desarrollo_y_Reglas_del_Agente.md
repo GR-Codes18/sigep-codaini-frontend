@@ -35,7 +35,7 @@ Los archivos van en la carpeta `docs/` del repositorio:
 
 ## 2. Metodología de trabajo (adaptada a este proyecto)
 
-Aplica la metodología completa de `docs/METODOLOGIA.md`. Estas son las adaptaciones para este proyecto, porque esa metodología está escrita pensando también en backend:
+Aplica la metodología completa de `docs/METODOLOGÍA DE TRABAJO.md`. Estas son las adaptaciones para este proyecto, porque esa metodología está escrita pensando también en backend:
 
 ### 2.1 Ciclo de cada paso (obligatorio)
 
@@ -104,7 +104,8 @@ Aplica la metodología completa de `docs/METODOLOGIA.md`. Estas son las adaptaci
   - `EstadoPR`: `PENDIENTE | CREADO | CON_CONFLICTOS | FUSIONADO | CERRADO`
   - `EstadoPostulacion`: `PENDIENTE | APROBADA | RECHAZADA`
   - `EstadoProyecto`: `ACTIVO | EN_PAUSA | FINALIZADO`
-  - `EstadoPracticante` (usuario): `ACTIVO | FINALIZADO`
+  - `EstadoUsuario` (campo `Usuario.estado`): `ACTIVO | INACTIVO`
+  - `EstadoPracticante`: `ACTIVO | FINALIZADO`. Es solo presentación derivada de `Usuario.estado`; no se guarda.
 - "Devuelta con observaciones" **no es un estado**: es una marca sobre una tarea EN_PROGRESO (viene de un evento del historial).
 - "Requiere revisión manual" **no es un estado**: es una marca en la evaluación.
 
@@ -160,12 +161,12 @@ Estas son las reglas que el agente más fácilmente rompe. Antes de tocar tareas
 9. **Alcance por rol:** el Supervisor solo ve y actúa en sus proyectos; el Practicante solo en aquellos a los que está asignado. El Practicante ve el tablero completo de sus proyectos, pero las tareas ajenas son de **solo lectura**. De sus compañeros ve solo nombre, especialidad, carga, Discord y GitHub (nunca correo ni celular).
 10. **El Supervisor no** crea proyectos, no asigna ni quita practicantes, no pausa ni finaliza proyectos, no ve el área técnica ni la postulación de origen de los practicantes. Define reunión, enlaces y rama base (igual que el admin).
 11. **La IA sugiere, el Administrador decide.** El puntaje lo calcula el **sistema** con los pesos (el "modelo" solo juzga criterio por criterio; en el prototipo, una función local simula ese juicio). Nota final = 40 % área + 60 % especialidad (ajustable). Ejemplo de prueba: 80 y 90 → **86**.
-12. **Insights = reglas explicables** con umbrales de Configuración (propuesta §5.6). El Supervisor ve 5 de las 7 reglas. "Revisado" es independiente por usuario. Los insights **no se guardan**: se calculan.
+12. **Insights = reglas explicables** con umbrales de Configuración (propuesta §5.6). El Supervisor ve 5 de las 7 reglas: practicante inactivo, carga desbalanceada, posible atraso del proyecto, proyecto sin actividad y supervisión demorada; no ve «Postulaciones sin decidir» ni «Fin de práctica», y solo marca como revisadas esas 5. "Revisado" es independiente por usuario. Los insights **no se guardan**: se calculan.
 13. **Notificaciones:** solo dentro del sistema, según la tabla de §8.1. La persona que hizo la acción no se notifica a sí misma.
 14. **Historial:** eventos inmutables, con valor anterior y nuevo, autor "Sistema" para lo automático, copia del ID y título del elemento. Nunca guarda contraseñas ni inicios de sesión.
 15. **Contraseña temporal:** franja persistente en todas las pantallas hasta que la persona la cambie; mínimo 8 caracteres.
 16. **Tablero:** la columna "Terminada" muestra las 5 más recientes + "Ver todas las terminadas"; el Practicante tiene el filtro "Solo mis tareas".
-17. **IDs legibles:** `CODIGO-NNN` (ej. `PL2D-018`); código de proyecto 3–5 caracteres, único, inmutable; un número eliminado no se reutiliza.
+17. **IDs legibles:** `CODIGO-NNN` (ej. `PL2D-018`); el número lleva mínimo 3 dígitos y no tiene tope (`PL2D-1000`); código de proyecto de 3 a 5 caracteres (solo mayúsculas A-Z y dígitos), único entre todos los proyectos (también los finalizados), inmutable; un número eliminado no se reutiliza.
 
 ---
 
@@ -189,7 +190,7 @@ No construir, no sugerir como si existiera, no dejar "por si acaso":
 
 ---
 
-## 7. Reglas visuales (resumen; manda `docs/ESPECIFICACION_VISUAL.md`)
+## 7. Reglas visuales (resumen; manda `docs/Especificacion_visual_SIGEP (1).md`)
 
 - **Nunca colores escritos a mano en un componente.** Solo tokens (`--bg`, `--surface`, `--surface-2`, `--border`, `--text`, `--text-2`, `--primary`, `--link`, `--danger`, etc.). Todo componente debe verse bien en tema claro y oscuro.
 - Un solo color de acción (verde `#58C481`). `#58C481` **no** se usa como texto sobre fondo claro; para texto verde, `--link`.
@@ -214,7 +215,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 - Tareas en cada estado y en cada etiqueta de PR (Pendiente, Creado, Con conflictos, Fusionado, Cerrado), tareas con y sin `requiere_supervision`, devueltas con observaciones (con nota), vencidas, sin asignar, una esperando supervisión hace más de 3 días, una reabierta, y un proyecto con más de 5 tareas terminadas (para la regla de "5 más recientes").
 - Postulaciones en cada estado, con puntajes variados, una con la marca "Requiere revisión manual" por criterio obligatorio y otra por banda ambigua (50–69).
 - Notificaciones y eventos de historial coherentes con los datos (el historial es la fuente de varios indicadores, así que la semilla debe generar eventos reales, no solo estados finales).
-- Un caso de error de PR preparado ("rama inexistente" o "GitHub no disponible").
+- Un caso de error de PR preparado: la rama de ejemplo «rama inexistente» (`feature/<código>-rama-eliminada`), que aparece en la lista pero GitHub rechaza. Las ramas de ejemplo son `feature/<código>-NNN`, más `feature/<código>-con-conflictos`, que crea el PR y lo deja con conflictos.
 - Acceso rápido por rol: "Entrar como Administrador / Supervisor / Practicante" con un aviso discreto "Prototipo: autenticación simulada".
 
 ---
@@ -223,7 +224,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 
 **Cómo leer cada fase:** *Objetivo* · *Pasos* (cada uno se hace con el ciclo de la sección 2.1) · *Listo cuando* (criterio de terminado, incluye pruebas) · *Lee de la propuesta*. No se pasa a la fase siguiente sin cumplir el "Listo cuando" y sin OK de los autores.
 
-> **Dependencias:** 0 → 1 → 2 → 3 → 4 → 5/6/7 → 8. Las fases 1–2 (lógica y datos) y 3–4 (interfaz base) pueden hacerse **en paralelo por dos personas** una vez terminada la Fase 0 y acordados los tipos de `domain/`.
+> **Dependencias:** 0 → 1 → 2 → 3 → 4 → 5/6/7 → 8. Las fases 1–2 (lógica y datos) y 3–4 (interfaz base) se avanzan en el orden de las fases, con un solo agente.
 
 ---
 
@@ -256,24 +257,27 @@ La semilla **debe incluir casos para poder demostrar todo**:
 
 **Pasos**
 1. **Tipos y enumeraciones** de todas las entidades (propuesta §11). Mostrar y acordar nombres antes de seguir.
-2. **Permisos** por rol (la matriz de §4 convertida en una función `puede(rol, accion, contexto)`).
+2. **Permisos** por rol (la matriz de §4 convertida en una función `puede(usuario, accion, contexto)`). Recibe el usuario completo porque el rol solo no alcanza para "el responsable" o "sus proyectos". Devuelve un resultado con el código de denegación y si exige motivo o nota. Decide solo **quién** puede (rol, alcance, identidad, usuario activo); no mira el estado de la tarea, eso es de los pasos 3 a 5. Única excepción: un proyecto FINALIZADO es de solo lectura para las acciones que cambian tareas (§6.8). En un proyecto FINALIZADO nadie (Administrador o Supervisor) ejecuta acciones que cambien tareas; la vía es reactivar el proyecto. La guarda NO bloquea editar datos del proyecto, que siguen su fila de la matriz: reunión, enlaces y rama base (Administrador y Supervisor); descripción, fechas y repositorio (solo Administrador). El código del proyecto se define al crearlo y no se edita nunca.
 3. **Transiciones de tarea** (regla 1 de la sección 5): función única `transicionesDisponibles(tarea, usuario, proyecto)` y `puedeTransicionar(...)`, incluyendo condiciones (supervisión, pausa, motivo/nota obligatorios).
-4. **Reglas de edición de tarea y de opciones** (`requiere_supervision`, `requiere_pr`).
+4. **Reglas de edición de tarea y de opciones** (`requiere_supervision`, `requiere_pr`) y eliminación de tarea DISPONIBLE sin PR.
 5. **Máquina del estado del PR** (tabla de §7.4, incluyendo recálculo al devolver/reabrir y "No requiere PR").
-6. **Generación de ID legible** (`CODIGO-NNN`, número correlativo no reutilizable).
-7. **Puntaje de postulaciones:** cálculo por bloques (área y especialidad), proporción, marca de revisión manual (criterio obligatorio no cumplido o banda ambigua).
+6. **Generación de ID legible** (`CODIGO-NNN`, número correlativo no reutilizable, mínimo 3 dígitos y sin tope): validación del código del proyecto (3 a 5 caracteres, solo mayúsculas A-Z y dígitos, único contra la lista de códigos de todos los proyectos que entrega el servicio), siguiente número a partir de `ultimo_numero_tarea` sin modificarlo, y formato del ID.
+7. **Puntaje de postulaciones:** cálculo por bloques (área y especialidad) con los criterios activos de cada bloque (cumplido = peso completo; no cumplido = 0), proporción y banda recibidas por parámetro, nota final redondeada al entero (mitades hacia arriba) y marca de revisión manual (criterio obligatorio no cumplido o nota redondeada dentro de la banda, extremos incluidos). Errores explícitos si un bloque no tiene criterios activos, si un peso no es entero mayor que 0, si los pesos no suman 100, si falta el juicio de un criterio o si la proporción o la banda no son válidas. No genera la justificación (Fase 2).
 8. **Reglas de insights** (las 7, con umbrales como parámetros) y su filtrado por alcance (admin vs supervisor).
-9. **Indicadores:** avance, tiempo de ciclo, espera de supervisión, tasa de devolución, última actividad, días esperando, veces devuelta, carga.
-10. **Reglas de ciclo de vida:** finalizar práctica (qué se libera), finalizar proyecto (bloqueo si hay ESPERANDO_SUPERVISION), desactivar supervisor (bloqueo con proyectos activos), fecha de fin prevista (ingreso + duración), aviso previo, vencimiento.
+9. **Indicadores:** avance (terminadas sobre el total), tiempo de ciclo neto, espera de supervisión por envío respondido, tasa de devolución (tareas con un envío devuelto sobre tareas enviadas en el periodo), última actividad, días esperando, veces devuelta y carga. Reciben ahora por parámetro; el periodo es de calendario en hora de Perú, de 1 a 365 días; sin datos devuelven null; y el alcance sale de puede('VER_REPORTES') (el Supervisor, solo sus proyectos y sin postulaciones ni área). Las funciones sueltas (días esperando, veces devuelta, carga, última actividad) las reutilizan otros módulos y las reglas de insights.
+10. **Reglas de ciclo de vida:** finalizar práctica (da baja a las asignaciones vigentes y libera las tareas EN_PROGRESO; las ESPERANDO_SUPERVISION se quedan), finalizar proyecto (bloqueado si hay tareas ESPERANDO_SUPERVISION; libera las EN_PROGRESO y fija la fecha real; no cierra las asignaciones), desactivar supervisor (bloqueado si tiene proyectos activos o en pausa, con la cantidad), asignar, quitar y cambiar de supervisor (bloqueados en un proyecto FINALIZADO por decisión de los autores; esa guarda vive en el ciclo de vida y no en puede()), fecha de fin prevista (ingreso + 1 a 24 meses, con el último día del mes si el destino es más corto), aviso previo (1 a 365 días) y vencimiento.
 
 **Pruebas obligatorias (casos mínimos)**
 - Matriz completa de transiciones: **cada combinación estado × rol × condición**, tanto la permitida como las prohibidas (por ejemplo, un practicante no puede aprobar su propia tarea; no se salta de DISPONIBLE a TERMINADA; no se envía a supervisión una tarea sin `requiere_supervision`).
 - Tomar una tarea en un proyecto EN_PAUSA → rechazada.
-- Motivo/nota faltante cuando es obligatorio → rechazada.
-- Puntaje: el ejemplo 80/90 → 86; pesos que no suman 100; criterio obligatorio incumplido → marca; puntaje 50, 69, 49 y 70 en los bordes de la banda.
+- Motivo o nota obligatorios: vacío o solo espacios → rechazada (TEXTO_OBLIGATORIO); si todavía no se escribió, la acción queda pendiente de texto y devuelve qué texto exige (el servicio la rechaza si falta).
+- Puntaje: el ejemplo 80/90 → 86; redondeo (86,4 → 86; 69,5 → 70) y cálculo con enteros, sin coma flotante; pesos que no suman 100 y bloque sin criterios activos; criterio obligatorio incumplido → marca, sin anular el bloque; puntaje 49, 50, 69 y 70 en los bordes de la banda; banda y proporción por parámetro.
 - Insights: justo en el umbral y un valor por debajo; reaparición de un insight revisado (empeora o 7 días).
-- Permisos: cada fila de la matriz de §4 para cada rol.
-- Generación de IDs: número eliminado no se reutiliza.
+- Permisos: cada fila de la matriz de §4 para cada rol; alcance (supervisor ajeno, practicante sin asignación o con fecha_baja, responsable vs. otro practicante); proyecto FINALIZADO (acciones de tareas denegadas a todos; editar reunión, enlaces y rama base permitido); usuario INACTIVO.
+- Generación de IDs: número eliminado no se reutiliza; relleno y bordes del formato (1 → `001`, 999 → `999`, 1000 → `1000`, sin tope); código de proyecto inválido (vacío, longitud 2 y 6, minúsculas, caracteres fuera de A-Z y 0-9, espacios alrededor) y duplicado (los finalizados cuentan), con el formato comprobado antes que el duplicado; `ultimo_numero_tarea` inválido (negativo, decimal, `NaN`).
+
+- Indicadores: bordes del periodo (el primer instante y ahora entran), hora de Perú, tiempo de ciclo con liberar y reabrir, tasa de devolución con envíos sin respuesta y con devoluciones fuera del periodo, tareas eliminadas, alcance por rol (Supervisor ajeno, Practicante, usuario INACTIVO) y que el resultado no traiga datos de postulaciones ni de área.
+- Ciclo de vida: cada acción por rol, alcance e INACTIVO; motivo o nota vacío; proyecto FINALIZADO; el orden de comprobación; los efectos (qué tareas y asignaciones se tocan, y que no se modifican los datos de entrada); y las fechas: fin de mes, año bisiesto, cambio de año, hora de Perú, y los bordes del aviso y del vencimiento.
 
 **Listo cuando:** todas las pruebas pasan; `domain/` no importa React ni `data/`; los autores revisaron los tipos.
 
@@ -290,13 +294,13 @@ La semilla **debe incluir casos para poder demostrar todo**:
 2. **Semilla** según la sección 8, generada por funciones con fechas relativas a hoy. Debe generar también los eventos de historial.
 3. **Restablecer datos de demostración.**
 4. **Utilidades de `services/`:** registrar evento, crear notificación (respetando "no notificar la acción propia"), simular demora, resultado de éxito/error estándar.
-5. **Servicios de tareas** (crear, editar, tomar, liberar, enviar a supervisión, terminar, aprobar, devolver, reabrir, eliminar, cambiar opciones). **Primero estos**, porque son el corazón.
-6. **Servicios de Pull Request** (crear con ramas de ejemplo, caso de error preparado, detectar PR existente, cerrar, "No requiere PR", recálculo).
+5. **Servicios de tareas** (crear, editar, tomar, liberar, enviar a supervisión, terminar, aprobar, devolver, reabrir, eliminar, cambiar opciones: «Requiere supervisión», «Requiere PR» y «No requiere PR»). **Primero estos**, porque son el corazón. Crear una tarea usa `siguienteNumeroTarea` y guarda `ultimo_numero_tarea` y el `numero` de la tarea en una sola operación.
+6. **Servicios de Pull Request** (listar ramas de ejemplo, crear con ramas de ejemplo, caso de error preparado, detectar PR existente, cerrar, recálculo). «No requiere PR» se hace en el paso 5, con las demás opciones de la tarea.
 7. **Servicios de postulaciones** (evaluación simulada, aprobar —crea practicante con contraseña temporal—, rechazar, reconsiderar, criterios, áreas y especialidades).
 8. **Servicios de practicantes y supervisores** (asignar, quitar, finalizar práctica, reactivar, restablecer contraseña, crear supervisor, editar, reasignar proyectos, desactivar).
-9. **Servicios de proyectos** (crear, editar, cambiar supervisor, pausar, reanudar, finalizar, reactivar, reunión, enlaces, rama base).
+9. **Servicios de proyectos** (crear, editar, cambiar supervisor, pausar, reanudar, finalizar, reactivar, reunión, enlaces, rama base). El servicio de crear proyecto valida el código con `validarCodigoProyecto`, pasando los códigos de todos los proyectos (también los finalizados); el servicio de editar proyecto rechaza cualquier cambio del código.
 10. **Servicios de cuenta** (perfil, cambiar contraseña, marcar insight revisado, notificar desde insight, marcar notificaciones leídas, configuración).
-11. **Consultas con alcance por rol:** funciones que devuelven "lo que este usuario puede ver" (proyectos, tareas, practicantes, insights). El alcance se aplica **aquí**, no en las pantallas.
+11. **Consultas con alcance por rol:** funciones que devuelven "lo que este usuario puede ver" (proyectos, tareas, practicantes, supervisores, postulaciones, criterios, Configuración, insights, indicadores, historial, notificaciones y los tres resúmenes de entrada). El alcance se aplica **aquí**, no en las pantallas.
 
 **Pruebas obligatorias**
 - Por cada servicio: caso exitoso, caso sin permiso, caso de datos inválidos y caso de dato inexistente. Verificar que cada acción exitosa deja su **evento de historial** y sus **notificaciones** correctas.
@@ -339,7 +343,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 3. **Tarjeta de métrica** y **tarjeta de proyecto** (con variante atenuada para "anteriores").
 4. **Línea de tiempo** (alimentada por eventos del historial).
 5. **Tablero Kanban** (4 columnas, tarjetas sin botones de acción, columna "Terminada" con las 5 más recientes y "Ver todas las terminadas", filtro "Solo mis tareas").
-6. **Detalle de tarea** (componente compartido): estado, responsable, descripción, fecha límite, opciones, datos del PR, observaciones, línea de tiempo y **los botones que `domain/` permita** para el usuario y la tarea. Solo lectura cuando no tiene permiso.
+6. **Detalle de tarea** (componente compartido): estado, responsable, descripción, fecha límite, opciones, datos del PR, observaciones, línea de tiempo y **los botones que `domain/` permita** para el usuario y la tarea. Solo lectura cuando no tiene permiso. La línea de tiempo se muestra en cualquier detalle de tarea que el usuario pueda abrir, incluso en solo lectura. «Lo suyo» (matriz, Historial) se aplica a los perfiles y a «mi actividad» del resumen del proyecto.
 7. **Modal "Crear Pull Request"** (título, descripción, rama de trabajo con buscador, rama base fija; estado "Creando…"; error que no cierra la ventana) y modal de cerrar PR.
 8. **Formulario de tarea** (crear/editar) con Zod.
 9. **Notificaciones:** campana con las últimas 8, "marcar todas", "ver todas" con pestañas, enlace desactivado si el elemento ya no existe.
@@ -363,7 +367,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 | **5.1 Postulaciones** | Abre en "Pendientes"; orden por puntaje; evaluación en 2 bloques con desglose; nota fija "el puntaje es una ayuda"; "Analizando…" al evaluar; Aprobar (crea practicante, muestra la contraseña temporal una sola vez), Rechazar (motivo), Reconsiderar (nota); sub-sección de criterios, áreas y especialidades (pesos suman 100; no se borra, se desactiva; no recalcula evaluaciones pasadas). Aviso sobre uso del CV. | §5.1, §10.1 |
 | **5.2 Practicantes** | Sin botón "Nuevo practicante"; atajo "Asignar a proyecto" en "Sin proyecto"; finalizar con aviso de tareas a liberar; reactivar; fecha de fin y aviso previo. | §5.2 |
 | **5.3 Supervisores** | "Nuevo supervisor"; reasignar proyectos; no desactivar con proyectos activos (mensaje con cuántos). | §5.3 |
-| **5.4 Proyectos** | Código único e inmutable; repositorio y rama base obligatorios; reunión opcional; detalle con Resumen, Tablero y Equipo; pausar/reanudar/finalizar/reactivar con nota; finalizar bloqueado con tareas esperando supervisión. | §5.4 |
+| **5.4 Proyectos** | Código único (entre todos los proyectos, también los finalizados) e inmutable, de 3 a 5 mayúsculas o dígitos; repositorio y rama base obligatorios; reunión opcional; detalle con Resumen, Tablero y Equipo; pausar/reanudar/finalizar/reactivar con nota; finalizar bloqueado con tareas esperando supervisión. | §5.4 |
 | **5.5 Tareas** | Vista transversal con filtros; ID legible; sin botones de decisión en las filas. | §5.5, §6.7 |
 | **5.6 Reportes** | Insights (7 reglas, ver detalle, marcar revisado, notificar) e Indicadores (selector de periodo, tablas por proyecto y por practicante, gráfico por área). | §5.6 |
 | **5.7 Historial** | Filtros, panel de detalle con valor anterior y nuevo, solo lectura. | §5.7 |
@@ -441,13 +445,10 @@ El agente no tiene memoria entre sesiones; estos archivos sí.
 
 - **Ramas:** `main` es la versión estable y demostrable (solo recibe código de `development` al cerrar una fase). `development` es la rama de integración y pruebas. Cada paso o módulo se trabaja en una rama propia creada desde `development`: `feat/fase2-servicios-tareas`, `feat/admin-postulaciones`, `fix/...`, `test/...`.
 - **Commits:** una unidad lógica por commit; mensajes con `feat:`, `fix:`, `chore:`, `test:`, `docs:`, `refactor:`. Antes de cada commit, el agente lista los archivos que entrarán y confirma que no hay secretos ni archivos locales.
-- **Integración:** cada rama de trabajo se une a `development` mediante un Pull Request revisado por **la otra persona** (es la misma práctica que el sistema promueve; vale la pena vivirla), con las pruebas pasando. `development` se une a `main` solo cuando una fase cumple su "Listo cuando" y ambas personas lo confirman. Se etiqueta el cierre de fase en `main` (por ejemplo, `fase-2-completa`).
-- **División sugerida del trabajo en paralelo** (se puede acordar otra):
-  - Persona A: Fases 1 y 2 (`domain/`, `data/`, `services/`).
-  - Persona B: Fases 3 y 4 (acceso, layout, componentes), usando datos de ejemplo mínimos hasta que A entregue los servicios.
-  - Desde la Fase 5, repartir por módulo o por panel; antes de empezar, acordar qué componentes de `compartido/` se tocan para evitar choques.
-- **Contrato entre ambas personas:** los tipos de `domain/` (Fase 1, paso 1) se acuerdan juntos y **no se cambian sin avisar**, porque todo depende de ellos.
-- Si dos personas usan agentes de IA distintos, ambos leen este mismo archivo y los mismos `PROGRESO.md` y `DECISIONES.md` (versionados en el repositorio).
+- **Integración:** cada rama de trabajo se une a `development` mediante un Pull Request que revisan **ambos autores juntos** antes de fusionarlo (trabajan con un solo agente y avanzan una sola vez, así que no hay «la otra persona»), con las pruebas pasando. `development` se une a `main` solo cuando una fase cumple su "Listo cuando" y ambas personas lo confirman. Se etiqueta el cierre de fase en `main` (por ejemplo, `fase-2-completa`).
+- **Forma de trabajo:** Gabriel y Roxana trabajan juntos con un solo agente (Claude Code) y avanzan una sola vez, por fases: una sesión por fase y una parada por paso (el agente propone, esperan el OK, implementa con pruebas, verifica, muestra el diff y se detiene; los autores hacen el commit y el PR). Ya no hay división Persona A / Persona B. Desde la Fase 5 se avanza módulo por módulo, en orden.
+- **Contrato de tipos:** los tipos de `domain/` (Fase 1, paso 1) se acuerdan entre los autores y **no se cambian sin avisar**, porque todo depende de ellos.
+- El agente no tiene memoria entre sesiones: lee este archivo, `CLAUDE.md`, `PROGRESO.md` y `DECISIONES.md` (versionados en el repositorio) al empezar cada sesión.
 
 ---
 

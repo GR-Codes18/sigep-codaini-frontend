@@ -1,0 +1,336 @@
+/**
+ * Barril de `domain/`: tipos, enumeraciones y constantes compartidas.
+ */
+
+export type { Fecha, FechaHora, Hora, Id, ReferenciaElemento } from './comunes';
+
+export {
+  ACCIONES_POR_CATEGORIA,
+  BLOQUES_CRITERIO,
+  DIAS_SEMANA,
+  ESTADOS_POSTULACION,
+  ESTADOS_PR,
+  ESTADOS_PRACTICANTE,
+  ESTADOS_PROYECTO,
+  ESTADOS_TAREA,
+  ESTADOS_USUARIO,
+  ROLES,
+  SEVERIDADES,
+  TIPOS_CRITERIO,
+  TIPOS_ELEMENTO,
+  TIPOS_NOTIFICACION,
+  TIPOS_REGLA_INSIGHT,
+} from './enumeraciones';
+
+export type {
+  BloqueCriterio,
+  CategoriaEvento,
+  DiaSemana,
+  EstadoPostulacion,
+  EstadoPracticante,
+  EstadoProyecto,
+  EstadoPR,
+  EstadoTarea,
+  EstadoUsuario,
+  Rol,
+  Severidad,
+  TipoAccionHistorial,
+  TipoCriterio,
+  TipoElemento,
+  TipoNotificacion,
+  TipoReglaInsight,
+} from './enumeraciones';
+
+export type { Practicante, Supervisor, Usuario } from './usuarios';
+export type { Asignacion, EnlaceProyecto, Proyecto } from './proyectos';
+export type { Tarea } from './tareas';
+export type {
+  ArchivoCV,
+  AreaTecnica,
+  CriterioEvaluacion,
+  Especialidad,
+  PostulacionEvaluacion,
+  PostulacionEvaluacionDetalle,
+  Postulante,
+} from './postulaciones';
+export type { AutorEvento, CambioRegistrado, ElementoAfectado, EventoHistorial } from './historial';
+export type { Notificacion } from './notificaciones';
+export type { Insight, InsightRevision } from './insights';
+export { CATALOGO_PARAMETROS, SECCIONES_CONFIGURACION } from './configuracion';
+export type {
+  ClaveParametro,
+  ParametroCatalogo,
+  ParametroConfiguracion,
+  SeccionConfiguracion,
+  ValorParametro,
+} from './configuracion';
+export {
+  CODIGOS_CONFIGURACION,
+  clavesDeSeccion,
+  validarSeccionConfiguracion,
+} from './configuracionValidacion';
+export type {
+  CampoConfiguracion,
+  CodigoConfiguracion,
+  ErrorConfiguracion,
+  ResultadoConfiguracion,
+  ValoresConfiguracion,
+} from './configuracionValidacion';
+export {
+  ACCIONES_PERMISO,
+  AMBITO_POR_ACCION,
+  AMBITOS_PERMISO,
+  CODIGOS_DENEGACION,
+  REGLAS_INSIGHT_VISIBLES,
+  insightEnAlcance,
+  puede,
+  puedeEnRol,
+} from './permisos';
+export type {
+  AccionPermiso,
+  AmbitoPermiso,
+  CodigoDenegacion,
+  ContextoPorAccion,
+  ResultadoPermiso,
+  SolicitudPermiso,
+  TextoExigido,
+} from './permisos';
+
+export {
+  ACCIONES_TRANSICION,
+  CODIGOS_TRANSICION,
+  TEXTO_OBLIGATORIO,
+  TRANSICIONES_TAREA,
+  devolucionVigente,
+  puedeTransicionar,
+  transicionesDisponibles,
+  validarTexto,
+} from './transiciones';
+export type {
+  AccionTransicion,
+  CodigoTransicion,
+  CodigoTransicionPropio,
+  ContextoTransicion,
+  DefinicionTransicion,
+  ResultadoTransicion,
+  TextoTransicion,
+  TransicionDisponible,
+} from './transiciones';
+
+export {
+  CODIGOS_EDICION,
+  puedeCambiarRequierePR,
+  puedeCambiarRequiereSupervision,
+  puedeEditarDatosTarea,
+  puedeEliminarTarea,
+  tuvoPullRequest,
+} from './edicionTarea';
+export type { CodigoEdicion, CodigoEdicionPropio, ResultadoEdicion } from './edicionTarea';
+
+export {
+  CODIGOS_PR,
+  etiquetaPRVisible,
+  necesitaConsultaGitHub,
+  puedeCerrarPullRequest,
+  puedeCrearPullRequest,
+  siguienteEstadoPR,
+} from './estadoPR';
+export type {
+  CodigoAccionPR,
+  CodigoEventoPR,
+  CodigoPRPropio,
+  ConsultaGitHub,
+  EventoPR,
+  ResultadoAccionPR,
+  ResultadoCreacionPR,
+  ResultadoEventoPR,
+  TareaPR,
+} from './estadoPR';
+
+export {
+  CODIGO_PROYECTO_MAX,
+  CODIGO_PROYECTO_MIN,
+  CODIGOS_ID_LEGIBLE,
+  DIGITOS_MINIMOS_NUMERO,
+  formatearIdLegible,
+  siguienteNumeroTarea,
+  validarCodigoProyecto,
+} from './idLegible';
+export type {
+  CodigoIdLegible,
+  ResultadoCodigoProyecto,
+  ResultadoIdLegible,
+  ResultadoSiguienteNumero,
+} from './idLegible';
+
+export {
+  ACCIONES_DECISION_POSTULACION,
+  CODIGOS_DECISION_POSTULACION,
+  TRANSICIONES_POSTULACION,
+  decisionesDisponibles,
+  puedeDecidirPostulacion,
+} from './decisionPostulacion';
+export type {
+  AccionDecisionPostulacion,
+  CodigoDecisionPostulacion,
+  ResultadoDecisionPostulacion,
+  TransicionPostulacion,
+} from './decisionPostulacion';
+
+export {
+  ACCIONES_ESTADO_PROYECTO,
+  CODIGOS_ESTADO_PROYECTO,
+  accionesDeEstadoDisponibles,
+  puedePausarProyecto,
+  puedeReactivarProyecto,
+  puedeReanudarProyecto,
+} from './estadoProyecto';
+export type {
+  AccionEstadoProyecto,
+  CodigoEstadoProyecto,
+  CodigoEstadoProyectoPropio,
+  ErrorEstadoProyecto,
+  ResultadoEstadoProyecto,
+} from './estadoProyecto';
+
+export { CODIGOS_REACTIVACION, reactivarPractica, reactivarSupervisor } from './reactivacion';
+export type {
+  CodigoReactivacion,
+  CodigoReactivacionPropio,
+  ErrorReactivacion,
+  ResultadoReactivacion,
+} from './reactivacion';
+
+export {
+  CODIGOS_BLOQUE_CRITERIOS,
+  PESO_TOTAL_BLOQUE,
+  sumaPesosActivos,
+  validarBloqueCriterios,
+} from './criteriosBloque';
+export type { CodigoBloqueCriterios, ResultadoBloqueCriterios } from './criteriosBloque';
+
+export { CODIGOS_PUNTAJE, MOTIVOS_REVISION, calcularPuntaje } from './puntaje';
+export type {
+  BandaAmbigua,
+  CodigoPuntaje,
+  DetallePuntaje,
+  EntradaPuntaje,
+  JuicioCriterio,
+  MotivoRevision,
+  ProporcionNota,
+  ResultadoPuntaje,
+} from './puntaje';
+
+export {
+  CODIGOS_INSIGHTS,
+  DESFASE_ZONA_HORARIA_MS,
+  DIAS_REAPARICION_INSIGHT,
+  aplicarRevisiones,
+  calcularInsights,
+  estaVencida,
+  filtrarInsightsPorAlcance,
+  hoyEn,
+  insightsParaUsuario,
+  ordenarInsights,
+  validarUmbrales,
+} from './reglasInsights';
+export type {
+  ClaveUmbralInsight,
+  CodigoInsights,
+  DatosInsights,
+  ErrorUmbral,
+  ResultadoInsights,
+  UmbralesInsight,
+} from './reglasInsights';
+
+export {
+  CODIGOS_INDICADORES,
+  DIAS_PERIODO_MAXIMO,
+  DIAS_PERIODO_PREDETERMINADO,
+  avanceProyecto,
+  cargaDePracticante,
+  diasEsperando,
+  enviosASupervision,
+  indicadoresParaUsuario,
+  instanteUltimoEnvio,
+  proyectosDeCarga,
+  tiempoCicloMs,
+  ultimaActividadDeProyecto,
+  ultimaActividadDeUsuario,
+  vecesDevuelta,
+} from './indicadores';
+export type {
+  CodigoIndicadores,
+  DatosIndicadores,
+  EnvioSupervision,
+  FiltroIndicadores,
+  IndicadoresPracticante,
+  IndicadoresProyecto,
+  PeriodoIndicadores,
+  Proporcion,
+  ResultadoIndicadores,
+  ResumenIndicadores,
+} from './indicadores';
+
+export {
+  AVISO_MAXIMO_DIAS,
+  CODIGOS_PRACTICA,
+  DURACION_MAXIMA_MESES,
+  SITUACIONES_FIN_PRACTICA,
+  fechaFinPrevista,
+  situacionFinPractica,
+} from './practicas';
+export type {
+  CodigoPractica,
+  ErrorPractica,
+  ResultadoFechaFin,
+  ResultadoSituacionFin,
+  SituacionFinPractica,
+} from './practicas';
+
+export {
+  CODIGOS_CICLO_VIDA,
+  desactivarSupervisor,
+  finalizarPractica,
+  finalizarProyecto,
+  puedeAsignarPracticante,
+  puedeCambiarSupervisor,
+  puedeQuitarPracticante,
+} from './cicloVida';
+export type {
+  CodigoCicloVida,
+  CodigoCicloVidaPropio,
+  DatosFinalizarPractica,
+  EfectosFinalizarPractica,
+  EfectosFinalizarProyecto,
+  EfectosQuitarPracticante,
+  ErrorCicloVida,
+  ResultadoFinalizarPractica,
+  ResultadoFinalizarProyecto,
+  ResultadoQuitarPracticante,
+  ResultadoSimple,
+} from './cicloVida';
+
+export { ACCIONES_TAREA_ADICIONALES, accionesDeTarea } from './accionesTarea';
+export type { AccionDeTarea, AccionDisponible, AccionTareaAdicional } from './accionesTarea';
+
+export {
+  TERMINADAS_EN_TABLERO,
+  observacionDevolucionVigente,
+  ordenarReuniones,
+  ordenarTareasEnCurso,
+  ordenarTerminadas,
+  prPorAtender,
+  proximaReunion,
+  situacionPracticante,
+  terminadasRecientes,
+} from './consultas';
+export type { ReunionProxima, SituacionPracticante, TerminadasRecientes } from './consultas';
+
+export { indicadoresDePostulaciones } from './indicadoresPostulaciones';
+export type {
+  DatosIndicadoresPostulaciones,
+  IndicadoresPostulaciones,
+  IndicadoresPostulacionesArea,
+  PeriodoPostulaciones,
+} from './indicadoresPostulaciones';

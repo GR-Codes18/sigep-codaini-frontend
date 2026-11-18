@@ -112,7 +112,7 @@ La matriz está completa para los tres roles. Cada regla se explica en las secci
 | **Reabrir una tarea terminada**                                                  | Sí (con nota)         | Sí (con nota)         | No                                       |
 | **Eliminar una tarea disponible sin Pull Request**                               | Sí (con motivo)       | Sí (con motivo)       | No                                       |
 | **Cambiar “Requiere supervisión”**                                               | Sí                    | Sí                    | No                                       |
-| **Activar o desactivar “Requiere PR”**                                           | Sí (si aún no hay PR) | Sí (si aún no hay PR) | Solo desactivar, con motivo              |
+| **Activar o desactivar “Requiere PR”**                                           | Sí (si aún no hay PR) | Sí (si aún no hay PR) | Solo desactivar, con motivo (si aún no hay PR)              |
 | **Crear un Pull Request**                                                        | No                    | No                    | Sí (el responsable)                      |
 | **Cerrar un Pull Request**                                                       | Sí (con motivo)       | Sí (con motivo)       | Sí (el responsable, con motivo)          |
 | **Ver el detalle de tareas ajenas**                                              | Sí                    | Sí                    | Solo lectura                             |
@@ -121,7 +121,7 @@ La matriz está completa para los tres roles. Cada regla se explica en las secci
 
 | **Acción**                                                                     | **Administrador** | **Supervisor**                                         | **Practicante**                                           |
 |--------------------------------------------------------------------------------|-------------------|--------------------------------------------------------|-----------------------------------------------------------|
-| **Crear proyectos y editar nombre, código, descripción, fechas y repositorio** | Sí                | No                                                     | No                                                        |
+| **Crear proyectos (definiendo su código) y editar nombre, descripción, fechas y repositorio.** | Sí                | No                                                     | No                                                        |
 | **Cambiar la rama base**                                                       | Sí                | Sí                                                     | No                                                        |
 | **Definir la reunión semanal**                                                 | Sí                | Sí                                                     | No                                                        |
 | **Gestionar enlaces útiles**                                                   | Sí                | Sí                                                     | No                                                        |
@@ -137,6 +137,9 @@ La matriz está completa para los tres roles. Cada regla se explica en las secci
 | **Acción**                                                    | **Administrador**       | **Supervisor**           | **Practicante**                                          |
 |---------------------------------------------------------------|-------------------------|--------------------------|----------------------------------------------------------|
 | **Decidir postulaciones y gestionar criterios de evaluación** | Sí                      | No                       | No                                                       |
+| **Ver el listado y el detalle de las postulaciones**          | Sí                      | No                       | No                                                       |
+| **Ver el listado y el detalle de los supervisores**           | Sí                      | No                       | No                                                       |
+| **Ver el directorio completo de practicantes** (incluidos los que no tienen proyecto)               | Sí | No | No |
 | **Crear supervisores y restablecer contraseñas**              | Sí                      | No                       | No                                                       |
 | **Finalizar o reactivar una práctica**                        | Sí                      | No                       | No                                                       |
 | **Editar los datos de la práctica** (especialidad y fechas)   | Sí                      | No                       | No                                                       |
@@ -147,9 +150,9 @@ La matriz está completa para los tres roles. Cada regla se explica en las secci
 | **Acción**                                | **Administrador**                           | **Supervisor**                       | **Practicante**             |
 |-------------------------------------------|---------------------------------------------|--------------------------------------|-----------------------------|
 | **Ver Reportes**                          | Todo                                        | Solo sus proyectos                   | No                          |
-| **Marcar un insight como revisado**       | Sí                                          | Sí (independiente del Administrador) | No                          |
+| **Marcar un insight como revisado**       | Sí                                          | Sí, en las cinco reglas que ve (independiente del Administrador) | No                          |
 | **Notificar desde un insight**            | Practicante inactivo y supervisión demorada | Solo practicante inactivo            | No                          |
-| **Historial de actividad**                | Vista global                                | Líneas de tiempo de sus proyectos    | Líneas de tiempo de lo suyo |
+| **Historial de actividad**                | Vista global                                | Líneas de tiempo de sus proyectos    | Líneas de tiempo de lo suyo y de las tareas que puede abrir |
 | **Configuración y datos de demostración** | Sí                                          | No                                   | No                          |
 
 ## 5. Panel del Administrador
@@ -186,7 +189,7 @@ Es la puerta de entrada de los practicantes y reemplaza el manejo informal por W
 
 Qué muestra
 
-- **Listado** con pestañas y contador: Pendientes, Requieren revisión, Aprobadas, Rechazadas y Todas. Abre en “Pendientes”.
+- **Listado** con pestañas y contador: Pendientes, Requieren revisión, Aprobadas, Rechazadas y Todas. Abre en “Pendientes”. «Requieren revisión» son las postulaciones pendientes que tienen la marca de revisión manual.
 
 - Columnas: postulante (nombre y correo), área técnica, especialidad, fecha, puntaje de la IA (número y barra), marca de revisión manual, estado y acceso al detalle. Se ordena por puntaje de mayor a menor por defecto (es el ranking) y puede ordenarse por fecha.
 
@@ -198,11 +201,11 @@ Qué muestra
 
 Cómo se calcula el puntaje
 
-Cada postulación se evalúa en dos bloques. El primero reúne los criterios generales del área técnica (por ejemplo, nivel académico y disponibilidad) y el segundo los criterios propios de la especialidad elegida (por ejemplo, las tecnologías de Backend). Cada bloque suma 100 puntos por separado, y la nota final los combina con una proporción ajustable, inicialmente 40 % para el área y 60 % para la especialidad. Por ejemplo, con 80 puntos en el área y 90 en la especialidad, la nota final es 0,4 × 80 + 0,6 × 90 = 86. Separar los bloques evita que un postulante de Frontend sea penalizado por no conocer tecnologías de Backend.
+Cada postulación se evalúa en dos bloques. El primero reúne los criterios generales del área técnica (por ejemplo, nivel académico y disponibilidad) y el segundo los criterios propios de la especialidad elegida (por ejemplo, las tecnologías de Backend). Cada bloque suma 100 puntos por separado, y la nota final los combina con una proporción ajustable, inicialmente 40 % para el área y 60 % para la especialidad. Por ejemplo, con 80 puntos en el área y 90 en la especialidad, la nota final es 0,4 × 80 + 0,6 × 90 = 86. Separar los bloques evita que un postulante de Frontend sea penalizado por no conocer tecnologías de Backend. Cada criterio cumplido aporta su peso completo y uno no cumplido aporta 0, de modo que el puntaje de cada bloque es la suma de los pesos de sus criterios activos cumplidos. La nota final se redondea al entero más cercano, con las mitades hacia arriba (86,4 → 86; 69,5 → 70), y esa nota redondeada es la que se compara con la banda ambigua.
 
 Qué se puede hacer
 
-- **Aprobar:** pide confirmación. La postulación pasa a “Aprobada” y el sistema crea la cuenta del practicante con una contraseña temporal, que el Administrador entrega por fuera del sistema. El practicante hereda el área y la especialidad de su postulación. La asignación a un proyecto se hace después, en el módulo Practicantes o Proyectos.
+- **Aprobar:** pide confirmación. La postulación pasa a “Aprobada” y el sistema crea la cuenta del practicante con una contraseña temporal, que el Administrador entrega por fuera del sistema. El practicante hereda el área y la especialidad de su postulación. La asignación a un proyecto se hace después, en el módulo Practicantes o Proyectos. La fecha de ingreso es el día de la aprobación (hora de Perú) y la fecha de fin prevista se calcula con la duración vigente de Configuración.
 
 - **Rechazar:** exige un motivo, que queda registrado.
 
@@ -214,9 +217,9 @@ Reglas
 
 - Los estados de una postulación son tres: Pendiente, Aprobada y Rechazada.
 
-- **“Requiere revisión manual” es una marca, no un estado.** La pone la IA cuando falta un criterio obligatorio o cuando el puntaje cae en una banda ambigua (inicialmente entre 50 y 69, ajustable en Configuración). El Administrador decide siempre, con o sin marca.
+- **“Requiere revisión manual” es una marca, no un estado.** La pone la IA cuando falta un criterio obligatorio o cuando la nota final, ya redondeada, cae en una banda ambigua con ambos extremos incluidos (inicialmente entre 50 y 69, ajustable en Configuración). Un criterio obligatorio no cumplido solo pone la marca: aporta 0 puntos como cualquier criterio no cumplido, sin anular su bloque. El Administrador decide siempre, con o sin marca.
 
-- Los pesos de los criterios activos de cada bloque (área y especialidad) deben sumar 100.
+- Los pesos de los criterios activos de cada bloque (área y especialidad) son números enteros mayores que 0 y deben sumar 100. Si un bloque no tiene criterios activos o sus pesos no suman 100, el sistema no calcula el puntaje y devuelve un error.
 
 - Un criterio que ya se usó no se borra, solo se desactiva.
 
@@ -230,7 +233,7 @@ Permite seguir a cada practicante durante su ciclo (de unos 4 meses), asignarlo 
 
 Qué muestra
 
-- **Listado** con pestañas y contador: Activos, Sin proyecto, Finalizados y Todos. Abre en “Activos”.
+- **Listado** con pestañas y contador: Activos, Sin proyecto, Finalizados y Todos. Abre en “Activos”. «Activos» incluye a los practicantes «Sin proyecto» (los que no tienen un proyecto vigente sin finalizar, aunque sigan asignados a uno finalizado); «Finalizados» son los de acceso bloqueado.
 
 - Columnas: practicante (nombre y correo), área y especialidad, proyectos activos, carga (tareas “En progreso”), última actividad, fecha de fin prevista, estado y acceso al detalle. Filtros por área técnica y proyecto, y búsqueda por nombre o correo.
 
@@ -248,7 +251,7 @@ Qué se puede hacer
 
 - **Restablecer contraseña:** genera una contraseña temporal, visible una sola vez, para entregarla por fuera del sistema.
 
-- **Finalizar la práctica:** pide un motivo (término de ciclo, retiro u otro) y avisa antes de confirmar: “Tiene N tareas en progreso que serán liberadas”. Al confirmar, se bloquea su acceso, sus asignaciones reciben fecha de baja y sus tareas “En progreso” pasan a “Disponible”, dejando un registro por cada una.
+- **Finalizar la práctica:** pide un motivo (término de ciclo, retiro u otro) y avisa antes de confirmar: “Tiene N tareas en progreso que serán liberadas”. Al confirmar, se bloquea su acceso, sus asignaciones reciben fecha de baja y sus tareas “En progreso” pasan a “Disponible”, dejando un registro por cada una. Las tareas «Esperando supervisión» no se liberan: siguen su curso con el supervisor.
 
 - **Reactivar:** devuelve a un practicante finalizado a “Activo”, con una nota. Sus asignaciones antiguas no se reactivan: aparece en “Sin proyecto” y se le asigna de nuevo.
 
@@ -256,9 +259,9 @@ Reglas
 
 - Los estados son dos: Activo y Finalizado. La inactividad no es un estado: se detecta como una alerta (ver 5.6).
 
-- **La fecha de fin prevista** se propone automáticamente (ingreso más 4 meses, valor configurable) y el Administrador puede cambiarla. No cierra la práctica por sí sola.
+- **La fecha de fin prevista** se propone automáticamente (ingreso más 4 meses, valor configurable de 1 a 24 meses) y el Administrador puede cambiarla. Si el mes de destino es más corto, queda su último día (31 de octubre más 4 meses es el 28 de febrero, o el 29 en año bisiesto). No cierra la práctica por sí sola.
 
-- **Aviso previo:** 14 días antes de la fecha de fin (ajustable), el sistema notifica al practicante, a los supervisores de sus proyectos y al Administrador. Si la fecha vence sin que se finalice, aparece una alerta.
+- **Aviso previo:** 14 días antes de la fecha de fin (ajustable, de 1 a 365 días), el sistema avisa una sola vez, el día en que faltan exactamente esos días. El sistema notifica al practicante, a los supervisores de sus proyectos y al Administrador. La práctica está vencida cuando hoy es posterior a la fecha de fin; el propio día de la fecha de fin todavía no lo está. Si la fecha vence sin que se finalice, aparece una alerta.
 
 - **Asignaciones con fecha de alta y de baja.** Una asignación nunca se borra: al salir de un proyecto recibe una fecha de baja, y si el practicante vuelve, se crea una asignación nueva. Así queda el historial de quién trabajó en cada proyecto y entre qué fechas. Las tareas conservan el nombre de quien las hizo aunque ya haya salido.
 
@@ -288,7 +291,7 @@ Qué se puede hacer
 
 Reglas
 
-- Todo proyecto tiene exactamente un supervisor, por eso **no se puede desactivar a un supervisor con proyectos activos**: primero se reasignan. El sistema lo bloquea e indica cuántos proyectos tiene pendientes.
+- Todo proyecto tiene exactamente un supervisor, por eso **no se puede desactivar a un supervisor con proyectos activos o en pausa: primero se reasignan. Los proyectos finalizados no cuentan.** El sistema lo bloquea e indica cuántos proyectos tiene pendientes.
 
 - Al reasignar un proyecto, sus tareas “Esperando supervisión” pasan al nuevo supervisor, porque siguen al proyecto. El proyecto reasignado deja de aparecer en el panel del supervisor anterior, pero sus acciones pasadas siguen asociadas a su nombre.
 
@@ -306,7 +309,7 @@ Qué muestra
 
 - **Listado** con pestañas Activos, En pausa, Finalizados y Todos. Columnas: proyecto, supervisor, practicantes activos, avance (tareas terminadas sobre el total), tareas esperando supervisión, próxima reunión (o “Sin definir”), estado y acceso al detalle. Filtro por supervisor y búsqueda por nombre. Botón **“Nuevo proyecto”**.
 
-- **Datos del proyecto:** nombre, código corto (de 3 a 5 caracteres, único y que no cambia; por ejemplo PL2D), descripción, fecha de inicio y de fin prevista, supervisor, repositorio y rama base de GitHub (obligatorios), y reunión semanal (día y hora, opcionales).
+- **Datos del proyecto:** nombre, código corto (de 3 a 5 caracteres, solo letras mayúsculas de la A a la Z, sin tildes, y números; único entre todos los proyectos, también los finalizados, y que no cambia; por ejemplo PL2D), descripción, fecha de inicio y de fin prevista, supervisor, repositorio y rama base de GitHub (obligatorios; el repositorio tiene la forma https://github.com/{organización}/{repositorio}, sin «/» final ni «.git», y la rama base no lleva espacios), y reunión semanal (día y hora, opcionales).
 
 - **Detalle con tres pestañas:** “Resumen” (datos, indicadores de avance, tareas por estado, tareas vencidas, actividad reciente y enlaces útiles), “Tablero” (el tablero Kanban descrito en la sección 6) y “Equipo” (practicantes activos con su carga, y anteriores con sus fechas de alta y baja).
 
@@ -326,13 +329,13 @@ Qué se puede hacer
 
 Reglas
 
-- La reunión semanal es **opcional** al crear el proyecto, porque la organiza el Supervisor. La define el Supervisor o el Administrador y, si cambia, se notifica al equipo. Se fija por proyecto (no por supervisor) para que un supervisor con varios proyectos no concentre todas sus reuniones en un solo día. El Administrador también puede definirla para cubrir el caso de un supervisor ausente.
+- La reunión semanal es **opcional** al crear el proyecto, porque la organiza el Supervisor. La define el Supervisor o el Administrador y, si cambia, se notifica al equipo. También se puede quitar (queda «Sin definir») y entonces también se avisa al equipo. Se fija por proyecto (no por supervisor) para que un supervisor con varios proyectos no concentre todas sus reuniones en un solo día. El Administrador también puede definirla para cubrir el caso de un supervisor ausente.
 
 - Un proyecto puede crearse sin equipo, pero siempre con un supervisor activo.
 
 - **En pausa:** nadie puede tomar tareas nuevas; todo lo demás sigue igual. Quien tiene tareas en progreso puede seguir trabajándolas, y el Supervisor puede seguir aprobando o devolviendo lo que ya estaba en revisión.
 
-- **Finalizar:** se bloquea mientras haya tareas “Esperando supervisión”, porque son decisiones pendientes del supervisor. Las tareas “En progreso” se liberan automáticamente con registro, y el tablero queda en solo lectura. Las asignaciones de los practicantes no se cierran al finalizar el proyecto: si el Administrador lo reactiva, el equipo recupera su acceso. El sistema guarda la fecha real de finalización.
+- **Finalizar:** se bloquea mientras haya tareas “Esperando supervisión”, porque son decisiones pendientes del supervisor. Las tareas “En progreso” se liberan automáticamente con registro. Las asignaciones de los practicantes no se cierran al finalizar el proyecto: si el Administrador lo reactiva, el equipo recupera su acceso. El sistema guarda la fecha real de finalización. El tablero queda en solo lectura, pero los datos del proyecto (reunión, enlaces, rama base, descripción, fechas y repositorio) siguen editables según el rol. Un proyecto finalizado no admite asignar ni quitar practicantes ni cambiar de supervisor; si hace falta, se reactiva primero. Un proyecto se puede finalizar estando activo o en pausa. Reactivar un proyecto finalizado no genera aviso al equipo.
 
 - Quedan fuera sprints, prioridades, presupuesto, clientes y etiquetas, porque no forman parte del modelo.
 
@@ -346,7 +349,7 @@ Qué muestra
 
 - Columnas: ID, título, proyecto, responsable (o “Sin asignar”), estado, ícono de “Requiere supervisión”, etiqueta del Pull Request, fecha límite (en rojo si está vencida) y acceso al detalle.
 
-- **ID legible:** cada tarea se identifica con el código de su proyecto y un número correlativo (por ejemplo, PL2D-018). Sirve para nombrar la tarea en el título del Pull Request, en Discord y en las reuniones, en lugar de asignar trabajo de palabra. Un número eliminado no se reutiliza.
+- **ID legible:** cada tarea se identifica con el código de su proyecto y un número correlativo de al menos tres dígitos (por ejemplo, PL2D-018). El número no tiene tope: después de la tarea 999 sigue creciendo (PL2D-1000). Sirve para nombrar la tarea en el título del Pull Request, en Discord y en las reuniones, en lugar de asignar trabajo de palabra. Un número eliminado no se reutiliza.
 
 - **Detalle de la tarea:** estado y responsable, descripción y fecha límite, las dos opciones (supervisión y Pull Request), los datos del Pull Request (etiqueta, enlace, rama de origen y rama base), las observaciones del supervisor y la línea de tiempo de la tarea. Es un componente compartido por los tres paneles.
 
@@ -388,9 +391,17 @@ Muestra alertas automáticas, cada una como una tarjeta con su severidad (Críti
 | **Postulaciones sin decidir**   | Una postulación pendiente no recibe decisión.                                                                  | 5 días                                  | Atención              |
 | **Fin de práctica**             | Un practicante está cerca de su fecha de fin, o ya la superó sin finalizar.                                    | 14 días / vencida                       | Informativo / Crítico |
 
-*El avance esperado de un proyecto es el tiempo transcurrido sobre su duración total, según sus fechas de inicio y de fin.*
+*El avance esperado de un proyecto es el tiempo transcurrido sobre su duración total, según sus fechas de inicio y de fin. La duración incluye el día de fin y el tiempo transcurrido cuenta los días completos desde el inicio. Si el proyecto no tiene tareas, la regla no se evalúa; si su fecha de fin no es posterior a la de inicio, solo se evalúa el porcentaje de tareas vencidas.*
 
 Acciones sobre un insight: **ver el detalle** del elemento afectado; **marcar como revisado**, con una nota opcional, lo que lo saca de la lista activa (reaparece si la situación empeora o a los 7 días si sigue igual, para no perder un problema sin resolver); y **notificar** al practicante o supervisor afectado, disponible en los insights de practicante inactivo y de supervisión demorada, lo que permite pasar de la alerta a la acción sin salir del sistema. Los insights no se editan ni se borran: desaparecen cuando la condición deja de cumplirse. El estado “revisado” es independiente por persona: si el Supervisor revisa un insight, el Administrador lo sigue viendo.
+
+**Cuándo reaparece un insight revisado.** Reaparece si su severidad aumenta (por ejemplo, de Atención a Crítico) o si pasan 7 días desde la revisión y la condición sigue. Otros cambios en los datos no lo reactivan.
+
+**Fecha de detección.** Es el momento en que empezó la condición de cada regla (por ejemplo, el último día con actividad más el umbral). Donde no hay un inicio medible, se usa el momento del cálculo; en «Posible atraso» y «Carga desbalanceada» siempre es el momento del cálculo.
+
+**Cómo se mide cada regla.** Los umbrales se cumplen al alcanzarse (7 días, 20 puntos, 25 %), salvo la carga máxima, que exige superarlos («más de 3»). Los días son periodos completos de 24 horas y el día se corta a la medianoche, hora de Perú (UTC−5). La actividad de un practicante son las acciones registradas por él mismo (no las que otra persona hace sobre él), y solo se evalúa si tiene al menos un proyecto activo vigente; una asignación reciente cuenta como punto de partida. La actividad de un proyecto es cualquier evento registrado en él, y solo se evalúa si el proyecto está activo y tiene al menos un practicante asignado. Una tarea está vencida si su fecha límite ya pasó y no está terminada; el porcentaje de vencidas se calcula sobre el total de tareas del proyecto, y el posible atraso solo se evalúa en proyectos activos. La carga es la de la persona en todos sus proyectos, incluidos los que están en pausa, y su mínimo solo se dispara si alguno de sus proyectos activos tiene tareas disponibles. En «Postulaciones sin decidir», una postulación reconsiderada cuenta desde su reconsideración. En «Supervisión demorada», el plazo corre desde el último envío a supervisión y vale también con el proyecto en pausa. «Fin de práctica» se evalúa a todo practicante activo, tenga o no proyecto. El tiempo que un proyecto pasa en pausa no se descuenta.
+
+**Alcance.** Cada insight conserva los proyectos a los que se refiere (un practicante en dos proyectos lleva ambos). Así el Supervisor ve solo los de sus proyectos. Los de postulaciones no pertenecen a ningún proyecto.
 
 Pestaña “Indicadores”
 
@@ -405,6 +416,7 @@ Con selector de periodo (últimos 30 días por defecto) y filtro por proyecto. M
 - **Tasa de devolución:** tareas devueltas sobre tareas enviadas a supervisión.
 
 - **Última actividad:** la última acción registrada en el Historial.
+Cómo se mide cada indicador. El periodo son días de calendario en hora de Perú (UTC−5), incluido hoy, de 1 a 365 días. Los porcentajes se redondean al entero, los promedios de tiempo se dan en días con un decimal y, si no hay datos, se muestra «Sin datos» y no cero. Una tarea cuenta como terminada en el periodo si hoy está terminada y su fecha de término cae dentro de él; una tarea reabierta sale y vuelve. El tiempo de ciclo suma solo los tramos en que alguien tuvo la tarea tomada, hasta su fecha de término: no cuenta el tiempo sin responsable tras liberarla ni el que pasó terminada antes de reabrirse. La espera de supervisión es una muestra por cada envío ya respondido (aprobado o devuelto), contada en la fecha de la respuesta. La tasa de devolución son las tareas con al menos un envío en el periodo que fue devuelto, sobre las tareas con al menos un envío en el periodo: un envío sin respuesta cuenta en el total, una tarea devuelta varias veces cuenta una vez y el periodo se mide por la fecha del envío. El avance y la última actividad no dependen del periodo. La última actividad de una persona son sus propias acciones y la de un proyecto, cualquier evento suyo. Las tareas eliminadas no cuentan en ningún indicador. En la tabla por practicante, el tiempo de ciclo es el de las tareas que terminó él, y su tasa de devolución cuenta solo los envíos que hizo él. «Postulaciones decididas» son las aprobadas o rechazadas cuya decisión más reciente cae dentro del periodo, con los dos extremos incluidos; una postulación reconsiderada que sigue pendiente no cuenta. El «puntaje promedio por área» es el promedio del puntaje final de esas postulaciones por área técnica, con un decimal; las que no tienen evaluación cuentan como decididas pero no entran en el promedio, y sin datos se muestra «Sin datos». El gráfico de practicantes por área cuenta a los practicantes activos y, si se filtra por un proyecto, a los asignados a él.
 
 Quedan fuera la exportación de reportes, los constructores de reportes personalizados y las comparaciones de practicantes como ranking.
 
@@ -428,7 +440,7 @@ Qué se registra
 | **Evaluación**    | Criterios, áreas y especialidades creados, editados, activados o desactivados; parámetros de configuración cambiados.                                                            |
 | **Practicantes**  | Cuenta creada, datos de la práctica editados, contraseña restablecida, asignado o quitado de un proyecto, finalizado y reactivado.                                               |
 | **Supervisores**  | Cuenta creada, nombre o correo editados, contraseña restablecida, proyectos reasignados, desactivado y reactivado.                                                               |
-| **Proyectos**     | Creado, editado, supervisor cambiado, reunión definida o cambiada, repositorio o rama base cambiados, enlaces agregados o quitados, pausado, reanudado, finalizado y reactivado. |
+| **Proyectos**     | Creado, editado, supervisor cambiado, reunión definida o cambiada, repositorio o rama base cambiados, enlaces (agregados, editados o quitados), pausado, reanudado, finalizado y reactivado. |
 | **Tareas**        | Creada, editada, opciones de supervisión o de PR cambiadas, tomada, liberada, enviada a supervisión, terminada, aprobada, devuelta, reabierta y eliminada.                       |
 | **Pull Request**  | Creado, estado actualizado (conflictos, fusionado, cerrado), cerrado desde el sistema y marcado como “No requiere PR”.                                                           |
 | **Cuenta propia** | Cambios de nombre, correo y contraseña de cada persona.                                                                                                                          |
@@ -453,27 +465,32 @@ Es una pantalla de parámetros ajustables, solo para el Administrador, organizad
 
 | **Sección**                     | **Parámetro**                                                                                                                                                                                         | **Valor inicial**                               |
 |---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------|
-| **Evaluación de postulaciones** | Banda de puntaje ambiguo (el mínimo debe ser menor que el máximo)                                                                                                                                     | 50 a 69                                         |
-|                                 | Proporción de la nota entre área y especialidad (deben sumar 100)                                                                                                                                     | 40 % / 60 %                                     |
-| **Prácticas**                   | Duración predeterminada, para proponer la fecha de fin                                                                                                                                                | 4 meses                                         |
-|                                 | Días de anticipación del aviso de fin de práctica                                                                                                                                                     | 14 días                                         |
+| **Evaluación de postulaciones** | Banda de puntaje ambiguo (números enteros entre 0 y 100, el mínimo menor que el máximo; ambos extremos se incluyen en la banda)                                                                                                                                     | 50 a 69                                         |
+|                                 | Proporción de la nota entre área y especialidad (números enteros de 0 a 100 que deben sumar 100; se aceptan 100/0 y 0/100)                                                                                                                                     | 40 % / 60 %                                     |
+| **Prácticas**                   | Duración predeterminada, para proponer la fecha de fin (entero de 1 a 24 meses)                                                                                                                       | 4 meses                                         |
+|                                 | Días de anticipación del aviso de fin de práctica (entero de 1 a 365 días)                                                                                                                            | 14 días                                         |
 | **Seguimiento**                 | Umbrales de las siete reglas de insights (sección 5.6), incluida la anticipación del insight “Fin de práctica”                                                                                        | Ver tabla de la sección 5.6                     |
 | **Integraciones**               | Conexión con GitHub: estado (conectado o no), organización o cuenta conectada, fecha de la última verificación, y botones “Probar conexión” y “Reconectar”. La clave de la conexión nunca se muestra. | Diseño; en el prototipo, una tarjeta de ejemplo |
 | **Datos de demostración**       | Restablecer los datos de ejemplo a su estado original (existe solo en el prototipo)                                                                                                                   | —                                               |
 
 Las áreas técnicas y especialidades no se configuran aquí sino dentro de Postulaciones, junto a sus criterios, porque solo se usan allí. El perfil personal está en el menú del usuario, y los roles y permisos son fijos, no configurables.
 
+Nota: Cada umbral de §5.6 es un parámetro propio: inactividad (7 y 14 días), carga máxima (más de 3 tareas) y mínima (0 tareas, con tareas disponibles en el proyecto), atraso (20 puntos y 25 % vencidas), proyecto sin actividad (7 días), supervisión demorada (3 días), postulaciones sin decidir (5 días) y fin de práctica (14 días). El aviso de fin de práctica de la sección Prácticas y la anticipación del insight «Fin de práctica» son parámetros distintos aunque hoy valgan lo mismo. «Vencida» no es un parámetro: es la condición de haber superado la fecha de fin. Los parámetros se agrupan en tres secciones (Evaluación, Prácticas y Seguimiento), y cada una se puede restaurar por separado. Validación de los umbrales de Seguimiento: los días (incluida la anticipación de «Fin de práctica») son enteros desde 1; las cargas son enteros desde 0, con la mínima menor que la máxima; los puntos y el porcentaje de atraso son enteros de 1 a 100; el umbral crítico de inactividad es mayor que el de atención.
+
+Validación de Prácticas: la duración es un entero de 1 a 24 meses y el aviso es un entero de 1 a 365 días.
 ### 5.9 Dashboard
 
 Es la primera pantalla del Administrador. No calcula nada propio: resume lo que ya existe en los otros módulos, de modo que haya una sola fuente de alertas. Muestra el estado actual, sin selector de periodo ni exportación (el análisis por periodo está en Reportes).
 
-- **Cuatro tarjetas de métricas,** cada una con un enlace al módulo con el filtro ya aplicado: postulaciones pendientes (y cuántas requieren revisión manual), proyectos activos (y cuántos están en pausa), practicantes activos (y cuántos están sin proyecto) y tareas esperando supervisión (y cuántas llevan demasiado tiempo).
+- **Cuatro tarjetas de métricas,** cada una con un enlace al módulo con el filtro ya aplicado: postulaciones pendientes (y cuántas requieren revisión manual), proyectos activos (y cuántos están en pausa), practicantes activos (y cuántos están sin proyecto) y tareas esperando supervisión (y cuántas llevan el plazo de «Supervisión demorada» de Configuración, o más).
 
 - **Postulaciones pendientes:** las cinco de mayor puntaje, con nombre, área, especialidad, puntaje, marca de revisión manual y acceso al detalle.
 
-- **Alertas:** los insights vigentes (primero los críticos y luego los de atención, hasta cinco), cada uno con sus acciones. Incluyen los practicantes próximos a finalizar y los que ya superaron su fecha de fin.
+- **Alertas:** los insights vigentes que no ha revisado quien mira, de Crítico a Atención y a Informativo (y, dentro de cada severidad, los más antiguos primero), hasta cinco; los informativos, como los practicantes próximos a finalizar, entran si queda lugar. Cada uno con sus acciones. Incluyen los practicantes próximos a finalizar y los que ya superaron su fecha de fin.
 
 - **Practicantes por área:** barras con la cantidad de practicantes activos de cada área técnica.
+
+- **Por revisar, próximas reuniones y avance:** las cinco tareas que más tiempo llevan esperando supervisión, la reunión semanal de cada proyecto sin finalizar y su avance (tareas terminadas sobre el total).
 
 Si no hay alertas o postulaciones pendientes, se muestra un mensaje que lo indica. No incluye un feed de actividad reciente, porque duplicaría el Historial.
 
@@ -546,7 +563,7 @@ Ninguna acción que cambie el estado o los datos de una tarea se hace desde una 
 
 - El resto (liberar, reabrir, eliminar, cerrar el Pull Request, cambiar opciones, editar) sigue la misma regla.
 
-- Para cualquier rol, el detalle de una tarea sobre la que no tiene permiso de actuar se muestra en solo lectura, sin botones.
+- Para cualquier rol, el detalle de una tarea sobre la que no tiene permiso de actuar se muestra en solo lectura, sin botones. En ese detalle la línea de tiempo se muestra completa, también la nota de una devolución; la marca «Devuelta con observaciones» solo se muestra al Practicante en sus propias tareas.
 
 ### 6.8 Contenido del tablero
 
@@ -601,13 +618,15 @@ La etiqueta se muestra solo en tareas “Esperando supervisión” o “Terminad
 | **Evento**                                                                                             | **Resultado**                                                                                                                                                                                                                                                               |
 |--------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | La tarea llega a “Esperando supervisión” (supervisada) o a “Terminada” (sin supervisión) y requiere PR | Pendiente                                                                                                                                                                                                                                                                   |
+| Se aprueba la tarea (de “Esperando supervisión” a “Terminada”) | No cambia el estado del PR: la tarea supervisada ya había llegado al pasar a “Esperando supervisión”. Solo se recalcula al llegar de nuevo desde “En progreso” (tras devolver o reabrir). |
+| Se activa “Requiere PR” en una tarea que ya está en “Esperando supervisión” o “Terminada” y aún no tiene estado de PR | Pendiente |
 | Se crea el PR, o se detecta uno existente que está abierto                                             | Creado                                                                                                                                                                                                                                                                      |
 | Se detecta un PR existente que ya estaba fusionado                                                     | Fusionado                                                                                                                                                                                                                                                                   |
 | GitHub detecta conflictos / el practicante los resuelve                                                | Con conflictos / Creado                                                                                                                                                                                                                                                     |
 | El PR se fusiona (en GitHub)                                                                           | Fusionado                                                                                                                                                                                                                                                                   |
 | El PR se cierra sin fusionar (en GitHub o desde el sistema)                                            | Cerrado                                                                                                                                                                                                                                                                     |
 | Desde “Cerrado”, se pulsa “Crear nuevo PR”                                                             | Creado                                                                                                                                                                                                                                                                      |
-| La tarea se devuelve o se reabre                                                                       | La etiqueta se oculta y el enlace se conserva. Cuando la tarea vuelve a “Esperando supervisión” o “Terminada”, el sistema consulta GitHub y recalcula: PR abierto, Creado (o Con conflictos); fusionado, Pendiente (las correcciones van en un PR nuevo); cerrado, Cerrado. |
+| La tarea se devuelve o se reabre                                                                       | El estado del PR y el enlace se conservan, pero la etiqueta no se muestra mientras la tarea esté En progreso o Disponible. Cuando la tarea vuelve a “Esperando supervisión” o “Terminada”, el sistema consulta GitHub y recalcula: PR abierto, Creado (o Con conflictos); fusionado, Pendiente (las correcciones van en un PR nuevo); cerrado, Cerrado. |
 | El practicante marca “No requiere PR” (con motivo)                                                     | La opción “Requiere PR” se desactiva y la etiqueta desaparece                                                                                                                                                                                                               |
 
 ### 7.5 Situaciones especiales
@@ -618,7 +637,7 @@ La etiqueta se muestra solo en tareas “Esperando supervisión” o “Terminad
 
 - **No se pudo crear:** por ejemplo, rama inexistente, sin cambios respecto a la base, falta de permisos o GitHub caído. La ventana muestra el motivo, permite reintentar y la etiqueta sigue en “Pendiente”.
 
-- **Cerrar un PR desde el sistema:** si se cometió un error (rama base equivocada, PR duplicado o enfoque descartado), el practicante responsable, el Supervisor o el Administrador pueden cerrarlo desde la tarea, sin saltar a GitHub. Solo está disponible con la etiqueta “Creado” o “Con conflictos”, pide un motivo y una confirmación, y deja la etiqueta en “Cerrado” con la opción de crear otro. GitHub no permite eliminar un PR, solo cerrarlo, y un PR fusionado no se puede cerrar.
+- **Cerrar un PR desde el sistema:** si se cometió un error (rama base equivocada, PR duplicado o enfoque descartado), el practicante responsable, el Supervisor o el Administrador pueden cerrarlo desde la tarea, sin saltar a GitHub. Solo está disponible con la etiqueta “Creado” o “Con conflictos”, pide un motivo y una confirmación, y deja la etiqueta en “Cerrado” con la opción de crear otro. GitHub no permite eliminar un PR, solo cerrarlo, y un PR fusionado no se puede cerrar. Como la etiqueta solo se muestra con la tarea en “Esperando supervisión” o “Terminada”, tampoco se puede cerrar ni crear un PR mientras la tarea está devuelta o reabierta (“En progreso”): las correcciones se hacen en la misma rama y el mismo PR, y al volver a llegar la tarea se recalcula el estado (ver 7.4).
 
 - **“No requiere PR”:** hay tareas sin código (diseño, documentación) para las que un PR no tiene sentido. Todas las tareas nacen con la opción activada; el Supervisor o el Administrador pueden desactivarla al crear la tarea, y el practicante puede hacerlo después, con un motivo obligatorio que queda registrado y avisa al supervisor.
 
@@ -636,7 +655,7 @@ La etiqueta se muestra solo en tareas “Esperando supervisión” o “Terminad
 
 ### 7.7 Qué se muestra en el prototipo
 
-Como no hay servidor, el prototipo usa ramas de ejemplo, genera una URL ficticia con el formato real, incluye tareas de ejemplo en cada estado del PR y un caso de error preparado, para poder demostrar todo el flujo y sus excepciones. La sección de Integraciones de Configuración se muestra como una tarjeta de ejemplo.
+Como no hay servidor, el prototipo usa ramas de ejemplo, genera una URL ficticia con el formato real, incluye tareas de ejemplo en cada estado del PR y un caso de error preparado, para poder demostrar todo el flujo y sus excepciones. La sección de Integraciones de Configuración se muestra como una tarjeta de ejemplo. El caso de error preparado es una rama de ejemplo que ya no existe en GitHub, y otra rama de ejemplo crea el PR con conflictos.
 
 ## 8. Componentes compartidos por todos los paneles
 
@@ -661,19 +680,23 @@ Las notificaciones funcionan solo dentro del sistema (sin correo ni WhatsApp, qu
 | Reunión semanal definida o cambiada; proyecto pausado, reanudado o finalizado | Equipo del proyecto (supervisor y practicantes activos)    |
 | Práctica próxima a finalizar (14 días antes)                                  | Practicante, supervisores de sus proyectos y Administrador |
 | Práctica finalizada con tareas liberadas                                      | Supervisores de los proyectos afectados                    |
-| Botón “Notificar” desde un insight                                            | Practicante o Supervisor afectado                          |
+| Botón “Notificar” desde un insight (el aviso lleva el título y el motivo del insight, sin texto libre; el de supervisión demorada apunta a la tarea)                                            | Practicante o Supervisor afectado                          |
 
 Reglas
 
 - La persona que realizó la acción no recibe aviso de su propia acción.
 
-- Las notificaciones son privadas de su destinatario y no se borran.
+- Las notificaciones son privadas de su destinatario y no se borran. Marcarlas como leídas es una acción de cada persona sobre las suyas y no figura en la matriz de §4.
+
+- El enlace de una notificación está activo solo si el elemento existe y quien la recibe puede abrirlo; un proyecto del que la persona salió o que ya finalizó lleva a su resumen mínimo de solo lectura.
 
 - Los insights no generan notificaciones por sí solos, porque viven en Reportes y el Dashboard: una sola fuente de alertas. Tampoco se avisa cuando un PR se fusiona ni cuando se crean tareas nuevas, para no generar ruido, ni por cada postulación recibida.
 
 - Aprobar o rechazar una postulación no notifica a nadie, porque el postulante no tiene cuenta en el sistema. La contraseña temporal se entrega por fuera del sistema.
 
 - En el prototipo se ve de forma directa: al tomar y enviar una tarea como practicante, y cambiar luego al rol de supervisor, la campana ya muestra el aviso. Los avisos que dependen de un proceso programado o de GitHub se simulan con datos de ejemplo.
+
+- En las notificaciones de asignación a un proyecto o salida de él, el elemento relacionado es el proyecto, y la persona afectada es la destinataria.
 
 ### 8.2 Mi perfil
 
@@ -685,7 +708,7 @@ Está en el menú del usuario de la barra superior, para los tres roles, junto c
 | **Supervisor**    | Celular, Discord y GitHub. Su nombre y correo institucional son solo lectura: los fija el Administrador.                                                     |
 | **Administrador** | Nombre, correo y celular.                                                                                                                                    |
 
-El correo debe tener un formato válido y ser único; el celular, un formato válido; Discord y GitHub se escriben como nombre de usuario, y la disponibilidad es un número entero positivo. En un sistema real, el cambio de correo exigiría verificarlo, lo que queda como diseño. El bloque de **seguridad** permite cambiar la contraseña ingresando la actual, la nueva (mínimo 8 caracteres y distinta de la actual) y su confirmación; el cambio queda en el Historial sin guardar la contraseña. No hay foto de perfil (se usa un círculo con las iniciales), preferencias de notificación ni verificación en dos pasos.
+El correo debe tener un formato válido y ser único; el celular, un formato válido; Discord y GitHub se escriben como nombre de usuario, sin espacios y con hasta 32 y 39 caracteres respectivamente (si se dejan vacíos, el dato se quita), y la disponibilidad es un número entero positivo (o vacía). En un sistema real, el cambio de correo exigiría verificarlo, lo que queda como diseño. El bloque de **seguridad** permite cambiar la contraseña ingresando la actual, la nueva (mínimo 8 caracteres y distinta de la actual) y su confirmación; el cambio queda en el Historial sin guardar la contraseña. No hay foto de perfil (se usa un círculo con las iniciales), preferencias de notificación ni verificación en dos pasos.
 
 ### 8.3 Contraseña temporal
 
@@ -759,7 +782,7 @@ Es la vista transversal de todos los practicantes de sus proyectos. Se añadió 
 
 **Qué muestra**
 
-- **Listado en tabla** (son varias personas y conviene comparar), con pestañas **Activos** y **Anteriores** (los que ya salieron de sus proyectos, con fecha de baja). Abre en “Activos”.
+- **Listado en tabla** (son varias personas y conviene comparar), con pestañas **Activos** y **Anteriores** (los que ya salieron de sus proyectos, con fecha de baja). Abre en “Activos”. Una persona es «Activa» si tiene una asignación vigente en alguno de sus proyectos y su cuenta está activa; si salió de todos o su práctica finalizó, es «Anterior».
 
 - **Columnas:** practicante (nombre y correo), especialidad, proyectos suyos en los que participa, carga (tareas “En progreso”), tareas esperando su revisión, última actividad y acceso al detalle. Si un practicante está en dos proyectos del supervisor, aparece una sola fila con ambos, y sus tareas cuentan solo las de los proyectos de este supervisor.
 
@@ -841,7 +864,7 @@ Mismas dos pestañas que el Administrador (sección 5.6), con datos solo de sus 
 
 - Tarjetas generales: tareas terminadas, tiempo promedio de ciclo y tasa de devolución. **Sin** “postulaciones decididas” ni “puntaje promedio por área”, porque vienen de postulaciones.
 
-- Tabla por proyecto y **tabla por practicante** (solo los de sus proyectos). La tabla por practicante se mantiene aunque exista “Practicantes a cargo”, porque aporta métricas distintas (tiempo de ciclo y tasa de devolución).
+- Tabla por proyecto y **tabla por practicante.** Aparece quien tuvo una asignación a un proyecto del Supervisor que se cruza con el periodo (alta no posterior a hoy y baja vacía o desde el primer día del periodo), y sus métricas cuentan solo las tareas y eventos de esos proyectos.
 
 - No incluye el gráfico de practicantes por área, porque el Supervisor no ve el área técnica.
 
@@ -869,15 +892,15 @@ Es la primera pantalla del Supervisor. Como el del Administrador, no calcula nad
 
 - **Por revisar:** las cinco tareas que más tiempo llevan esperando su supervisión, con ID, título, proyecto, responsable, días esperando y acceso al detalle (donde decide). Es su cola de trabajo, por eso va en el lugar más visible.
 
-- **Alertas:** los insights vigentes de sus proyectos (primero críticos, luego de atención, hasta cinco), cada uno con sus acciones. Son los mismos de Reportes.
+- **Alertas:** los insights vigentes de sus proyectos (de Crítico a Atención y a Informativo, sin los que ya revisó, hasta cinco), cada uno con sus acciones. Son los mismos de Reportes.
 
-- **Próximas reuniones:** la reunión semanal de cada proyecto (día, hora y proyecto), o “Sin definir”. Es un dato propio del Supervisor, que es quien organiza las reuniones.
+- **Próximas reuniones:** la reunión semanal de cada proyecto sin finalizar (día, hora y proyecto), o “Sin definir”. Es un dato propio del Supervisor, que es quien organiza las reuniones.
 
-- **Avance de mis proyectos:** barras con el avance de cada proyecto activo (equivale al gráfico “Practicantes por área” del Administrador, que aquí no aplica).
+- **Avance de mis proyectos:** barras con el avance de cada proyecto activo o en pausa (equivale al gráfico “Practicantes por área” del Administrador, que aquí no aplica).
 
 **Qué no incluye:** selector de periodo, exportación, feed de actividad (duplicaría el historial de cada proyecto) ni postulaciones.
 
-**Reglas:** si no hay tareas por revisar o alertas, cada bloque muestra un mensaje que lo indica (“No tienes tareas esperando tu supervisión”, “No hay alertas en tus proyectos”). **Estado vacío total** (recién creado, sin proyectos): en lugar de las tarjetas, un solo mensaje: “El Administrador aún no te ha asignado proyectos”.
+**Reglas:** si no hay tareas por revisar o alertas, cada bloque muestra un mensaje que lo indica (“No tienes tareas esperando tu supervisión”, “No hay alertas en tus proyectos”). **Estado vacío total** (recién creado, sin ningún proyecto): en lugar de las tarjetas, un solo mensaje: “El Administrador aún no te ha asignado proyectos”. Con solo proyectos finalizados se muestran las tarjetas en cero.
 
 ### 9.2 Panel del Practicante
 
@@ -907,7 +930,7 @@ Principios que aplican a todo el panel
 
 - **Cada tarjeta muestra:** nombre y código con su etiqueta de estado, el supervisor, mi carga en ese proyecto (mis tareas en progreso), las tareas disponibles para tomar, la barra de avance y la próxima reunión (o “Sin definir”).
 
-- **Sección “Anteriores”:** debajo de las tarjetas activas, solo si existe alguno. Incluye los proyectos Finalizados y aquellos de los que el practicante salió (asignación con fecha de baja). Cada tarjeta se ve atenuada y muestra nombre, código, la etiqueta “Finalizado” o “Ya no participas”, el supervisor y el periodo en que participó (fecha de alta y de baja o de finalización), sin barra de avance, carga ni reunión.
+- **Sección “Anteriores”:** debajo de las tarjetas activas, solo si existe alguno. Incluye los proyectos Finalizados y aquellos de los que el practicante salió (asignación con fecha de baja). Cada tarjeta se ve atenuada y muestra nombre, código, la etiqueta “Finalizado” o “Ya no participas” (esta última si su asignación tiene fecha de baja, aunque el proyecto además esté finalizado), el supervisor y el periodo en que participó (fecha de alta y de baja o de finalización), sin barra de avance, carga ni reunión.
 
 - **Acceso bloqueado a un proyecto anterior:** el clic no abre el tablero ni el equipo, sino un **resumen mínimo de solo lectura** con los datos del proyecto, su periodo de participación y el número de tareas que terminó ahí, con un enlace a Mi historial filtrado por ese proyecto. Si el Administrador reactiva un proyecto finalizado y la asignación del practicante sigue vigente, el proyecto vuelve a la lista de activos con acceso normal.
 
@@ -983,7 +1006,7 @@ Es la primera pantalla del Practicante. Como los dashboards de los otros dos pan
 
 - **Pull Requests por atender:** sus tareas con etiqueta **Pendiente** (falta crearlo) o **Con conflictos** (hay que resolverlos). Cada fila lleva al detalle, donde crea el PR o ve el conflicto. Este bloque consulta el estado del PR (\`estado_pr\`), no el estado del Kanban, porque incluye tareas Esperando supervisión o Terminada.
 
-- **Próximas reuniones:** la reunión semanal de cada proyecto activo (día, hora y proyecto), o “Sin definir”.
+- **Próximas reuniones:** la reunión semanal de cada proyecto vigente, activo o en pausa (día, hora y proyecto), o “Sin definir”.
 
 **Qué puede hacer:** solo navegar. Todo clic lleva al detalle de la tarea o al proyecto; no hay botones de acción en el Inicio.
 
@@ -993,7 +1016,7 @@ Es la primera pantalla del Practicante. Como los dashboards de los otros dos pan
 
 - En un proyecto en pausa, sus tareas En progreso siguen apareciendo, pero sus Disponibles no cuentan.
 
-- **Estado vacío total** (sin proyectos asignados): un solo mensaje, “Aún no tienes proyectos asignados. El Administrador te asignará uno”, sin tarjetas en cero.
+- **Estado vacío total** (sin ningún proyecto vigente; quien solo sigue asignado a un proyecto finalizado también lo ve): un solo mensaje, “Aún no tienes proyectos asignados. El Administrador te asignará uno”, sin tarjetas en cero.
 
 - La franja de contraseña temporal aparece encima, como en todas las pantallas.
 
@@ -1031,27 +1054,27 @@ Entidades principales, incluidas las que soportan el ranking de CVs con IA, el t
 
 | **Entidad**                       | **Atributos principales**                                                                                                                                                                                                                                                                          | **Relaciones**                                                                                                                                                                             |
 |-----------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Postulante**                    | nombre, correo, celular, id_area_tecnica (FK), id_especialidad (FK), fecha_postulacion, CV (archivo), estado (pendiente / aprobada / rechazada)                                                                                                                                                    | 1 postulante → 0..1 usuario Practicante (al ser aprobado); 1 postulante → 0..1 PostulacionEvaluacion                                                                                       |
-| **Usuario**                       | nombre, correo (login), contraseña, rol, estado (activo / inactivo; en practicantes se presenta como “Finalizado”), debe_cambiar_contrasena                                                                                                                                                        | Tabla base; 1 usuario → 0..1 Practicante o Supervisor (detalle)                                                                                                                            |
-| **Practicante (detalle)**         | id_usuario (FK), celular, discord, cuenta_github, disponibilidad_horaria, id_area_tecnica (FK), id_especialidad (FK), fecha_ingreso, fecha_fin_prevista, id_postulante (FK, origen)                                                                                                                | N practicantes → N proyectos (vía Asignación)                                                                                                                                              |
-| **Supervisor (detalle)**          | id_usuario (FK), celular, discord, cuenta_github                                                                                                                                                                                                                                                   | 1 supervisor → N proyectos                                                                                                                                                                 |
-| **Proyecto**                      | nombre, codigo (3–5 caracteres, único), descripción, fecha_inicio, fecha_fin_prevista, **fecha_fin_real (nuevo en v6; nula hasta que se finaliza)**, estado (activo / en pausa / finalizado), dia_reunion y hora_reunion (opcionales), repositorio_url, rama_base, id_supervisor (FK)              | 1 proyecto → 1 supervisor; 1 proyecto → N practicantes (vía Asignación); 1 proyecto → N tareas y N enlaces                                                                                 |
+| **Postulante**                    | nombre, correo, celular, id_area_tecnica (FK), id_especialidad (FK), fecha_postulacion (fecha y hora), CV (nombre y enlace al archivo), estado (pendiente / aprobada / rechazada)                                                                                                                                                    | 1 postulante → 0..1 usuario Practicante (al ser aprobado); 1 postulante → 0..1 PostulacionEvaluacion                                                                                       |
+| **Usuario**                       | nombre, correo (login), celular, contraseña, rol, estado (activo / inactivo; en practicantes se presenta como **Finalizado**), debe_cambiar_contrasena, fecha_alta (fecha y hora)                                                                                                                                                        | Tabla base; 1 usuario → 0..1 Practicante o Supervisor (detalle)                                                                                                                            |
+| **Practicante (detalle)**         | id_usuario (FK), discord, cuenta_github, disponibilidad_horaria, id_area_tecnica (FK), id_especialidad (FK), fecha_ingreso, fecha_fin_prevista, id_postulante (FK, origen). Discord, cuenta de GitHub y disponibilidad nacen vacíos y los completa el propio practicante en Mi perfil.                                                                                                                | N practicantes → N proyectos (vía Asignación)                                                                                                                                              |
+| **Supervisor (detalle)**          | id_usuario (FK), discord, cuenta_github                                                                                                                                                                                                                                                   | 1 supervisor → N proyectos                                                                                                                                                                 |
+| **Proyecto**                      | nombre, codigo (3–5 caracteres, solo mayúsculas A–Z y dígitos, único entre todos los proyectos, también los finalizados; no se edita), descripción, fecha_inicio, fecha_fin_prevista, **fecha_fin_real (nuevo en v6; nula hasta que se finaliza)**, estado (activo / en pausa / finalizado), dia_reunion y hora_reunion (opcionales), repositorio_url, rama_base, id_supervisor (FK), ultimo_numero_tarea (nuevo: correlativo, inicia en 0, solo lo escribe la generación de IDs; evita reutilizar el número de una tarea eliminada).              | 1 proyecto → 1 supervisor; 1 proyecto → N practicantes (vía Asignación); 1 proyecto → N tareas y N enlaces                                                                                 |
 | **EnlaceProyecto**                | id_proyecto (FK), nombre, url                                                                                                                                                                                                                                                                      | N enlaces → 1 proyecto. Es una entidad aparte porque un proyecto puede tener cualquier cantidad de enlaces.                                                                                |
 | **Asignación**                    | id_practicante (FK), id_proyecto (FK), fecha_alta, fecha_baja (nula mientras sigue en el proyecto)                                                                                                                                                                                                 | Tabla intermedia practicante–proyecto. Nunca se borra; volver a un proyecto crea una asignación nueva. Finalizar un proyecto no cierra sus asignaciones.                                   |
-| **Tarea**                         | numero (correlativo dentro del proyecto), título, descripción, fecha_limite, id_proyecto (FK), id_practicante (FK, nulo si Disponible), estado, requiere_supervision, requiere_pr, estado_pr, rama_origen, rama_base, url_pull_request, **fecha_termino (nuevo en v6; nula si no está Terminada)** | N tareas → 1 proyecto; N tareas → 0..1 practicante. Se identifica como codigo-numero (por ejemplo, PL2D-018). Las observaciones del supervisor se guardan como eventos del historial.      |
+| **Tarea**                         | numero (correlativo dentro del proyecto, entero desde 1 y sin tope), título, descripción, fecha_limite, id_proyecto (FK), id_practicante (FK, nulo si Disponible), estado, requiere_supervision, requiere_pr, estado_pr (nulo hasta la primera llegada a "Esperando supervisión" o "Terminada" con "Requiere PR" activo), rama_origen, rama_base, url_pull_request, fecha_termino (fecha y hora; nula si no está Terminada) | N tareas → 1 proyecto; N tareas → 0..1 practicante. Se identifica como codigo-numero, con el número rellenado a 3 dígitos como mínimo (por ejemplo, PL2D-018 o PL2D-1000). Las observaciones del supervisor se guardan como eventos del historial.      |
 | **AreaTecnica**                   | nombre (Software, Videojuegos, ...), activo                                                                                                                                                                                                                                                        | 1 área → N especialidades; 1 área → N criterios; 1 área → N postulantes                                                                                                                    |
 | **Especialidad**                  | id_area_tecnica (FK), nombre (Frontend, Backend, ...), activo                                                                                                                                                                                                                                      | N especialidades → 1 área; 1 especialidad → N criterios                                                                                                                                    |
 | **CriterioEvaluacion**            | id_area_tecnica (FK), id_especialidad (FK, nulo si es general del área), nombre, tipo (tecnología / académico / disponibilidad / palabra_clave), peso, obligatorio, activo                                                                                                                         | Configurable por el Administrador; los pesos de cada bloque (área y especialidad) suman 100                                                                                                |
-| **PostulacionEvaluacion**         | id_postulante (FK), puntaje_area, puntaje_especialidad, puntaje_total, justificacion, requiere_revision_manual, fecha_evaluacion                                                                                                                                                                   | 1 evaluación → 1 postulante; 1 evaluación → N detalles                                                                                                                                     |
-| **PostulacionEvaluacion_Detalle** | id_evaluacion (FK), id_criterio (FK), nombre_criterio y peso (copia al momento de evaluar), cumplido, puntaje_obtenido, observacion                                                                                                                                                                | Desglose del puntaje por criterio. Guarda una copia del criterio para que cambiarlo después no altere evaluaciones pasadas.                                                                |
+| **PostulacionEvaluacion**         | id_postulante (FK), puntaje_area, puntaje_especialidad, puntaje_total (entero de 0 a 100, redondeado con las mitades hacia arriba), justificacion, requiere_revision_manual, fecha_evaluacion                                                                                                                                                                   | 1 evaluación → 1 postulante; 1 evaluación → N detalles                                                                                                                                     |
+| **PostulacionEvaluacion_Detalle** | id_evaluacion (FK), id_criterio (FK), nombre_criterio y peso (copia al momento de evaluar), cumplido, puntaje_obtenido, observacion, bloque (área / especialidad)                                                                                                                                                                | Desglose del puntaje por criterio. Guarda una copia del criterio para que cambiarlo después no altere evaluaciones pasadas.                                                                |
 | **EventoHistorial**               | fecha, id_autor (FK, o “Sistema”), tipo_accion, tipo y referencia del elemento afectado, etiqueta del elemento (copia del ID y título), id_proyecto (opcional), cambios (campo, valor anterior, valor nuevo), nota                                                                                 | Registro permanente; no se edita ni se borra                                                                                                                                               |
 | **Notificacion**                  | id_destinatario (FK), tipo, mensaje, referencia al elemento, fecha, leida                                                                                                                                                                                                                          | N notificaciones → 1 usuario                                                                                                                                                               |
 | **InsightRevision**               | tipo_regla, referencia al elemento, severidad_al_revisar, fecha, id_usuario (FK), nota                                                                                                                                                                                                             | Permite que un insight revisado reaparezca si empeora. Al guardar el usuario, el estado “revisado” es independiente por persona (el Supervisor y el Administrador no se afectan entre sí). |
-| **ParametroConfiguracion**        | clave, valor, valor_predeterminado                                                                                                                                                                                                                                                                 | Parámetros de la sección 5.8                                                                                                                                                               |
+| **ParametroConfiguracion**        | clave (PK), valor, valor_predeterminado. El valor puede ser un número, un rango (mínimo y máximo) o una proporción (área y especialidad).                                                                                                                                                                                                                                                                 | Parámetros de la sección 5.8                                                                                                                                                               |
 
 **Nota de diseño:** los criterios de evaluación, las áreas y las especialidades se modelan como tablas configurables (no como campos fijos), de modo que el Administrador pueda agregar, modificar o desactivar criterios sin requerir cambios en el sistema. El detalle de la evaluación permite justificar el puntaje criterio por criterio, evitando que el resultado de la IA funcione como una “caja negra” y dejando la decisión final en manos del Administrador. Los insights no se guardan: se calculan sobre los datos cada vez que se consultan.
 
-**Valores que se calculan y no se guardan:** los “días esperando” de una tarea en supervisión, el número de veces que fue devuelta, la carga de un practicante (tareas “En progreso”) y los indicadores de Reportes salen de los eventos del Historial y de los estados actuales. Se guardan **fecha_termino** (para ordenar la columna “Terminada” y Mi historial sin recorrer eventos) y **fecha_fin_real** del proyecto (para mostrar el periodo de participación de un practicante en un proyecto finalizado).
+**Valores que se calculan y no se guardan:** los “días esperando” de una tarea en supervisión, el número de veces que fue devuelta, la carga de un practicante (tareas “En progreso”) y los indicadores de Reportes salen de los eventos del Historial y de los estados actuales. Se guardan **fecha_termino** (con hora, para ordenar la columna “Terminada” y Mi historial sin recorrer eventos) y **fecha_fin_real** del proyecto (solo fecha, para mostrar el periodo de participación de un practicante en un proyecto finalizado).
 
 ## 12. Flujo general del sistema
 
@@ -1194,7 +1217,7 @@ Para no duplicar trabajo, varias pantallas se construyen una sola vez y cada pan
 | **Listado de tareas**                                         | Módulo Tareas                       | Mismo componente, filtrado a sus proyectos          | No tiene (usa Inicio y Mis proyectos)                         |
 | **Personas**                                                  | Módulos Practicantes y Supervisores | Practicantes a cargo (pantalla nueva, solo lectura) | Pestaña Equipo del proyecto                                   |
 | **Reportes**                                                  | Completo                            | Mismo componente, filtrado a sus proyectos          | No tiene                                                      |
-| **Historial**                                                 | Vista global                        | Líneas de tiempo de sus proyectos                   | Líneas de tiempo de lo suyo; Mi historial (tareas terminadas) |
+| **Historial**                                                 | Vista global                        | Líneas de tiempo de sus proyectos                   | Líneas de tiempo de lo suyo y de las tareas que puede abrir; Mi historial (tareas terminadas) |
 | **Notificaciones, Mi perfil y franja de contraseña temporal** | Compartidos                         | Compartidos                                         | Compartidos                                                   |
 
 ## 15. Mejoras futuras (fuera del alcance actual)
