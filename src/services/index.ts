@@ -39,6 +39,8 @@ export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 // Servicios por módulo
 export {
   aprobarTarea,
+  cambiarRequierePR,
+  cambiarRequiereSupervision,
   crearTarea,
   devolverTarea,
   editarTarea,
@@ -55,5 +57,7 @@ export type {
   EntradaEditarTarea,
   EntradaEliminarTarea,
   EntradaLiberar,
+  EntradaRequierePR,
+  EntradaRequiereSupervision,
   EntradaTransicion,
 } from './tareas';
