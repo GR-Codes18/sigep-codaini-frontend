@@ -13,8 +13,10 @@ import { AHORA_DE_PRUEBA, crearEntornoDePrueba } from '../pruebas/entorno';
 import { MENSAJES, type Resultado } from '../resultado';
 import {
   NOTA_PR_VINCULADO,
+  cerrarPullRequest,
   crearPullRequest,
   listarRamasParaPullRequest,
+  type EntradaCerrarPR,
   type EntradaCrearPullRequest,
 } from './pullRequests';
 
@@ -31,10 +33,11 @@ const MOVIMIENTO = 'tar-pl2d-001'; // de DIEGO, TERMINADA, PR FUSIONADO (feature
 const ENEMIGOS = 'tar-pl2d-010'; // de DEMO, EN_PROGRESO
 const AHORA_ISO = AHORA_DE_PRUEBA.toISOString();
 
-/** Puerto que registra las solicitudes de creación; el resto, el GitHub simulado. */
+/** Puerto que registra las llamadas a GitHub; responde lo mismo que el GitHub simulado. */
 function puertoEspia() {
   const creaciones: SolicitudPR[] = [];
   const ramasPedidas: number[] = [];
+  const cierres: string[] = [];
   const github: PuertoGitHub = {
     ...GITHUB_SIMULADO,
     listarRamas: (repositorio) => {
@@ -45,8 +48,11 @@ function puertoEspia() {
       creaciones.push(solicitud);
       return GITHUB_SIMULADO.crearPullRequest(solicitud);
     },
+    cerrarPullRequest: (url) => {
+      cierres.push(url);
+    },
   };
-  return { github, creaciones, ramasPedidas };
+  return { github, creaciones, ramasPedidas, cierres };
 }
 
 function preparar(github?: PuertoGitHub) {
@@ -491,5 +497,224 @@ describe('crearPullRequest: errores y orden de comprobación', () => {
     const prueba = preparar();
     prueba.modificar(cambiarProyecto({ estado: 'EN_PAUSA' }));
     expect((await crearPullRequest(entrada(), prueba.entorno)).ok).toBe(true);
+  });
+});
+
+// ── Cerrar ───────────────────────────────────────────────────────────────────────────────────
+
+const URL_EFECTOS = `${REPO}/pull/77`;
+
+/** Deja `EFECTOS` (de DEMO) con un PR abierto en ese estado. */
+const prAbiertoEnEfectos = (estado_pr: 'CREADO' | 'CON_CONFLICTOS' = 'CREADO') =>
+  cambiarTarea(EFECTOS, {
+    estado_pr,
+    url_pull_request: URL_EFECTOS,
+    rama_origen: 'feature/pl2d-006',
+    rama_base: 'develop',
+  });
+
+function entradaCerrar(cambios: Partial<EntradaCerrarPR> = {}): EntradaCerrarPR {
+  return {
+    idActor: DEMO,
+    idTarea: EFECTOS,
+    motivo: 'Se creó contra la rama base equivocada.',
+    ...cambios,
+  };
+}
+
+describe('cerrarPullRequest: éxito', () => {
+  it('el practicante responsable cierra su PR: CERRADO, URL y ramas conservadas, una escritura y sin aviso', async () => {
+    const espia = puertoEspia();
+    const prueba = preparar(espia.github);
+    prueba.modificar(prAbiertoEnEfectos());
+    const antes = prueba.tarea(EFECTOS);
+
+    const r = await ejecutar(prueba, () =>
+      cerrarPullRequest(entradaCerrar({ motivo: '  PR duplicado.  ' }), prueba.entorno),
+    );
+
+    expect(r.resultado).toEqual({ ok: true, valor: { ...antes, estado_pr: 'CERRADO' } });
+    expect(prueba.tarea(EFECTOS)).toMatchObject({
+      estado_pr: 'CERRADO',
+      url_pull_request: URL_EFECTOS,
+      rama_origen: 'feature/pl2d-006',
+      rama_base: 'develop',
+    });
+    expect(r.escrituras).toBe(1);
+    expect(r.eventos).toEqual([
+      {
+        id: expect.stringMatching(/^evt-/),
+        fecha: AHORA_ISO,
+        autor: { tipo: 'USUARIO', id_usuario: DEMO },
+        tipo_accion: 'PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA',
+        elemento: { tipo: 'TAREA', id: EFECTOS, etiqueta: 'PL2D-006 · Efectos de sonido' },
+        id_proyecto: PL2D,
+        cambios: [{ campo: 'estado_pr', valor_anterior: 'CREADO', valor_nuevo: 'CERRADO' }],
+        nota: 'PR duplicado.',
+      },
+    ]);
+    expect(r.avisos).toEqual([]);
+    expect(espia.cierres).toEqual([URL_EFECTOS]);
+  });
+
+  it.each([
+    ['Supervisor', SUPERVISOR],
+    ['Administrador', ADMIN],
+  ])('%s cierra el PR de otra persona: avisa al responsable', async (_rol, idActor) => {
+    const prueba = preparar();
+    const responsable = prueba.tarea(NIVEL1).id_practicante!;
+
+    const r = await ejecutar(prueba, () =>
+      cerrarPullRequest(entradaCerrar({ idActor, idTarea: NIVEL1 }), prueba.entorno),
+    );
+
+    expect(r.resultado.ok && r.resultado.valor.estado_pr).toBe('CERRADO');
+    expect(r.eventos[0]).toMatchObject({
+      autor: { tipo: 'USUARIO', id_usuario: idActor },
+      tipo_accion: 'PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA',
+    });
+    expect(r.avisos).toEqual([
+      {
+        id: expect.stringMatching(/^ntf-/),
+        id_destinatario: responsable,
+        tipo: 'PULL_REQUEST_CERRADO_POR_OTRA_PERSONA',
+        mensaje: 'Cerraron el Pull Request de «Nivel 1: tutorial» (PL2D-005).',
+        elemento: { tipo: 'TAREA', id: NIVEL1 },
+        fecha: AHORA_ISO,
+        leida: false,
+      },
+    ]);
+  });
+
+  it('un PR con conflictos también se cierra', async () => {
+    const prueba = preparar();
+    prueba.modificar(prAbiertoEnEfectos('CON_CONFLICTOS'));
+    const r = await ejecutar(prueba, () => cerrarPullRequest(entradaCerrar(), prueba.entorno));
+    expect(r.resultado.ok && r.resultado.valor.estado_pr).toBe('CERRADO');
+    expect(r.eventos[0]?.cambios).toEqual([
+      { campo: 'estado_pr', valor_anterior: 'CON_CONFLICTOS', valor_nuevo: 'CERRADO' },
+    ]);
+  });
+
+  it('después de cerrarlo se puede crear un PR nuevo con otra URL (un cerrado no bloquea)', async () => {
+    const prueba = preparar();
+    prueba.modificar(prAbiertoEnEfectos());
+    expect((await cerrarPullRequest(entradaCerrar(), prueba.entorno)).ok).toBe(true);
+
+    const nuevo = await crearPullRequest(entrada(), prueba.entorno);
+    expect(nuevo.ok && nuevo.valor).toMatchObject({
+      vinculado: false,
+      tarea: { estado_pr: 'CREADO', url_pull_request: `${REPO}/pull/78` },
+    });
+  });
+
+  it('en un proyecto EN_PAUSA se puede cerrar', async () => {
+    const prueba = preparar();
+    prueba.modificar(prAbiertoEnEfectos());
+    prueba.modificar(cambiarProyecto({ estado: 'EN_PAUSA' }));
+    expect((await cerrarPullRequest(entradaCerrar(), prueba.entorno)).ok).toBe(true);
+  });
+});
+
+describe('cerrarPullRequest: errores y orden de comprobación', () => {
+  it.each([
+    ['ausente', undefined],
+    ['vacío', ''],
+    ['solo espacios', '   '],
+  ])('motivo %s → TEXTO_OBLIGATORIO, sin escribir y sin llamar a GitHub', async (_caso, motivo) => {
+    const espia = puertoEspia();
+    const prueba = preparar(espia.github);
+    prueba.modificar(prAbiertoEnEfectos());
+    const comprobar = sinEscritura(prueba);
+    expect(await cerrarPullRequest(entradaCerrar({ motivo }), prueba.entorno)).toEqual({
+      ok: false,
+      codigo: 'TEXTO_OBLIGATORIO',
+      mensaje: MENSAJES.TEXTO_OBLIGATORIO,
+    });
+    comprobar();
+    expect(espia.cierres).toEqual([]);
+  });
+
+  it.each([
+    ['con motivo', 'Ya no hace falta'],
+    ['con motivo vacío', ''],
+  ])(
+    'PR FUSIONADO o PENDIENTE (%s) → ESTADO_PR_NO_APLICA: el estado va antes que el texto',
+    async (_caso, motivo) => {
+      const espia = puertoEspia();
+      const prueba = preparar(espia.github);
+      const comprobar = sinEscritura(prueba);
+      expect(
+        await cerrarPullRequest(
+          entradaCerrar({ idActor: DIEGO, idTarea: MOVIMIENTO, motivo }),
+          prueba.entorno,
+        ),
+      ).toMatchObject({ codigo: 'ESTADO_PR_NO_APLICA' });
+      expect(await cerrarPullRequest(entradaCerrar({ motivo }), prueba.entorno)).toMatchObject({
+        codigo: 'ESTADO_PR_NO_APLICA',
+      });
+      comprobar();
+      expect(espia.cierres).toEqual([]);
+    },
+  );
+
+  it('quién: supervisor ajeno, otro practicante y practicante con baja. GitHub no se llama', async () => {
+    const espia = puertoEspia();
+    const prueba = preparar(espia.github);
+    prueba.modificar(prAbiertoEnEfectos());
+    const comprobar = sinEscritura(prueba);
+    expect(
+      await cerrarPullRequest(entradaCerrar({ idActor: 'usr-sup-02' }), prueba.entorno),
+    ).toMatchObject({ codigo: 'FUERA_DE_ALCANCE' });
+    expect(
+      await cerrarPullRequest(entradaCerrar({ idActor: DIEGO }), prueba.entorno),
+    ).toMatchObject({ codigo: 'NO_ES_EL_RESPONSABLE' });
+    comprobar();
+    prueba.modificar(darDeBaja(DEMO));
+    expect(await cerrarPullRequest(entradaCerrar(), prueba.entorno)).toMatchObject({
+      codigo: 'FUERA_DE_ALCANCE',
+    });
+    expect(espia.cierres).toEqual([]);
+  });
+
+  it('estado de la tarea: EN_PROGRESO → TAREA_SIN_ETIQUETA_PR; sin «Requiere PR» → TAREA_NO_REQUIERE_PR', async () => {
+    const prueba = preparar();
+    prueba.modificar(
+      cambiarTarea(ENEMIGOS, { estado_pr: 'CREADO', url_pull_request: URL_EFECTOS }),
+    );
+    expect(
+      await cerrarPullRequest(entradaCerrar({ idTarea: ENEMIGOS }), prueba.entorno),
+    ).toMatchObject({ codigo: 'TAREA_SIN_ETIQUETA_PR' });
+    prueba.modificar(prAbiertoEnEfectos());
+    prueba.modificar(cambiarTarea(EFECTOS, { requiere_pr: false }));
+    expect(await cerrarPullRequest(entradaCerrar(), prueba.entorno)).toMatchObject({
+      codigo: 'TAREA_NO_REQUIERE_PR',
+    });
+  });
+
+  it('FINALIZADO, INACTIVO, inexistentes y datos inválidos', async () => {
+    const prueba = preparar();
+    prueba.modificar(prAbiertoEnEfectos());
+    const comprobar = sinEscritura(prueba);
+    expect(
+      await cerrarPullRequest(entradaCerrar({ idTarea: 'no-existe' }), prueba.entorno),
+    ).toMatchObject({ codigo: 'NO_ENCONTRADO' });
+    expect(
+      await cerrarPullRequest(entradaCerrar({ idActor: 'fantasma' }), prueba.entorno),
+    ).toMatchObject({ codigo: 'NO_ENCONTRADO' });
+    expect(await cerrarPullRequest(entradaCerrar({ idTarea: '' }), prueba.entorno)).toMatchObject({
+      codigo: 'DATOS_INVALIDOS',
+    });
+    comprobar();
+
+    prueba.modificar(cambiarProyecto({ estado: 'FINALIZADO' }));
+    expect(await cerrarPullRequest(entradaCerrar(), prueba.entorno)).toMatchObject({
+      codigo: 'PROYECTO_FINALIZADO',
+    });
+    prueba.modificar(cambiarProyecto({ estado: 'ACTIVO' }));
+    prueba.modificar(cambiarUsuario(DEMO, { estado: 'INACTIVO' }));
+    expect(await cerrarPullRequest(entradaCerrar(), prueba.entorno)).toMatchObject({
+      codigo: 'USUARIO_INACTIVO',
+    });
   });
 });

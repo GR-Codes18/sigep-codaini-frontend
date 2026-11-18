@@ -1,5 +1,6 @@
 /**
- * Servicios de Pull Request (Fase 2, paso 6A): listar las ramas para el modal y crear el PR.
+ * Servicios de Pull Request (Fase 2, paso 6): listar las ramas para el modal y crear el PR (6A), y
+ * cerrarlo desde el sistema (6B).
  *
  * Mismo patrón que los servicios de tareas: Zod → actor → tarea → regla de `domain/` → GitHub →
  * `siguienteEstadoPR` → escritura en una sola transacción. GitHub se usa siempre a través de
@@ -13,11 +14,21 @@
  *   - si GitHub informa conflictos, en la misma operación se registra un segundo evento del Sistema
  *     que pasa el PR a CON_CONFLICTOS y avisa al practicante (§7.3, §8.1).
  * No se avisa a nadie por crear un PR (§8.1).
+ *
+ * Cerrar (§7.5): solo con la etiqueta Creado o Con conflictos y con motivo; la etiqueta queda en
+ * Cerrado (se puede crear otro) y se conservan la URL y las ramas. GitHub se llama solo después de los
+ * permisos y del texto. Se avisa al responsable si lo cerró otra persona (§8.1).
  */
 
 import { z } from 'zod';
 import type { DatosAlmacen } from '@/data';
-import { puedeCrearPullRequest, siguienteEstadoPR, type Id, type Tarea } from '@/domain';
+import {
+  puedeCerrarPullRequest,
+  puedeCrearPullRequest,
+  siguienteEstadoPR,
+  type Id,
+  type Tarea,
+} from '@/domain';
 import { ENTORNO, type Entorno } from '../entorno';
 import { etiquetaTarea } from '../etiquetas';
 import type { PRConocido } from '../github';
@@ -28,9 +39,12 @@ import { conEfectos, ejecutarConsulta, ejecutarServicio } from '../transaccional
 import {
   cargarContextoTarea,
   esquemaId,
+  esquemaTextoOpcional,
   eventoDeTarea,
+  exigirTexto,
   referenciaTarea,
   reemplazarTarea,
+  textoGuardado,
 } from '../tareas/comun';
 
 export const NOTA_PR_VINCULADO = 'Ya existía un PR para estas ramas; se vinculó.';
@@ -212,6 +226,93 @@ export function crearPullRequest(
         datos,
         { tareas: reemplazarTarea(datos.tareas, final) },
         { eventos, notificaciones: avisos },
+      ),
+    };
+  });
+}
+
+// ── Cerrar ───────────────────────────────────────────────────────────────────────────────────
+
+const esquemaCerrar = z.object({
+  idActor: esquemaId,
+  idTarea: esquemaId,
+  motivo: esquemaTextoOpcional,
+});
+
+export type EntradaCerrarPR = z.input<typeof esquemaCerrar>;
+
+/**
+ * Cierra el PR de la tarea sin fusionarlo (§7.5): el practicante responsable, el Supervisor del
+ * proyecto o el Administrador, con motivo. Solo cambia `estado_pr` a CERRADO; la URL y las ramas se
+ * conservan, y luego se puede crear un PR nuevo.
+ */
+export function cerrarPullRequest(
+  entrada: EntradaCerrarPR,
+  entorno: Entorno = ENTORNO,
+): Promise<Resultado<Tarea>> {
+  return ejecutarServicio(entorno, ({ datos, marca, entorno: e }) => {
+    const valida = validarEntrada(esquemaCerrar, entrada);
+    if (!valida.ok) return valida;
+    const v = valida.valor;
+
+    const contexto = cargarContextoTarea(datos, v.idActor, v.idTarea);
+    if (!contexto.ok) return contexto;
+    const { actor, tarea, proyecto, asignaciones } = contexto.valor;
+
+    // `puede()` → etiqueta visible → PR abierto (CREADO o CON_CONFLICTOS) → motivo vacío.
+    const permiso = puedeCerrarPullRequest(tarea, actor, { proyecto, asignaciones }, v.motivo);
+    if (!permiso.permitido) return denegar(permiso);
+    // Motivo ausente: `domain/` lo deja pasar, el servicio no.
+    const sinTexto = exigirTexto(permiso.exige_texto, v.motivo);
+    if (sinTexto !== null) return sinTexto;
+
+    // Un PR abierto siempre tiene URL; sin ella, el dato está roto (→ ERROR_INESPERADO).
+    if (tarea.url_pull_request === null) {
+      throw new Error(`La tarea ${tarea.id} tiene un PR abierto sin URL.`);
+    }
+    // GitHub, solo después de los permisos y del texto.
+    e.github.cerrarPullRequest(tarea.url_pull_request);
+
+    const cerrado = siguienteEstadoPR(tarea, { tipo: 'PR_CERRADO_DESDE_SISTEMA' });
+    if (!cerrado.aplica) return denegar(cerrado);
+    const nueva: Tarea = { ...tarea, estado_pr: cerrado.estado_pr };
+
+    const evento = eventoDeTarea(
+      {
+        actor,
+        proyecto,
+        tarea: nueva,
+        tipo_accion: 'PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA',
+        cambios: diferencias(tarea, nueva, ['estado_pr']),
+        nota: textoGuardado(v.motivo),
+      },
+      marca,
+      e.generarId,
+    );
+    // §8.1: al responsable si lo cerró otra persona (`crearNotificaciones` descarta al autor).
+    const avisos =
+      tarea.id_practicante === null
+        ? []
+        : crearNotificaciones(
+            {
+              autor: evento.autor,
+              destinatarios: [tarea.id_practicante],
+              tipo: 'PULL_REQUEST_CERRADO_POR_OTRA_PERSONA',
+              mensaje: `Cerraron el Pull Request de ${referenciaTarea(proyecto, tarea)}.`,
+              elemento: { tipo: 'TAREA', id: tarea.id },
+            },
+            datos.usuarios,
+            marca,
+            e.generarId,
+          );
+
+    return {
+      ok: true,
+      valor: nueva,
+      cambios: conEfectos(
+        datos,
+        { tareas: reemplazarTarea(datos.tareas, nueva) },
+        { eventos: [evento], notificaciones: avisos },
       ),
     };
   });

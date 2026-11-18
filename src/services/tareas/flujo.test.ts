@@ -1,7 +1,7 @@
 /**
- * Flujo completo de una tarea por código (plan §9, Fase 2, «Listo cuando», en su parte de tareas): solo
- * servicios reales sobre la semilla real, con el historial y las notificaciones coherentes. El reloj
- * avanza un minuto entre pasos, como en un uso real.
+ * Flujo completo de una tarea por código (plan §9, Fase 2, «Listo cuando», en su parte de tareas y de
+ * Pull Request): solo servicios reales sobre la semilla real, con el historial y las notificaciones
+ * coherentes. El reloj avanza un minuto entre pasos, como en un uso real.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -14,6 +14,7 @@ import {
   type Tarea,
 } from '@/domain';
 import { AHORA_DE_PRUEBA, crearEntornoDePrueba } from '../pruebas/entorno';
+import { cerrarPullRequest, crearPullRequest } from '../pullRequests/pullRequests';
 import type { Resultado } from '../resultado';
 import { crearTarea } from './datosTarea';
 import { cambiarRequierePR } from './opciones';
@@ -39,7 +40,7 @@ function preparar() {
 }
 
 /** Exige un éxito y devuelve la tarea; si falla, la prueba muestra el código. */
-function valor(resultado: Resultado<Tarea>): Tarea {
+function valor<T>(resultado: Resultado<T>): T {
   if (!resultado.ok) throw new Error(`${resultado.codigo}: ${resultado.mensaje}`);
   return resultado.valor;
 }
@@ -229,6 +230,146 @@ describe('flujo completo de una tarea', () => {
       ['TAREA_ENVIADA_A_SUPERVISION', SUPERVISOR],
       ['PULL_REQUEST_NO_REQUERIDO_POR_PRACTICANTE', SUPERVISOR],
       ['TAREA_APROBADA', DEMO],
+    ]);
+  });
+});
+
+/** La rama de ejemplo de la tarea (`feature/pl2d-018`), la que el practicante elige en el modal. */
+function ramaDe(tarea: Tarea): string {
+  return `feature/pl2d-${String(tarea.numero).padStart(3, '0')}`;
+}
+
+/** Mayor número de PR conocido en PL2D, para saber qué URL debe dar GitHub. */
+function mayorPR(prueba: ReturnType<typeof preparar>): number {
+  return Math.max(
+    0,
+    ...prueba
+      .datos()
+      .tareas.filter((t) => t.id_proyecto === PL2D && t.url_pull_request !== null)
+      .map((t) => Number(/\/pull\/(\d+)$/.exec(t.url_pull_request!)?.[1] ?? 0)),
+  );
+}
+
+describe('flujo de punta a punta con Pull Request', () => {
+  it('crear → tomar → enviar → aprobar → crear PR, con historial y avisos coherentes', async () => {
+    const prueba = preparar();
+    const avisosAntes = prueba.datos().notificaciones.length;
+    const repositorio = prueba.datos().proyectos.find((p) => p.id === PL2D)!;
+
+    const creada = await crearConSupervision(prueba);
+    prueba.avanzar();
+    valor(await tomarTarea({ idActor: DEMO, idTarea: creada.id }, prueba.entorno));
+    prueba.avanzar();
+    valor(await enviarTareaASupervision({ idActor: DEMO, idTarea: creada.id }, prueba.entorno));
+    prueba.avanzar();
+    valor(await aprobarTarea({ idActor: SUPERVISOR, idTarea: creada.id }, prueba.entorno));
+    const url = `${repositorio.repositorio_url}/pull/${mayorPR(prueba) + 1}`;
+    prueba.avanzar();
+    const conPR = valor(
+      await crearPullRequest(
+        {
+          idActor: DEMO,
+          idTarea: creada.id,
+          rama_origen: ramaDe(creada),
+          titulo: `PL2D-0${creada.numero} · Jefe final`,
+        },
+        prueba.entorno,
+      ),
+    );
+
+    expect(conPR.vinculado).toBe(false);
+    expect(conPR.tarea).toMatchObject({
+      estado: 'TERMINADA',
+      id_practicante: DEMO,
+      estado_pr: 'CREADO',
+      url_pull_request: url,
+      rama_origen: ramaDe(creada),
+      rama_base: repositorio.rama_base,
+    });
+    expect(etiquetaPRVisible(conPR.tarea)).toBe('CREADO');
+    expect(eventosDe(prueba, creada.id)).toEqual([
+      ['TAREA_CREADA', SUPERVISOR],
+      ['TAREA_TOMADA', DEMO],
+      ['TAREA_ENVIADA_A_SUPERVISION', DEMO],
+      ['TAREA_APROBADA', SUPERVISOR],
+      ['PULL_REQUEST_CREADO', DEMO],
+    ]);
+    const eventos = prueba.datos().historial.filter((e) => e.elemento.id === creada.id);
+    expect(new Set(eventos.map((e) => e.elemento.etiqueta)).size).toBe(1);
+    expect(eventos.every((e) => e.id_proyecto === PL2D)).toBe(true);
+    // Crear el PR no avisa a nadie (§8.1): siguen siendo los dos avisos del flujo de la tarea.
+    expect(prueba.datos().notificaciones.length - avisosAntes).toBe(2);
+    expect(avisosDe(prueba, creada.id, avisosAntes)).toEqual([
+      ['TAREA_ENVIADA_A_SUPERVISION', SUPERVISOR],
+      ['TAREA_APROBADA', DEMO],
+    ]);
+  });
+
+  it('variante: el Supervisor cierra el PR con motivo y el practicante crea uno nuevo', async () => {
+    const prueba = preparar();
+    const avisosAntes = prueba.datos().notificaciones.length;
+
+    const creada = await crearConSupervision(prueba);
+    prueba.avanzar();
+    valor(await tomarTarea({ idActor: DEMO, idTarea: creada.id }, prueba.entorno));
+    prueba.avanzar();
+    valor(await enviarTareaASupervision({ idActor: DEMO, idTarea: creada.id }, prueba.entorno));
+    prueba.avanzar();
+    valor(await aprobarTarea({ idActor: SUPERVISOR, idTarea: creada.id }, prueba.entorno));
+    prueba.avanzar();
+    const primero = valor(
+      await crearPullRequest(
+        { idActor: DEMO, idTarea: creada.id, rama_origen: ramaDe(creada), titulo: 'Jefe final' },
+        prueba.entorno,
+      ),
+    );
+
+    prueba.avanzar();
+    const cerrada = valor(
+      await cerrarPullRequest(
+        { idActor: SUPERVISOR, idTarea: creada.id, motivo: 'Apunta a la rama base equivocada.' },
+        prueba.entorno,
+      ),
+    );
+    expect(cerrada).toMatchObject({
+      estado_pr: 'CERRADO',
+      url_pull_request: primero.tarea.url_pull_request,
+    });
+    expect(etiquetaPRVisible(cerrada)).toBe('CERRADO');
+
+    prueba.avanzar();
+    const segundo = valor(
+      await crearPullRequest(
+        { idActor: DEMO, idTarea: creada.id, rama_origen: ramaDe(creada), titulo: 'Jefe final' },
+        prueba.entorno,
+      ),
+    );
+    const numero = (url: string | null) => Number(/\/pull\/(\d+)$/.exec(url ?? '')?.[1]);
+    expect(segundo).toMatchObject({ vinculado: false, tarea: { estado_pr: 'CREADO' } });
+    expect(numero(segundo.tarea.url_pull_request)).toBe(numero(primero.tarea.url_pull_request) + 1);
+
+    expect(eventosDe(prueba, creada.id).map(([tipo]) => tipo)).toEqual([
+      'TAREA_CREADA',
+      'TAREA_TOMADA',
+      'TAREA_ENVIADA_A_SUPERVISION',
+      'TAREA_APROBADA',
+      'PULL_REQUEST_CREADO',
+      'PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA',
+      'PULL_REQUEST_CREADO',
+    ]);
+    expect(
+      prueba
+        .datos()
+        .historial.find(
+          (e) =>
+            e.elemento.id === creada.id &&
+            e.tipo_accion === 'PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA',
+        )?.nota,
+    ).toBe('Apunta a la rama base equivocada.');
+    expect(avisosDe(prueba, creada.id, avisosAntes)).toEqual([
+      ['TAREA_ENVIADA_A_SUPERVISION', SUPERVISOR],
+      ['TAREA_APROBADA', DEMO],
+      ['PULL_REQUEST_CERRADO_POR_OTRA_PERSONA', DEMO],
     ]);
   });
 });

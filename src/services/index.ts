@@ -51,8 +51,14 @@ export { conEfectos, ejecutarConsulta, ejecutarServicio } from './transaccional'
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
 // Servicios por módulo
-export { NOTA_PR_VINCULADO, crearPullRequest, listarRamasParaPullRequest } from './pullRequests';
+export {
+  NOTA_PR_VINCULADO,
+  cerrarPullRequest,
+  crearPullRequest,
+  listarRamasParaPullRequest,
+} from './pullRequests';
 export type {
+  EntradaCerrarPR,
   EntradaCrearPullRequest,
   EntradaListarRamas,
   PullRequestCreado,
