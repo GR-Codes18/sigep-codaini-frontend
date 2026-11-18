@@ -10,7 +10,7 @@
 
 - **Fase actual:** **Fase 2 (`data/` y `services/`) terminada**; sigue la conexión de las pantallas. El **Bloque 1**
   (pasos 1 a 4) está en el PR #22, el **Bloque 2** (pasos 5 y 6, servicios de tareas y de Pull Request) en el PR #23 y el
-  **Bloque 3** (pasos 7 a 11) en la rama `feat/fase2-cuenta-consultas`, pendiente de su PR. **7A:** evaluar, aprobar,
+  **Bloque 3** (pasos 7 a 11) en el PR #25 (rama `feat/fase2-cuenta-consultas`), todos ya en `development`. **7A:** evaluar, aprobar,
   rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`). **7B:** áreas técnicas, especialidades y criterios
   (`3368603` y `5eb54a4`). **8A:** asignar, quitar, finalizar y reactivar practicantes y editar los datos de su práctica
   (`861c5f3` y `df57b0d`). **8B:** supervisores, restablecer contraseña y aviso de fin de práctica (`a52fe0c`). **9A:**
@@ -337,11 +337,11 @@
   `src/services/tareas/flujo.test.ts`; los servicios tienen caso exitoso, sin permiso, datos inválidos e inexistente;
   el alcance (un supervisor no obtiene datos de un proyecto ajeno; un practicante no recibe correo ni celular de un
   compañero) está probado campo por campo en las consultas; y restablecer la semilla deja el sistema consistente (paso 3).
-- **Siguiente:** cerrar la rama (PR de `feat/fase2-cuenta-consultas` a `development`, revisado por ambos autores, y después
-  `development` → `main` con la etiqueta `fase-2-completa`, plan §11) y empezar a **conectar las pantallas**: cada una llama a
-  `services/` (para actuar) y a `services/consultas/` (para leer), y se retira `src/app/ejemplos/`.
-- **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
-  `domain/` y que ajusten una línea del plan (ver «Pendientes»).
+- **Siguiente:** el **corte oficial** `development` → `main` (PR revisado por ambos autores, con las etiquetas `fase-1-completa` y
+  `fase-2-completa`, plan §11) y empezar a **conectar las pantallas**: cada una llama a `services/` (para actuar) y a
+  `services/consultas/` (para leer), y se retira `src/app/ejemplos/`.
+- **Fase 1, «Listo cuando»:** cumplido. Los autores revisaron los tipos de `domain/` y ajustaron la línea del plan (2026-11-18);
+  solo falta el corte a `main` con su etiqueta (ver «Pendientes»).
 - **Rama:** `feat/fase2-cuenta-consultas` (sale de `development` tras fusionar el paso 9, PR #24). Antes:
   `feat/fase2-servicios-modulos`.
 
@@ -391,7 +391,9 @@
 | 2026-11-18 | 11B. Consultas de tareas y vistas del practicante | `b6a0d1b` |
 | 2026-11-18 | 11C. Consultas de practicantes, supervisores, postulaciones, catálogo y Configuración | `6d6b79a` |
 | 2026-11-18 | 11D. Insights, indicadores, historial, líneas de tiempo y notificaciones | `31d127d` |
-| 2026-11-18 | 11E. Dashboards y Inicio (cierra el paso 11 y la Fase 2) | `006022d`; docs `1a19c9f` |
+| 2026-11-18 | 11E. Dashboards y Inicio (cierra el paso 11 y la Fase 2) | `006022d`; docs `1a19c9f`; PR #25 fusionado en `4082eaa` |
+| 2026-11-18 | Hash de cierre del paso 11 en `PROGRESO.md` | `40cfbc9`; PR #26 fusionado en `2f33f79` |
+| 2026-11-18 | Ajustes a mano de `docs/` de las Fases 1 y 2 (hechos por los autores) | `3d6f019`; PR #27 fusionado en `6cdd2fb` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -435,14 +437,15 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
 - [x] Paso 9: indicadores (`998987e`, `e408893` y `86b0167`).
 - [x] Paso 10: ciclo de vida (`3c78c4f` y `2a3dc50`).
 - [x] Pruebas mínimas de la sección 9 del plan (`e1e112d`).
-- [ ] Revisión de los tipos de `domain/` por los autores («Listo cuando» de la Fase 1; los tipos no se
-      cambian sin avisar).
-- [ ] Ajustar a mano el plan §9, Fase 1, pruebas obligatorias: la línea «Motivo/nota faltante cuando es
+- [x] Revisión de los tipos de `domain/` por los autores («Listo cuando» de la Fase 1; los tipos no se
+      cambian sin avisar). Hecha y confirmada por Gabriel y Roxana (2026-11-18): sin cambios en los tipos.
+- [x] Ajustar a mano el plan §9, Fase 1, pruebas obligatorias (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): la línea «Motivo/nota faltante cuando es
       obligatorio → rechazada» no coincide con el dominio. Vacío o solo espacios da `TEXTO_OBLIGATORIO`; si
       todavía no se escribió, la acción queda pendiente de texto y devuelve qué texto exige, y el servicio
       la rechaza si falta (decisión del paso 3). Texto propuesto en `DECISIONES.md`.
-- [ ] Cierre de la Fase 1: PR a `development` y, cuando ambos autores lo confirmen, `development` → `main`
-      con la etiqueta de cierre (plan §11, por ejemplo `fase-1-completa`).
+- [ ] Cierre de la Fase 1: **listo para el corte, falta ejecutarlo.** Lo de la fase ya está en `development` y los autores
+      confirmaron los tipos y el ajuste del plan; queda `development` → `main` (PR revisado por ambos) con la etiqueta
+      `fase-1-completa` (plan §11). Se marca `[x]` cuando exista la etiqueta.
 
 ### Fase 2 (`data/`, `services/`)
 
@@ -463,9 +466,9 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       y Bloque 2 terminados.**
 - [x] PR del Bloque 2 (`feat/fase2-servicios-tareas-pr`) a `development`, revisado por ambos autores (PR #23,
       `34e0656`).
-- [ ] Ajustar a mano el plan §9, Fase 2, paso 6: «No requiere PR» pasa al paso 5 (decisión D3-A); el paso 6
+- [x] Ajustar a mano el plan §9, Fase 2, paso 6 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): «No requiere PR» pasa al paso 5 (decisión D3-A); el paso 6
       queda con crear y cerrar PR, ramas de ejemplo, error preparado, PR existente y recálculo.
-- [ ] Ajustar a mano el plan §8 (y la propuesta §7.7 si lo quieren explícito): el caso de error de PR
+- [x] Ajustar a mano el plan §8 (y la propuesta §7.7; hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): el caso de error de PR
       preparado es «rama inexistente», con la rama de ejemplo `feature/<código>-rama-eliminada` (P2-A); las
       ramas de ejemplo son `feature/<código>-NNN` más `…-con-conflictos` (P1-A, P5-A).
 - [ ] Riesgo aceptado (P3-A): si dos tareas comparten un PR vinculado y una lo cierra, la otra conserva su
@@ -482,7 +485,7 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       bloque es válido. Nacen inactivas.
 - [ ] Fase 5.1: cómo se muestra «Analizando…» (la semilla ya evalúa a todos y `evaluarPostulacion` solo se
       dispara por código), el mensaje cuando la evaluación falla y la contraseña temporal visible una sola vez.
-- [ ] Ajustar a mano la propuesta §5.1/§5.2: la fecha de ingreso de un practicante nuevo es el día de la
+- [x] Ajustar a mano la propuesta §5.1/§5.2 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): la fecha de ingreso de un practicante nuevo es el día de la
       aprobación (hora de Perú) y la de fin se calcula con la duración vigente (supuesto confirmado en 7A).
 - [x] Sub-paso 8A: asignar, quitar, finalizar y reactivar practicantes y editar los datos de su práctica
       (`861c5f3` y `df57b0d`).
@@ -507,7 +510,7 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       mayúsculas y sin espacios **antes** de enviarlo (el servicio no lo normaliza, G1/9A); crear muestra el error del
       código en `campos.codigo`; editar no ofrece el código; la reunión se quita enviando día y hora vacíos; reactivar no
       avisa al equipo (G2-A) y los autores pueden sumar esa fila a §8.1 si lo quieren.
-- [ ] Ajustar a mano la propuesta §5.4 con los supuestos del paso 9: el repositorio es
+- [x] Ajustar a mano la propuesta §5.4 con los supuestos del paso 9 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): el repositorio es
       `https://github.com/{organización}/{repositorio}`; la rama base no lleva espacios; la reunión y los enlaces
       también se editan en un proyecto finalizado; quitar la reunión avisa al equipo; reactivar no avisa.
 - [x] Paso 10 (login): hecho en 10A (`d8f89b4`). `iniciarSesion` debe leer de `data/` para que `Usuario.estado = INACTIVO` bloquee de verdad
@@ -535,7 +538,7 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       (refresca o cierra la sesión) y vuelve al inicio.
 - [x] Paso 11 (hecho en 11D, `31d127d`, y 11E, `006022d`): las consultas de insights (Dashboard y Reportes) reutilizan `calcularInsightsVigentes`,
       `filtrarInsightsPorAlcance` y `aplicarRevisiones` (o `insightsParaUsuario`) con los umbrales de `umbralesDe`.
-- [ ] Ajustar a mano la propuesta con los supuestos del paso 10: §8.2 (Discord y GitHub sin espacios, hasta 32 y 39
+- [x] Ajustar a mano la propuesta con los supuestos del paso 10 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): §8.2 (Discord y GitHub sin espacios, hasta 32 y 39
       caracteres, vacío quita el dato), §8.1 (el aviso «Notificar» lleva el texto del insight y marcar como leída no tiene
       fila en la matriz de §4) y §5.8 (proporción de enteros de 0 a 100 que suman 100; `100/0` y `0/100` son válidas).
 - [x] Paso 11 (hecho en 11C, `6d6b79a`; consultas con alcance por rol): las pantallas de supervisores y practicantes (Fases 5.2, 5.3 y 6.3)
@@ -610,9 +613,12 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       `listarMiHistorial` y `obtenerInicioPracticante`. Una tarea que el supervisor devolvió o reabrió y que quedó a nombre de
       alguien que ya salió del proyecto no aparece en «Mis tareas en curso» (solo en proyectos vigentes), pero sí en
       `listarTareas` y en `obtenerTarea` (decisión D6-A del paso 5).
-- [ ] Cierre de la Fase 2: PR de `feat/fase2-cuenta-consultas` a `development`, revisado por ambos autores, y, cuando lo confirmen,
-      `development` → `main` con la etiqueta `fase-2-completa` (plan §11).
-- [ ] Ajustar a mano `docs/` con las decisiones del paso 11 (los autores; el agente no toca `docs/`):
+- [ ] Cierre de la Fase 2: **listo para el corte, falta ejecutarlo.** El PR de `feat/fase2-cuenta-consultas` ya está fusionado en
+      `development` (PR #25, `4082eaa`), junto con los PR #26 (`2f33f79`) y #27 (`6cdd2fb`). Queda `development` → `main` (PR
+      revisado por ambos, que lleva también la Fase 1) con la etiqueta `fase-2-completa` (plan §11). Se marca `[x]` cuando
+      exista la etiqueta.
+- [x] Ajustar a mano `docs/` con las decisiones del paso 11 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`), incluida la decisión de documentar
+      en §5.9 los bloques «por revisar», reuniones y avance del Dashboard del Administrador; el agente no toca `docs/`):
       - **Propuesta §4 (matriz):** filas «Ver postulaciones», «Ver supervisores» y «Ver el directorio de practicantes»
         (solo Administrador).
       - **§5.1:** «Requieren revisión» son las postulaciones **pendientes** con la marca de revisión manual.
