@@ -316,6 +316,7 @@ export type { AccionDeTarea, AccionDisponible, AccionTareaAdicional } from './ac
 
 export {
   TERMINADAS_EN_TABLERO,
+  observacionDevolucionVigente,
   ordenarReuniones,
   ordenarTareasEnCurso,
   ordenarTerminadas,

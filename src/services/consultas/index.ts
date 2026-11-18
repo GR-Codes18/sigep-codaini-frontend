@@ -40,3 +40,23 @@ export type {
   TableroProyecto,
   TerminadasDeProyecto,
 } from './proyectos';
+export {
+  listarMiHistorial,
+  listarMisTareasEnCurso,
+  listarPullRequestsPorAtender,
+  listarTareas,
+  obtenerTarea,
+} from './tareas';
+export type {
+  EntradaConTarea,
+  EntradaListarMiHistorial,
+  ListadoTareas,
+  MiHistorial,
+  MisTareasEnCurso,
+  PullRequestDeTarea,
+  PullRequestsPorAtender,
+  TareaDeHistorial,
+  TareaDetalleVista,
+  TareaListado,
+} from './tareas';
+export type { ProyectoResumen, TareaConProyecto } from './comun';

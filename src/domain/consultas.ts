@@ -9,10 +9,12 @@
  */
 
 import type { FechaHora, Hora, Id } from './comunes';
+import type { EventoHistorial } from './historial';
 import { DIAS_SEMANA } from './enumeraciones';
 import type { DiaSemana, EstadoPracticante, EstadoPR } from './enumeraciones';
 import { etiquetaPRVisible } from './estadoPR';
 import { proyectosDeCarga } from './indicadores';
+import { devolucionVigente } from './transiciones';
 import type { Asignacion, Proyecto } from './proyectos';
 import type { Tarea } from './tareas';
 import { DESFASE_ZONA_HORARIA_MS, MS_POR_DIA, esAhoraValido } from './tiempo';
@@ -107,6 +109,30 @@ export function prPorAtender(tareas: readonly Tarea[]): Tarea[] {
         a.numero - b.numero ||
         compararTexto(a.id, b.id),
     );
+}
+
+// ── Detalle de tarea ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * La nota («observaciones») de la devolución vigente de una tarea, o `null` si no hay marca
+ * «Devuelta con observaciones» (`devolucionVigente`) o la devolución no trae nota. Con varias
+ * devoluciones, la más reciente. Liberar o volver a tomar la tarea no borra la marca ni la nota
+ * (§6.5); enviarla o terminarla otra vez sí.
+ */
+export function observacionDevolucionVigente(
+  idTarea: Id,
+  historial: readonly EventoHistorial[],
+): string | null {
+  if (!devolucionVigente(idTarea, [...historial])) return null;
+  const ultima = historial
+    .filter(
+      (e) =>
+        e.tipo_accion === 'TAREA_DEVUELTA' &&
+        e.elemento.tipo === 'TAREA' &&
+        e.elemento.id === idTarea,
+    )
+    .sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
+  return ultima?.nota ?? null;
 }
 
 // ── Practicantes ─────────────────────────────────────────────────────────────────────────────

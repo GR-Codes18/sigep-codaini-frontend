@@ -27,6 +27,7 @@ import {
   puede,
   type EstadoPR,
   type EstadoTarea,
+  type Asignacion,
   type EventoHistorial,
   type Fecha,
   type FechaHora,
@@ -200,4 +201,89 @@ export function aTareaDeTablero(
     etiqueta_pr_visible: etiquetaPRVisible(tarea),
     devuelta: puedeVerMarca && devolucionVigente(tarea.id, datos.historial),
   };
+}
+
+// ── Tareas con su proyecto ───────────────────────────────────────────────────────────────────
+
+export interface ProyectoResumen {
+  id: Id;
+  codigo: string;
+  nombre: string;
+}
+
+export function resumenDeProyecto(
+  proyecto: Pick<Proyecto, 'id' | 'codigo' | 'nombre'>,
+): ProyectoResumen {
+  return { id: proyecto.id, codigo: proyecto.codigo, nombre: proyecto.nombre };
+}
+
+/** Una tarea del tablero con el proyecto al que pertenece (para los listados transversales). */
+export type TareaConProyecto = TareaDeTablero & { proyecto: ProyectoResumen };
+
+export function aTareaConProyecto(
+  datos: Pick<DatosAlmacen, 'usuarios' | 'historial'>,
+  actor: Pick<Usuario, 'id' | 'rol'>,
+  proyecto: Pick<Proyecto, 'id' | 'codigo' | 'nombre'>,
+  tarea: Tarea,
+  hoy: Fecha,
+): TareaConProyecto {
+  return {
+    ...aTareaDeTablero(datos, actor, proyecto, tarea, hoy),
+    proyecto: resumenDeProyecto(proyecto),
+  };
+}
+
+export interface TareaConSuProyecto {
+  tarea: Tarea;
+  proyecto: Proyecto;
+}
+
+/** Las tareas que `actor` puede abrir (`VER_TAREA`), en el orden del almacén, con su proyecto. */
+export function tareasVisibles(
+  datos: Pick<DatosAlmacen, 'tareas' | 'proyectos' | 'asignaciones'>,
+  actor: Usuario,
+): TareaConSuProyecto[] {
+  const asignaciones = asignacionesDe(datos, actor.id);
+  const proyectos = new Map(datos.proyectos.map((p) => [p.id, p]));
+  return datos.tareas.flatMap((tarea) => {
+    const proyecto = proyectos.get(tarea.id_proyecto);
+    if (proyecto === undefined) return [];
+    return puede(actor, 'VER_TAREA', { proyecto, tarea, asignaciones }).permitido
+      ? [{ tarea, proyecto }]
+      : [];
+  });
+}
+
+export interface TareaCargada {
+  tarea: Tarea;
+  proyecto: Proyecto;
+  /** Asignaciones **de quien consulta**, listas para las reglas de `domain/`. */
+  asignaciones: Asignacion[];
+}
+
+/** Una tarea por id con `VER_TAREA`: `NO_ENCONTRADO` si no existe y `FUERA_DE_ALCANCE` si es ajena. */
+export function cargarTareaConPermiso(
+  datos: Pick<DatosAlmacen, 'tareas' | 'proyectos' | 'asignaciones'>,
+  actor: Usuario,
+  idTarea: Id,
+): Resultado<TareaCargada> {
+  const tarea = datos.tareas.find((t) => t.id === idTarea);
+  if (tarea === undefined) return fallo('NO_ENCONTRADO');
+  const proyecto = datos.proyectos.find((p) => p.id === tarea.id_proyecto);
+  if (proyecto === undefined) return fallo('NO_ENCONTRADO');
+  const asignaciones = asignacionesDe(datos, actor.id);
+  const permiso = puede(actor, 'VER_TAREA', { proyecto, tarea, asignaciones });
+  if (!permiso.permitido) return denegar(permiso);
+  return exito({ tarea, proyecto, asignaciones });
+}
+
+/** Los eventos de una tarea, con su autor, del más reciente al más antiguo. */
+export function eventosDeLaTarea(
+  datos: Pick<DatosAlmacen, 'historial' | 'usuarios'>,
+  idTarea: Id,
+): EventoConAutor[] {
+  return conAutor(
+    datos.usuarios,
+    datos.historial.filter((e) => e.elemento.tipo === 'TAREA' && e.elemento.id === idTarea),
+  );
 }

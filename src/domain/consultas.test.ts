@@ -4,13 +4,15 @@ import {
   TERMINADAS_EN_TABLERO,
   ordenarReuniones,
   ordenarTareasEnCurso,
+  observacionDevolucionVigente,
   ordenarTerminadas,
   prPorAtender,
   proximaReunion,
   situacionPracticante,
   terminadasRecientes,
 } from './consultas';
-import { IDS, asignacion, proyecto, tarea, usuario } from './pruebas/fabricas';
+import type { TipoAccionHistorial } from './enumeraciones';
+import { IDS, asignacion, evento, proyecto, tarea, usuario } from './pruebas/fabricas';
 import type { Tarea } from './tareas';
 
 function terminada(numero: number, fecha: string | null): Tarea {
@@ -407,5 +409,91 @@ describe('ordenarReuniones', () => {
 
   it('sin proyectos devuelve una lista vacía', () => {
     expect(ordenarReuniones([], ahora)).toEqual([]);
+  });
+});
+
+describe('observacionDevolucionVigente (§6.5)', () => {
+  const de = (
+    tipo_accion: TipoAccionHistorial,
+    hora: string,
+    nota: string | null = null,
+    idTarea: string = IDS.tarea,
+  ) =>
+    evento({
+      id: `e-${tipo_accion}-${hora}-${idTarea}`,
+      fecha: `2026-11-10T${hora}:00:00.000Z`,
+      tipo_accion,
+      nota,
+      elemento: { tipo: 'TAREA', id: idTarea, etiqueta: idTarea },
+    });
+
+  it('sin eventos: null', () => {
+    expect(observacionDevolucionVigente(IDS.tarea, [])).toBeNull();
+  });
+
+  it('una devolución vigente devuelve su nota', () => {
+    const historial = [
+      de('TAREA_ENVIADA_A_SUPERVISION', '10'),
+      de('TAREA_DEVUELTA', '11', 'Falta probar.'),
+    ];
+
+    expect(observacionDevolucionVigente(IDS.tarea, historial)).toBe('Falta probar.');
+  });
+
+  it('con varias devoluciones, la más reciente', () => {
+    const historial = [
+      de('TAREA_DEVUELTA', '09', 'Primera.'),
+      de('TAREA_ENVIADA_A_SUPERVISION', '10'),
+      de('TAREA_DEVUELTA', '11', 'Segunda.'),
+    ];
+
+    expect(observacionDevolucionVigente(IDS.tarea, historial)).toBe('Segunda.');
+  });
+
+  it('liberar o volver a tomar la tarea conserva la marca y la nota', () => {
+    const historial = [
+      de('TAREA_DEVUELTA', '11', 'Falta probar.'),
+      de('TAREA_LIBERADA', '12'),
+      de('TAREA_TOMADA', '13'),
+    ];
+
+    expect(observacionDevolucionVigente(IDS.tarea, historial)).toBe('Falta probar.');
+  });
+
+  it('enviarla o terminarla otra vez quita la marca: null', () => {
+    for (const cierre of ['TAREA_ENVIADA_A_SUPERVISION', 'TAREA_TERMINADA'] as const) {
+      const historial = [de('TAREA_DEVUELTA', '11', 'Falta probar.'), de(cierre, '12')];
+
+      expect(observacionDevolucionVigente(IDS.tarea, historial), cierre).toBeNull();
+    }
+  });
+
+  it('una devolución sin nota da null aunque la marca esté vigente', () => {
+    expect(observacionDevolucionVigente(IDS.tarea, [de('TAREA_DEVUELTA', '11', null)])).toBeNull();
+  });
+
+  it('ignora los eventos de otras tareas', () => {
+    const historial = [de('TAREA_DEVUELTA', '11', 'De otra tarea.', 't-otra')];
+
+    expect(observacionDevolucionVigente(IDS.tarea, historial)).toBeNull();
+    expect(observacionDevolucionVigente('t-otra', historial)).toBe('De otra tarea.');
+  });
+
+  it('con una devolución propia y otra más reciente de otra tarea, usa la propia', () => {
+    const historial = [
+      de('TAREA_DEVUELTA', '09', 'La mía.'),
+      de('TAREA_DEVUELTA', '11', 'De otra tarea.', 't-otra'),
+    ];
+
+    expect(observacionDevolucionVigente(IDS.tarea, historial)).toBe('La mía.');
+  });
+
+  it('no modifica el historial recibido', () => {
+    const historial = Object.freeze([
+      de('TAREA_DEVUELTA', '09', 'Primera.'),
+      de('TAREA_DEVUELTA', '11', 'Segunda.'),
+    ]);
+
+    expect(() => observacionDevolucionVigente(IDS.tarea, historial)).not.toThrow();
   });
 });
