@@ -12,8 +12,8 @@
   consultas con alcance por rol. El cierre y los sub-pasos constan en el historial inferior.
 - **Fase 4 — componentes compartidos: construidos y probados; conexión a `services/consultas/` en curso.** Los pasos 1 a 11
   están construidos y probados en aislamiento. Las acciones ya pasan por `services/`, pero las pantallas aún leen el almacén
-  directamente; faltan el detalle y el Kanban con consultas, Mi perfil y retirar `src/app/ejemplos/` (sub-pasos c a e).
-  `FormularioTarea` no tiene todavía pantalla anfitriona. Se cierra al terminar esos sub-pasos.
+  directamente; faltan Mi perfil y retirar `src/app/ejemplos/` (sub-pasos d y e). `FormularioTarea` solo tiene pantalla
+  anfitriona para editar (el detalle); crear espera a los módulos 5.4 y 5.5. Se cierra al terminar esos sub-pasos.
 - **Conexión de pantallas, sub-paso 0: terminado (2026-11-18, `83b1315`).** La interfaz usa los servicios de la Fase 2
   (`cuentas/` y `seguimiento/`) y se retiraron los duplicados de la Fase 4.
 - **Conexión de pantallas, sub-paso a): terminado (2026-11-18, `0ed86c9`).** Adaptadores puros en `src/app/adaptadores/`
@@ -23,10 +23,17 @@
   `listarNotificaciones` mediante el hook `useNotificaciones`, que vuelve a consultar al montarse y cuando cambia la lista de
   notificaciones del almacén (opción A). El punto verde usa `no_leidas`; el enlace, `destino` y `enlace_activo`. Se retiró
   `notificacionVista.ts`.
-- **Verificación (en `7269ba6`):** 2.937 pruebas en 109 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+- **Conexión de pantallas, sub-paso c): terminado (2026-11-18, `7354f39`).** `PaginaDesarrollo` lee con
+  `obtenerTableroProyecto`, `obtenerTarea` y `listarTerminadasDeProyecto`, con un selector de proyecto según el rol, y las
+  acciones del detalle salen de un mapeador (`src/app/tareas/accionesDelDetalle.ts`) de las que ofrece la consulta.
+  `DetalleTarea` y `TableroKanban` dejan de leer el almacén y de recalcular reglas; hay un listado de «Ver todas las
+  terminadas» con búsqueda y se edita una tarea con `FormularioTarea`. Incluye la señal D6-A como regla de `domain/`
+  (`motivosDeAtencionDelResponsable`) y los campos `atencion_responsable` y `proyecto.rama_base` de `obtenerTarea`. Se retiraron
+  `accionesDeTarea.ts` y `datos.ts` de `ejemplos/`.
+- **Verificación (en `7354f39`):** 3.017 pruebas en 112 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el sub-paso b) (`7269ba6`).
-- **Siguiente paso:** sub-paso c) de la conexión de pantallas (detalle de tarea y Kanban), y después d) y e);
+- **Actualizado:** 2026-11-18, tras el sub-paso c) (`7354f39`).
+- **Siguiente paso:** sub-paso d) de la conexión de pantallas (Mi perfil y sesión), y después e);
   al terminar, Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
@@ -352,7 +359,7 @@
 - **Siguiente:** **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
   y se retira `src/app/ejemplos/`. La integración de las ramas de interfaz con el Bloque 3 de `development` ya está hecha
   (`48abbbc`). Va en sub-pasos, cada uno con su commit: **0** unificar servicios y acceso (hecho, `83b1315`); **a**
-  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas» (hecho, `7269ba6`); **c** detalle de tarea y Kanban; **d** Mi perfil y sesión; **e** retirar
+  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas» (hecho, `7269ba6`); **c** detalle de tarea y Kanban (hecho, `7354f39`); **d** Mi perfil y sesión; **e** retirar
   `ejemplos/`. Después sigue la Fase 5, módulo 5.1 (Postulaciones).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
@@ -434,8 +441,11 @@
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso 0. Acceso, Mi perfil y notificaciones usan los servicios de la Fase 2 (`cuentas/`, `seguimiento/`); se retiran `services/cuenta.ts`, `autenticacion.ts`, `marcar*` de `notificaciones.ts` y `auth/iniciarSesion.ts`. El acceso vuelve a emitir los avisos de fin de práctica (F6-A) | `83b1315` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso a). Adaptadores de las consultas a los componentes compartidos en `src/app/adaptadores/` (`tarea`, `tablero`, `eventos`, `notificacion`) y tabla de rutas de las notificaciones | `0ed86c9` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso b). Campana y «Ver todas» leen con `listarNotificaciones` (hook `useNotificaciones`); `CampanaNotificaciones` recibe `noLeidas`; se retira `notificacionVista.ts` | `7269ba6` |
+| 2026-11-18 | 4 | Conexión de pantallas, sub-paso c). Detalle de tarea, Kanban y «Ver todas las terminadas» con `obtenerTarea`, `obtenerTableroProyecto` y `listarTerminadasDeProyecto`; mapeador de acciones; editar con `FormularioTarea`; regla D6-A en `domain/` (`responsableTarea.ts`); se retiran `accionesDeTarea.ts` y `datos.ts` de `ejemplos/` | `7354f39` |
 
-**Estado de pruebas (2026-11-18, en `7269ba6`):** 2.937 pruebas en 109 archivos, todas aprobadas (`npx vitest run`); antes eran
+**Estado de pruebas (2026-11-18, en `7354f39`):** 3.017 pruebas en 112 archivos, todas aprobadas (`npx vitest run`); antes eran
+2.937 en 109 (`7269ba6`): el sub-paso c) sumó 80 netas (23 de la regla D6-A y de la consulta; el resto de adaptadores,
+mapeador, `useConsulta`, listado de terminadas, detalle, tablero y `PaginaDesarrollo`) y retiró las de `accionesDeTarea`. Antes,
 2.915 en 108 (`0ed86c9`): el sub-paso b) agregó 23 pruebas y retiró 1 (la de `notificacionVista`). Antes, 2.871 en 104
 (`83b1315`): el sub-paso a) sumó 44 pruebas en 4 archivos. Y antes, 2.890 en 108 (`48abbbc`): el sub-paso 0 retiró 23
 pruebas por duplicadas y agregó 4. `npx tsc -b`, `npx prettier --check` y `npm run build` sin errores; `npx eslint` con 0 errores y el aviso conocido en
@@ -501,10 +511,9 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       etiqueta hasta que vuelva a llegar a supervisión o a terminada.
 - [x] Fase 4 (detalle de tarea): se señala el caso D6-A en que una tarea EN_PROGRESO conserva como responsable
       a un practicante INACTIVO o con la asignación de baja; Administrador o Supervisor pueden identificar que
-      deben liberarla con motivo.
-- [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
-      a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
-      Administrador o el Supervisor la liberen con motivo.
+      deben liberarla con motivo. Hecho en el sub-paso c) (`7354f39`): la regla vive en `domain/responsableTarea.ts`
+      (`motivosDeAtencionDelResponsable`: cuenta inactiva, cuenta no encontrada o sin asignación vigente), la consulta
+      `obtenerTarea` entrega `atencion_responsable` solo al Administrador y al Supervisor, y `DetalleTarea` solo lo muestra.
 - [x] Sub-paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`).
 - [x] Sub-paso 7B: áreas técnicas, especialidades y criterios de evaluación (crear, editar, activar y
       desactivar) (`3368603` y `5eb54a4`). **Paso 7 terminado.**
@@ -629,19 +638,22 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       cerrarlo** en 6B (`9600f46`, `PR_CERRADO_DESDE_SISTEMA`). Completo.
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
 
-- [x] Paso explícito: migrar las pantallas integradas de `src/app/ejemplos/` a `services/` y a selectores del
-      almacén; la página de desarrollo temporal queda como contenedor de integración, sin simulaciones locales.
+- [x] Las mutaciones de la interfaz pasan por `services/` y la página de desarrollo temporal es un contenedor de integración sin
+      simulaciones locales. Las lecturas del tablero y del detalle usan `services/consultas/` desde el sub-paso c) (`7354f39`); la
+      de Mi perfil sigue leyendo el almacén (sub-paso d).
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
 
-- [ ] **Siguiente fase: conectar las pantallas y retirar `src/app/ejemplos/`.** Cada pantalla llama a `services/` (acciones) y a
-      `src/services/consultas/` (lecturas) y no filtra ni decide nada. Se retiran `accionesDeTarea.ts` (lo reemplaza
-      `accionesDeTarea` de `domain/`, que `obtenerTarea` ya trae como `acciones`), `almacenNotificaciones.ts`, `datos.ts`,
-      `PaginaDesarrollo.tsx` y `PaginaPerfil.tsx`.
+- [ ] **Conectar las pantallas y retirar `src/app/ejemplos/`** (en curso, sub-pasos 0 a e). Cada pantalla llama a `services/`
+      (acciones) y a `src/services/consultas/` (lecturas) y no filtra ni decide nada. Ya están retirados `accionesDeTarea.ts` y
+      `datos.ts` (`7354f39`); `almacenNotificaciones.ts` ya no existía. Quedan `responsabilidadesPerfil.ts` y la reescritura
+      de `PaginaPerfil` (sub-paso d), y mover `PaginaDesarrollo` y borrar la carpeta (sub-paso e). `PaginaDesarrollo` se conserva
+      como contenedor hasta la Fase 7.
 - [x] Fase 3 y 4 (adaptadores): hecho en el sub-paso a) (`0ed86c9`). Las consultas devuelven la forma de `domain/` (snake_case y
       fechas ISO) y los adaptadores de `src/app/adaptadores/` las convierten a los tipos de los componentes compartidos
       (`TareaDetalle`, `TareaTablero`, `EventoLinea`, `NotificacionItem`), con `parseISO` en el borde. Esos cuatro tipos se
-      conservan como tipos de presentación (ya no son «provisionales»). Sigue pendiente conectarlos: el detalle de tarea usa
-      `acciones` y `solo_lectura` de `obtenerTarea` (sub-paso c) y la campana, `listarNotificaciones` (sub-paso b).
+      conservan como tipos de presentación (ya no son «provisionales»). Ya conectados: la campana con `listarNotificaciones`
+      (sub-paso b, `7269ba6`) y el detalle, el tablero y el listado de terminadas con `obtenerTarea`, `obtenerTableroProyecto` y
+      `listarTerminadasDeProyecto` (sub-paso c, `7354f39`).
 - [x] Fase 4 (campana y «Ver todas»): hecho en el sub-paso b) (`7269ba6`). `listarNotificaciones` con `limite: 8` para la
       campana; `enlace_activo` y `destino` deciden el enlace (la ruta sale de la tabla de `adaptadores/notificacion.ts`);
       `no_leidas` da el punto verde. Mientras no existan los detalles de los módulos, un aviso lleva a la página del módulo

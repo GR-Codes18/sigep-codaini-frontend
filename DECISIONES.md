@@ -3717,3 +3717,45 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   detalle. Mientras tanto, la única forma de abrir una tarea es `PaginaDesarrollo`.
 - **Pruebas.** 2.915 → 2.937 en 109 archivos: +23 (hook 9, campana conectada 6, «Ver todas» 6 más, `CampanaNotificaciones` 2 más) y
   −1 (la de `notificacionVista`). Sin cobertura propia: el aviso de error de «Ver todas» (el hook sí lo prueba).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso c): detalle de tarea, Kanban y «Ver todas las terminadas»
+
+- **Commit:** `7354f39` (detalle de tarea, tablero y «Ver todas las terminadas» conectados a las consultas; incluye la regla D6-A de
+  `domain/` y los campos de `obtenerTarea`).
+- **Partición.** El sub-paso se planeó en tres commits (c1 dominio y consulta, c2 detalle y tablero, c3 listado y edición) y los
+  autores pidieron unirlos en uno solo para no multiplicar commits; el contenido es el mismo.
+- **Señal D6-A (D3-A).** Devolver o reabrir conserva al responsable, así que una tarea puede quedar EN_PROGRESO a nombre de alguien que
+  ya no puede trabajarla. La regla pura `motivosDeAtencionDelResponsable` (`src/domain/responsableTarea.ts`) devuelve los motivos
+  `CUENTA_INACTIVA`, `CUENTA_NO_ENCONTRADA` y `SIN_ASIGNACION_VIGENTE` (pueden darse varios, en ese orden; `[]` si no hay nada que
+  señalar). Solo aplica con la tarea EN_PROGRESO y con responsable. `obtenerTarea` la expone como `atencion_responsable`, que
+  **solo reciben el Administrador y el Supervisor** (quienes liberan la tarea); para el Practicante es `[]`, para que no se entere del
+  estado de la cuenta de un compañero. Se eligió un arreglo de motivos y no un booleano porque la interfaz distingue tres mensajes. 13
+  mutaciones detectadas de 13 (10 sobre la regla y 3 sobre la consulta); se aplicaron con un script que restaura el archivo, sin Git.
+- **Rama base del proyecto.** `obtenerTarea` trae `proyecto.rama_base`: el modal de «Crear Pull Request» la necesita aunque aún no
+  exista el PR (`pull_request.rama_base` es `null` hasta entonces). Antes se leía del almacén.
+- **Mapeador de acciones.** `src/app/tareas/accionesDelDetalle.ts` convierte las `AccionDisponible` que entrega la consulta en las
+  acciones de `DetalleTarea`: clave, etiqueta, si es destructiva, el texto que se pide (`MOTIVO` o `NOTA`) y el servicio al que
+  llama. No consulta permisos ni estados. La tabla está tipada `Record<AccionDeTarea, …>`, así que una acción nueva del dominio no
+  compila hasta describirla. Crear un PR y editar no llaman a un servicio: los resuelve la página (modal de PR y formulario).
+- **Componentes sin reglas.** `DetalleTarea` ya no lee el almacén ni recalcula la etiqueta de PR (llega decidida por la consulta, y
+  con «Pendiente» la consulta no trae URL). `TableroKanban` ya no usa `estaVencida` ni `hoy` (usa `vencida` de la consulta) ni
+  recorta o reordena las terminadas: recibe las 5 más recientes y `totalTerminadas` para el contador y el enlace «Ver todas».
+- **`useConsulta`.** Hook genérico (`src/app/useConsulta.ts`) con el patrón de `useNotificaciones`: vuelve a consultar cuando cambia
+  el almacén (usado solo como señal de cambio), conserva la respuesta anterior mientras llega la nueva, no muestra el valor de otra
+  consulta ni deja que una respuesta tardía pise a una reciente.
+- **«Ver todas las terminadas» (§6.8).** Vista dentro de `PaginaDesarrollo` (`ListadoTerminadas`): lista completa, búsqueda por título o
+  ID en memoria, clic al detalle y «Volver al listado» o «Volver al tablero». La búsqueda es un filtro de presentación sobre datos ya
+  limitados por la consulta.
+- **Selector de proyecto.** `PaginaDesarrollo` ya no está fijada a `pry-pl2d`: el Administrador y el Supervisor usan `listarProyectos`
+  y el Practicante, `listarMisProyectos` (solo los vigentes); por defecto, el primero. No hizo falta ajustar ninguna consulta.
+- **Editar tarea (D6-A).** Solo «editar» se conecta a `FormularioTarea`, desde el detalle y cuando la consulta ofrece `EDITAR_DATOS`.
+  Crear tarea no tiene todavía pantalla anfitriona: espera a los módulos 5.4 y 5.5.
+- **Retiros.** `ejemplos/accionesDeTarea.ts` y `ejemplos/datos.ts`, con sus pruebas. `PaginaDesarrollo` se conserva como contenedor
+  de integración hasta la Fase 7 (D2-B).
+- **Pruebas.** 2.937 → 3.017 en 112 archivos (+80 netas): la regla D6-A y la consulta, el mapeador, `useConsulta`, el listado de
+  terminadas, el detalle, el tablero, los adaptadores y `PaginaDesarrollo` reescrita (15). Las pruebas de la página usan un entorno sin
+  demora de red para no esperar 600 ms por consulta.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** (1) §6.5 y plan §5: la señal D6-A y quién la ve no están
+  documentadas. (2) §6.8 describe «Ver todas las terminadas» como un listado con búsqueda; hoy es una vista del contenedor temporal
+  hasta los módulos de las Fases 5 a 7. (3) «Solo mis tareas» actúa sobre las terminadas que muestra el tablero (las 5 más recientes):
+  conviene decidir si debe actuar sobre todas.

@@ -315,6 +315,8 @@ export { ACCIONES_TAREA_ADICIONALES, accionesDeTarea } from './accionesTarea';
 export type { AccionDeTarea, AccionDisponible, AccionTareaAdicional } from './accionesTarea';
 export { MOTIVOS_ATENCION_RESPONSABLE, motivosDeAtencionDelResponsable } from './responsableTarea';
 export type { MotivoAtencionResponsable } from './responsableTarea';
+export { CAMPOS_DEL_PERFIL, camposDelPerfil } from './perfil';
+export type { CampoDelPerfil, CampoPerfilDisponible } from './perfil';
 
 export {
   TERMINADAS_EN_TABLERO,

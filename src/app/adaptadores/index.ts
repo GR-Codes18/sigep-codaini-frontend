@@ -6,5 +6,6 @@ export {
   RUTA_MI_PERFIL,
   type ContextoNotificacion,
 } from './notificacion';
+export { aPerfil, type PerfilParaVista } from './perfil';
 export { aTareaDetalle } from './tarea';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';

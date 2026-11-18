@@ -124,6 +124,8 @@ export type {
   LineaDeTiempo,
   ListadoHistorial,
 } from './historial';
+export { obtenerMiPerfil } from './perfil';
+export type { MiPerfil, PracticaDelPerfil } from './perfil';
 export { listarNotificaciones } from './notificaciones';
 export type {
   DestinoDeNotificacion,
