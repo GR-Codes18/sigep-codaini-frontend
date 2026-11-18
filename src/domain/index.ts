@@ -164,6 +164,14 @@ export type {
   TransicionPostulacion,
 } from './decisionPostulacion';
 
+export { CODIGOS_REACTIVACION, reactivarPractica, reactivarSupervisor } from './reactivacion';
+export type {
+  CodigoReactivacion,
+  CodigoReactivacionPropio,
+  ErrorReactivacion,
+  ResultadoReactivacion,
+} from './reactivacion';
+
 export {
   CODIGOS_BLOQUE_CRITERIOS,
   PESO_TOTAL_BLOQUE,
