@@ -2251,7 +2251,7 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 
 - **5B:** las 7 transiciones y el puerto `github` en `Entorno` (D4). **5C:** opciones (D3, D5) y la prueba de
   flujo crear → tomar → enviar → aprobar.
-- Ajustar a mano el plan §9, Fase 2, paso 6 (D3).
+- Ajustar a mano el plan §9, Fase 2, paso 6 (D3). **Actualización (2026-11-18):** hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`).
 - Fase 4: señalar en el detalle de tarea el caso de D6 (responsable INACTIVO o con baja en una tarea
   EN_PROGRESO).
 
@@ -2442,7 +2442,7 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   cuando el practicante desactiva «Requiere PR»; y, en todos los servicios de tareas, pasar las asignaciones de
   quien actúa y rechazar el texto ausente.
 - **Queda para los autores (a mano):** ajustar el plan §9, Fase 2, paso 6 (D3: «No requiere PR» ya está en el
-  paso 5).
+  paso 5). **Actualización (2026-11-18):** hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`).
 - **Queda para la Fase 4:** señalar en el detalle de tarea el caso de D6-A (responsable INACTIVO o con baja en
   una tarea EN_PROGRESO).
 
@@ -2550,7 +2550,7 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 
 - **6B:** `cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre del Bloque 2.
 - **Ajustes a mano en `docs/`:** plan §9, Fase 2, paso 6 (D3: «No requiere PR» ya está en el paso 5) y plan §8
-  (el caso de error preparado es «rama inexistente», con las ramas de ejemplo de P1 y P5).
+  (el caso de error preparado es «rama inexistente», con las ramas de ejemplo de P1 y P5). **Actualización (2026-11-18):** hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`).
 
 ## 2026-11-17 — [A+B] Fase 2, paso 6B: cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2)
 
@@ -2630,7 +2630,7 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 
 - **Autores:** commit de documentación de este cierre y PR del Bloque 2 a `development`, revisado por ambos.
 - **Ajustes a mano en `docs/`:** plan §9, Fase 2, paso 6 (D3) y plan §8 (caso de error «rama inexistente» y
-  ramas de ejemplo, P1, P2 y P5).
+  ramas de ejemplo, P1, P2 y P5). **Actualización (2026-11-18):** hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`).
 - **Fase 4:** señalar en el detalle de tarea el caso de D6-A (responsable INACTIVO o con baja en una tarea
   EN_PROGRESO); la pantalla de «Crear Pull Request» usa `listarRamasParaPullRequest` y muestra el aviso de
   §7.5 cuando `vinculado` es `true`.
@@ -2726,7 +2726,7 @@ en dos sub-pasos: 7A (este) y 7B (áreas técnicas, especialidades y criterios; 
 - **Fase 5.1:** cómo se muestra «Analizando…» (E5-A) y qué texto sale cuando la evaluación falla (E3-A: «No se
   pudo evaluar: <mensaje>»); mostrar la contraseña temporal una sola vez al aprobar.
 - **Autores, a mano en `docs/`:** propuesta §5.1/§5.2: la fecha de ingreso de un practicante nuevo es el día de la
-  aprobación (hora de Perú) y la de fin se calcula con la duración vigente.
+  aprobación (hora de Perú) y la de fin se calcula con la duración vigente. **Actualización (2026-11-18):** hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`).
 - **Paso 8:** `editarDatosPractica` (fecha de ingreso y de fin), restablecer contraseña y asignar al proyecto.
 - **7B:** áreas técnicas, especialidades y criterios (propuesta aparte).
 
@@ -3134,7 +3134,8 @@ dos sub-pasos: **9A** (este: datos del proyecto) y **9B** (ciclo de vida y super
 - **Fase 5.4:** los formularios usan los esquemas de `esquemas.ts` y envían el código ya en mayúsculas y sin espacios;
   el error del código se muestra en su campo; editar no ofrece el código; la reunión se quita enviando día y hora vacíos.
 - **Autores, a mano en `docs/`:** propuesta §5.4 con los supuestos del paso 9 (repositorio, rama base, reunión y enlaces
-  editables en un proyecto finalizado, quitar la reunión avisa, reactivar no avisa).
+  editables en un proyecto finalizado, quitar la reunión avisa, reactivar no avisa). **Actualización (2026-11-18):** hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`). Lo de la reunión y los
+  enlaces en un proyecto finalizado ya estaba escrito en §5.4.
 
 ---
 
@@ -3370,6 +3371,9 @@ Paso partido en tres sub-pasos, cada uno con su parada y su commit: **10A** (acc
   insight (sin campo libre) y el de supervisión demorada apunta a la tarea.
 - **§5.8:** la proporción de la nota admite `100/0` y `0/100` (enteros de 0 a 100 que suman 100).
 
+**Actualización (2026-11-18):** las tres divergencias (§8.2, §8.1 y §5.8) las escribieron los autores a mano en `3d6f019`
+(PR #27, fusionado en `6cdd2fb`). Con esto ya no hay divergencia entre el código y `docs/` para el paso 10.
+
 ### Pendientes
 
 - **Sesión abierta:** `GuardaRuta` no revalida la sesión guardada; quien queda INACTIVO con la sesión abierta sigue viendo las
@@ -3554,6 +3558,11 @@ notificaciones) y **11E** (los tres resúmenes de entrada). Commits de código: 
 - **§9.2.1:** «Ya no participas» cuando hay baja, aunque el proyecto además esté finalizado.
 - **§8.1:** el enlace de una notificación está activo solo si el elemento existe y quien mira puede abrirlo.
 - **§6.7:** la línea de tiempo de una tarea ajena trae todos sus eventos, también la nota de una devolución.
+
+**Actualización (2026-11-18):** las divergencias las escribieron los autores a mano en `3d6f019` (PR #27, fusionado en
+`6cdd2fb`): propuesta §4, §5.1, §5.2, §5.6, §5.9, §6.7, §8.1, §9.1.2, §9.1.5, §9.2.1 y §9.2.3, y plan §9 (Fase 2, paso 11). En
+§5.9 decidieron **documentar** también «por revisar», próximas reuniones y avance en el Dashboard del Administrador, así que
+esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/` para el paso 11.
 
 ### Pendientes
 
