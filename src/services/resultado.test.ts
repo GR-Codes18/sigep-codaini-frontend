@@ -65,13 +65,12 @@ describe('mensajes de los códigos de domain/', () => {
       'NO_ENCONTRADO',
       'DATOS_INVALIDOS',
       'ERROR_INESPERADO',
-<<<<<<< HEAD
+
       'CREDENCIALES_INVALIDAS',
       'ACCESO_RAPIDO_NO_DISPONIBLE',
-=======
+
       'SIN_CAMBIOS',
       'RAMA_INEXISTENTE',
->>>>>>> origin/development
     ]) {
       expect(mensajeDe(codigo), codigo).not.toBe(MENSAJE_GENERICO);
     }
