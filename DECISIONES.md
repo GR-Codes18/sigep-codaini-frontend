@@ -2254,3 +2254,101 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 - Ajustar a mano el plan §9, Fase 2, paso 6 (D3).
 - Fase 4: señalar en el detalle de tarea el caso de D6 (responsable INACTIVO o con baja en una tarea
   EN_PROGRESO).
+
+## 2026-11-17 — [A+B] Fase 2, paso 5B: las 7 transiciones de tarea y el puerto de GitHub simulado
+
+- **Commit:** `2726b9a` (`feat: agrega las transiciones de tarea y el puerto de GitHub simulado (Fase 2, paso 5B)`). Verificación: 1092 pruebas en 47 archivos (82 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó
+
+- `src/services/github.ts`: `PuertoGitHub` (`consultarPullRequest(tarea): ConsultaGitHub`), `TareaConsultable`
+  (`url_pull_request` y `estado_pr`), `consultaSimulada` y `GITHUB_SIMULADO`. El paso 6 amplía el mismo puerto
+  con listar ramas, crear y cerrar.
+- `src/services/entorno.ts`: `Entorno` gana `github: PuertoGitHub`; `ENTORNO.github = GITHUB_SIMULADO`.
+  `crearEntornoDePrueba` acepta `github` (por defecto, la simulación).
+- `src/services/tareas/transiciones.ts`: `tomarTarea`, `liberarTarea`, `enviarTareaASupervision`,
+  `marcarTareaTerminada`, `aprobarTarea`, `devolverTarea` y `reabrirTarea` (entradas `EntradaTransicion`,
+  `EntradaLiberar` con `motivo?` y `EntradaConNota` con `nota?`). Todas devuelven la `Tarea` resultante.
+- Reexportaciones en `src/services/tareas/index.ts` y `src/services/index.ts`. Sin códigos nuevos en
+  `MENSAJES`.
+
+### Decisiones aprobadas en la propuesta de 5B
+
+- **Simulación de GitHub (D4-A):** responde lo último que el sistema sabe del PR: CREADO → abierto sin
+  conflictos; CON_CONFLICTOS → abierto con conflictos; FUSIONADO → fusionado; CERRADO → cerrado; PENDIENTE con
+  URL (PR viejo ya fusionado y recalculado, S4) → fusionado. Una URL sin `estado_pr` es un dato imposible y
+  lanza (`ERROR_INESPERADO`).
+- **Puerto síncrono que recibe la tarea:** la operación de `ejecutarServicio` corre dentro de la transacción
+  del almacén (síncrona) y S1 dice que el GitHub simulado siempre responde al recalcular. Recibe la tarea y no
+  solo la URL porque la simulación necesita el último `estado_pr`. Con un backend real se reemplaza toda la
+  capa `services/`.
+- **`fecha_termino` no va en `cambios`**, como en la semilla: ya es igual a la fecha del evento.
+- **`FALTA_CONSULTA_GITHUB` se devuelve como fallo** con el mensaje que ya tenía en `MENSAJES` (no como
+  excepción) y no escribe nada. Es inalcanzable mientras el servicio consulte cuando `necesitaConsultaGitHub`
+  lo pide.
+
+### Decisiones de implementación
+
+- **Un ayudante privado, `ejecutarTransicion`**, con el orden de 5A: Zod → `cargarContextoTarea` →
+  `puedeTransicionar` (puede → estado → condición → texto vacío) → `exigirTexto` (texto ausente) → efecto
+  propio → evento + aviso → una sola escritura con `conEfectos`. Las 7 funciones exportadas solo declaran su
+  efecto (plan §4.4: una función por acción).
+- **El ayudante pone y registra el cambio de `estado`** (siempre primero en `cambios`); el efecto devuelve la
+  tarea nueva, los cambios extra (responsable, `estado_pr`), la `nota` y el aviso.
+- **Mapeo (sigue la semilla):**
+
+  | Servicio | Tarea | `cambios` | `nota` | Aviso (§8.1) |
+  |---|---|---|---|---|
+  | tomar | EN_PROGRESO, responsable = actor | estado; responsable `null` → nombre | — | ninguno |
+  | liberar | DISPONIBLE, sin responsable; PR, URL y ramas se conservan | estado; responsable nombre → `null` | motivo recortado (opcional para el practicante) | `TAREA_LIBERADA` → responsable |
+  | enviar | ESPERANDO_SUPERVISION, `estado_pr` recalculado | estado; + `estado_pr` si cambia | — | `TAREA_ENVIADA_A_SUPERVISION` → supervisor |
+  | terminar | TERMINADA, `fecha_termino = marca.ahora`, `estado_pr` recalculado | estado; + `estado_pr` si cambia | — | ninguno |
+  | aprobar | TERMINADA, `fecha_termino = marca.ahora` (sin recalcular PR, S5) | estado | — | `TAREA_APROBADA` → responsable |
+  | devolver | EN_PROGRESO, mismo responsable (D6-A) | estado | nota recortada | `TAREA_DEVUELTA` → responsable |
+  | reabrir | EN_PROGRESO, mismo responsable (D6-A), `fecha_termino = null` | estado | nota recortada | `TAREA_REABIERTA` → responsable |
+
+- **El aviso va al responsable anterior a la transición.** `crearNotificaciones` descarta al autor, así que
+  liberar la tarea propia no avisa a nadie, sin una regla aparte. Con D6-A, un responsable INACTIVO recibe el
+  aviso igual (solo se exige que exista).
+- **PR al llegar:** el puerto se consulta solo si `necesitaConsultaGitHub(tarea)` (requiere PR y ya hubo URL);
+  sin URL, `domain/` da PENDIENTE sin consultar; sin «Requiere PR», `estado_pr` se conserva. El cambio de
+  `estado_pr` va en el mismo evento de la transición (autor, el practicante), sin un
+  `PULL_REQUEST_ESTADO_ACTUALIZADO` aparte. La URL y las ramas no se tocan.
+- **La marca «Devuelta con observaciones»** se sigue derivando con `devolucionVigente`; no se guarda nada
+  nuevo. Las pruebas comprueban que liberar y volver a tomar la conservan y que volver a enviar la apaga.
+- **El texto se pasa siempre a `puedeTransicionar`** (pendiente de la Fase 1), aunque `exigirTexto` también
+  rechaza el vacío: así la regla del texto queda en `domain/` y el servicio solo añade el caso «ausente».
+
+### Pruebas y mutaciones
+
+- `transiciones.test.ts`: éxito de cada una (tarea, una sola escritura, evento exacto y avisos exactos);
+  condiciones de §6.2 (estado equivocado, tomar en EN_PAUSA, liberar/aprobar en EN_PAUSA permitidos, enviar sin
+  supervisión, terminar con supervisión); quién (roles, supervisor ajeno, sin asignación, con baja, no
+  responsable); textos ausentes, vacíos o con solo espacios; orden alcance → estado → texto; PR (primera
+  llegada, sin «Requiere PR», las 4 respuestas de GitHub con un puerto inyectado que cuenta las llamadas,
+  aprobar sin consultar); `fecha_termino` igual a la fecha del evento y en `null` al reabrir; D6-A; un caso
+  real de la semilla (reabrir `PL2D-001`, con PR fusionado, y volver a terminar → PENDIENTE con la URL vieja); y
+  una matriz común a las 7 (FINALIZADO, INACTIVO, inexistentes, ID vacío). La prueba del ciclo de la marca
+  adelanta el reloj entre pasos para no depender del desempate de eventos con el mismo instante.
+- `github.test.ts`: las 5 respuestas de la simulación, su efecto con `siguienteEstadoPR` y el dato imposible.
+  `entorno.test.ts`: el puerto por defecto y que `crearEntorno` lo conserva o lo cambia.
+- **Mutaciones del agente (11, con `git add` previo y `git restore` después):** 10 detectadas y restauradas
+  (no pasar `github`; consultar siempre; aprobar recalcula el PR; `fecha_termino` con el reloj; reabrir no
+  limpia `fecha_termino`; devolver quita al responsable; tomar no asigna al actor; no exigir el motivo ausente;
+  la simulación responde abierto para PENDIENTE con URL; el aviso de liberar va al actor).
+- La mutación «la simulación responde abierto para PENDIENTE con URL» pareció sobrevivir en la primera pasada
+  porque el script solo corría `src/services/tareas`; sobre `src/services` la detectan 2 pruebas de
+  `github.test.ts`.
+- **Mutación equivalente:** quitar el texto de la llamada a `puedeTransicionar` no cambia ningún resultado,
+  porque `exigirTexto` corre justo después y también rechaza el texto vacío (el orden estado → texto se
+  mantiene). No se puede detectar con pruebas; se conserva el texto en la llamada por el pendiente acordado.
+  La misma redundancia existe en `eliminarTarea` (5A).
+
+### Pendientes
+
+- **5C:** «Requiere supervisión» y «Requiere PR» (D3, D5, C1 con `siguienteEstadoPR` y el aviso al supervisor)
+  y la prueba de flujo crear → tomar → enviar → aprobar.
+- **Paso 6:** ampliar `PuertoGitHub` con listar ramas, crear y cerrar PR, y el caso de error preparado.
+- **Semilla (opcional):** ninguna tarea EN_PROGRESO tiene un PR previo, así que el recálculo al volver a
+  llegar no se ve en la demostración sin reabrir antes una tarea con PR.

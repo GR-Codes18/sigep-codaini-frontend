@@ -11,8 +11,9 @@
 - **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 2** (pasos 5 y 6: servicios de tareas y de Pull
   Request). El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). El paso 5 se parte en tres
   sub-pasos con parada y commit cada uno (D2-A): **5A terminado** (crear, editar y eliminar tareas,
-  `2c54c04`); siguen 5B (las 7 transiciones y el puerto de GitHub) y 5C (opciones y prueba de flujo).
-- **Actualizado:** 2026-11-17, al cerrar el sub-paso 5A.
+  `2c54c04`) y **5B terminado** (las 7 transiciones y el puerto de GitHub, `2726b9a`); sigue 5C (opciones y
+  prueba de flujo).
+- **Actualizado:** 2026-11-17, al cerrar el sub-paso 5B.
 
 ### Cierres de fase
 
@@ -140,8 +141,15 @@
   cambian y avisa al responsable si la tarea está EN_PROGRESO; eliminar quita la tarea y deja el evento con
   el motivo. Código nuevo `SIN_CAMBIOS`. 50 pruebas nuevas y 13 mutaciones detectadas de 13. Detalle en
   `DECISIONES.md`.
-- **Siguiente: sub-paso 5B** (tomar, liberar, enviar a supervisión, marcar terminada, aprobar, devolver y
-  reabrir, más el puerto `github` en `Entorno`). Se propone y se espera el OK antes de escribir código.
+- **Fase 2, sub-paso 5B: terminado (2026-11-17).** Las 7 transiciones de §6.2 (`tomarTarea`, `liberarTarea`,
+  `enviarTareaASupervision`, `marcarTareaTerminada`, `aprobarTarea`, `devolverTarea`, `reabrirTarea`) en
+  `src/services/tareas/transiciones.ts`, y el puerto `github` del `Entorno` con su simulación en
+  `src/services/github.ts` (`2726b9a`). Enviar y terminar recalculan `estado_pr` y consultan a GitHub solo si
+  ya hubo PR; aprobar no recalcula (S5); `fecha_termino` sale de la marca al terminar o aprobar y vuelve a
+  `null` al reabrir; devolver y reabrir conservan al responsable (D6-A). 82 pruebas nuevas; 10 mutaciones
+  detectadas y 1 equivalente (sin efecto observable). Detalle en `DECISIONES.md`.
+- **Siguiente: sub-paso 5C** («Requiere supervisión», «Requiere PR» con C1 y el aviso al supervisor, y la
+  prueba de flujo crear → tomar → enviar → aprobar). Se propone y se espera el OK antes de escribir código.
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
   por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
@@ -176,7 +184,8 @@
 | 2026-11-17 | 2. Semilla completa de demostración | `91b29e0`; docs `b7e8d68` |
 | 2026-11-17 | 3. Restablecer datos de demostración | `d3d4800`; docs `e950907` |
 | 2026-11-17 | 4. Utilidades base de `services/` (cierra el Bloque 1) | `c2b3f47`; docs `0a08c1d`; PR #22 fusionado en `ba4f077` |
-| 2026-11-17 | 5A. Servicios para crear, editar y eliminar tareas | `2c54c04`; docs pendientes de commit |
+| 2026-11-17 | 5A. Servicios para crear, editar y eliminar tareas | `2c54c04`; docs `b6683dd` |
+| 2026-11-17 | 5B. Las 7 transiciones de tarea y el puerto de GitHub simulado | `2726b9a`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -198,9 +207,9 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 1010 pruebas en 45 archivos (de la Fase 2: 22 del almacén, 180 de la
-semilla, 11 de restablecer, 136 de las utilidades de `services/` y 50 de los servicios de tareas del
-sub-paso 5A); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
+**Estado de pruebas (2026-11-17):** 1092 pruebas en 47 archivos (de la Fase 2: 22 del almacén, 180 de la
+semilla, 11 de restablecer, 136 de las utilidades de `services/`, 50 del sub-paso 5A y 82 del sub-paso 5B);
+`build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -231,7 +240,10 @@ sub-paso 5A); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
       (`d3d4800`).
 - [x] Paso 4: utilidades base de `services/` (`c2b3f47`). Cierra el Bloque 1 (pasos 1 a 4).
 - [x] Sub-paso 5A: crear, editar y eliminar tareas (`2c54c04`).
-- [ ] Sub-paso 5B: las 7 transiciones de tarea y el puerto `github` en `Entorno` (D4-A).
+- [x] Sub-paso 5B: las 7 transiciones de tarea y el puerto `github` en `Entorno` (D4-A) (`2726b9a`).
+- [ ] Semilla (opcional, para la demostración): ninguna tarea EN_PROGRESO tiene un PR previo, así que el
+      recálculo al volver a llegar (§7.4) no se ve en pantalla sin reabrir antes una tarea (por ejemplo
+      `PL2D-001`, PR fusionado); hoy solo lo cubren las pruebas.
 - [ ] Sub-paso 5C: «Requiere supervisión», «Requiere PR» (D3-A, D5-A) y la prueba de flujo crear → tomar →
       enviar → aprobar.
 - [ ] Ajustar a mano el plan §9, Fase 2, paso 6: «No requiere PR» pasa al paso 5 (decisión D3-A); el paso 6
@@ -264,15 +276,18 @@ sub-paso 5A); `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 - [ ] La regla de «no notificar al autor» ya vive en `crearNotificaciones` (`services/`, paso 4). El registro
       de la semilla (`src/data/semilla/registro.ts`) conserva una copia mínima solo para generar los datos
       iniciales; no se reutiliza en los servicios.
-- [ ] Servicios (pasos 5 a 11): `ejecutarServicio` toma la marca de tiempo **dentro** de la transacción, tras la
+- [x] Servicios (pasos 5 a 11): `ejecutarServicio` toma la marca de tiempo **dentro** de la transacción, tras la
       demora; el servicio que escriba `fecha_termino` debe usar `marca.ahora` y el mismo valor en el evento de
-      cierre (`TAREA_TERMINADA` o `TAREA_APROBADA`), como ya pide el pendiente de indicadores.
+      cierre (`TAREA_TERMINADA` o `TAREA_APROBADA`), como ya pide el pendiente de indicadores. Cumplido en
+      `marcarTareaTerminada` y `aprobarTarea` (`2726b9a`).
 - [ ] Servicios: pasar a `puede()` las asignaciones **de quien actúa** (no las de todo el proyecto).
 - [ ] Los servicios deben pasar SIEMPRE el texto y rechazar si `exige_texto !== null` y falta o viene vacío.
 - [ ] Aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1).
 - [ ] Servicios de PR: simular GitHub y, si `necesitaConsultaGitHub(tarea)`, pasar SIEMPRE `github` en el
       evento `TAREA_ENVIADA_O_TERMINADA`; llamar a `siguienteEstadoPR` tras enviar/terminar, tras crear o
-      cerrar el PR y tras cambiar «Requiere PR». Detalle en `DECISIONES.md` (paso 5).
+      cerrar el PR y tras cambiar «Requiere PR». Detalle en `DECISIONES.md` (paso 5). **Hecho para enviar y
+      terminar** en 5B (`2726b9a`, puerto `entorno.github`); falta tras cambiar «Requiere PR» (5C) y tras crear
+      o cerrar el PR (paso 6, que amplía el mismo puerto con ramas, crear y cerrar).
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
 - [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
