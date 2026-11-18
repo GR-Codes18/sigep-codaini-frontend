@@ -22,14 +22,17 @@
   (`3bd4460`) y consultas de proyectos (`5821b99`). **11B:** consultas de tareas y vistas del practicante (`b6a0d1b`). **11C:**
   consultas de practicantes, supervisores, postulaciones, catálogo y Configuración (`6d6b79a`). **11D:** insights,
   indicadores, historial, líneas de tiempo y notificaciones (`31d127d`). **11E:** Dashboards y Inicio (`006022d`). Siguiente:
-  **conectar las pantallas** a servicios y consultas y retirar `src/app/ejemplos/` (ver «Siguiente paso»).
-- **Actualizado:** 2026-11-18, al cerrar el paso 11 y la Fase 2 (11A a 11E; rama `feat/fase2-cuenta-consultas`).
+  **revisar e integrar** las ramas de interfaz `feat/fase3-interfaz-conexion` y `feat/fase4-vistas-lectura` y **conectar las
+  pantallas** a servicios y consultas, retirando `src/app/ejemplos/` (ver «Siguiente paso»).
+- **Actualizado:** 2026-11-18, al etiquetar `fase-1-completa` y `fase-2-completa` en `main` (rama `docs/etiquetas-fases-1-y-2`).
 
 ### Cierres de fase
 
 | Fase | Etiqueta | Commit etiquetado | Fecha |
 |---|---|---|---|
 | 0 — Base técnica y tema | `fase-0-completa` (anotada, objeto `cd07cc4`, publicada en `origin`) | `67e4116` | 2026-10-21 18:02 -05 |
+| 1 — `domain/`: tipos y reglas puras | `fase-1-completa` (anotada, objeto `272f57f`, publicada en `origin`) | `e1e112d` | 2026-11-18 13:46 -05 |
+| 2 — `data/` y `services/` | `fase-2-completa` (anotada, objeto `2925648`, publicada en `origin`) | `6b51fbd` (merge del PR #29, `development` → `main`) | 2026-11-18 13:46 -05 |
 
 ### Historial de la Fase 0 (resumen)
 
@@ -337,11 +340,12 @@
   `src/services/tareas/flujo.test.ts`; los servicios tienen caso exitoso, sin permiso, datos inválidos e inexistente;
   el alcance (un supervisor no obtiene datos de un proyecto ajeno; un practicante no recibe correo ni celular de un
   compañero) está probado campo por campo en las consultas; y restablecer la semilla deja el sistema consistente (paso 3).
-- **Siguiente:** el **corte oficial** `development` → `main` (PR revisado por ambos autores, con las etiquetas `fase-1-completa` y
-  `fase-2-completa`, plan §11) y empezar a **conectar las pantallas**: cada una llama a `services/` (para actuar) y a
-  `services/consultas/` (para leer), y se retira `src/app/ejemplos/`.
-- **Fase 1, «Listo cuando»:** cumplido. Los autores revisaron los tipos de `domain/` y ajustaron la línea del plan (2026-11-18);
-  solo falta el corte a `main` con su etiqueta (ver «Pendientes»).
+- **Siguiente:** **revisar e integrar** las ramas de interfaz `feat/fase3-interfaz-conexion` (2 commits) y `feat/fase4-vistas-lectura`
+  (5 commits), y **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
+  y se retira `src/app/ejemplos/`. Parten de `development` del 2026-11-17 (la de Fase 3 desde el PR #22, la de Fase 4 desde el PR #23) y hoy `development`
+  las supera por 47 y 36 commits, así que hay que revisarlas contra `development` y resolver conflictos antes de integrarlas.
+- **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
+  plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
 - **Rama:** `feat/fase2-cuenta-consultas` (sale de `development` tras fusionar el paso 9, PR #24). Antes:
   `feat/fase2-servicios-modulos`.
 
@@ -443,9 +447,8 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       obligatorio → rechazada» no coincide con el dominio. Vacío o solo espacios da `TEXTO_OBLIGATORIO`; si
       todavía no se escribió, la acción queda pendiente de texto y devuelve qué texto exige, y el servicio
       la rechaza si falta (decisión del paso 3). Texto propuesto en `DECISIONES.md`.
-- [ ] Cierre de la Fase 1: **listo para el corte, falta ejecutarlo.** Lo de la fase ya está en `development` y los autores
-      confirmaron los tipos y el ajuste del plan; queda `development` → `main` (PR revisado por ambos) con la etiqueta
-      `fase-1-completa` (plan §11). Se marca `[x]` cuando exista la etiqueta.
+- [x] Cierre de la Fase 1: hecho el 2026-11-18. Los autores confirmaron los tipos y el ajuste del plan; `development` se fusionó en
+      `main` (PR #29, `6b51fbd`) y la etiqueta anotada `fase-1-completa` apunta a `e1e112d` (plan §11).
 
 ### Fase 2 (`data/`, `services/`)
 
@@ -613,10 +616,9 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       `listarMiHistorial` y `obtenerInicioPracticante`. Una tarea que el supervisor devolvió o reabrió y que quedó a nombre de
       alguien que ya salió del proyecto no aparece en «Mis tareas en curso» (solo en proyectos vigentes), pero sí en
       `listarTareas` y en `obtenerTarea` (decisión D6-A del paso 5).
-- [ ] Cierre de la Fase 2: **listo para el corte, falta ejecutarlo.** El PR de `feat/fase2-cuenta-consultas` ya está fusionado en
-      `development` (PR #25, `4082eaa`), junto con los PR #26 (`2f33f79`) y #27 (`6cdd2fb`). Queda `development` → `main` (PR
-      revisado por ambos, que lleva también la Fase 1) con la etiqueta `fase-2-completa` (plan §11). Se marca `[x]` cuando
-      exista la etiqueta.
+- [x] Cierre de la Fase 2: hecho el 2026-11-18. El PR de `feat/fase2-cuenta-consultas` (PR #25, `4082eaa`), el #26 (`2f33f79`), el #27
+      (`6cdd2fb`) y el #28 (`5eaf39b`) están en `development`, que se fusionó en `main` (PR #29, `6b51fbd`, junto con la Fase 1);
+      la etiqueta anotada `fase-2-completa` apunta a `6b51fbd` (plan §11).
 - [x] Ajustar a mano `docs/` con las decisiones del paso 11 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`), incluida la decisión de documentar
       en §5.9 los bloques «por revisar», reuniones y avance del Dashboard del Administrador; el agente no toca `docs/`):
       - **Propuesta §4 (matriz):** filas «Ver postulaciones», «Ver supervisores» y «Ver el directorio de practicantes»
