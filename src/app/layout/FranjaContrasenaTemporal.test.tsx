@@ -4,11 +4,16 @@ import { MemoryRouter } from 'react-router';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
 import { accesoRapido } from '@/auth/iniciarSesion';
 import type { Rol } from '@/auth/tipos';
+import { crearEntorno } from '@/services';
 import { FranjaContrasenaTemporal } from './FranjaContrasenaTemporal';
 
-function abrirSesion(rol: Rol, debeCambiar: boolean) {
+const entorno = crearEntorno({ demoraMs: 0 });
+
+async function abrirSesion(rol: Rol, debeCambiar: boolean) {
+  const resultado = await accesoRapido(rol, entorno);
+  if (!resultado.ok) throw new Error(resultado.mensaje);
   useAlmacenSesion.setState({
-    usuario: { ...accesoRapido(rol), debe_cambiar_contrasena: debeCambiar },
+    usuario: { ...resultado.usuario, debe_cambiar_contrasena: debeCambiar },
   });
 }
 
@@ -26,8 +31,8 @@ describe('FranjaContrasenaTemporal', () => {
     useAlmacenSesion.setState({ usuario: null });
   });
 
-  it('aparece para un practicante con contraseña temporal y lleva a su perfil', () => {
-    abrirSesion('PRACTICANTE', true);
+  it('aparece para un practicante con contraseña temporal y lleva a su perfil', async () => {
+    await abrirSesion('PRACTICANTE', true);
     mostrar();
     expect(screen.getByText(/contraseña temporal/i)).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Ir a mi perfil' })).toHaveAttribute(
@@ -36,8 +41,8 @@ describe('FranjaContrasenaTemporal', () => {
     );
   });
 
-  it('aparece para un supervisor con contraseña temporal', () => {
-    abrirSesion('SUPERVISOR', true);
+  it('aparece para un supervisor con contraseña temporal', async () => {
+    await abrirSesion('SUPERVISOR', true);
     mostrar();
     expect(screen.getByRole('link', { name: 'Ir a mi perfil' })).toHaveAttribute(
       'href',
@@ -45,14 +50,14 @@ describe('FranjaContrasenaTemporal', () => {
     );
   });
 
-  it('no aparece si ya cambió la contraseña', () => {
-    abrirSesion('PRACTICANTE', false);
+  it('no aparece si ya cambió la contraseña', async () => {
+    await abrirSesion('PRACTICANTE', false);
     mostrar();
     expect(screen.queryByText(/contraseña temporal/i)).not.toBeInTheDocument();
   });
 
-  it('no aparece para el Administrador', () => {
-    abrirSesion('ADMINISTRADOR', true);
+  it('no aparece para el Administrador', async () => {
+    await abrirSesion('ADMINISTRADOR', true);
     mostrar();
     expect(screen.queryByText(/contraseña temporal/i)).not.toBeInTheDocument();
   });

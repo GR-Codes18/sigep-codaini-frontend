@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { CUENTAS_DEMO } from '@/auth/usuariosDemo';
 import {
   CATALOGO_PARAMETROS,
   ESTADOS_PR,
@@ -172,13 +171,37 @@ describe.each(AHORAS)('semilla con ahora = %s', (fecha) => {
       }
     });
 
-    it('los tres accesos rápidos conservan el ID, el correo, el nombre y la contraseña de auth', () => {
-      for (const cuenta of Object.values(CUENTAS_DEMO)) {
+    it('incluye las tres cuentas activas definidas para los accesos rápidos', () => {
+      const cuentas = [
+        {
+          id: 'demo-admin',
+          nombre: 'Administrador Demo',
+          correo: 'admin@codaini.demo',
+          rol: 'ADMINISTRADOR',
+        },
+        {
+          id: 'demo-supervisor',
+          nombre: 'Supervisor Demo',
+          correo: 'supervisor@codaini.demo',
+          rol: 'SUPERVISOR',
+        },
+        {
+          id: 'demo-practicante',
+          nombre: 'Practicante Demo',
+          correo: 'practicante@codaini.demo',
+          rol: 'PRACTICANTE',
+        },
+      ] as const;
+
+      for (const cuenta of cuentas) {
         const usuario = usuarioDe(cuenta.id);
-        expect(usuario.correo).toBe(cuenta.correo);
-        expect(usuario.nombre).toBe(cuenta.nombre);
-        expect(usuario.rol).toBe(cuenta.rol);
-        expect(usuario.contrasena).toBe(cuenta.contrasena);
+        expect(usuario).toMatchObject({
+          nombre: cuenta.nombre,
+          correo: cuenta.correo,
+          rol: cuenta.rol,
+          estado: 'ACTIVO',
+          debe_cambiar_contrasena: false,
+        });
         expect(usuario.contrasena).toBe(CONTRASENA_DEMO);
       }
     });

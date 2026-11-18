@@ -1,34 +1,29 @@
-import { CUENTAS_DEMO, type CuentaDemo } from './usuariosDemo';
+import type { Entorno } from '@/services';
+import { autenticarUsuario, ENTORNO, obtenerUsuarioDeAccesoRapido } from '@/services';
 import type { Rol, UsuarioSesion } from './tipos';
+import { IDS_ACCESO_RAPIDO } from './usuariosDemo';
 
 export type ResultadoAcceso =
-  | { ok: true; usuario: UsuarioSesion }
-  | { ok: false; codigo: 'CREDENCIALES_INVALIDAS'; mensaje: string };
+  { ok: true; usuario: UsuarioSesion } | { ok: false; codigo: string; mensaje: string };
 
-const MENSAJE_GENERICO = 'Correo o contraseña incorrectos';
-
-// Quita la contraseña: la sesión nunca debe guardarla.
-function aUsuarioSesion(cuenta: CuentaDemo): UsuarioSesion {
-  return {
-    id: cuenta.id,
-    nombre: cuenta.nombre,
-    correo: cuenta.correo,
-    rol: cuenta.rol,
-    debe_cambiar_contrasena: cuenta.debe_cambiar_contrasena,
-  };
+function comoResultadoAcceso(
+  resultado: Awaited<ReturnType<typeof autenticarUsuario>>,
+): ResultadoAcceso {
+  return resultado.ok
+    ? { ok: true, usuario: resultado.valor }
+    : { ok: false, codigo: resultado.codigo, mensaje: resultado.mensaje };
 }
 
-export function iniciarSesion(correo: string, contrasena: string): ResultadoAcceso {
-  const correoNormalizado = correo.trim().toLowerCase();
-  const cuenta = Object.values(CUENTAS_DEMO).find((c) => c.correo === correoNormalizado);
-
-  // Mismo mensaje si falla el correo o la contraseña: no se revela cuál falló.
-  if (!cuenta || cuenta.contrasena !== contrasena) {
-    return { ok: false, codigo: 'CREDENCIALES_INVALIDAS', mensaje: MENSAJE_GENERICO };
-  }
-  return { ok: true, usuario: aUsuarioSesion(cuenta) };
+export async function iniciarSesion(
+  correo: string,
+  contrasena: string,
+  entorno: Entorno = ENTORNO,
+): Promise<ResultadoAcceso> {
+  return comoResultadoAcceso(await autenticarUsuario(correo, contrasena, entorno));
 }
 
-export function accesoRapido(rol: Rol): UsuarioSesion {
-  return aUsuarioSesion(CUENTAS_DEMO[rol]);
+export async function accesoRapido(rol: Rol, entorno: Entorno = ENTORNO): Promise<ResultadoAcceso> {
+  return comoResultadoAcceso(
+    await obtenerUsuarioDeAccesoRapido(IDS_ACCESO_RAPIDO[rol], rol, entorno),
+  );
 }

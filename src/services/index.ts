@@ -3,6 +3,8 @@
  */
 
 export { obtenerActor } from './actor';
+export { autenticarUsuario, obtenerUsuarioDeAccesoRapido } from './autenticacion';
+export type { UsuarioAutenticado } from './autenticacion';
 export { simularDemora } from './demora';
 export { DEMORA_PREDETERMINADA_MS, ENTORNO, crearEntorno } from './entorno';
 export type { AlmacenServicio, Entorno } from './entorno';

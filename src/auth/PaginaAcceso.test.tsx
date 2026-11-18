@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { crearSemilla, useAlmacen } from '@/data';
 import { PaginaAcceso } from './PaginaAcceso';
 import { useAlmacenSesion } from './almacenSesion';
 
@@ -8,6 +9,7 @@ describe('PaginaAcceso', () => {
   beforeEach(() => {
     localStorage.clear();
     useAlmacenSesion.setState({ usuario: null });
+    useAlmacen.setState({ datos: crearSemilla(new Date('2026-11-17T18:30:00.000Z')) });
   });
 
   it('muestra el aviso de autenticación simulada y los tres accesos rápidos', () => {
@@ -45,6 +47,7 @@ describe('PaginaAcceso', () => {
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
     await waitFor(() => expect(useAlmacenSesion.getState().usuario).not.toBeNull());
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('SUPERVISOR');
+    expect(useAlmacenSesion.getState().usuario).not.toHaveProperty('contrasena');
   });
 
   it('abre sesión con el acceso rápido de Practicante', async () => {
@@ -52,6 +55,41 @@ describe('PaginaAcceso', () => {
     render(<PaginaAcceso />);
     await user.click(screen.getByRole('button', { name: 'Entrar como Practicante' }));
     await waitFor(() => expect(useAlmacenSesion.getState().usuario).not.toBeNull());
+    expect(useAlmacenSesion.getState().usuario?.id).toBe('demo-practicante');
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('PRACTICANTE');
+  });
+
+  it('no permite iniciar sesión con una cuenta inactiva', async () => {
+    useAlmacen.getState().transaccion((datos) => ({
+      usuarios: datos.usuarios.map((usuario) =>
+        usuario.id === 'demo-practicante' ? { ...usuario, estado: 'INACTIVO' } : usuario,
+      ),
+    }));
+
+    const user = userEvent.setup();
+    render(<PaginaAcceso />);
+    await user.type(screen.getByLabelText('Correo'), 'practicante@codaini.demo');
+    await user.type(screen.getByLabelText('Contraseña'), 'demo12345');
+    await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Correo o contraseña incorrectos');
+    expect(useAlmacenSesion.getState().usuario).toBeNull();
+  });
+
+  it('muestra un error explícito si la cuenta del acceso rápido no está disponible', async () => {
+    useAlmacen.getState().transaccion((datos) => ({
+      usuarios: datos.usuarios.map((usuario) =>
+        usuario.id === 'demo-practicante' ? { ...usuario, estado: 'INACTIVO' } : usuario,
+      ),
+    }));
+
+    const user = userEvent.setup();
+    render(<PaginaAcceso />);
+    await user.click(screen.getByRole('button', { name: 'Entrar como Practicante' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'El acceso rápido no está disponible.',
+    );
+    expect(useAlmacenSesion.getState().usuario).toBeNull();
   });
 });

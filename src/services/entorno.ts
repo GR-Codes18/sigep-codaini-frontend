@@ -11,7 +11,7 @@ import type { Id } from '@/domain';
 
 /** Lo único que los servicios necesitan del almacén. */
 export interface AlmacenServicio {
-  getState: () => Pick<EstadoAlmacen, 'transaccion'>;
+  getState: () => Pick<EstadoAlmacen, 'datos' | 'transaccion'>;
 }
 
 export interface Entorno {

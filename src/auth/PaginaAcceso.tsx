@@ -9,9 +9,6 @@ import { esquemaAcceso, type DatosAcceso } from './esquemaAcceso';
 import { accesoRapido, iniciarSesion } from './iniciarSesion';
 import type { Rol } from './tipos';
 
-const DEMORA_MS = 300;
-const esperar = () => new Promise<void>((resolver) => setTimeout(resolver, DEMORA_MS));
-
 const ACCESOS_RAPIDOS: { rol: Rol; etiqueta: string }[] = [
   { rol: 'ADMINISTRADOR', etiqueta: 'Entrar como Administrador' },
   { rol: 'SUPERVISOR', etiqueta: 'Entrar como Supervisor' },
@@ -32,8 +29,7 @@ export function PaginaAcceso() {
   const enviar = handleSubmit(async (datos) => {
     setErrorGeneral(null);
     setCargando(true);
-    await esperar();
-    const resultado = iniciarSesion(datos.correo, datos.contrasena);
+    const resultado = await iniciarSesion(datos.correo, datos.contrasena);
     if (!resultado.ok) {
       setCargando(false);
       setErrorGeneral(resultado.mensaje);
@@ -45,8 +41,13 @@ export function PaginaAcceso() {
   async function entrarComo(rol: Rol) {
     setErrorGeneral(null);
     setCargando(true);
-    await esperar();
-    abrirSesion(accesoRapido(rol));
+    const resultado = await accesoRapido(rol);
+    if (!resultado.ok) {
+      setCargando(false);
+      setErrorGeneral(resultado.mensaje);
+      return;
+    }
+    abrirSesion(resultado.usuario);
   }
 
   return (
