@@ -10,10 +10,13 @@
 
 - **Fase 2 — `data/` y `services/`: terminada (2026-11-18).** Bloques 1, 2 y 3 cerrados; el paso 11 completa las
   consultas con alcance por rol. El cierre y los sub-pasos constan en el historial inferior.
-- **Fase 4 — componentes compartidos: construidos y probados; conexión a `services/consultas/` en curso.** Los pasos 1 a 11
-  están construidos y probados en aislamiento. Las acciones ya pasan por `services/`, pero las pantallas aún leen el almacén
-  directamente; falta mover `PaginaDesarrollo` y retirar `src/app/ejemplos/` (sub-paso e). `FormularioTarea` solo tiene
-  pantalla anfitriona para editar (el detalle); crear espera a los módulos 5.4 y 5.5. Se cierra al terminar ese sub-paso.
+- **Fase 4 — componentes compartidos: terminada (2026-11-18, `9ea9835`).** Los pasos 1 a 11 están construidos, probados y
+  conectados: las acciones pasan por `services/` y las lecturas, por `services/consultas/` mediante adaptadores; ninguna pantalla
+  ni componente compartido lee el almacén ni decide reglas (el almacén solo se usa como señal de cambio en `useConsulta` y
+  `useNotificaciones`). `PaginaDesarrollo` queda en `src/app/desarrollo/` como contenedor temporal hasta la Fase 7. **Salvedad:**
+  `FormularioTarea` solo tiene pantalla anfitriona para **editar** (el detalle); su modo **crear** espera a los módulos 5.4 y 5.5,
+  que son quienes lo alojan. Pendiente de los autores: el PR de esta rama a `development` y, al cumplirse el «Listo cuando», el
+  cierre de fase en `main` con su etiqueta (plan §11).
 - **Conexión de pantallas, sub-paso 0: terminado (2026-11-18, `83b1315`).** La interfaz usa los servicios de la Fase 2
   (`cuentas/` y `seguimiento/`) y se retiraron los duplicados de la Fase 4.
 - **Conexión de pantallas, sub-paso a): terminado (2026-11-18, `0ed86c9`).** Adaptadores puros en `src/app/adaptadores/`
@@ -36,11 +39,13 @@
   celular, Discord y GitHub editables; el Administrador, nombre, correo y celular (Discord, GitHub y disponibilidad no existen
   para su rol y no se muestran). El formulario reutiliza `esquemaCorreo` y `esquemaCelular` del servicio (H3 resuelto). La
   página pasó a `src/app/perfil/` y se retiró el bloque «Asignaciones y responsabilidades», que no está en §8.2.
-- **Verificación (en `f2bb209`):** 3.068 pruebas en 114 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+- **Conexión de pantallas, sub-paso e): terminado (2026-11-18, `9ea9835`).** `PaginaDesarrollo` (y su prueba) pasó a
+  `src/app/desarrollo/`, sin cambios de comportamiento ni de ruta (`/<panel>/desarrollo`), y se eliminó la carpeta
+  `src/app/ejemplos/`. Se retiró además el código de resultado `ACCESO_RAPIDO_NO_DISPONIBLE`, que quedó sin uso desde el sub-paso 0.
+- **Verificación (en `9ea9835`):** 3.068 pruebas en 114 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el sub-paso d) (`f2bb209`).
-- **Siguiente paso:** sub-paso e) de la conexión de pantallas (mover `PaginaDesarrollo` y retirar `ejemplos/`);
-  al terminar, Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
+- **Actualizado:** 2026-11-18, tras el sub-paso e) (`9ea9835`), con el cierre de la Fase 4.
+- **Siguiente paso:** Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
 
@@ -362,11 +367,11 @@
   `src/services/tareas/flujo.test.ts`; los servicios tienen caso exitoso, sin permiso, datos inválidos e inexistente;
   el alcance (un supervisor no obtiene datos de un proyecto ajeno; un practicante no recibe correo ni celular de un
   compañero) está probado campo por campo en las consultas; y restablecer la semilla deja el sistema consistente (paso 3).
-- **Siguiente:** **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
-  y se retira `src/app/ejemplos/`. La integración de las ramas de interfaz con el Bloque 3 de `development` ya está hecha
-  (`48abbbc`). Va en sub-pasos, cada uno con su commit: **0** unificar servicios y acceso (hecho, `83b1315`); **a**
-  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas» (hecho, `7269ba6`); **c** detalle de tarea y Kanban (hecho, `7354f39`); **d** Mi perfil y sesión (hecho, `f2bb209`); **e** retirar
-  `ejemplos/`. Después sigue la Fase 5, módulo 5.1 (Postulaciones).
+- **Siguiente:** **Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).** La conexión de las pantallas a `services/` y
+  a `services/consultas/` y el retiro de `src/app/ejemplos/` quedaron hechos (cierre de la Fase 4, `9ea9835`). La integración de
+  las ramas de interfaz con el Bloque 3 de `development` se hizo en `48abbbc`. La conexión fue en sub-pasos, cada uno con su commit: **0** unificar servicios y acceso (hecho, `83b1315`); **a**
+  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas» (hecho, `7269ba6`); **c** detalle de tarea y Kanban (hecho, `7354f39`); **d** Mi perfil y sesión (hecho, `f2bb209`); **e** mover
+  `PaginaDesarrollo` y retirar `ejemplos/` (hecho, `9ea9835`).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
 - **Rama:** `feat/fase4-conectar-pantallas` (sale de `development`, que ya contiene el merge `48abbbc`: Bloque 3 de la Fase 2
@@ -449,8 +454,10 @@
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso b). Campana y «Ver todas» leen con `listarNotificaciones` (hook `useNotificaciones`); `CampanaNotificaciones` recibe `noLeidas`; se retira `notificacionVista.ts` | `7269ba6` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso c). Detalle de tarea, Kanban y «Ver todas las terminadas» con `obtenerTarea`, `obtenerTableroProyecto` y `listarTerminadasDeProyecto`; mapeador de acciones; editar con `FormularioTarea`; regla D6-A en `domain/` (`responsableTarea.ts`); se retiran `accionesDeTarea.ts` y `datos.ts` de `ejemplos/` | `7354f39` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso d). Mi perfil con `obtenerMiPerfil` y la regla `camposDelPerfil` de `domain/` (campos por rol y cuáles se editan); `PaginaPerfil` pasa a `src/app/perfil/`; el formulario reutiliza `esquemaCorreo` y `esquemaCelular` (H3); se retiran `responsabilidadesPerfil.ts` y el bloque de responsabilidades | `f2bb209` |
+| 2026-11-18 | 4 | Conexión de pantallas, sub-paso e). `PaginaDesarrollo` pasa a `src/app/desarrollo/`, se elimina `src/app/ejemplos/` y se retira `ACCESO_RAPIDO_NO_DISPONIBLE`. **Cierre de la Fase 4** | `9ea9835` |
 
-**Estado de pruebas (2026-11-18, en `f2bb209`):** 3.068 pruebas en 114 archivos, todas aprobadas (`npx vitest run`); antes eran
+**Estado de pruebas (2026-11-18, en `9ea9835`):** 3.068 pruebas en 114 archivos, todas aprobadas (`npx vitest run`); el sub-paso e)
+no cambió el total (mover archivos y quitar un código sin uso). Antes eran 3.068 en 114 (`f2bb209`), y antes
 3.017 en 112 (`7354f39`): el sub-paso d) sumó 51 netas (regla de `domain/`, consulta, adaptador, formulario y página de Mi
 perfil, y se retiraron las de `PaginaPerfil` y `responsabilidadesPerfil` de `ejemplos/`). Antes, 2.937 en 109 (`7269ba6`): el
 sub-paso c) (`7354f39`) sumó 80 netas (23 de la regla D6-A y de la consulta; el resto de adaptadores,
@@ -654,11 +661,12 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       la de Mi perfil, desde el sub-paso d) (`f2bb209`).
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
 
-- [ ] **Conectar las pantallas y retirar `src/app/ejemplos/`** (en curso, sub-pasos 0 a e). Cada pantalla llama a `services/`
-      (acciones) y a `src/services/consultas/` (lecturas) y no filtra ni decide nada. Ya están retirados `accionesDeTarea.ts` y
-      `datos.ts` (`7354f39`); `almacenNotificaciones.ts` ya no existía; `responsabilidadesPerfil.ts` y `PaginaPerfil` ya salieron
-      de `ejemplos/` (`f2bb209`). Queda mover `PaginaDesarrollo` y borrar la carpeta (sub-paso e). `PaginaDesarrollo` se
-      conserva como contenedor hasta la Fase 7.
+- [x] **Conectar las pantallas y retirar `src/app/ejemplos/`:** hecho en los sub-pasos 0 a e (cierre de la Fase 4, `9ea9835`).
+      Cada pantalla llama a `services/` (acciones) y a `src/services/consultas/` (lecturas) y no filtra ni decide nada. Se
+      retiraron `accionesDeTarea.ts` y `datos.ts` (`7354f39`); `almacenNotificaciones.ts` ya no existía;
+      `responsabilidadesPerfil.ts` y `PaginaPerfil` salieron de `ejemplos/` (`f2bb209`); y `PaginaDesarrollo` pasó a
+      `src/app/desarrollo/` y la carpeta `ejemplos/` se eliminó (`9ea9835`). `PaginaDesarrollo` se conserva como contenedor
+      temporal hasta la Fase 7.
 - [x] Fase 3 y 4 (adaptadores): hecho en el sub-paso a) (`0ed86c9`). Las consultas devuelven la forma de `domain/` (snake_case y
       fechas ISO) y los adaptadores de `src/app/adaptadores/` las convierten a los tipos de los componentes compartidos
       (`TareaDetalle`, `TareaTablero`, `EventoLinea`, `NotificacionItem`), con `parseISO` en el borde. Esos cuatro tipos se
@@ -705,7 +713,9 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [x] ID legible: usar `validarCodigoProyecto` (con los códigos de todos los proyectos, también finalizados)
       en el servicio de proyectos (`crearProyecto`, `30b27ab`). Sigue abierto el formulario de la Fase 5.4. Detalle en
       `DECISIONES.md` (paso 6).
-- [ ] Migrar los formateos de ID de `src/compartido/` y `src/app/ejemplos/` a `formatearIdLegible`.
+- [x] Migrar los formateos de ID de `src/compartido/` y `src/app/ejemplos/` a `formatearIdLegible`: ya no queda ningún formateo
+      manual de IDs en la interfaz. El ID legible llega ya formateado de las consultas (`id_legible`), que usan
+      `formatearIdLegible`; el único código de la interfaz que lo formateaba (`ejemplos/datos.ts`) se retiró en `7354f39`.
 - [x] Puntaje: la evaluación simulada lee la banda y la proporción vigentes de `data/`, llama a
       `calcularPuntaje` y genera la justificación; si `calcularPuntaje` devuelve un error no se escribe nada
       y las decisiones no se bloquean (E3-A, `debd47e`). Sigue abierto: el formulario de criterios y el de Configuración exigen enteros.
@@ -759,7 +769,8 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [x] H3 (Mi perfil): resuelto en el sub-paso d) (`f2bb209`). El formulario ya no tiene la regex laxa del celular: reutiliza
       `esquemaCelular` (9 dígitos que empiezan con 9, F7-A) y `esquemaCorreo` de `services/`, y el mínimo de la contraseña usa
       `LARGO_MINIMO_CONTRASENA`. Discord, GitHub y disponibilidad los valida el servicio y su error sale junto al campo.
-- [ ] `ACCESO_RAPIDO_NO_DISPONIBLE` (`services/resultado.ts` y `resultado.test.ts`) quedó sin uso tras el sub-paso 0; decidir si se retira.
+- [x] `ACCESO_RAPIDO_NO_DISPONIBLE` (`services/resultado.ts` y `resultado.test.ts`): quedó sin uso tras el sub-paso 0 y se retiró en
+      el sub-paso e) (`9ea9835`).
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
 - [x] Tipos provisionales (`TareaTablero`, `EventoLinea`, `TareaDetalle`, `NotificacionItem`): se conservan como tipos de

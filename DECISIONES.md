@@ -3798,3 +3798,36 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   menos las de `PaginaPerfil` y `responsabilidadesPerfil` de `ejemplos/`.
 - **Divergencias con `docs/` (para que los autores las actualicen a mano).** §8.2 no dice que el Supervisor ve su nombre y correo en solo
   lectura dentro del formulario (hoy son campos bloqueados); conviene aclararlo. El resto de §8.2 coincide con lo implementado.
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso e) y cierre de la Fase 4
+
+- **Commit:** `9ea9835` (mueve `PaginaDesarrollo` a `src/app/desarrollo/`, elimina `src/app/ejemplos/` y retira `ACCESO_RAPIDO_NO_DISPONIBLE`).
+- **`PaginaDesarrollo`.** Se movió con su prueba, sin cambios de comportamiento y con la misma ruta (`/<panel>/desarrollo`). La carpeta se llama
+  `desarrollo` porque la página es un contenedor temporal de integración y no un «ejemplo»; se elimina al terminar la Fase 7 (plan §9, D2-B).
+  No está en ningún menú: se llega escribiendo la URL.
+- **Código muerto.** `ACCESO_RAPIDO_NO_DISPONIBLE` (mensaje en `services/resultado.ts` y su entrada en `resultado.test.ts`) quedó sin uso
+  cuando el acceso pasó a los servicios de la Fase 2 (sub-paso 0, `83b1315`); se retira ahora y no en la limpieza de la Fase 8.
+- **Pendientes cerrados.** `src/app/ejemplos/` ya no existe. El pendiente de migrar los formateos de ID a `formatearIdLegible` dejó de aplicar: el
+  único código de la interfaz que formateaba IDs (`ejemplos/datos.ts`) se retiró en `7354f39`, y las consultas entregan `id_legible`.
+- **Pruebas.** Sin cambios en el total (3.068 en 114 archivos): se movieron las 15 de `PaginaDesarrollo` y se quitó un elemento de una lista.
+
+### Cierre de la Fase 4 (componentes compartidos)
+
+- **Qué quedó.** Los componentes compartidos de los pasos 1 a 11 están construidos, probados y conectados. Las pantallas llaman a `services/`
+  para actuar y a `services/consultas/` para leer, mediante adaptadores (`src/app/adaptadores/`) y los hooks `useConsulta` y
+  `useNotificaciones`. Ni las pantallas ni los componentes compartidos leen el almacén ni deciden reglas: el almacén solo se usa dentro de esos
+  dos hooks, como señal de cambio. El recorrido fue: 0 unificar servicios y acceso (`83b1315`), a adaptadores (`0ed86c9`), b campana y «Ver
+  todas» (`7269ba6`), c detalle, Kanban y terminadas (`7354f39`), d Mi perfil (`f2bb209`) y e retiro de `ejemplos/` (`9ea9835`).
+- **Salvedad.** `FormularioTarea` solo tiene pantalla anfitriona para **editar** (desde el detalle). Su modo **crear** no se aloja en ninguna
+  pantalla hasta los módulos 5.4 (Proyectos) y 5.5 (Tareas), que son quienes lo usan.
+- **Ampliaciones a la Fase 2 hechas durante la conexión** (aditivas, con sus pruebas): la regla `motivosDeAtencionDelResponsable` y los campos
+  `atencion_responsable` y `proyecto.rama_base` de `obtenerTarea`; la regla `camposDelPerfil` y la consulta `obtenerMiPerfil`.
+- **Siguiente.** Fase 5, módulo 5.1 (Postulaciones). Para cerrar la fase, los autores revisan el PR de esta rama a `development`; el cierre en
+  `main` con su etiqueta sigue el plan §11.
+- **Divergencias con `docs/` (consolidadas, para que los autores las actualicen a mano).**
+  1. §8.1 «se abre el elemento relacionado»: hoy el aviso lleva a la página del módulo, vacía hasta las Fases 5 a 7 (D4-A, temporal).
+  2. §6.5 y plan §5: no está documentada la señal D6-A (tarea EN_PROGRESO a cargo de alguien con la cuenta inactiva, sin cuenta o sin
+     asignación vigente) ni que solo la ven el Administrador y el Supervisor.
+  3. §6.8: «Ver todas las terminadas» es una vista dentro de `PaginaDesarrollo` mientras no existan los módulos.
+  4. §9.2.1: «Solo mis tareas» actúa sobre las 5 terminadas visibles del tablero; decidir si debe actuar sobre todas.
+  5. §8.2: aclarar que el Supervisor ve su nombre y correo en el formulario como campos de solo lectura.
