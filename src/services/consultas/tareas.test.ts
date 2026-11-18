@@ -511,6 +511,108 @@ describe('obtenerTarea', () => {
     });
   });
 
+  it('trae la rama base del proyecto, también al Practicante (antes de que exista el PR)', async () => {
+    const prueba = prepararPrueba();
+    const ramaBase = prueba.entorno.almacen
+      .getState()
+      .datos.proyectos.find((p) => p.id === PL2D)?.rama_base;
+
+    expect(ramaBase).toBeTruthy();
+    for (const idActor of [ADMIN, SUPERVISOR, PRACTICANTE]) {
+      const t = valor(await obtener(prueba, idActor, 'tar-pl2d-010'));
+      expect(t.proyecto.rama_base, idActor).toBe(ramaBase);
+    }
+  });
+
+  describe('atención al responsable (D6-A)', () => {
+    const TAREA_EN_CURSO = 'tar-pl2d-010'; // en progreso, a cargo de PRACTICANTE
+
+    function darDeBaja(prueba: PruebaPreparada, idPracticante: Id, idProyecto: Id) {
+      prueba.modificar((d) => ({
+        asignaciones: d.asignaciones.map((a) =>
+          a.id_practicante === idPracticante && a.id_proyecto === idProyecto
+            ? { ...a, fecha_baja: '2026-11-10' }
+            : a,
+        ),
+      }));
+    }
+
+    it('sin ningún problema con el responsable no hay motivos, para nadie', async () => {
+      const prueba = prepararPrueba();
+
+      for (const idActor of [ADMIN, SUPERVISOR, PRACTICANTE]) {
+        const t = valor(await obtener(prueba, idActor, TAREA_EN_CURSO));
+        expect(t.atencion_responsable, idActor).toEqual([]);
+      }
+    });
+
+    it('el Administrador y el Supervisor ven una cuenta inactiva', async () => {
+      const prueba = prepararPrueba();
+      desactivar(prueba, PRACTICANTE);
+
+      for (const idActor of [ADMIN, SUPERVISOR]) {
+        const t = valor(await obtener(prueba, idActor, TAREA_EN_CURSO));
+        expect(t.atencion_responsable, idActor).toEqual(['CUENTA_INACTIVA']);
+      }
+    });
+
+    it('el Administrador y el Supervisor ven una asignación con baja', async () => {
+      const prueba = prepararPrueba();
+      darDeBaja(prueba, PRACTICANTE, PL2D);
+
+      for (const idActor of [ADMIN, SUPERVISOR]) {
+        const t = valor(await obtener(prueba, idActor, TAREA_EN_CURSO));
+        expect(t.atencion_responsable, idActor).toEqual(['SIN_ASIGNACION_VIGENTE']);
+      }
+    });
+
+    it('una cuenta que ya no existe y una baja dan los dos motivos', async () => {
+      const prueba = prepararPrueba();
+      prueba.modificar((d) => ({ usuarios: d.usuarios.filter((u) => u.id !== PRACTICANTE) }));
+      darDeBaja(prueba, PRACTICANTE, PL2D);
+
+      const t = valor(await obtener(prueba, ADMIN, TAREA_EN_CURSO));
+
+      expect(t.atencion_responsable).toEqual(['CUENTA_NO_ENCONTRADA', 'SIN_ASIGNACION_VIGENTE']);
+    });
+
+    it('el Practicante no se entera del estado de la cuenta de un compañero', async () => {
+      const prueba = prepararPrueba();
+      cambiarTarea(prueba, 'tar-pl2d-011', { estado: 'EN_PROGRESO' });
+      const companero = valor(await obtener(prueba, ADMIN, 'tar-pl2d-011')).responsable;
+      if (companero === null) throw new Error('La tarea 011 debe tener responsable.');
+      desactivar(prueba, companero.id);
+      darDeBaja(prueba, companero.id, PL2D);
+
+      const comoAdmin = valor(await obtener(prueba, ADMIN, 'tar-pl2d-011'));
+      const comoPracticante = valor(await obtener(prueba, PRACTICANTE, 'tar-pl2d-011'));
+
+      expect(comoAdmin.atencion_responsable).toEqual(['CUENTA_INACTIVA', 'SIN_ASIGNACION_VIGENTE']);
+      expect(comoPracticante.atencion_responsable).toEqual([]);
+    });
+
+    it('una tarea que no está en progreso no se señala, aunque el responsable ya no pueda trabajar', async () => {
+      const prueba = prepararPrueba();
+      desactivar(prueba, PRACTICANTE);
+      darDeBaja(prueba, PRACTICANTE, PL2D);
+
+      // 017 espera supervisión a cargo de PRACTICANTE.
+      const t = valor(await obtener(prueba, SUPERVISOR, 'tar-pl2d-017'));
+
+      expect(t.estado).toBe('ESPERANDO_SUPERVISION');
+      expect(t.atencion_responsable).toEqual([]);
+    });
+
+    it('una tarea sin responsable no se señala', async () => {
+      const prueba = prepararPrueba();
+
+      const t = valor(await obtener(prueba, SUPERVISOR, 'tar-pl2d-019'));
+
+      expect(t.responsable).toBeNull();
+      expect(t.atencion_responsable).toEqual([]);
+    });
+  });
+
   it('los datos del PR salen solo con la etiqueta visible', async () => {
     const prueba = prepararPrueba();
 

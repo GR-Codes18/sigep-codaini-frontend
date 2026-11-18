@@ -1,10 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { proyecto, tarea as tareaDominio, usuario } from '@/domain/pruebas/fabricas';
 import { exito, fallo } from '@/services';
 import { DetalleTarea, type TareaDetalle } from './DetalleTarea';
-import { accionesDeTarea } from '@/app/ejemplos/accionesDeTarea';
 
 const tarea: TareaDetalle = {
   id: 'tar-pl2d-003',
@@ -70,13 +68,26 @@ describe('DetalleTarea', () => {
     expect(onEjecutar).not.toHaveBeenCalled();
   });
 
-  it('muestra la etiqueta Pendiente y oculta una URL antigua del PR', () => {
+  it('muestra la etiqueta Pendiente sin enlace: la consulta no trae la URL de un PR anterior', () => {
+    render(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'TERMINADA', estadoPr: 'PENDIENTE' }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('muestra el enlace y las ramas del PR cuando llegan', () => {
     render(
       <DetalleTarea
         tarea={{
           ...tarea,
           estado: 'TERMINADA',
-          estadoPr: 'PENDIENTE',
+          estadoPr: 'CREADO',
           urlPr: 'https://github.com/codaini/pl2d/pull/12',
           ramaOrigen: 'feat/pl2d-003',
           ramaBase: 'main',
@@ -86,8 +97,73 @@ describe('DetalleTarea', () => {
         onEjecutar={async () => {}}
       />,
     );
-    expect(screen.getByText('Pendiente')).toBeInTheDocument();
-    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      'https://github.com/codaini/pl2d/pull/12',
+    );
+    expect(screen.getByText('(feat/pl2d-003 → main)')).toBeInTheDocument();
+  });
+
+  it('no muestra la etiqueta del PR si la consulta no la entrega', () => {
+    render(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'EN_PROGRESO', estadoPr: null }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.queryByText('Pendiente')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [['CUENTA_INACTIVA'], 'La cuenta del responsable está inactiva.'],
+    [['CUENTA_NO_ENCONTRADA'], 'No se encontró la cuenta del responsable.'],
+    [
+      ['SIN_ASIGNACION_VIGENTE'],
+      'El responsable ya no tiene una asignación vigente en este proyecto.',
+    ],
+  ] as const)('avisa que hay que revisar al responsable (%j)', (motivos, texto) => {
+    render(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'EN_PROGRESO', atencionResponsable: [...motivos] }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    const aviso = screen.getByRole('status');
+    expect(aviso).toHaveTextContent('Revisar el responsable de la tarea');
+    expect(aviso).toHaveTextContent(texto);
+    expect(aviso).toHaveTextContent('puede liberar la tarea con un motivo');
+  });
+
+  it('con varios motivos los dice todos, y sin motivos no hay aviso', () => {
+    const { rerender } = render(
+      <DetalleTarea
+        tarea={{
+          ...tarea,
+          estado: 'EN_PROGRESO',
+          atencionResponsable: ['CUENTA_INACTIVA', 'SIN_ASIGNACION_VIGENTE'],
+        }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    const aviso = screen.getByRole('status');
+    expect(aviso).toHaveTextContent('La cuenta del responsable está inactiva.');
+    expect(aviso).toHaveTextContent('ya no tiene una asignación vigente');
+
+    rerender(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'EN_PROGRESO' }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('una acción con nota obligatoria abre el modal y envía la nota', async () => {
@@ -115,33 +191,27 @@ describe('DetalleTarea', () => {
   });
 
   it.each([
-    {
-      accion: 'devolver',
-      etiqueta: 'Devolver',
-      campo: 'Nota',
-      tarea: { ...tarea, estado: 'ESPERANDO_SUPERVISION' as const },
-    },
-    {
-      accion: 'liberar',
-      etiqueta: 'Liberar',
-      campo: 'Motivo',
-      tarea: { ...tarea, estado: 'EN_PROGRESO' as const },
-    },
-  ])('$etiqueta como supervisor exige $campo antes de ejecutar', async (caso) => {
+    { clave: 'devolver', etiqueta: 'Devolver', campo: 'Nota' },
+    { clave: 'liberar', etiqueta: 'Liberar', campo: 'Motivo' },
+  ])('$etiqueta exige $campo antes de ejecutar el servicio', async (caso) => {
     const user = userEvent.setup();
     const onEjecutar = vi.fn().mockResolvedValue(undefined);
-    const ejecutarServicio = vi.fn(async () => exito(tareaDominio()));
-    const supervisor = usuario('SUPERVISOR');
-    const acciones = accionesDeTarea(caso.tarea, {
-      usuario: supervisor,
-      proyecto: proyecto({ id: 'pl2d', id_supervisor: supervisor.id }),
-      asignaciones: [],
-    }).map((accion) =>
-      accion.clave === caso.accion ? { ...accion, ejecutar: ejecutarServicio } : accion,
-    );
+    const ejecutarServicio = vi.fn(async () => exito(null));
 
     render(
-      <DetalleTarea tarea={caso.tarea} acciones={acciones} eventos={[]} onEjecutar={onEjecutar} />,
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          {
+            clave: caso.clave,
+            etiqueta: caso.etiqueta,
+            pedirMotivo: { etiqueta: caso.campo, obligatorio: true },
+            ejecutar: ejecutarServicio,
+          },
+        ]}
+        eventos={[]}
+        onEjecutar={onEjecutar}
+      />,
     );
     await user.click(screen.getByRole('button', { name: caso.etiqueta }));
 
@@ -149,7 +219,7 @@ describe('DetalleTarea', () => {
     const confirmar = within(dialogo).getByRole('button', { name: caso.etiqueta });
     expect(confirmar).toBeDisabled();
     await user.click(confirmar);
-    expect(onEjecutar).not.toHaveBeenCalled();
+    expect(ejecutarServicio).not.toHaveBeenCalled();
 
     await user.type(within(dialogo).getByLabelText(caso.campo), 'Revisar el trabajo');
     await user.click(confirmar);

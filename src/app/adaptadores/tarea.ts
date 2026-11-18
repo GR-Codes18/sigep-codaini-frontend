@@ -4,9 +4,9 @@ import type { TareaDetalleVista } from '@/services';
 /**
  * Convierte el detalle que entrega `obtenerTarea` (snake_case) al modelo de presentación de `DetalleTarea`.
  *
- * Solo renombra y aplana: no calcula reglas. La etiqueta del PR, la marca «Devuelta», la observación y las
- * acciones ya vienen decididas por la consulta (`pull_request` es `null` cuando la etiqueta no se muestra, y su
- * URL es `null` con la etiqueta «Pendiente»).
+ * Solo renombra y aplana: no calcula reglas. La etiqueta del PR, la marca «Devuelta», la observación, la señal
+ * de atención al responsable y las acciones ya vienen decididas por la consulta (`pull_request` es `null` cuando la
+ * etiqueta no se muestra, y su URL es `null` con la etiqueta «Pendiente»).
  */
 export function aTareaDetalle(vista: TareaDetalleVista): TareaDetalle {
   const pr = vista.pull_request;
@@ -31,5 +31,8 @@ export function aTareaDetalle(vista: TareaDetalleVista): TareaDetalle {
     ...(pr?.rama_base ? { ramaBase: pr.rama_base } : {}),
     devuelta: vista.devuelta,
     ...(vista.observacion ? { observacion: vista.observacion } : {}),
+    ...(vista.atencion_responsable.length > 0
+      ? { atencionResponsable: vista.atencion_responsable }
+      : {}),
   };
 }

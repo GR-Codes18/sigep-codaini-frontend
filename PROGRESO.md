@@ -12,18 +12,21 @@
   consultas con alcance por rol. El cierre y los sub-pasos constan en el historial inferior.
 - **Fase 4 — componentes compartidos: construidos y probados; conexión a `services/consultas/` en curso.** Los pasos 1 a 11
   están construidos y probados en aislamiento. Las acciones ya pasan por `services/`, pero las pantallas aún leen el almacén
-  directamente; faltan la campana y «Ver todas», el detalle y el Kanban con consultas, Mi perfil y retirar
-  `src/app/ejemplos/` (sub-pasos b a e). `FormularioTarea` no tiene todavía pantalla anfitriona. Se cierra al terminar esos
-  sub-pasos.
+  directamente; faltan el detalle y el Kanban con consultas, Mi perfil y retirar `src/app/ejemplos/` (sub-pasos c a e).
+  `FormularioTarea` no tiene todavía pantalla anfitriona. Se cierra al terminar esos sub-pasos.
 - **Conexión de pantallas, sub-paso 0: terminado (2026-11-18, `83b1315`).** La interfaz usa los servicios de la Fase 2
   (`cuentas/` y `seguimiento/`) y se retiraron los duplicados de la Fase 4.
 - **Conexión de pantallas, sub-paso a): terminado (2026-11-18, `0ed86c9`).** Adaptadores puros en `src/app/adaptadores/`
   (`tarea`, `tablero`, `eventos` y `notificacion`, con `parseISO` en el borde y sin reglas), más la tabla de rutas de las
   notificaciones por rol. Aún no los usa ningún componente: se conectan en b) y c).
-- **Verificación (en `0ed86c9`):** 2.915 pruebas en 108 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+- **Conexión de pantallas, sub-paso b): terminado (2026-11-18, `7269ba6`).** La campana (últimas 8) y «Ver todas» leen con
+  `listarNotificaciones` mediante el hook `useNotificaciones`, que vuelve a consultar al montarse y cuando cambia la lista de
+  notificaciones del almacén (opción A). El punto verde usa `no_leidas`; el enlace, `destino` y `enlace_activo`. Se retiró
+  `notificacionVista.ts`.
+- **Verificación (en `7269ba6`):** 2.937 pruebas en 109 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el sub-paso a) (`0ed86c9`).
-- **Siguiente paso:** sub-paso b) de la conexión de pantallas (campana y «Ver todas»), y después c) a e);
+- **Actualizado:** 2026-11-18, tras el sub-paso b) (`7269ba6`).
+- **Siguiente paso:** sub-paso c) de la conexión de pantallas (detalle de tarea y Kanban), y después d) y e);
   al terminar, Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
@@ -349,7 +352,7 @@
 - **Siguiente:** **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
   y se retira `src/app/ejemplos/`. La integración de las ramas de interfaz con el Bloque 3 de `development` ya está hecha
   (`48abbbc`). Va en sub-pasos, cada uno con su commit: **0** unificar servicios y acceso (hecho, `83b1315`); **a**
-  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas»; **c** detalle de tarea y Kanban; **d** Mi perfil y sesión; **e** retirar
+  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas» (hecho, `7269ba6`); **c** detalle de tarea y Kanban; **d** Mi perfil y sesión; **e** retirar
   `ejemplos/`. Después sigue la Fase 5, módulo 5.1 (Postulaciones).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
@@ -430,9 +433,11 @@
 | 2026-11-18 | 3–4 | Integración del Bloque 3 de la Fase 2 en las ramas de interfaz | `48abbbc` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso 0. Acceso, Mi perfil y notificaciones usan los servicios de la Fase 2 (`cuentas/`, `seguimiento/`); se retiran `services/cuenta.ts`, `autenticacion.ts`, `marcar*` de `notificaciones.ts` y `auth/iniciarSesion.ts`. El acceso vuelve a emitir los avisos de fin de práctica (F6-A) | `83b1315` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso a). Adaptadores de las consultas a los componentes compartidos en `src/app/adaptadores/` (`tarea`, `tablero`, `eventos`, `notificacion`) y tabla de rutas de las notificaciones | `0ed86c9` |
+| 2026-11-18 | 4 | Conexión de pantallas, sub-paso b). Campana y «Ver todas» leen con `listarNotificaciones` (hook `useNotificaciones`); `CampanaNotificaciones` recibe `noLeidas`; se retira `notificacionVista.ts` | `7269ba6` |
 
-**Estado de pruebas (2026-11-18, en `0ed86c9`):** 2.915 pruebas en 108 archivos, todas aprobadas (`npx vitest run`); antes eran
-2.871 en 104 (`83b1315`): el sub-paso a) sumó 44 pruebas en 4 archivos. Y antes, 2.890 en 108 (`48abbbc`): el sub-paso 0 retiró 23
+**Estado de pruebas (2026-11-18, en `7269ba6`):** 2.937 pruebas en 109 archivos, todas aprobadas (`npx vitest run`); antes eran
+2.915 en 108 (`0ed86c9`): el sub-paso b) agregó 23 pruebas y retiró 1 (la de `notificacionVista`). Antes, 2.871 en 104
+(`83b1315`): el sub-paso a) sumó 44 pruebas en 4 archivos. Y antes, 2.890 en 108 (`48abbbc`): el sub-paso 0 retiró 23
 pruebas por duplicadas y agregó 4. `npx tsc -b`, `npx prettier --check` y `npm run build` sin errores; `npx eslint` con 0 errores y el aviso conocido en
 `src/compartido/ui/button.tsx` (Vite avisa que el chunk principal supera 500 kB).
 `npx tsc -b` y `npx prettier --check .` sin errores; `npx eslint .` con 0 errores y el aviso conocido en
@@ -637,8 +642,10 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       (`TareaDetalle`, `TareaTablero`, `EventoLinea`, `NotificacionItem`), con `parseISO` en el borde. Esos cuatro tipos se
       conservan como tipos de presentación (ya no son «provisionales»). Sigue pendiente conectarlos: el detalle de tarea usa
       `acciones` y `solo_lectura` de `obtenerTarea` (sub-paso c) y la campana, `listarNotificaciones` (sub-paso b).
-- [ ] Fase 4 (campana y «Ver todas»): `listarNotificaciones` con `limite: 8` para la campana; `enlace_activo` y `destino`
-      (`DETALLE` o `RESUMEN_PROYECTO_ANTERIOR`) deciden el enlace; `no_leidas` da el punto verde.
+- [x] Fase 4 (campana y «Ver todas»): hecho en el sub-paso b) (`7269ba6`). `listarNotificaciones` con `limite: 8` para la
+      campana; `enlace_activo` y `destino` deciden el enlace (la ruta sale de la tabla de `adaptadores/notificacion.ts`);
+      `no_leidas` da el punto verde. Mientras no existan los detalles de los módulos, un aviso lleva a la página del módulo
+      (divergencia temporal con §8.1).
 - [ ] Fase 5 y 6 (listados): las consultas devuelven el conjunto completo del alcance con contadores por pestaña; la pantalla
       filtra pestañas y búsqueda en memoria. Solo `listarHistorial` y `obtenerIndicadores` reciben filtros.
 - [ ] Fase 7 (Practicante): `listarMisProyectos`, `obtenerProyecto` (variante `PRACTICANTE`), `obtenerEquipoProyecto`,

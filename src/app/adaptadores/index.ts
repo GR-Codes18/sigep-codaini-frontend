@@ -7,4 +7,4 @@ export {
   type ContextoNotificacion,
 } from './notificacion';
 export { aTareaDetalle } from './tarea';
-export { aTareaTablero, aTareasDelTablero } from './tablero';
+export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { TableroProyecto, TareaDeTablero } from '@/services';
-import { aTareaTablero, aTareasDelTablero } from './tablero';
+import type { TableroProyecto, TareaDeTablero, TerminadasDeProyecto } from '@/services';
+import { aTablero, aTareaTablero, aTareasTerminadas } from './tablero';
 
 function tarea(cambios: Partial<TareaDeTablero> = {}): TareaDeTablero {
   return {
@@ -32,6 +32,7 @@ describe('aTareaTablero', () => {
       responsable: 'Ana Quispe',
       esMia: true,
       fechaLimite: '2026-11-20',
+      vencida: false,
       requiereSupervision: true,
       estadoPr: null,
       devuelta: true,
@@ -44,6 +45,13 @@ describe('aTareaTablero', () => {
     );
     expect(resultado.fechaTermino).toBeInstanceOf(Date);
     expect(resultado.fechaTermino?.toISOString()).toBe('2026-11-19T15:00:00.000Z');
+  });
+
+  it('pasa «vencida» tal como la decide la consulta, sin recalcularla', () => {
+    expect(aTareaTablero(tarea({ vencida: true })).vencida).toBe(true);
+    expect(aTareaTablero(tarea({ vencida: false, fecha_limite: '2000-01-01' })).vencida).toBe(
+      false,
+    );
   });
 
   it('sin responsable ni fecha de término, no hay esas propiedades', () => {
@@ -63,7 +71,7 @@ describe('aTareaTablero', () => {
   });
 });
 
-describe('aTareasDelTablero', () => {
+describe('aTablero', () => {
   it('une las columnas en orden y deja las terminadas ya recortadas', () => {
     const tablero: TableroProyecto = {
       id_proyecto: 'pry-1',
@@ -74,12 +82,14 @@ describe('aTareasDelTablero', () => {
       terminadas: [tarea({ id: 'e', estado: 'TERMINADA' })],
       total_terminadas: 9,
     };
-    expect(aTareasDelTablero(tablero).map((t) => t.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
+    const resultado = aTablero(tablero);
+    expect(resultado.tareas.map((t) => t.id)).toEqual(['a', 'b', 'c', 'd', 'e']);
+    expect(resultado.totalTerminadas).toBe(9);
   });
 
-  it('un tablero vacío da una lista vacía', () => {
+  it('un tablero vacío da una lista vacía y cero terminadas', () => {
     expect(
-      aTareasDelTablero({
+      aTablero({
         id_proyecto: 'pry-1',
         estado_proyecto: 'EN_PAUSA',
         disponibles: [],
@@ -88,6 +98,21 @@ describe('aTareasDelTablero', () => {
         terminadas: [],
         total_terminadas: 0,
       }),
-    ).toEqual([]);
+    ).toEqual({ tareas: [], totalTerminadas: 0 });
+  });
+});
+
+describe('aTareasTerminadas', () => {
+  it('adapta todas las terminadas y conserva el orden recibido', () => {
+    const terminadas: TerminadasDeProyecto = {
+      id_proyecto: 'pry-1',
+      tareas: [
+        tarea({ id: 'nueva', estado: 'TERMINADA', fecha_termino: '2026-11-19T15:00:00.000Z' }),
+        tarea({ id: 'vieja', estado: 'TERMINADA', fecha_termino: '2026-11-01T15:00:00.000Z' }),
+      ],
+    };
+    const resultado = aTareasTerminadas(terminadas);
+    expect(resultado.map((t) => t.id)).toEqual(['nueva', 'vieja']);
+    expect(resultado[0].fechaTermino).toBeInstanceOf(Date);
   });
 });

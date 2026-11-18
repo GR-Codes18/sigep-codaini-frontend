@@ -1,154 +1,282 @@
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { useAlmacenSesion } from '@/auth/almacenSesion';
-import { devolucionVigente, etiquetaPRVisible, puede } from '@/domain';
+import { aEventosLinea, aTablero, aTareaDetalle, aTareasTerminadas } from '@/app/adaptadores';
+import { aAccionesTarea } from '@/app/tareas/accionesDelDetalle';
+import { useConsulta } from '@/app/useConsulta';
+import { useSesionActiva } from '@/auth/useSesionActiva';
 import { DetalleTarea } from '@/compartido/DetalleTarea';
+import { EstadoVacio } from '@/compartido/EstadoVacio';
+import { FormularioTarea } from '@/compartido/FormularioTarea';
+import { ListadoTerminadas } from '@/compartido/ListadoTerminadas';
 import { ModalCrearPR, type DatosPR } from '@/compartido/ModalCrearPR';
-import { TableroKanban, type TareaTablero } from '@/compartido/TableroKanban';
+import { TableroKanban } from '@/compartido/TableroKanban';
 import { Button } from '@/compartido/ui/button';
-import { useAlmacen } from '@/data';
-import { crearPullRequest, fallo, listarRamasParaPullRequest, NOTA_PR_VINCULADO } from '@/services';
-import { accionesDeTarea } from './accionesDeTarea';
-import { eventosDeTarea, observacionDevolucionVigente, tareaDetalleDesdeAlmacen } from './datos';
+import { Label } from '@/compartido/ui/label';
+import { Skeleton } from '@/compartido/ui/skeleton';
+import {
+  crearPullRequest,
+  ENTORNO,
+  exito,
+  fallo,
+  listarMisProyectos,
+  listarProyectos,
+  listarRamasParaPullRequest,
+  listarTerminadasDeProyecto,
+  NOTA_PR_VINCULADO,
+  obtenerTableroProyecto,
+  obtenerTarea,
+  type Entorno,
+  type Resultado,
+} from '@/services';
 
 // TEMPORAL (plan Fase 4, paso 11): se elimina al terminar la Fase 7.
-const ID_PROYECTO_DEMO = 'pry-pl2d';
 
-export function PaginaDesarrollo() {
-  const idUsuario = useAlmacenSesion((s) => s.usuario?.id ?? null);
-  const usuarios = useAlmacen((s) => s.datos.usuarios);
-  const proyectos = useAlmacen((s) => s.datos.proyectos);
-  const tareasAlmacen = useAlmacen((s) => s.datos.tareas);
-  const asignaciones = useAlmacen((s) => s.datos.asignaciones);
-  const historialAlmacen = useAlmacen((s) => s.datos.historial);
-  const usuarioAlmacen = usuarios.find((item) => item.id === idUsuario);
-  const proyecto = proyectos.find((item) => item.id === ID_PROYECTO_DEMO);
-  const tareasBase = proyecto
-    ? tareasAlmacen
-        .filter((item) => item.id_proyecto === proyecto.id)
-        .map((item) => tareaDetalleDesdeAlmacen(item, proyecto, usuarios))
-    : [];
+interface OpcionProyecto {
+  id: string;
+  nombre: string;
+  codigo: string;
+}
+
+const CARGANDO = (
+  <div className="space-y-2" role="status" aria-label="Cargando">
+    <Skeleton className="h-12 w-full" />
+    <Skeleton className="h-12 w-full" />
+  </div>
+);
+
+function AvisoDeError({ mensaje }: { mensaje: string }) {
+  return (
+    <p role="alert" className="text-sm text-danger-text">
+      {mensaje}
+    </p>
+  );
+}
+
+/**
+ * Contenedor temporal de integración: el tablero de un proyecto, su detalle de tarea y «Ver todas las terminadas», todo
+ * leído con `services/consultas/` y con las acciones por `services/`. No filtra ni decide nada: el alcance por rol, los
+ * botones del detalle y las etiquetas salen de las consultas. `entorno` solo lo cambian las pruebas.
+ */
+export function PaginaDesarrollo({ entorno = ENTORNO }: { entorno?: Entorno } = {}) {
+  const { sesion } = useSesionActiva();
+  const idUsuario = sesion?.id ?? null;
+  const rol = sesion?.rol ?? null;
+
+  const [eleccion, setEleccion] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
+  const [verTerminadas, setVerTerminadas] = useState(false);
   const [crearPr, setCrearPr] = useState(false);
+
+  // Los proyectos que cada rol puede abrir los decide la consulta de su rol.
+  const cargarProyectos = useCallback(async (): Promise<Resultado<OpcionProyecto[]>> => {
+    if (idUsuario === null || rol === null) return fallo('NO_ENCONTRADO');
+    if (rol === 'PRACTICANTE') {
+      const resultado = await listarMisProyectos({ idActor: idUsuario }, entorno);
+      return resultado.ok
+        ? exito(resultado.valor.vigentes.map(({ id, nombre, codigo }) => ({ id, nombre, codigo })))
+        : resultado;
+    }
+    const resultado = await listarProyectos({ idActor: idUsuario }, entorno);
+    return resultado.ok
+      ? exito(resultado.valor.proyectos.map(({ id, nombre, codigo }) => ({ id, nombre, codigo })))
+      : resultado;
+  }, [entorno, idUsuario, rol]);
+  const proyectos = useConsulta(idUsuario === null ? null : cargarProyectos);
+  const opciones = proyectos.valor ?? [];
+  const idProyecto = opciones.some((p) => p.id === eleccion) ? eleccion : (opciones[0]?.id ?? null);
+
+  const cargarTablero = useCallback(
+    () =>
+      obtenerTableroProyecto({ idActor: idUsuario ?? '', idProyecto: idProyecto ?? '' }, entorno),
+    [entorno, idUsuario, idProyecto],
+  );
+  const tablero = useConsulta(idUsuario === null || idProyecto === null ? null : cargarTablero);
+
+  const cargarTerminadas = useCallback(
+    () =>
+      listarTerminadasDeProyecto(
+        { idActor: idUsuario ?? '', idProyecto: idProyecto ?? '' },
+        entorno,
+      ),
+    [entorno, idUsuario, idProyecto],
+  );
+  const terminadas = useConsulta(
+    idUsuario === null || idProyecto === null || !verTerminadas ? null : cargarTerminadas,
+  );
+
+  const cargarTarea = useCallback(
+    () => obtenerTarea({ idActor: idUsuario ?? '', idTarea: abierta ?? '' }, entorno),
+    [entorno, idUsuario, abierta],
+  );
+  const tarea = useConsulta(idUsuario === null || abierta === null ? null : cargarTarea);
+
+  const idTareaAbierta = abierta;
   const listarRamas = useCallback(() => {
-    if (idUsuario === null || abierta === null) return Promise.resolve(fallo('NO_ENCONTRADO'));
-    return listarRamasParaPullRequest({ idActor: idUsuario, idTarea: abierta });
-  }, [abierta, idUsuario]);
+    if (idUsuario === null || idTareaAbierta === null)
+      return Promise.resolve(fallo('NO_ENCONTRADO'));
+    return listarRamasParaPullRequest({ idActor: idUsuario, idTarea: idTareaAbierta }, entorno);
+  }, [entorno, idTareaAbierta, idUsuario]);
   const crearPRDesdeModal = useCallback(
     async (datos: DatosPR) => {
-      if (idUsuario === null || abierta === null) return fallo('NO_ENCONTRADO');
-      const resultado = await crearPullRequest({
-        idActor: idUsuario,
-        idTarea: abierta,
-        rama_origen: datos.ramaOrigen,
-        titulo: datos.titulo,
-        descripcion: datos.descripcion,
-      });
+      if (idUsuario === null || idTareaAbierta === null) return fallo('NO_ENCONTRADO');
+      const resultado = await crearPullRequest(
+        {
+          idActor: idUsuario,
+          idTarea: idTareaAbierta,
+          rama_origen: datos.ramaOrigen,
+          titulo: datos.titulo,
+          descripcion: datos.descripcion,
+        },
+        entorno,
+      );
       if (resultado.ok) {
         if (resultado.valor.vinculado) toast.info(NOTA_PR_VINCULADO);
         else toast.success('Pull Request creado');
       }
       return resultado;
     },
-    [abierta, idUsuario],
+    [entorno, idTareaAbierta, idUsuario],
   );
-  if (idUsuario === null) return null;
-  if (!usuarioAlmacen) {
-    return <p role="alert">No se encontró el usuario de la sesión en los datos del sistema.</p>;
-  }
-  if (!proyecto) {
-    return <p role="alert">No se encontró el proyecto de demostración PL2D.</p>;
-  }
 
-  const usuario = usuarioAlmacen;
-  const asignacionesUsuario = asignaciones.filter(
-    (asignacion) => asignacion.id_practicante === usuario.id,
-  );
-  const permisoVerProyecto = puede(usuario, 'VER_PROYECTO', {
-    proyecto,
-    asignaciones: asignacionesUsuario,
-  });
-  if (!permisoVerProyecto.permitido) {
-    return <p role="alert">No tienes acceso al proyecto de demostración PL2D.</p>;
+  if (idUsuario === null || rol === null) return null;
+
+  function abrir(id: string) {
+    setAbierta(id);
+    setEditando(false);
   }
 
-  const tareas = tareasBase;
-  const historial = historialAlmacen;
-  const tareasConDevolucion = tareas.map((tarea) => {
-    const devuelta = devolucionVigente(tarea.id, historial);
-    return {
-      ...tarea,
-      devuelta,
-      observacion: devuelta ? observacionDevolucionVigente(historial, tarea.id) : undefined,
-    };
-  });
-  const tarea = tareasConDevolucion.find((t) => t.id === abierta);
+  function volverAlTablero() {
+    setAbierta(null);
+    setEditando(false);
+    setVerTerminadas(false);
+  }
 
-  const tablero: TareaTablero[] = tareasConDevolucion.map((t) => ({
-    id: t.id,
-    idLegible: t.idLegible,
-    titulo: t.titulo,
-    estado: t.estado,
-    responsable: t.responsable,
-    esMia: t.idPracticante === usuario.id,
-    fechaLimite: t.fechaLimite,
-    fechaTermino: t.fechaTermino ? new Date(t.fechaTermino) : undefined,
-    requiereSupervision: t.requiereSupervision,
-    estadoPr: etiquetaPRVisible({
-      estado: t.estado,
-      requiere_pr: t.requierePr,
-      estado_pr: t.estadoPr,
-    }),
-    devuelta: t.devuelta,
-  }));
-
-  async function ejecutar(clave: string): Promise<void> {
-    if (clave !== 'crear_pr') {
-      throw new Error('La acción de tarea no está disponible.');
+  function contenido() {
+    if (proyectos.error) return <AvisoDeError mensaje={proyectos.error} />;
+    if (proyectos.cargando) return CARGANDO;
+    if (idProyecto === null) {
+      return <EstadoVacio titulo="No tienes proyectos para mostrar" />;
     }
-    setCrearPr(true);
+
+    if (abierta !== null) {
+      if (tarea.error) {
+        return (
+          <div className="space-y-4">
+            <Button variant="outline" onClick={volverAlTablero}>
+              Volver al tablero
+            </Button>
+            <AvisoDeError mensaje={tarea.error} />
+          </div>
+        );
+      }
+      if (tarea.valor === null) return CARGANDO;
+      const vista = tarea.valor;
+      const detalle = aTareaDetalle(vista);
+
+      if (editando) {
+        return (
+          <div className="space-y-4">
+            <h2 className="text-text">Editar {detalle.idLegible}</h2>
+            <FormularioTarea
+              modo="editar"
+              idActor={idUsuario ?? ''}
+              idTarea={detalle.id}
+              proyectos={[{ id: detalle.idProyecto, nombre: detalle.proyecto }]}
+              valoresIniciales={{
+                idProyecto: detalle.idProyecto,
+                titulo: detalle.titulo,
+                descripcion: detalle.descripcion,
+                fechaLimite: detalle.fechaLimite,
+              }}
+              onCancelar={() => setEditando(false)}
+            />
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-4">
+          <Button variant="outline" onClick={() => setAbierta(null)}>
+            {verTerminadas ? 'Volver al listado' : 'Volver al tablero'}
+          </Button>
+          <DetalleTarea
+            key={detalle.id}
+            tarea={detalle}
+            acciones={aAccionesTarea(vista.acciones, detalle, idUsuario ?? '', entorno)}
+            eventos={aEventosLinea(vista.eventos)}
+            onEjecutar={async (clave) => {
+              if (clave === 'crear_pr') setCrearPr(true);
+              else if (clave === 'editar') setEditando(true);
+              else throw new Error('La acción de tarea no está disponible.');
+            }}
+          />
+          <ModalCrearPR
+            abierto={crearPr}
+            onCerrar={() => setCrearPr(false)}
+            tituloPropuesto={`${detalle.idLegible} ${detalle.titulo}`}
+            plantillaDescripcion="Qué se hizo:"
+            onListarRamas={listarRamas}
+            ramaBase={vista.proyecto.rama_base}
+            onCrear={crearPRDesdeModal}
+          />
+        </div>
+      );
+    }
+
+    if (verTerminadas) {
+      if (terminadas.error) return <AvisoDeError mensaje={terminadas.error} />;
+      if (terminadas.valor === null) return CARGANDO;
+      return (
+        <ListadoTerminadas
+          tareas={aTareasTerminadas(terminadas.valor)}
+          onAbrir={abrir}
+          onVolver={volverAlTablero}
+        />
+      );
+    }
+
+    if (tablero.error) return <AvisoDeError mensaje={tablero.error} />;
+    if (tablero.valor === null) return CARGANDO;
+    const { tareas, totalTerminadas } = aTablero(tablero.valor);
+    return (
+      <TableroKanban
+        tareas={tareas}
+        totalTerminadas={totalTerminadas}
+        onAbrir={abrir}
+        permitirSoloMias={rol === 'PRACTICANTE'}
+        onVerTerminadas={() => setVerTerminadas(true)}
+      />
+    );
   }
 
   return (
     <section className="space-y-6">
       <h1 className="text-text">Desarrollo: tablero y detalle (temporal)</h1>
       <p className="text-sm text-text-2">
-        Entra con otro rol para ver cómo cambian los botones del detalle. Rol actual: {usuario.rol}.
+        Entra con otro rol para ver cómo cambian los botones del detalle. Rol actual: {rol}.
       </p>
-
-      {tarea ? (
-        <div className="space-y-4">
-          <Button variant="outline" onClick={() => setAbierta(null)}>
-            Volver al tablero
-          </Button>
-          <DetalleTarea
-            tarea={tarea}
-            acciones={accionesDeTarea(tarea, {
-              usuario,
-              proyecto,
-              asignaciones: asignacionesUsuario,
-            })}
-            eventos={eventosDeTarea(historial, tarea.id, usuarios)}
-            onEjecutar={ejecutar}
-          />
-          <ModalCrearPR
-            abierto={crearPr}
-            onCerrar={() => setCrearPr(false)}
-            tituloPropuesto={`${tarea.idLegible} ${tarea.titulo}`}
-            plantillaDescripcion="Qué se hizo:"
-            onListarRamas={listarRamas}
-            ramaBase={proyecto.rama_base}
-            onCrear={crearPRDesdeModal}
-          />
+      {opciones.length > 0 && (
+        <div className="max-w-xs space-y-1.5">
+          <Label htmlFor="desarrollo-proyecto">Proyecto</Label>
+          <select
+            id="desarrollo-proyecto"
+            value={idProyecto ?? ''}
+            onChange={(e) => {
+              setEleccion(e.target.value);
+              volverAlTablero();
+            }}
+            className="h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text"
+          >
+            {opciones.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.codigo} · {p.nombre}
+              </option>
+            ))}
+          </select>
         </div>
-      ) : (
-        <TableroKanban
-          tareas={tablero}
-          onAbrir={setAbierta}
-          permitirSoloMias={usuario.rol === 'PRACTICANTE'}
-          onVerTerminadas={() => toast.info('Aquí irá el listado completo')}
-        />
       )}
+      {contenido()}
     </section>
   );
 }

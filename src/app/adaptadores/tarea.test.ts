@@ -13,7 +13,13 @@ function vista(cambios: Partial<TareaDetalleVista> = {}): TareaDetalleVista {
     fecha_limite: '2026-11-20',
     vencida: false,
     fecha_termino: null,
-    proyecto: { id: 'pry-1', codigo: 'PL2D', nombre: 'Plataforma 2D', estado: 'ACTIVO' },
+    proyecto: {
+      id: 'pry-1',
+      codigo: 'PL2D',
+      nombre: 'Plataforma 2D',
+      estado: 'ACTIVO',
+      rama_base: 'main',
+    },
     responsable: { id: 'usr-1', nombre: 'Ana Quispe' },
     es_mia: true,
     requiere_supervision: true,
@@ -26,6 +32,7 @@ function vista(cambios: Partial<TareaDetalleVista> = {}): TareaDetalleVista {
     },
     devuelta: false,
     observacion: null,
+    atencion_responsable: [],
     dias_esperando: 2,
     acciones: [],
     solo_lectura: true,
@@ -99,5 +106,16 @@ describe('aTareaDetalle', () => {
       '2026-11-19T15:00:00.000Z',
     );
     expect(aTareaDetalle(vista({ fecha_termino: null }))).not.toHaveProperty('fechaTermino');
+  });
+
+  it('pasa los motivos de atención al responsable y los omite si no hay', () => {
+    const conMotivos = aTareaDetalle(
+      vista({ atencion_responsable: ['CUENTA_INACTIVA', 'SIN_ASIGNACION_VIGENTE'] }),
+    );
+    expect(conMotivos.atencionResponsable).toEqual(['CUENTA_INACTIVA', 'SIN_ASIGNACION_VIGENTE']);
+
+    expect(aTareaDetalle(vista({ atencion_responsable: [] }))).not.toHaveProperty(
+      'atencionResponsable',
+    );
   });
 });

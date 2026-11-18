@@ -3695,3 +3695,25 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Etiqueta de acciones.** El mapa de etiquetas de la línea de tiempo (los 15 tipos de tarea y de Pull Request) se migró de
   `src/app/ejemplos/datos.ts`; un tipo sin etiqueta muestra su código.
 - **Pruebas.** 2.871 → 2.915 en 108 archivos (+44 en 4 archivos nuevos).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso b): campana y «Ver todas»
+
+- **Commit:** `7269ba6` (campana y «Ver todas» conectadas a `listarNotificaciones`).
+- **Qué se construyó.** El hook `useNotificaciones({ limite, soloNoLeidas })` (`src/app/layout/useNotificaciones.ts`) llama a
+  `listarNotificaciones`, adapta con `aNotificacionItem` y devuelve `{ items, noLeidas, total, cargando, error }`. La campana pide
+  las últimas 8; «Ver todas» hace dos consultas (todas y solo no leídas). `CampanaNotificaciones` recibe `noLeidas` por prop y ya no
+  cuenta, ordena ni recorta. Se retiró `notificacionVista.ts`, que decidía en la pantalla la existencia y la ruta de cada aviso
+  (y tenía el caso especial `pry-pl2d`).
+- **Decisión (recarga, opción A).** El hook vuelve a consultar al montarse y cada vez que cambia la lista de notificaciones del
+  almacén, que se usa solo como señal de cambio y no sale del hook: los componentes no leen el almacén. Alternativa descartada:
+  consultar solo al montar y tras las acciones propias, porque un aviso nuevo en la misma sesión no aparecería hasta navegar.
+- **Por qué `noLeidas` va aparte.** Con `limite: 8` la lista ya no trae todos los avisos; contar sobre ella daría un punto verde
+  equivocado. `no_leidas` de la consulta cuenta siempre todos los del usuario.
+- **Comportamiento.** Mientras llega una respuesta nueva se conserva la anterior (sin parpadeo); una respuesta que llega tarde no
+  pisa a otra más reciente; la respuesta de otra persona (cambio de sesión) no se muestra. Cada consulta conserva la demora de red
+  simulada de 600 ms, así que tras marcar un aviso el contador baja con ese retraso.
+- **Consecuencia de D4-A (divergencia temporal con §8.1).** Un aviso de una tarea lleva a la página vacía del módulo
+  (`/<panel>/tareas` o `/proyectos`) y ya no a `/desarrollo`: «se abre el elemento relacionado» se cumple cuando los módulos tengan
+  detalle. Mientras tanto, la única forma de abrir una tarea es `PaginaDesarrollo`.
+- **Pruebas.** 2.915 → 2.937 en 109 archivos: +23 (hook 9, campana conectada 6, «Ver todas» 6 más, `CampanaNotificaciones` 2 más) y
+  −1 (la de `notificacionVista`). Sin cobertura propia: el aviso de error de «Ver todas» (el hook sí lo prueba).

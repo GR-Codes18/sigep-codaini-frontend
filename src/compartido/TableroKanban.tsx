@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { ShieldCheck } from 'lucide-react';
-import { estaVencida, hoyEn, type EstadoPR, type Fecha } from '@/domain';
+import type { EstadoPR, Fecha } from '@/domain';
 import { Insignia } from '@/compartido/Insignia';
 import { Button } from '@/compartido/ui/button';
 import { cn } from '@/compartido/utils';
@@ -16,20 +16,24 @@ export interface TareaTablero {
   /** Para marcar "Solo mis tareas". */
   esMia?: boolean;
   fechaLimite: Fecha;
+  /** Fecha límite pasada y tarea no terminada: la decide `domain/` y la entrega la consulta. */
+  vencida: boolean;
   fechaTermino?: Date;
   requiereSupervision: boolean;
-  /** Solo se pasa cuando `etiquetaPRVisible` devuelve un estado. */
+  /** La etiqueta visible según §7.3; la decide la consulta (`null` si no se muestra). */
   estadoPr?: EstadoPR | null;
   devuelta?: boolean;
 }
 
 interface Props {
+  /** Las tareas de las cuatro columnas; las terminadas ya vienen recortadas a las 5 más recientes (§6.8). */
   tareas: TareaTablero[];
+  /** Cuántas terminadas tiene el proyecto en total; si no se pasa, se cuentan las recibidas. */
+  totalTerminadas?: number;
   onAbrir: (id: string) => void;
   /** Muestra el filtro "Solo mis tareas" (Practicante). */
   permitirSoloMias?: boolean;
   onVerTerminadas: () => void;
-  hoy?: Fecha;
 }
 
 const COLUMNAS: { estado: TareaTablero['estado']; titulo: string; borde: string }[] = [
@@ -43,18 +47,7 @@ const COLUMNAS: { estado: TareaTablero['estado']; titulo: string; borde: string 
   { estado: 'TERMINADA', titulo: 'Terminada', borde: 'border-t-state-success' },
 ];
 
-const MAX_TERMINADAS = 5;
-
-function Tarjeta({
-  t,
-  hoy,
-  onAbrir,
-}: {
-  t: TareaTablero;
-  hoy: Fecha;
-  onAbrir: (id: string) => void;
-}) {
-  const vencida = estaVencida({ estado: t.estado, fecha_limite: t.fechaLimite }, hoy);
+function Tarjeta({ t, onAbrir }: { t: TareaTablero; onAbrir: (id: string) => void }) {
   return (
     <button
       type="button"
@@ -77,7 +70,7 @@ function Tarjeta({
         {t.estadoPr && <Insignia tipo="pr" estado={t.estadoPr} />}
         {t.devuelta && <Insignia tipo="marca" estado="DEVUELTA" />}
       </div>
-      <p className={cn('text-xs tabular-nums', vencida ? 'text-danger-text' : 'text-text-2')}>
+      <p className={cn('text-xs tabular-nums', t.vencida ? 'text-danger-text' : 'text-text-2')}>
         Límite {format(parseISO(t.fechaLimite), 'dd/MM/yyyy')}
       </p>
     </button>
@@ -86,10 +79,10 @@ function Tarjeta({
 
 export function TableroKanban({
   tareas,
+  totalTerminadas,
   onAbrir,
   permitirSoloMias,
   onVerTerminadas,
-  hoy = hoyEn(new Date().toISOString()),
 }: Props) {
   const [soloMias, setSoloMias] = useState(false);
   const visibles = soloMias ? tareas.filter((t) => t.esMia) : tareas;
@@ -109,15 +102,11 @@ export function TableroKanban({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {COLUMNAS.map(({ estado, titulo, borde }) => {
-          const deColumna = visibles.filter((t) => t.estado === estado);
-          const mostradas =
-            estado === 'TERMINADA'
-              ? [...deColumna]
-                  .sort(
-                    (a, b) => (b.fechaTermino?.getTime() ?? 0) - (a.fechaTermino?.getTime() ?? 0),
-                  )
-                  .slice(0, MAX_TERMINADAS)
-              : deColumna;
+          const mostradas = visibles.filter((t) => t.estado === estado);
+          const total =
+            estado === 'TERMINADA' && !soloMias
+              ? Math.max(totalTerminadas ?? 0, mostradas.length)
+              : mostradas.length;
 
           return (
             <section
@@ -130,12 +119,12 @@ export function TableroKanban({
             >
               <h2 className="flex items-center justify-between text-sm font-semibold text-text">
                 {titulo}
-                <span className="text-xs text-text-2 tabular-nums">{deColumna.length}</span>
+                <span className="text-xs text-text-2 tabular-nums">{total}</span>
               </h2>
               {mostradas.map((t) => (
-                <Tarjeta key={t.id} t={t} hoy={hoy} onAbrir={onAbrir} />
+                <Tarjeta key={t.id} t={t} onAbrir={onAbrir} />
               ))}
-              {estado === 'TERMINADA' && deColumna.length > MAX_TERMINADAS && (
+              {estado === 'TERMINADA' && total > mostradas.length && (
                 <button
                   type="button"
                   onClick={onVerTerminadas}
