@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { useAlmacen } from '@/data';
 import { DEMORA_PREDETERMINADA_MS, ENTORNO, crearEntorno } from './entorno';
+import { GITHUB_SIMULADO } from './github';
 
 describe('entorno por defecto', () => {
   it('usa el almacén de la aplicación y una demora de 600 ms', () => {
@@ -21,6 +22,10 @@ describe('entorno por defecto', () => {
     expect(a).not.toBe(b);
     expect(ENTORNO.generarId('ntf')).toMatch(/^ntf-/);
   });
+
+  it('usa el GitHub simulado', () => {
+    expect(ENTORNO.github).toBe(GITHUB_SIMULADO);
+  });
 });
 
 describe('crearEntorno', () => {
@@ -31,6 +36,12 @@ describe('crearEntorno', () => {
     expect(entorno.ahora).toBe(reloj);
     expect(entorno.almacen).toBe(ENTORNO.almacen);
     expect(entorno.generarId).toBe(ENTORNO.generarId);
+    expect(entorno.github).toBe(GITHUB_SIMULADO);
+  });
+
+  it('permite cambiar el puerto de GitHub', () => {
+    const github = { consultarPullRequest: () => ({ estado: 'CERRADO' as const }) };
+    expect(crearEntorno({ github }).github).toBe(github);
   });
 
   it('no modifica el entorno por defecto', () => {

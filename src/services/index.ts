@@ -7,6 +7,8 @@ export { obtenerActor } from './actor';
 export { simularDemora } from './demora';
 export { DEMORA_PREDETERMINADA_MS, ENTORNO, crearEntorno } from './entorno';
 export type { AlmacenServicio, Entorno } from './entorno';
+export { GITHUB_SIMULADO, consultaSimulada } from './github';
+export type { PuertoGitHub, TareaConsultable } from './github';
 export { etiquetaPostulante, etiquetaProyecto, etiquetaTarea, etiquetaUsuario } from './etiquetas';
 export {
   AUTOR_SISTEMA,
@@ -35,5 +37,23 @@ export { conEfectos, ejecutarServicio } from './transaccional';
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
 // Servicios por módulo
-export { crearTarea, editarTarea, eliminarTarea } from './tareas';
-export type { EntradaCrearTarea, EntradaEditarTarea, EntradaEliminarTarea } from './tareas';
+export {
+  aprobarTarea,
+  crearTarea,
+  devolverTarea,
+  editarTarea,
+  eliminarTarea,
+  enviarTareaASupervision,
+  liberarTarea,
+  marcarTareaTerminada,
+  reabrirTarea,
+  tomarTarea,
+} from './tareas';
+export type {
+  EntradaConNota,
+  EntradaCrearTarea,
+  EntradaEditarTarea,
+  EntradaEliminarTarea,
+  EntradaLiberar,
+  EntradaTransicion,
+} from './tareas';
