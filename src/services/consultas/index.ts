@@ -60,3 +60,53 @@ export type {
   TareaListado,
 } from './tareas';
 export type { ProyectoResumen, TareaConProyecto } from './comun';
+export {
+  listarPracticantes,
+  listarPracticantesACargo,
+  obtenerPracticante,
+  obtenerPracticanteACargo,
+} from './practicantes';
+export type {
+  CatalogoNombre,
+  EntradaConPracticante,
+  FinDePractica,
+  ListadoPracticantes,
+  ListadoPracticantesACargo,
+  ParticipacionACargo,
+  ParticipacionEnProyectoDePracticante,
+  PracticanteACargoDetalle,
+  PracticanteACargoListado,
+  PracticanteDetalle,
+  PracticanteListado,
+  SituacionACargo,
+} from './practicantes';
+export { listarSupervisores, obtenerSupervisor } from './supervisores';
+export type {
+  EntradaConSupervisor,
+  ListadoSupervisores,
+  ProyectoACargo,
+  ProyectoAnteriorDeSupervisor,
+  SupervisorDetalle,
+  SupervisorListado,
+} from './supervisores';
+export {
+  listarCatalogoEvaluacion,
+  listarPostulaciones,
+  obtenerConfiguracion,
+  obtenerPostulacion,
+} from './postulaciones';
+export type {
+  AreaDeCatalogo,
+  BloqueDeCriterios,
+  CatalogoEvaluacion,
+  ConfiguracionVista,
+  CriterioEvaluado,
+  EntradaConPostulacion,
+  EspecialidadDeCatalogo,
+  EvaluacionDetalle,
+  ListadoPostulaciones,
+  ParametroVista,
+  PostulacionDetalle,
+  PostulacionListado,
+  SeccionVista,
+} from './postulaciones';

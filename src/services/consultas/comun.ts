@@ -25,6 +25,8 @@ import {
   etiquetaPRVisible,
   formatearIdLegible,
   puede,
+  puedeEnRol,
+  type AccionPermiso,
   type EstadoPR,
   type EstadoTarea,
   type Asignacion,
@@ -286,4 +288,25 @@ export function eventosDeLaTarea(
     datos.usuarios,
     datos.historial.filter((e) => e.elemento.tipo === 'TAREA' && e.elemento.id === idTarea),
   );
+}
+
+// ── Módulos globales (solo Administrador) ────────────────────────────────────────────────────
+
+/**
+ * Permiso de **módulo** con `puedeEnRol` (activo y rol permitido, sin contexto). Lo usan las consultas
+ * de las pantallas que no dependen de un proyecto: Practicantes, Supervisores, Postulaciones, criterios de
+ * evaluación y Configuración.
+ */
+export function exigirPermisoDeModulo(actor: Usuario, accion: AccionPermiso): Resultado<null> {
+  const permiso = puedeEnRol(actor, accion);
+  return permiso.permitido ? exito(null) : denegar(permiso);
+}
+
+/** Nombre de un elemento de catálogo (área o especialidad); `null` si el dato está roto. */
+export function nombreDeCatalogo(
+  catalogo: readonly { id: Id; nombre: string }[],
+  id: Id,
+): { id: Id; nombre: string } | null {
+  const elemento = catalogo.find((e) => e.id === id);
+  return elemento === undefined ? null : { id: elemento.id, nombre: elemento.nombre };
 }

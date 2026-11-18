@@ -67,7 +67,7 @@ export interface ReunionDeProyecto {
   proxima: FechaHora | null;
 }
 
-function reunionDe(proyecto: Proyecto, ahora: FechaHora): ReunionDeProyecto {
+export function reunionDe(proyecto: Proyecto, ahora: FechaHora): ReunionDeProyecto {
   return {
     dia_reunion: proyecto.dia_reunion,
     hora_reunion: proyecto.hora_reunion,
@@ -78,7 +78,7 @@ function reunionDe(proyecto: Proyecto, ahora: FechaHora): ReunionDeProyecto {
 const vigente = (a: Asignacion) => a.fecha_baja === null;
 
 /** Asignaciones vigentes del proyecto cuyas personas siguen ACTIVAS. */
-function asignacionesActivas(
+export function asignacionesActivas(
   datos: Pick<DatosAlmacen, 'asignaciones' | 'usuarios'>,
   idProyecto: Id,
 ): Asignacion[] {
