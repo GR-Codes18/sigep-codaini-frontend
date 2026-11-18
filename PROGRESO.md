@@ -391,7 +391,7 @@
 | 2026-11-18 | 11B. Consultas de tareas y vistas del practicante | `b6a0d1b` |
 | 2026-11-18 | 11C. Consultas de practicantes, supervisores, postulaciones, catálogo y Configuración | `6d6b79a` |
 | 2026-11-18 | 11D. Insights, indicadores, historial, líneas de tiempo y notificaciones | `31d127d` |
-| 2026-11-18 | 11E. Dashboards y Inicio (cierra el paso 11 y la Fase 2) | `006022d`; docs pendientes de commit |
+| 2026-11-18 | 11E. Dashboards y Inicio (cierra el paso 11 y la Fase 2) | `006022d`; docs `1a19c9f` |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
