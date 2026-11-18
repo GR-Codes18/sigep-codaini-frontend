@@ -8,14 +8,14 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 2** (pasos 5 y 6: servicios de tareas y de Pull
-  Request). El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). **Paso 5 terminado** en tres
-  sub-pasos con parada y commit cada uno (D2-A): 5A (crear, editar y eliminar, `2c54c04`), 5B (las 7
-  transiciones y el puerto de GitHub, `2726b9a`) y 5C (opciones de la tarea y prueba de flujo, `98ead18`).
-  El paso 6 (servicios de Pull Request, que cierra el Bloque 2) se parte en dos sub-pasos (P7-A): **6A
-  terminado** (listar ramas y crear el PR, `59dc320`); sigue 6B (cerrar el PR, el flujo final y el cierre del
-  Bloque 2).
-- **Actualizado:** 2026-11-17, al cerrar el sub-paso 6A.
+- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 2 (pasos 5 y 6) terminado**: servicios de tareas
+  y de Pull Request. El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). **Paso 5** en tres
+  sub-pasos (D2-A): 5A (crear, editar y eliminar, `2c54c04`), 5B (las 7 transiciones y el puerto de GitHub,
+  `2726b9a`) y 5C (opciones de la tarea y prueba de flujo, `98ead18`). **Paso 6** en dos sub-pasos (P7-A): 6A
+  (listar ramas y crear el PR, `59dc320`) y 6B (cerrar el PR y el flujo de punta a punta, `9600f46`).
+  Siguiente: PR del Bloque 2 a `development` (lo abren y revisan los autores) y, después, el Bloque 3 (pasos 7
+  a 11).
+- **Actualizado:** 2026-11-17, al cerrar el sub-paso 6B y con él el paso 6 y el Bloque 2.
 
 ### Cierres de fase
 
@@ -169,11 +169,24 @@
   servicios `listarRamasParaPullRequest` y `crearPullRequest` en `src/services/pullRequests/` (`59dc320`).
   Código nuevo `RAMA_INEXISTENTE`. 36 pruebas nuevas y 9 mutaciones detectadas de 9. Detalle en
   `DECISIONES.md`.
-- **Siguiente: sub-paso 6B** (`cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre
-  del Bloque 2). Se propone y se espera el OK antes de escribir código.
+- **Fase 2, sub-paso 6B: terminado (2026-11-17).** `cerrarPullRequest` en
+  `src/services/pullRequests/pullRequests.ts` y el flujo de punta a punta en
+  `src/services/tareas/flujo.test.ts` (`9600f46`). Cerrar solo cambia `estado_pr` a CERRADO (URL y ramas se
+  conservan), llama a GitHub después de los permisos y del motivo, y avisa al responsable si lo cerró otra
+  persona. El flujo crear → tomar → enviar → aprobar → crear PR (y la variante cerrar → crear de nuevo) deja
+  historial y avisos coherentes. 16 pruebas nuevas y 4 mutaciones detectadas de 4. Detalle en `DECISIONES.md`.
+- **Fase 2, paso 6: terminado (2026-11-17).** Servicios de Pull Request (listar ramas, crear y cerrar) con el
+  `PuertoGitHub` completo de §7.6, en dos commits de código: `59dc320` y `9600f46`; 52 pruebas nuevas.
+- **Fase 2, Bloque 2 (pasos 5 y 6): terminado (2026-11-17).** 15 servicios (12 de tareas y 3 de Pull Request),
+  el puerto de GitHub simulado y `ejecutarConsulta`, con 217 pruebas nuevas en cinco commits de código
+  (`2c54c04`, `2726b9a`, `98ead18`, `59dc320`, `9600f46`). Del «Listo cuando» de la Fase 2 queda cubierta la
+  parte de tareas y PR del flujo por código (crear tarea → tomar → enviar → aprobar → crear PR); «aprobar
+  postulación → asignar» llega con los pasos 7 y 8.
+- **Siguiente:** commit de documentación de este cierre y **PR del Bloque 2 a `development`** (lo abren y
+  revisan ambos autores). Después, el **Bloque 3** (pasos 7 a 11: postulaciones, practicantes y supervisores,
+  proyectos, cuenta y consultas con alcance por rol), en una sesión nueva desde `development`.
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
-  `domain/` y que ajusten una línea del plan (ver «Pendientes»). Después, el resto de la Fase 2 (servicios
-  por módulo); queda por decidir si se parte en sesiones (ver «Decisiones pendientes»).
+  `domain/` y que ajusten una línea del plan (ver «Pendientes»).
 - **Rama:** `feat/fase2-servicios-tareas-pr` (sale de `development`, con el Bloque 1 ya fusionado en el
   PR #22).
 
@@ -208,7 +221,8 @@
 | 2026-11-17 | 5A. Servicios para crear, editar y eliminar tareas | `2c54c04`; docs `b6683dd` |
 | 2026-11-17 | 5B. Las 7 transiciones de tarea y el puerto de GitHub simulado | `2726b9a`; docs `ed6a6bc` |
 | 2026-11-17 | 5C. Opciones de la tarea y prueba de flujo (cierra el paso 5) | `98ead18`; docs `6c8e32f` |
-| 2026-11-17 | 6A. Listar ramas y crear Pull Request con GitHub simulado | `59dc320`; docs pendientes de commit |
+| 2026-11-17 | 6A. Listar ramas y crear Pull Request con GitHub simulado | `59dc320`; docs `465a147` |
+| 2026-11-17 | 6B. Cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2) | `9600f46`; docs pendientes de commit; PR a `development` pendiente |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -230,10 +244,10 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 1161 pruebas en 50 archivos (de la Fase 2: 22 del almacén, 180 de la
+**Estado de pruebas (2026-11-17):** 1177 pruebas en 50 archivos (de la Fase 2: 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
-—50 en 5A, 82 en 5B y 33 en 5C— y 36 del sub-paso 6A); `build` OK (aviso de Vite por chunk > 500 kB, no es de
-seguridad).
+—50 en 5A, 82 en 5B y 33 en 5C— y 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—);
+`build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
 
@@ -271,8 +285,9 @@ seguridad).
 - [x] Sub-paso 5C: «Requiere supervisión», «Requiere PR» (D3-A, D5-A) y la prueba de flujo crear → tomar →
       enviar → aprobar (`98ead18`). **Paso 5 terminado.**
 - [x] Sub-paso 6A: listar ramas y crear Pull Request (P1 a P5) con `ejecutarConsulta` (`59dc320`).
-- [ ] Sub-paso 6B: `cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre del
-      Bloque 2 (PR a `development`, lo hacen los autores).
+- [x] Sub-paso 6B: `cerrarPullRequest` y el flujo de la Fase 2 terminando en «crear PR» (`9600f46`). **Paso 6
+      y Bloque 2 terminados.**
+- [ ] PR del Bloque 2 (`feat/fase2-servicios-tareas-pr`) a `development`, revisado por ambos autores.
 - [ ] Ajustar a mano el plan §9, Fase 2, paso 6: «No requiere PR» pasa al paso 5 (decisión D3-A); el paso 6
       queda con crear y cerrar PR, ramas de ejemplo, error preparado, PR existente y recálculo.
 - [ ] Ajustar a mano el plan §8 (y la propuesta §7.7 si lo quieren explícito): el caso de error de PR
@@ -283,8 +298,8 @@ seguridad).
 - [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
       a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
       Administrador o el Supervisor la liberen con motivo.
-- [ ] Pasos 6 a 11 (el 5 ya está terminado): servicios por módulo, consultas con alcance por rol, más sus
-      pruebas. Cada servicio recibe
+- [ ] Pasos 7 a 11 (Bloque 3; los pasos 5 y 6 ya están terminados): servicios por módulo, consultas con
+      alcance por rol (pueden usar `ejecutarConsulta`), más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
       dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos
       nuevos que no traigan `mensaje` del dominio (una prueba exige que todo código conocido tenga mensaje).
@@ -316,18 +331,19 @@ seguridad).
       cierre (`TAREA_TERMINADA` o `TAREA_APROBADA`), como ya pide el pendiente de indicadores. Cumplido en
       `marcarTareaTerminada` y `aprobarTarea` (`2726b9a`).
 - [ ] Servicios: pasar a `puede()` las asignaciones **de quien actúa** (no las de todo el proyecto). Cumplido
-      en los servicios de tareas con `asignacionesDe` (`src/services/tareas/comun.ts`); sigue vigente para los
-      pasos 6 a 11.
+      en los servicios de tareas y de PR con `asignacionesDe` (`src/services/tareas/comun.ts`); sigue vigente
+      para los pasos 7 a 11.
 - [ ] Los servicios deben pasar SIEMPRE el texto y rechazar si `exige_texto !== null` y falta o viene vacío.
-      Cumplido en los servicios de tareas con `exigirTexto` (`comun.ts`); sigue vigente para los pasos 6 a 11.
+      Cumplido en los servicios de tareas y de PR con `exigirTexto` (`comun.ts`); sigue vigente para los pasos
+      7 a 11.
 - [x] Aviso al Supervisor cuando el practicante desactiva «Requiere PR» (§7.5/§8.1) (`cambiarRequierePR`,
       `98ead18`).
-- [ ] Servicios de PR: simular GitHub y, si `necesitaConsultaGitHub(tarea)`, pasar SIEMPRE `github` en el
+- [x] Servicios de PR: simular GitHub y, si `necesitaConsultaGitHub(tarea)`, pasar SIEMPRE `github` en el
       evento `TAREA_ENVIADA_O_TERMINADA`; llamar a `siguienteEstadoPR` tras enviar/terminar, tras crear o
       cerrar el PR y tras cambiar «Requiere PR». Detalle en `DECISIONES.md` (paso 5). **Hecho para enviar y
       terminar** en 5B (`2726b9a`, puerto `entorno.github`) y **tras cambiar «Requiere PR»** en 5C (`98ead18`,
-      C1) y **tras crear el PR** en 6A (`59dc320`, `PR_CREADO` y `GITHUB_INFORMA` por conflictos); falta tras
-      cerrar el PR (6B).
+      C1), **tras crear el PR** en 6A (`59dc320`, `PR_CREADO` y `GITHUB_INFORMA` por conflictos) y **tras
+      cerrarlo** en 6B (`9600f46`, `PR_CERRADO_DESDE_SISTEMA`). Completo.
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
 - [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
 - [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
@@ -436,8 +452,8 @@ seguridad).
   (2026-11-14): revisión conjunta de ambos autores.** Ya está reflejado en el plan §11.
 - Fase 2: ¿una sesión por fase o partirla en 2 o 3 sesiones (almacén y semilla; servicios de tareas y PR;
   el resto)? Recomendación del asesor: partirla. **En la práctica ya se parte por bloques:** el Bloque 1
-  (pasos 1 a 4) fue una sesión y el Bloque 2 (pasos 5 y 6) es otra, en la rama
-  `feat/fase2-servicios-tareas-pr`.
+  (pasos 1 a 4) fue una sesión y el Bloque 2 (pasos 5 y 6) otra, en la rama
+  `feat/fase2-servicios-tareas-pr`; el Bloque 3 (pasos 7 a 11) irá en una sesión nueva.
 - Estilo de Prettier si se quiere otro distinto al propuesto (comillas simples, punto y coma, ancho 100).
 - Interlineado: la especificación visual y la propuesta §13 no definen un valor.
 - Rutas con prefijo por panel (`/administrador/...`): la propuesta no define URLs.

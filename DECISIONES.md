@@ -2551,3 +2551,90 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 - **6B:** `cerrarPullRequest`, el flujo de la Fase 2 terminando en «crear PR» y el cierre del Bloque 2.
 - **Ajustes a mano en `docs/`:** plan §9, Fase 2, paso 6 (D3: «No requiere PR» ya está en el paso 5) y plan §8
   (el caso de error preparado es «rama inexistente», con las ramas de ejemplo de P1 y P5).
+
+## 2026-11-17 — [A+B] Fase 2, paso 6B: cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2)
+
+- **Commit:** `9600f46` (`feat: agrega cerrar Pull Request y el flujo de punta a punta (Fase 2, paso 6B)`).
+  Verificación: 1177 pruebas en 50 archivos (16 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó
+
+- `src/services/pullRequests/pullRequests.ts`: `cerrarPullRequest` (`EntradaCerrarPR`: `idActor`, `idTarea`,
+  `motivo?`), que devuelve la `Tarea` resultante. Reexportado en `src/services/pullRequests/index.ts` y
+  `src/services/index.ts`. Sin códigos nuevos.
+- `src/services/tareas/flujo.test.ts`: flujo de punta a punta terminando en `crearPullRequest` y la variante
+  cerrar → crear de nuevo. `valor()` pasa a ser genérico para leer el resultado de `crearPullRequest`.
+
+### Decisiones de implementación
+
+- **Orden de cerrar:** Zod → contexto → `puedeCerrarPullRequest` (`puede()`: responsable, Supervisor del
+  proyecto o Administrador, alcance y FINALIZADO → etiqueta visible → PR en CREADO o CON_CONFLICTOS → motivo
+  vacío) → `exigirTexto` (motivo ausente) → `github.cerrarPullRequest(url)` → `siguienteEstadoPR`
+  (`PR_CERRADO_DESDE_SISTEMA`) → una sola escritura. Por ese orden, un PR FUSIONADO o PENDIENTE con motivo vacío
+  responde `ESTADO_PR_NO_APLICA`, no `TEXTO_OBLIGATORIO`.
+- **GitHub se llama solo después de los permisos y del motivo:** una solicitud rechazada nunca deja un PR
+  cerrado en GitHub con la tarea sin cambios (lo comprueba un puerto espía en todos los casos de error).
+- **Solo cambia `estado_pr` a CERRADO;** la URL y las ramas se conservan (§7.5: luego se puede «crear nuevo
+  PR», y un cerrado no bloquea, P3-A). Una URL nula con el PR abierto es un dato roto: lanza y termina en
+  `ERROR_INESPERADO` sin escribir.
+- **Evento y aviso:** `PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA` (autor, quien cierra) con `estado_pr` → CERRADO y
+  el motivo recortado en `nota`; `PULL_REQUEST_CERRADO_POR_OTRA_PERSONA` al responsable con el texto de la
+  semilla («Cerraron el Pull Request de «X» (ID).»), que `crearNotificaciones` descarta si lo cerró él mismo.
+- **EN_PAUSA no impide cerrar** (como crear: `puede()` solo bloquea FINALIZADO).
+- Las pruebas de flujo calculan la URL esperada desde los datos (mayor número conocido + 1), sin fijar números.
+
+### Pruebas y mutaciones
+
+- `pullRequests.test.ts` (14 pruebas de cerrar): el practicante cierra su PR (evento exacto, una escritura,
+  sin aviso, el puerto recibe la URL), Supervisor y Administrador cierran uno ajeno (aviso exacto al
+  responsable), desde CON_CONFLICTOS, crear de nuevo después de cerrar (URL siguiente), EN_PAUSA, motivo ausente
+  / vacío / con solo espacios, FUSIONADO y PENDIENTE (también con motivo vacío), supervisor ajeno, otro
+  practicante, practicante con baja, tarea EN_PROGRESO, sin «Requiere PR», FINALIZADO, INACTIVO, inexistentes y
+  datos inválidos; en todos los errores ni se escribe ni se llama a GitHub.
+- `flujo.test.ts` (2 pruebas): crear → tomar → enviar → aprobar → crear PR (tarea TERMINADA y CREADO, rama base
+  del proyecto, 5 eventos en orden con la misma etiqueta y proyecto, y siguen siendo solo 2 avisos: crear un PR
+  no avisa); y la variante con cierre por el Supervisor (aviso al practicante, nota del motivo) y un PR nuevo con
+  el número siguiente.
+- **Mutaciones del agente (4, sobre `src/services` completo, con `git add` previo y `git restore` después;
+  todas detectadas y restauradas):** no exigir el motivo ausente; aviso de cierre al actor en vez del
+  responsable; cerrar sin llamar al puerto; borrar la URL al cerrar.
+
+### Cierre del paso 6 (servicios de Pull Request)
+
+- **Dos commits de código:** 6A `59dc320` (puerto ampliado, `ejecutarConsulta`, listar ramas y crear PR) y 6B
+  `9600f46` (cerrar PR y flujo de punta a punta); docs `465a147`. 52 pruebas nuevas; mutaciones 9 de 9 en 6A y
+  4 de 4 en 6B.
+- `PuertoGitHub` queda completo con las cuatro operaciones de §7.6 (consultar, listar ramas, crear y cerrar),
+  simulado sin estado propio y determinista.
+- Todos los eventos de §7.4 tienen servicio: llegar (5B), crear o detectar existente (6A), conflictos al crear
+  (6A), cerrar desde el sistema (6B) y «Requiere PR» (5C). Lo que GitHub informa por su cuenta (fusión, cierre o
+  resolución de conflictos en GitHub) queda para un backend con webhooks (P6-A).
+
+### Cierre del Bloque 2 de la Fase 2 (pasos 5 y 6)
+
+- **Cinco commits de código:** `2c54c04` (5A), `2726b9a` (5B), `98ead18` (5C), `59dc320` (6A) y `9600f46`
+  (6B); docs `b6683dd`, `ed6a6bc`, `6c8e32f` y `465a147` (y el de este cierre). Rama
+  `feat/fase2-servicios-tareas-pr`.
+- **15 servicios:** 12 de tareas (crear, editar, eliminar, las 7 transiciones y las 2 opciones) y 3 de Pull
+  Request (listar ramas, crear y cerrar), más el puerto de GitHub simulado y `ejecutarConsulta`. 217 pruebas
+  nuevas (165 del paso 5 y 52 del paso 6).
+- **Mutaciones:** 48 en total (13 en 5A, 11 en 5B, 11 en 5C, 9 en 6A y 4 en 6B): 46 detectadas y 2
+  equivalentes (sin efecto observable, explicadas en 5B y 5C).
+- **«Listo cuando» de la Fase 2:** queda cubierta por código la parte de tareas y PR del flujo (crear tarea →
+  tomar → enviar → aprobar → crear PR), con historial y notificaciones coherentes. «Aprobar postulación →
+  asignar» llega con los pasos 7 y 8 (Bloque 3).
+- **Decisiones del bloque:** D1 a D7 (paso 5) y P1 a P7 (paso 6), todas en la opción A.
+
+### Pendientes
+
+- **Autores:** commit de documentación de este cierre y PR del Bloque 2 a `development`, revisado por ambos.
+- **Ajustes a mano en `docs/`:** plan §9, Fase 2, paso 6 (D3) y plan §8 (caso de error «rama inexistente» y
+  ramas de ejemplo, P1, P2 y P5).
+- **Fase 4:** señalar en el detalle de tarea el caso de D6-A (responsable INACTIVO o con baja en una tarea
+  EN_PROGRESO); la pantalla de «Crear Pull Request» usa `listarRamasParaPullRequest` y muestra el aviso de
+  §7.5 cuando `vinculado` es `true`.
+- **Riesgo aceptado (P3-A):** un PR vinculado y compartido por dos tareas, cerrado desde una, no se propaga a
+  la otra hasta que vuelva a llegar.
+- **Bloque 3 (pasos 7 a 11):** postulaciones, practicantes y supervisores, proyectos, cuenta y consultas con
+  alcance por rol, en una sesión nueva desde `development`.
