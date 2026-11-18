@@ -2638,3 +2638,94 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   la otra hasta que vuelva a llegar.
 - **Bloque 3 (pasos 7 a 11):** postulaciones, practicantes y supervisores, proyectos, cuenta y consultas con
   alcance por rol, en una sesión nueva desde `development`.
+
+---
+
+## 2026-11-17 — [A+B] Fase 2, paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones
+
+Commits de código: `42c0b25` (regla de decisión en `domain/`) y `debd47e` (servicios de 7A). El paso 7 se parte
+en dos sub-pasos: 7A (este) y 7B (áreas técnicas, especialidades y criterios; propuesta aparte).
+
+### Decisiones aprobadas (todas en la opción recomendada)
+
+- **E1-A — el «modelo» es un puerto.** `Entorno.evaluador` (`PuertoEvaluador.juzgar`) con la simulación
+  determinista `EVALUADOR_SIMULADO` (`src/services/evaluador.ts`): hash FNV-1a de `id_postulante|id_criterio`,
+  cumple cerca del 70 % y usa las mismas observaciones de la semilla. Es repetible, como pide §10.1; las pruebas
+  inyectan juicios fijos para llegar a los bordes 49/50/69/70 y al criterio obligatorio. Descartadas: función
+  local sin puerto (pruebas de bordes incómodas) y juicio por palabras clave (frágil).
+- **E2-A — contraseña temporal.** `Entorno.generarContrasena` (`src/services/contrasena.ts`): 10 caracteres de
+  `crypto.getRandomValues`, sin 0/O/1/l/I, descartando los bytes que sesgarían el reparto; supera el mínimo de 8
+  de §8.3. Se devuelve **una sola vez** en el resultado de `aprobarPostulacion` y se guarda tal cual en
+  `Usuario.contrasena` (como la semilla); **nunca** va al historial. Descartadas: derivarla de `generarId`
+  (predecible) y una fija `demo12345` (todas las cuentas nuevas compartirían clave).
+- **E3-A — error de `calcularPuntaje`.** `evaluarPostulacion` devuelve el mismo `codigo` y `mensaje` de `domain/`
+  y no escribe nada; la postulación queda sin evaluación y el Administrador puede aprobarla o rechazarla igual
+  («decide siempre, con o sin marca»). Descartadas: bloquear las decisiones hasta que haya evaluación, e inventar
+  una evaluación con puntaje 0 (contradice «explicable», §10.1).
+- **E4-B — la regla de estado vive en `domain/`.** `src/domain/decisionPostulacion.ts`:
+  `puedeDecidirPostulacion(estado, accion)` y `decisionesDisponibles(estado)`, con las únicas transiciones
+  PENDIENTE→APROBADA, PENDIENTE→RECHAZADA y RECHAZADA→PENDIENTE. Servicio y pantalla (qué botón se ve) consultan
+  la misma regla, como `transicionesDisponibles` en tareas. Trae su propio `mensaje`
+  (`POSTULACION_NO_PENDIENTE`, `POSTULACION_NO_RECHAZADA`), así que no están en `MENSAJES`. No cambia ningún tipo.
+- **E5-A — `evaluarPostulacion` es un proceso del sistema.** Sin actor y con autor `SISTEMA`; no hay una acción
+  en la matriz de §4 que lo autorice a una persona. La semilla ya evalúa a las 42 postulaciones, así que hoy solo
+  se dispara por código; **cómo se ve «Analizando…» se decide en la Fase 5.1** (p. ej. una postulación de la
+  semilla sin evaluar). No se inventa ninguna pantalla.
+- **Supuesto confirmado — `fecha_ingreso`.** Es el día de la aprobación en hora de Perú (`marca.hoy`), igual que
+  la semilla; `fecha_fin_prevista` sale de `fechaFinPrevista(fecha_ingreso, PRACTICA_DURACION_MESES)`. El
+  Administrador podrá cambiarlas luego (`editarDatosPractica`, paso 8). **Falta que los autores lo escriban en
+  la propuesta §5.1/§5.2** (hoy no dice de dónde sale la fecha de ingreso).
+
+### Qué se construyó
+
+- `src/domain/decisionPostulacion.ts` (+ prueba) y su reexportación en `src/domain/index.ts`.
+- `src/services/postulaciones/`: `comun.ts` (esquemas, contexto actor → postulante, lectura de la banda, la
+  proporción y la duración vigentes con verificación de `tipo`), `evaluacion.ts` (`evaluarPostulacion` y
+  `redactarJustificacion`), `decisiones.ts` (`aprobarPostulacion`, `rechazarPostulacion`,
+  `reconsiderarPostulacion`) e `index.ts`.
+- `src/services/evaluador.ts` y `src/services/contrasena.ts`; `Entorno` gana `evaluador` y `generarContrasena`
+  (y `crearEntornoDePrueba` acepta un `evaluador` y numera las contraseñas: `Clave-t001`).
+- Códigos nuevos en `MENSAJES`: `POSTULACION_YA_EVALUADA`, `CORREO_YA_REGISTRADO` y `CONFIGURACION_INVALIDA`
+  (parámetro ausente o de otro `tipo`: dato roto, no error del usuario).
+
+### Decisiones de implementación
+
+- **Orden de las decisiones:** Zod → actor → postulante → `puede()` → estado (`puedeDecidirPostulacion`) → texto
+  ausente (`exigirTexto`) → reglas propias → escritura. Por eso un Supervisor sobre una postulación aprobada
+  recibe `ROL_NO_PERMITIDO`, y rechazar una aprobada sin motivo recibe `POSTULACION_NO_PENDIENTE`.
+- **Aprobar** crea `Usuario` (PRACTICANTE, ACTIVO, `debe_cambiar_contrasena: true`, correo recortado) y
+  `Practicante` (área y especialidad heredadas; Discord, GitHub y disponibilidad en `null`), pasa el postulante a
+  APROBADA y registra `POSTULACION_APROBADA` y `PRACTICANTE_CREADO` con el mismo instante, todo en una escritura.
+  **No asigna a ningún proyecto** (§5.1: es otra acción) y **no notifica a nadie** (§8.1).
+- **Correo único:** se compara sin distinguir mayúsculas ni espacios (`CORREO_YA_REGISTRADO`). La duración
+  inválida de Configuración devuelve `MESES_INVALIDOS` de `domain/` sin escribir.
+- **Reconsiderar** conserva la evaluación y su desglose (no se recalcula, §5.1).
+- **Evaluar:** el modelo solo ve los criterios activos del área (generales) y de la especialidad; la banda y la
+  proporción se leen de Configuración en cada evaluación; una postulación ya evaluada responde
+  `POSTULACION_YA_EVALUADA`. La justificación usa el mismo texto que la semilla (hay una prueba que lo exige).
+- **Limitación conocida:** en rechazar y reconsiderar, un motivo o nota que no sea texto falla en el campo
+  `texto` y no en `motivo` o `nota`; se ajusta con la pantalla de la Fase 5.1 si hace falta.
+
+### Pruebas y mutaciones
+
+- 110 pruebas nuevas (1.287 en 56 archivos en total): 12 de la regla de `domain/`; 25 de la evaluación; 51 de
+  las decisiones (permisos y datos de las tres, rejilla estado × decisión, fechas con fin de mes, año bisiesto y
+  cambio de año, duraciones de 1 a 24 y fuera de rango, correo repetido); flujo evaluar → rechazar →
+  reconsiderar → aprobar; contraseña (alfabeto, longitud, bytes sesgados); evaluador (determinista, porcentaje).
+- **Mutaciones del agente (17, con `git add` previo y `git restore` después; todas detectadas y restauradas):**
+  aprobar sin `puede()`; aprobar desde RECHAZADA; reconsiderar desde APROBADA; sin `exigirTexto`;
+  `debe_cambiar_contrasena: false`; 4 meses fijos; ingreso en UTC; contraseña en el historial; aviso al aprobar;
+  banda fija; proporción fija; sin `POSTULACION_YA_EVALUADA`; sin comprobar el correo duplicado; correo sin
+  normalizar; contraseña sin descartar bytes sesgados; evaluación firmada por una persona; reconsiderar que
+  borra la evaluación.
+- No se hizo una mutación de atomicidad: la escritura única la garantiza `transaccion` y todas las pruebas de
+  error comprueban que el almacén queda idéntico.
+
+### Pendientes
+
+- **Fase 5.1:** cómo se muestra «Analizando…» (E5-A) y qué texto sale cuando la evaluación falla (E3-A: «No se
+  pudo evaluar: <mensaje>»); mostrar la contraseña temporal una sola vez al aprobar.
+- **Autores, a mano en `docs/`:** propuesta §5.1/§5.2: la fecha de ingreso de un practicante nuevo es el día de la
+  aprobación (hora de Perú) y la de fin se calcula con la duración vigente.
+- **Paso 8:** `editarDatosPractica` (fecha de ingreso y de fin), restablecer contraseña y asignar al proyecto.
+- **7B:** áreas técnicas, especialidades y criterios (propuesta aparte).

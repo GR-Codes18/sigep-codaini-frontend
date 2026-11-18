@@ -8,14 +8,15 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 2 (pasos 5 y 6) terminado**: servicios de tareas
-  y de Pull Request. El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). **Paso 5** en tres
+- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: sub-paso 7A terminado** (evaluar,
+  aprobar, rechazar y reconsiderar postulaciones; `42c0b25` y `debd47e`). El Bloque 2 (pasos 5 y 6, servicios de
+  tareas y de Pull Request) está fusionado en `development` (PR #23). El Bloque 1 (pasos 1 a 4) está fusionado en `development` (PR #22). **Paso 5** en tres
   sub-pasos (D2-A): 5A (crear, editar y eliminar, `2c54c04`), 5B (las 7 transiciones y el puerto de GitHub,
   `2726b9a`) y 5C (opciones de la tarea y prueba de flujo, `98ead18`). **Paso 6** en dos sub-pasos (P7-A): 6A
   (listar ramas y crear el PR, `59dc320`) y 6B (cerrar el PR y el flujo de punta a punta, `9600f46`).
   Siguiente: PR del Bloque 2 a `development` (lo abren y revisan los autores) y, después, el Bloque 3 (pasos 7
   a 11).
-- **Actualizado:** 2026-11-17, al cerrar el sub-paso 6B y con él el paso 6 y el Bloque 2.
+- **Actualizado:** 2026-11-17, al cerrar el sub-paso 7A (rama `feat/fase2-servicios-modulos`).
 
 ### Cierres de fase
 
@@ -182,13 +183,24 @@
   (`2c54c04`, `2726b9a`, `98ead18`, `59dc320`, `9600f46`). Del «Listo cuando» de la Fase 2 queda cubierta la
   parte de tareas y PR del flujo por código (crear tarea → tomar → enviar → aprobar → crear PR); «aprobar
   postulación → asignar» llega con los pasos 7 y 8.
-- **Siguiente:** commit de documentación de este cierre y **PR del Bloque 2 a `development`** (lo abren y
-  revisan ambos autores). Después, el **Bloque 3** (pasos 7 a 11: postulaciones, practicantes y supervisores,
-  proyectos, cuenta y consultas con alcance por rol), en una sesión nueva desde `development`.
+- **Fase 2, paso 7: plan aprobado (2026-11-17)** con las cinco decisiones en la opción recomendada (E1-A a E5-A)
+  y el supuesto de `fecha_ingreso`; detalle en `DECISIONES.md`. En resumen: puerto `evaluador` simulado y
+  determinista; `generarContrasena` en `Entorno` (10 caracteres, una sola vez); si `calcularPuntaje` falla, evaluar
+  falla sin escribir y no bloquea aprobar ni rechazar; la regla de estado de la decisión vive en `domain/`;
+  `evaluarPostulacion` es del sistema; `fecha_ingreso` = día de la aprobación en hora de Perú. El paso se parte en
+  7A y 7B.
+- **Fase 2, sub-paso 7A: terminado (2026-11-17).** Regla `puedeDecidirPostulacion` en
+  `src/domain/decisionPostulacion.ts` (`42c0b25`) y los servicios `evaluarPostulacion`, `aprobarPostulacion`,
+  `rechazarPostulacion` y `reconsiderarPostulacion` en `src/services/postulaciones/`, con el puerto
+  `evaluador`, `generarContrasena` y 3 códigos nuevos (`debd47e`). Aprobar crea la cuenta y la práctica en una
+  escritura, sin asignar a un proyecto y sin notificar a nadie (§8.1). 110 pruebas nuevas y 17 mutaciones
+  detectadas de 17. Detalle en `DECISIONES.md`.
+- **Siguiente:** propuesta y OK del **sub-paso 7B** (áreas técnicas, especialidades y criterios de evaluación) y,
+  después, los pasos 8 a 11 del Bloque 3 (practicantes y supervisores, proyectos, cuenta y consultas con alcance
+  por rol).
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»).
-- **Rama:** `feat/fase2-servicios-tareas-pr` (sale de `development`, con el Bloque 1 ya fusionado en el
-  PR #22).
+- **Rama:** `feat/fase2-servicios-modulos` (sale de `development`, con el Bloque 2 ya fusionado en el PR #23).
 
 ## Pasos terminados
 
@@ -222,7 +234,8 @@
 | 2026-11-17 | 5B. Las 7 transiciones de tarea y el puerto de GitHub simulado | `2726b9a`; docs `ed6a6bc` |
 | 2026-11-17 | 5C. Opciones de la tarea y prueba de flujo (cierra el paso 5) | `98ead18`; docs `6c8e32f` |
 | 2026-11-17 | 6A. Listar ramas y crear Pull Request con GitHub simulado | `59dc320`; docs `465a147` |
-| 2026-11-17 | 6B. Cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2) | `9600f46`; docs pendientes de commit; PR a `development` pendiente |
+| 2026-11-17 | 6B. Cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2) | `9600f46`; docs `03d246c`; PR #23 fusionado en `34e0656` |
+| 2026-11-17 | 7A. Evaluar, aprobar, rechazar y reconsiderar postulaciones | A (regla en `domain/`) `42c0b25`; B (servicios) `debd47e`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -244,9 +257,10 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 1177 pruebas en 50 archivos (de la Fase 2: 22 del almacén, 180 de la
+**Estado de pruebas (2026-11-17):** 1287 pruebas en 56 archivos (de la Fase 2: 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
-—50 en 5A, 82 en 5B y 33 en 5C— y 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—);
+—50 en 5A, 82 en 5B y 33 en 5C—, 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B— y 110
+del sub-paso 7A, 12 de ellas en `domain/`);
 `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
@@ -287,7 +301,8 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
 - [x] Sub-paso 6A: listar ramas y crear Pull Request (P1 a P5) con `ejecutarConsulta` (`59dc320`).
 - [x] Sub-paso 6B: `cerrarPullRequest` y el flujo de la Fase 2 terminando en «crear PR» (`9600f46`). **Paso 6
       y Bloque 2 terminados.**
-- [ ] PR del Bloque 2 (`feat/fase2-servicios-tareas-pr`) a `development`, revisado por ambos autores.
+- [x] PR del Bloque 2 (`feat/fase2-servicios-tareas-pr`) a `development`, revisado por ambos autores (PR #23,
+      `34e0656`).
 - [ ] Ajustar a mano el plan §9, Fase 2, paso 6: «No requiere PR» pasa al paso 5 (decisión D3-A); el paso 6
       queda con crear y cerrar PR, ramas de ejemplo, error preparado, PR existente y recálculo.
 - [ ] Ajustar a mano el plan §8 (y la propuesta §7.7 si lo quieren explícito): el caso de error de PR
@@ -298,7 +313,14 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
 - [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
       a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
       Administrador o el Supervisor la liberen con motivo.
-- [ ] Pasos 7 a 11 (Bloque 3; los pasos 5 y 6 ya están terminados): servicios por módulo, consultas con
+- [x] Sub-paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`).
+- [ ] Sub-paso 7B: áreas técnicas, especialidades y criterios de evaluación (crear, editar, activar y
+      desactivar); pendiente su propuesta.
+- [ ] Fase 5.1: cómo se muestra «Analizando…» (la semilla ya evalúa a todos y `evaluarPostulacion` solo se
+      dispara por código), el mensaje cuando la evaluación falla y la contraseña temporal visible una sola vez.
+- [ ] Ajustar a mano la propuesta §5.1/§5.2: la fecha de ingreso de un practicante nuevo es el día de la
+      aprobación (hora de Perú) y la de fin se calcula con la duración vigente (supuesto confirmado en 7A).
+- [ ] Pasos 7B a 11 (Bloque 3; los pasos 5, 6 y 7A ya están terminados): servicios por módulo, consultas con
       alcance por rol (pueden usar `ejecutarConsulta`), más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
       dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos
@@ -346,14 +368,15 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
       cerrarlo** en 6B (`9600f46`, `PR_CERRADO_DESDE_SISTEMA`). Completo.
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
 - [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
-- [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
+- [x] `fecha_ingreso` del practicante al aprobar (`aprobarPostulacion`, `debd47e`). Sigue abierto: en
+      configuración, `id === clave`.
 - [x] ID legible: guardar `numero` y `ultimo_numero_tarea` en una sola operación (`crearTarea`, `2c54c04`).
 - [ ] ID legible: usar `validarCodigoProyecto` (con los códigos de todos los proyectos, también finalizados)
       en el servicio de proyectos y en el formulario de la Fase 5.4. Detalle en `DECISIONES.md` (paso 6).
 - [ ] Migrar los formateos de ID de `src/compartido/` y `src/app/ejemplos/` a `formatearIdLegible`.
-- [ ] Puntaje: la evaluación simulada lee la banda y la proporción vigentes de `data/`, llama a
-      `calcularPuntaje` y genera la justificación; decidir qué muestra una postulación si
-      `calcularPuntaje` devuelve un error; el formulario de criterios y el de Configuración exigen enteros.
+- [x] Puntaje: la evaluación simulada lee la banda y la proporción vigentes de `data/`, llama a
+      `calcularPuntaje` y genera la justificación; si `calcularPuntaje` devuelve un error no se escribe nada
+      y las decisiones no se bloquean (E3-A, `debd47e`). Sigue abierto: el formulario de criterios y el de Configuración exigen enteros.
       Detalle en `DECISIONES.md` (paso 7).
 - [ ] Insights: el servicio arma `UmbralesInsight` con los valores vigentes de Configuración y pasa `ahora`
       en ISO UTC con `Z` (`new Date().toISOString()`); si no, el resultado es `AHORA_INVALIDO`. Detalle en
@@ -382,8 +405,8 @@ semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los ser
 - [ ] Ciclo de vida: notificaciones de los efectos: «práctica finalizada con tareas liberadas» a
       `supervisores_a_avisar`; asignado y quitado; proyecto finalizado al equipo; el **aviso previo** lo emite
       el servicio una sola vez, cuando `dias_restantes === avisoDias` (`situacionFinPractica`).
-- [ ] Ciclo de vida: usar `fechaFinPrevista` al aprobar una postulación (`fecha_ingreso` + la duración vigente
-      de Configuración). Los formularios de Configuración exigen enteros: duración de 1 a 24 meses y aviso de 1
+- [x] Ciclo de vida: usar `fechaFinPrevista` al aprobar una postulación (`fecha_ingreso` + la duración vigente
+      de Configuración) (`aprobarPostulacion`, `debd47e`). Los formularios de Configuración exigen enteros: duración de 1 a 24 meses y aviso de 1
       a 365 días (`DURACION_MAXIMA_MESES`, `AVISO_MAXIMO_DIAS`).
 - [ ] Ciclo de vida: la reactivación de un proyecto debe exigir que su supervisor esté ACTIVO. Con el bloqueo
       de un proyecto FINALIZADO (no se cambia de supervisor) y la desactivación de supervisores (que ignora los
