@@ -60,7 +60,9 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   RAMA_INEXISTENTE: 'La rama elegida ya no existe en GitHub. Elige otra rama.',
   // Postulaciones (los de la decisión traen su mensaje desde `domain/`)
   POSTULACION_YA_EVALUADA: 'Esta postulación ya tiene una evaluación y no se vuelve a calcular.',
-  CORREO_YA_REGISTRADO: 'Ya existe una cuenta con el correo de esta postulación.',
+  CORREO_YA_REGISTRADO: 'Ya existe una cuenta con ese correo.',
+  USUARIO_OBJETIVO_INACTIVO:
+    'Esta cuenta está inactiva: reactívala antes de restablecer su contraseña.',
   CONFIGURACION_INVALIDA:
     'Falta un parámetro de Configuración o no tiene el formato esperado. Restaura sus valores.',
   // Ciclo de vida (`domain/cicloVida.ts` devuelve solo el código y, a veces, una cantidad: el mensaje

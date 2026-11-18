@@ -27,8 +27,12 @@ export interface ContextoOperacion {
   entorno: Entorno;
 }
 
-/** Lo que devuelve la operación de un servicio: un éxito con sus cambios, o un error. */
-export type SalidaOperacion<T> = { ok: true; valor: T; cambios: CambiosAlmacen } | Fallo;
+/**
+ * Lo que devuelve la operación de un servicio: un éxito con sus cambios, o un error. Un éxito con
+ * `cambios: null` es «no había nada que escribir» (por ejemplo, un proceso del sistema que ya había
+ * hecho todo): no se escribe nada, ni siquiera en el almacenamiento del navegador.
+ */
+export type SalidaOperacion<T> = { ok: true; valor: T; cambios: CambiosAlmacen | null } | Fallo;
 
 export async function ejecutarServicio<T>(
   entorno: Entorno,

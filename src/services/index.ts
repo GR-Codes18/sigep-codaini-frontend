@@ -54,16 +54,38 @@ export { conEfectos, ejecutarConsulta, ejecutarServicio } from './transaccional'
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
 export { denegarCicloVida } from './cicloVida';
+export {
+  correoEnUso,
+  esquemaCelular,
+  esquemaCorreo,
+  normalizarCorreo,
+  restablecerContrasena,
+} from './cuentas';
+export type { ContrasenaRestablecida, EntradaRestablecerContrasena } from './cuentas';
 
 // Servicios por módulo
 export {
+  crearSupervisor,
+  desactivarSupervisor,
+  editarSupervisor,
+  reactivarSupervisor,
+} from './supervisores';
+export type {
+  EntradaCambiarEstadoSupervisor,
+  EntradaCrearSupervisor,
+  EntradaEditarSupervisor,
+  SupervisorCreado,
+} from './supervisores';
+export {
   asignarPracticantes,
   editarDatosPractica,
+  emitirAvisosFinDePractica,
   finalizarPractica,
   quitarPracticante,
   reactivarPractica,
 } from './practicantes';
 export type {
+  AvisosFinDePractica,
   EntradaAsignarPracticantes,
   EntradaEditarDatosPractica,
   EntradaFinalizarPractica,
