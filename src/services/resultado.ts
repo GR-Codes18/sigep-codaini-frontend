@@ -69,6 +69,8 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   CREDENCIALES_INVALIDAS: 'Correo o contraseña incorrectos',
   CONTRASENA_ACTUAL_INCORRECTA: 'La contraseña actual no es correcta.',
   CONTRASENA_IGUAL_A_LA_ACTUAL: 'La contraseña nueva debe ser distinta de la actual.',
+  // Seguimiento
+  INSIGHT_YA_REVISADO: 'Ya marcaste esta alerta como revisada.',
   // Ciclo de vida (`domain/cicloVida.ts` devuelve solo el código y, a veces, una cantidad: el mensaje
   // lo pone `denegarCicloVida`, que agrega la cantidad donde corresponde)
   AHORA_INVALIDO: 'La hora del sistema no es válida. Recarga la página e intenta de nuevo.',

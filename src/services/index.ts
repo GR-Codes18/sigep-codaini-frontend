@@ -79,6 +79,22 @@ export type {
 
 // Servicios por módulo
 export {
+  calcularInsightsVigentes,
+  marcarInsightRevisado,
+  marcarNotificacionLeida,
+  marcarTodasLeidas,
+  notificarDesdeInsight,
+  umbralesDe,
+} from './seguimiento';
+export type {
+  EntradaMarcarInsightRevisado,
+  EntradaMarcarNotificacionLeida,
+  EntradaMarcarTodasLeidas,
+  EntradaNotificarDesdeInsight,
+  InsightNotificado,
+  TodasMarcadasLeidas,
+} from './seguimiento';
+export {
   agregarEnlace,
   cambiarRamaBase,
   cambiarSupervisor,
