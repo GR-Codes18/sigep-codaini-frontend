@@ -7,7 +7,7 @@
  * reactivación) pasan tal cual.
  */
 
-import type { ErrorCicloVida, ErrorReactivacion } from '@/domain';
+import type { ErrorCicloVida, ErrorEstadoProyecto, ErrorReactivacion } from '@/domain';
 import { fallo, type CamposConError, type Fallo } from './resultado';
 
 function plural(cantidad: number, singular: string, plurales: string): string {
@@ -26,7 +26,7 @@ function conCantidad(codigo: string, cantidad: number): string | undefined {
 }
 
 export function denegarCicloVida(
-  error: ErrorCicloVida | ErrorReactivacion,
+  error: ErrorCicloVida | ErrorReactivacion | ErrorEstadoProyecto,
   campos?: CamposConError,
 ): Fallo {
   const cantidad = 'cantidad' in error ? error.cantidad : undefined;

@@ -84,6 +84,7 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   ESPECIALIDAD_INACTIVA: 'La especialidad elegida está inactiva. Elige una especialidad activa.',
   FIN_ANTES_DE_INGRESO: 'La fecha de fin prevista no puede ser anterior a la fecha de ingreso.',
   // Proyectos (los de `validarCodigoProyecto` traen su mensaje desde `domain/`)
+  PROYECTO_NO_ES_DEL_SUPERVISOR: 'Ese proyecto no está a cargo del supervisor indicado.',
   CODIGO_INMUTABLE: 'El código del proyecto no se puede cambiar.',
   FIN_ANTES_DE_INICIO: 'La fecha de fin prevista no puede ser anterior a la fecha de inicio.',
   // Catálogo de evaluación (áreas, especialidades y criterios)

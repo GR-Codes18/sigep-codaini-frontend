@@ -71,6 +71,7 @@ describe('mensajes de los códigos de domain/', () => {
       'POSTULACION_YA_EVALUADA',
       'CORREO_YA_REGISTRADO',
       'CONFIGURACION_INVALIDA',
+      'PROYECTO_NO_ES_DEL_SUPERVISOR',
       'CODIGO_INMUTABLE',
       'FIN_ANTES_DE_INICIO',
       'NOMBRE_DUPLICADO',

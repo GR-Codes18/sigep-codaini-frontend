@@ -67,7 +67,13 @@ export type { ContrasenaRestablecida, EntradaRestablecerContrasena } from './cue
 export {
   agregarEnlace,
   cambiarRamaBase,
+  cambiarSupervisor,
   crearProyecto,
+  finalizarProyecto,
+  pausarProyecto,
+  reactivarProyecto,
+  reanudarProyecto,
+  reasignarProyectosDeSupervisor,
   definirReunion,
   editarDatosProyecto,
   editarEnlace,
@@ -86,7 +92,11 @@ export {
 } from './proyectos';
 export type {
   EntradaAgregarEnlace,
+  EntradaCambiarEstadoProyecto,
   EntradaCambiarRamaBase,
+  EntradaCambiarSupervisor,
+  EntradaReasignarProyectosDeSupervisor,
+  ProyectoFinalizado,
   EntradaCrearProyecto,
   EntradaDefinirReunion,
   EntradaEditarDatosProyecto,
