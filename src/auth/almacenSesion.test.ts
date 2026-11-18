@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { accesoRapido } from './iniciarSesion';
+import { sesionDePrueba } from './sesionDePrueba';
 import { useAlmacenSesion } from './almacenSesion';
-import { crearEntorno } from '@/services';
+import { accesoRapido, crearEntorno } from '@/services';
 
 describe('almacenSesion', () => {
   const entorno = crearEntorno({ demoraMs: 0 });
@@ -16,9 +16,9 @@ describe('almacenSesion', () => {
   });
 
   it('abre y cierra sesión, y lo persiste', async () => {
-    const resultado = await accesoRapido('SUPERVISOR', entorno);
+    const resultado = await accesoRapido({ rol: 'SUPERVISOR' }, entorno);
     if (!resultado.ok) throw new Error(resultado.mensaje);
-    useAlmacenSesion.getState().abrirSesion(resultado.usuario);
+    useAlmacenSesion.getState().abrirSesion(resultado.valor);
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('SUPERVISOR');
     const guardado = JSON.parse(localStorage.getItem('sigep-sesion') ?? '{}') as {
       state?: { usuario?: Record<string, unknown> };
@@ -56,10 +56,8 @@ describe('almacenSesion', () => {
     expect(useAlmacenSesion.getState().usuario).toBeNull();
   });
 
-  it('recupera una sesión válida guardada sin contrasena', async () => {
-    const resultado = await accesoRapido('PRACTICANTE', entorno);
-    if (!resultado.ok) throw new Error(resultado.mensaje);
-    const usuario = resultado.usuario;
+  it('recupera una sesión válida guardada', async () => {
+    const usuario = sesionDePrueba('PRACTICANTE');
     localStorage.setItem('sigep-sesion', JSON.stringify({ state: { usuario }, version: 0 }));
     await useAlmacenSesion.persist.rehydrate();
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('PRACTICANTE');

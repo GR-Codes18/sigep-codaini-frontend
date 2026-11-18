@@ -2,26 +2,25 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
-import { accesoRapido } from '@/auth/iniciarSesion';
 import type { Rol } from '@/auth/tipos';
 import { crearSemilla, useAlmacen } from '@/data';
-import { crearEntorno } from '@/services';
+import { accesoRapido, crearEntorno } from '@/services';
 import { FranjaContrasenaTemporal } from './FranjaContrasenaTemporal';
 
 const entorno = crearEntorno({ demoraMs: 0 });
 
 async function abrirSesion(rol: Rol, debeCambiar: boolean) {
-  const resultado = await accesoRapido(rol, entorno);
+  const resultado = await accesoRapido({ rol }, entorno);
   if (!resultado.ok) throw new Error(resultado.mensaje);
   useAlmacen.getState().transaccion((datos) => ({
     usuarios: datos.usuarios.map((usuario) =>
-      usuario.id === resultado.usuario.id
+      usuario.id === resultado.valor.id
         ? { ...usuario, debe_cambiar_contrasena: debeCambiar }
         : usuario,
     ),
   }));
   useAlmacenSesion.setState({
-    usuario: { ...resultado.usuario, debe_cambiar_contrasena: debeCambiar },
+    usuario: { ...resultado.valor, debe_cambiar_contrasena: debeCambiar },
   });
 }
 

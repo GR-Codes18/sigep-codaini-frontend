@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { useAlmacen } from '@/data';
 import { DEMORA_PREDETERMINADA_MS, ENTORNO, crearEntorno } from './entorno';
+import { EVALUADOR_SIMULADO } from './evaluador';
 import { GITHUB_SIMULADO } from './github';
 
 describe('entorno por defecto', () => {
@@ -25,6 +26,13 @@ describe('entorno por defecto', () => {
 
   it('usa el GitHub simulado', () => {
     expect(ENTORNO.github).toBe(GITHUB_SIMULADO);
+  });
+
+  it('usa el evaluador simulado y genera contraseñas temporales distintas de 8 o más caracteres', () => {
+    expect(ENTORNO.evaluador).toBe(EVALUADOR_SIMULADO);
+    const a = ENTORNO.generarContrasena();
+    expect(a.length).toBeGreaterThanOrEqual(8);
+    expect(ENTORNO.generarContrasena()).not.toBe(a);
   });
 });
 

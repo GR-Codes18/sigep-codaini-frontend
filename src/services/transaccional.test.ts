@@ -113,6 +113,22 @@ describe('ejecutarServicio', () => {
       expect(resultado.ok && resultado.valor).toEqual(guardada);
     });
 
+    it('un éxito con `cambios: null` devuelve el valor y no escribe nada', async () => {
+      const { entorno, almacen, escrituras } = crearEntornoDePrueba();
+      const datosAntes = almacen.getState().datos;
+      const antes = escrituras();
+
+      const resultado = await ejecutarServicio(entorno, () => ({
+        ok: true as const,
+        valor: 'nada que hacer',
+        cambios: null,
+      }));
+
+      expect(resultado).toEqual({ ok: true, valor: 'nada que hacer' });
+      expect(almacen.getState().datos).toBe(datosAntes);
+      expect(escrituras()).toBe(antes);
+    });
+
     it('un error de la operación no escribe nada', async () => {
       const { entorno, almacen, escrituras } = crearEntornoDePrueba();
       const datosAntes = almacen.getState().datos;

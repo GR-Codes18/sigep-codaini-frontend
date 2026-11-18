@@ -65,6 +65,18 @@ export type {
   ValorParametro,
 } from './configuracion';
 export {
+  CODIGOS_CONFIGURACION,
+  clavesDeSeccion,
+  validarSeccionConfiguracion,
+} from './configuracionValidacion';
+export type {
+  CampoConfiguracion,
+  CodigoConfiguracion,
+  ErrorConfiguracion,
+  ResultadoConfiguracion,
+  ValoresConfiguracion,
+} from './configuracionValidacion';
+export {
   ACCIONES_PERMISO,
   AMBITO_POR_ACCION,
   AMBITOS_PERMISO,
@@ -72,6 +84,7 @@ export {
   REGLAS_INSIGHT_VISIBLES,
   insightEnAlcance,
   puede,
+  puedeEnRol,
 } from './permisos';
 export type {
   AccionPermiso,
@@ -149,6 +162,52 @@ export type {
   ResultadoIdLegible,
   ResultadoSiguienteNumero,
 } from './idLegible';
+
+export {
+  ACCIONES_DECISION_POSTULACION,
+  CODIGOS_DECISION_POSTULACION,
+  TRANSICIONES_POSTULACION,
+  decisionesDisponibles,
+  puedeDecidirPostulacion,
+} from './decisionPostulacion';
+export type {
+  AccionDecisionPostulacion,
+  CodigoDecisionPostulacion,
+  ResultadoDecisionPostulacion,
+  TransicionPostulacion,
+} from './decisionPostulacion';
+
+export {
+  ACCIONES_ESTADO_PROYECTO,
+  CODIGOS_ESTADO_PROYECTO,
+  accionesDeEstadoDisponibles,
+  puedePausarProyecto,
+  puedeReactivarProyecto,
+  puedeReanudarProyecto,
+} from './estadoProyecto';
+export type {
+  AccionEstadoProyecto,
+  CodigoEstadoProyecto,
+  CodigoEstadoProyectoPropio,
+  ErrorEstadoProyecto,
+  ResultadoEstadoProyecto,
+} from './estadoProyecto';
+
+export { CODIGOS_REACTIVACION, reactivarPractica, reactivarSupervisor } from './reactivacion';
+export type {
+  CodigoReactivacion,
+  CodigoReactivacionPropio,
+  ErrorReactivacion,
+  ResultadoReactivacion,
+} from './reactivacion';
+
+export {
+  CODIGOS_BLOQUE_CRITERIOS,
+  PESO_TOTAL_BLOQUE,
+  sumaPesosActivos,
+  validarBloqueCriterios,
+} from './criteriosBloque';
+export type { CodigoBloqueCriterios, ResultadoBloqueCriterios } from './criteriosBloque';
 
 export { CODIGOS_PUNTAJE, MOTIVOS_REVISION, calcularPuntaje } from './puntaje';
 export type {
@@ -251,3 +310,27 @@ export type {
   ResultadoQuitarPracticante,
   ResultadoSimple,
 } from './cicloVida';
+
+export { ACCIONES_TAREA_ADICIONALES, accionesDeTarea } from './accionesTarea';
+export type { AccionDeTarea, AccionDisponible, AccionTareaAdicional } from './accionesTarea';
+
+export {
+  TERMINADAS_EN_TABLERO,
+  observacionDevolucionVigente,
+  ordenarReuniones,
+  ordenarTareasEnCurso,
+  ordenarTerminadas,
+  prPorAtender,
+  proximaReunion,
+  situacionPracticante,
+  terminadasRecientes,
+} from './consultas';
+export type { ReunionProxima, SituacionPracticante, TerminadasRecientes } from './consultas';
+
+export { indicadoresDePostulaciones } from './indicadoresPostulaciones';
+export type {
+  DatosIndicadoresPostulaciones,
+  IndicadoresPostulaciones,
+  IndicadoresPostulacionesArea,
+  PeriodoPostulaciones,
+} from './indicadoresPostulaciones';

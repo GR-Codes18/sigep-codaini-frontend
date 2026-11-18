@@ -8,6 +8,7 @@ import {
   AMBITOS_PERMISO,
   CODIGOS_DENEGACION,
   puede,
+  puedeEnRol,
 } from './permisos';
 import type { AccionPermiso, AmbitoPermiso, ResultadoPermiso } from './permisos';
 import {
@@ -26,15 +27,15 @@ import {
  * `tsc -b` (`npm run build`); aquí se comprueba lo que existe en tiempo de ejecución.
  */
 describe('contrato de permisos', () => {
-  it('define 55 acciones sin repetidos', () => {
-    expect(ACCIONES_PERMISO).toHaveLength(55);
-    expect(new Set(ACCIONES_PERMISO).size).toBe(55);
+  it('define 58 acciones sin repetidos', () => {
+    expect(ACCIONES_PERMISO).toHaveLength(58);
+    expect(new Set(ACCIONES_PERMISO).size).toBe(58);
   });
 
   it('cada acción tiene ámbito y el mapa no tiene sobrantes ni faltantes', () => {
     const acciones = Object.keys(AMBITO_POR_ACCION);
 
-    expect(acciones).toHaveLength(55);
+    expect(acciones).toHaveLength(58);
     expect(new Set(acciones)).toEqual(new Set(ACCIONES_PERMISO));
 
     for (const accion of ACCIONES_PERMISO) {
@@ -42,12 +43,12 @@ describe('contrato de permisos', () => {
     }
   });
 
-  it('reparte los ámbitos en 32 de proyecto, 7 propios y 16 globales', () => {
+  it('reparte los ámbitos en 32 de proyecto, 7 propios y 19 globales', () => {
     const ambitos = ACCIONES_PERMISO.map((accion) => AMBITO_POR_ACCION[accion]);
 
     expect(ambitos.filter((ambito) => ambito === 'PROYECTO')).toHaveLength(32);
     expect(ambitos.filter((ambito) => ambito === 'PROPIO')).toHaveLength(7);
-    expect(ambitos.filter((ambito) => ambito === 'GLOBAL')).toHaveLength(16);
+    expect(ambitos.filter((ambito) => ambito === 'GLOBAL')).toHaveLength(19);
   });
 
   it('define seis códigos de denegación sin repetidos', () => {
@@ -57,7 +58,7 @@ describe('contrato de permisos', () => {
 });
 
 /**
- * Matriz transcrita a mano de §4 y de la tabla de 55 acciones de `DECISIONES.md`. No se deriva
+ * Matriz transcrita a mano de §4 y de la tabla de 55 acciones de `DECISIONES.md` más las 3 de lectura del paso 11A. No se deriva
  * del código: si una regla de `permisos.ts` cambia, esta tabla no se entera y la prueba falla.
  *
  * Celdas: `true` (permitido sin texto), `'MOTIVO'` o `'NOTA'` (permitido y el servicio exige ese
@@ -182,6 +183,10 @@ const FILAS: FilaMatriz[] = [
   { accion: 'REACTIVAR_SUPERVISOR', bloque: 'PERSONAS_CUENTAS', ambito: 'GLOBAL', admin: true, supervisor: false, practicante: false },
   // §8.2 «Cambiar la propia contraseña» · 55: CAMBIAR_CONTRASENA_PROPIA
   { accion: 'CAMBIAR_CONTRASENA_PROPIA', bloque: 'PERSONAS_CUENTAS', ambito: 'PROPIO', admin: true, supervisor: true, practicante: true },
+  // Módulos solo del Administrador (paso 11A): la matriz de §4 no tiene fila «Ver …»; se suma a mano en docs/
+  { accion: 'VER_POSTULACIONES', bloque: 'PERSONAS_CUENTAS', ambito: 'GLOBAL', admin: true, supervisor: false, practicante: false },
+  { accion: 'VER_SUPERVISORES', bloque: 'PERSONAS_CUENTAS', ambito: 'GLOBAL', admin: true, supervisor: false, practicante: false },
+  { accion: 'VER_DIRECTORIO_PRACTICANTES', bloque: 'PERSONAS_CUENTAS', ambito: 'GLOBAL', admin: true, supervisor: false, practicante: false },
 
   // Seguimiento y sistema
   // §4 «Ver Reportes» · 55: VER_REPORTES
@@ -244,16 +249,16 @@ function esperarCelda(resultado: ResultadoPermiso, esperado: Celda, descripcion:
   });
 }
 
-describe('matriz de §4 (55 acciones × 3 roles)', () => {
+describe('matriz de §4 (58 acciones × 3 roles)', () => {
   it('tiene una fila por acción, sin sobrantes ni repetidas', () => {
     const accionesDeLaTabla = FILAS.map((fila) => fila.accion);
 
-    expect(FILAS).toHaveLength(55);
-    expect(new Set(accionesDeLaTabla).size).toBe(55);
+    expect(FILAS).toHaveLength(58);
+    expect(new Set(accionesDeLaTabla).size).toBe(58);
     expect(new Set(accionesDeLaTabla)).toEqual(new Set(ACCIONES_PERMISO));
   });
 
-  it('cada fila declara el ámbito de la tabla de 55', () => {
+  it('cada fila declara el ámbito de la tabla de 58', () => {
     for (const fila of FILAS) {
       expect(AMBITO_POR_ACCION[fila.accion], fila.accion).toBe(fila.ambito);
     }
@@ -505,7 +510,7 @@ describe('proyecto FINALIZADO', () => {
 });
 
 describe('usuario INACTIVO', () => {
-  it('no puede nada: las 55 acciones en los 3 roles', () => {
+  it('no puede nada: las 58 acciones en los 3 roles', () => {
     for (const rol of ROLES) {
       const inactivo = usuario(rol, { estado: 'INACTIVO' });
 
@@ -855,5 +860,85 @@ describe('frontera del paso', () => {
         tarea: tarea({ estado: 'DISPONIBLE', id_practicante: null }),
       }),
     ).toEqual({ permitido: true, exige_texto: null });
+  });
+});
+
+describe('puedeEnRol (permiso de módulo, sin contexto)', () => {
+  it('coincide con la matriz: la celda de cada acción y rol', () => {
+    for (const rol of ROLES) {
+      const usuarioQueActua = usuario(rol);
+      const celda = CELDA_POR_ROL[rol];
+
+      for (const fila of FILAS) {
+        esperarCelda(
+          puedeEnRol(usuarioQueActua, fila.accion),
+          fila[celda],
+          `${fila.accion} · ${rol}`,
+        );
+      }
+    }
+  });
+
+  it('un usuario INACTIVO recibe USUARIO_INACTIVO en las 58 acciones y los 3 roles', () => {
+    for (const rol of ROLES) {
+      const inactivo = usuario(rol, { estado: 'INACTIVO' });
+
+      for (const accion of ACCIONES_PERMISO) {
+        expect(puedeEnRol(inactivo, accion), `${accion} · ${rol}`).toEqual({
+          permitido: false,
+          codigo: 'USUARIO_INACTIVO',
+        });
+      }
+    }
+  });
+
+  it('el estado se comprueba antes que el rol: un practicante inactivo en una acción de admin', () => {
+    const inactivo = usuario('PRACTICANTE', { estado: 'INACTIVO' });
+
+    expect(puedeEnRol(inactivo, 'VER_POSTULACIONES')).toEqual({
+      permitido: false,
+      codigo: 'USUARIO_INACTIVO',
+    });
+  });
+
+  it('devuelve el texto exigido igual que puede()', () => {
+    const supervisor = usuario('SUPERVISOR');
+
+    expect(puedeEnRol(supervisor, 'LIBERAR_TAREA')).toEqual({
+      permitido: true,
+      exige_texto: 'MOTIVO',
+    });
+    expect(puedeEnRol(usuario('PRACTICANTE'), 'DESACTIVAR_REQUIERE_PR')).toEqual({
+      permitido: true,
+      exige_texto: 'MOTIVO',
+    });
+  });
+
+  it('no mira alcance: un supervisor sin proyectos tiene permiso de módulo de reportes', () => {
+    expect(puedeEnRol(usuario('SUPERVISOR'), 'VER_REPORTES')).toEqual({
+      permitido: true,
+      exige_texto: null,
+    });
+  });
+
+  it('los módulos solo-Administrador se deniegan a Supervisor y Practicante', () => {
+    for (const accion of [
+      'VER_POSTULACIONES',
+      'VER_SUPERVISORES',
+      'VER_DIRECTORIO_PRACTICANTES',
+    ] as const) {
+      expect(puedeEnRol(usuario('SUPERVISOR'), accion), `${accion} · SUPERVISOR`).toEqual({
+        permitido: false,
+        codigo: 'ROL_NO_PERMITIDO',
+      });
+      expect(puedeEnRol(usuario('PRACTICANTE'), accion), `${accion} · PRACTICANTE`).toEqual({
+        permitido: false,
+        codigo: 'ROL_NO_PERMITIDO',
+      });
+      expect(puedeEnRol(usuario('ADMINISTRADOR'), accion)).toEqual({
+        permitido: true,
+        exige_texto: null,
+      });
+    }
   });
 });
