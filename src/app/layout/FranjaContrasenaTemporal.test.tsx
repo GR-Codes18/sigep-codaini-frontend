@@ -2,13 +2,13 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
-import { accesoRapido } from '@/auth/iniciarSesion';
+import { sesionDePrueba } from '@/auth/sesionDePrueba';
 import type { Rol } from '@/auth/tipos';
 import { FranjaContrasenaTemporal } from './FranjaContrasenaTemporal';
 
 function abrirSesion(rol: Rol, debeCambiar: boolean) {
   useAlmacenSesion.setState({
-    usuario: { ...accesoRapido(rol), debe_cambiar_contrasena: debeCambiar },
+    usuario: { ...sesionDePrueba(rol), debe_cambiar_contrasena: debeCambiar },
   });
 }
 

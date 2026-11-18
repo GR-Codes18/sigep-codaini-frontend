@@ -6,11 +6,8 @@ import { Input } from '@/compartido/ui/input';
 import { Label } from '@/compartido/ui/label';
 import { useAlmacenSesion } from './almacenSesion';
 import { esquemaAcceso, type DatosAcceso } from './esquemaAcceso';
-import { accesoRapido, iniciarSesion } from './iniciarSesion';
+import { accesoRapido, iniciarSesion } from '@/services';
 import type { Rol } from './tipos';
-
-const DEMORA_MS = 300;
-const esperar = () => new Promise<void>((resolver) => setTimeout(resolver, DEMORA_MS));
 
 const ACCESOS_RAPIDOS: { rol: Rol; etiqueta: string }[] = [
   { rol: 'ADMINISTRADOR', etiqueta: 'Entrar como Administrador' },
@@ -32,21 +29,25 @@ export function PaginaAcceso() {
   const enviar = handleSubmit(async (datos) => {
     setErrorGeneral(null);
     setCargando(true);
-    await esperar();
-    const resultado = iniciarSesion(datos.correo, datos.contrasena);
+    const resultado = await iniciarSesion({ correo: datos.correo, contrasena: datos.contrasena });
     if (!resultado.ok) {
       setCargando(false);
       setErrorGeneral(resultado.mensaje);
       return;
     }
-    abrirSesion(resultado.usuario);
+    abrirSesion(resultado.valor);
   });
 
   async function entrarComo(rol: Rol) {
     setErrorGeneral(null);
     setCargando(true);
-    await esperar();
-    abrirSesion(accesoRapido(rol));
+    const resultado = await accesoRapido({ rol });
+    if (!resultado.ok) {
+      setCargando(false);
+      setErrorGeneral(resultado.mensaje);
+      return;
+    }
+    abrirSesion(resultado.valor);
   }
 
   return (

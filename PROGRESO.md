@@ -8,17 +8,22 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: pasos 7, 8 y 9 terminados.** **7A:**
-  evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`). **7B:** áreas técnicas,
-  especialidades y criterios (`3368603` y `5eb54a4`). **8A:** asignar, quitar, finalizar y reactivar practicantes y
-  editar los datos de su práctica (`861c5f3` y `df57b0d`). **8B:** supervisores, restablecer contraseña y aviso de fin
-  de práctica (`a52fe0c`). **9A:** crear y editar proyectos, rama base, reunión y enlaces (`30b27ab`). **9B:**
-  cambiar supervisor, reasignar los proyectos de un supervisor, pausar, reanudar, finalizar y reactivar proyectos
-  (`e15e4f5` y `12efa20`). El Bloque 2 (pasos 5 y 6, servicios de tareas y de Pull Request) está fusionado en
-  `development` (PR #23) y el Bloque 1 (pasos 1 a 4) en el PR #22. Siguiente: el **paso 10** (servicios de cuenta y de
-  configuración) y el **paso 11** (consultas con alcance por rol).
-- **Actualizado:** 2026-11-18, al cerrar el sub-paso 9B y con él el paso 9 (rama
-  `feat/fase2-servicios-modulos`).
+- **Fase actual:** **Fase 2 (`data/` y `services/`) terminada**; sigue la conexión de las pantallas. El **Bloque 1**
+  (pasos 1 a 4) está en el PR #22, el **Bloque 2** (pasos 5 y 6, servicios de tareas y de Pull Request) en el PR #23 y el
+  **Bloque 3** (pasos 7 a 11) en la rama `feat/fase2-cuenta-consultas`, pendiente de su PR. **7A:** evaluar, aprobar,
+  rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`). **7B:** áreas técnicas, especialidades y criterios
+  (`3368603` y `5eb54a4`). **8A:** asignar, quitar, finalizar y reactivar practicantes y editar los datos de su práctica
+  (`861c5f3` y `df57b0d`). **8B:** supervisores, restablecer contraseña y aviso de fin de práctica (`a52fe0c`). **9A:**
+  crear y editar proyectos, rama base, reunión y enlaces (`30b27ab`). **9B:** cambiar supervisor, reasignar los proyectos de un
+  supervisor, pausar, reanudar, finalizar y reactivar proyectos (`e15e4f5` y `12efa20`). **10A:** acceso desde `data/`, Mi
+  perfil y contraseña propia (`d8f89b4`). **10B:** insights revisados, «Notificar» desde un insight y notificaciones leídas
+  (`84c438d`). **10C:** validación de las secciones de Configuración en `domain/` (`185c6ae`) y guardar, restaurar y restablecer
+  datos de demostración (`66ff605`). **11A:** permisos de lectura, acciones de tarea y ayudantes de consulta en `domain/`
+  (`3bd4460`) y consultas de proyectos (`5821b99`). **11B:** consultas de tareas y vistas del practicante (`b6a0d1b`). **11C:**
+  consultas de practicantes, supervisores, postulaciones, catálogo y Configuración (`6d6b79a`). **11D:** insights,
+  indicadores, historial, líneas de tiempo y notificaciones (`31d127d`). **11E:** Dashboards y Inicio (`006022d`). Siguiente:
+  **conectar las pantallas** a servicios y consultas y retirar `src/app/ejemplos/` (ver «Siguiente paso»).
+- **Actualizado:** 2026-11-18, al cerrar el paso 11 y la Fase 2 (11A a 11E; rama `feat/fase2-cuenta-consultas`).
 
 ### Cierres de fase
 
@@ -266,12 +271,79 @@
   mutaciones detectadas de 64, en tres commits de código (`30b27ab`, `e15e4f5` y `12efa20`); docs de 9A `a3b124f`.
   Con esto **terminan los servicios de módulos de negocio del Bloque 3** (postulaciones, catálogo, practicantes,
   supervisores y proyectos); quedan los pasos 10 (cuenta y configuración) y 11 (consultas con alcance por rol).
-- **Siguiente:** propuesta y OK del **paso 10** (servicios de cuenta —perfil, cambiar contraseña, marcar insight
-  revisado, notificar desde un insight, marcar notificaciones leídas— y de configuración, más el cableado del login) y,
-  después, el **paso 11** (consultas con alcance por rol).
+- **Fase 2, paso 10: plan aprobado (2026-11-18)** con las cuatro decisiones en la opción recomendada; detalle en
+  `DECISIONES.md`. En resumen: tres sub-pasos (10A, 10B y 10C); marcar notificaciones leídas **sin acción nueva en
+  `puede()`**; Discord y GitHub **sin espacios y con largo máximo** (32 y 39); «Notificar» desde un insight con **texto
+  automático**.
+- **Fase 2, sub-paso 10A: terminado (2026-11-18).** Servicios en `src/services/cuentas/` (`d8f89b4`): `iniciarSesion` y
+  `accesoRapido` (`sesion.ts`), que leen las cuentas de `data/` con el correo normalizado, bloquean a las cuentas
+  `INACTIVO` (solo lo dicen si la contraseña era correcta, para no revelar que la cuenta existe) y llaman a
+  `emitirAvisosFinDePractica` tras un acceso correcto; `editarMiPerfil` (`perfil.ts`: un `puede()` por campo, correo único,
+  historial solo de nombre y correo) y `cambiarMiContrasena` (`contrasenaPropia.ts`: mínimo 8 caracteres sin recortar
+  espacios, distinta de la actual, limpia `debe_cambiar_contrasena` y deja un evento sin «cambios»). Se retiraron
+  `CUENTAS_DEMO`, `auth/usuariosDemo.ts` y `auth/iniciarSesion.ts`; `PaginaAcceso` llama a los servicios. 70 pruebas netas
+  nuevas y 20 mutaciones detectadas de 20. Detalle en `DECISIONES.md`.
+- **Fase 2, sub-paso 10B: terminado (2026-11-18).** Servicios en `src/services/seguimiento/` (`84c438d`):
+  `calcularInsightsVigentes` y `umbralesDe` (`comun.ts`, reutilizables por el paso 11), `marcarInsightRevisado` (revisión
+  independiente por usuario, `INSIGHT_YA_REVISADO`, sin evento ni aviso), `notificarDesdeInsight` (aviso
+  `NOTIFICACION_DESDE_INSIGHT` con el texto `título. motivo` al practicante inactivo o al supervisor del proyecto de la tarea
+  demorada), `marcarNotificacionLeida` y `marcarTodasLeidas` (actor activo, notificación propia, idempotentes). 73
+  pruebas nuevas y 20 mutaciones detectadas de 20. Detalle en `DECISIONES.md`.
+- **Fase 2, sub-paso 10C: terminado (2026-11-18).** Parte 1 (`185c6ae`): `validarSeccionConfiguracion` en
+  `src/domain/configuracionValidacion.ts` (Evaluación, Prácticas y Seguimiento, esta última con `validarUmbrales`), 93
+  pruebas y 20 mutaciones detectadas de 20. Parte 2 (`66ff605`), en `src/services/configuracion/`:
+  `guardarConfiguracionSeccion` y `restaurarSeccionConfiguracion` (un `PARAMETRO_CONFIGURACION_CAMBIADO` por parámetro
+  que cambió, `SIN_CAMBIOS` si no cambió ninguno) y `restablecerDatosDemostracion` (devuelve `{ usuario }` con la sesión
+  refrescada o `null`); `AlmacenServicio` pasó a incluir `restablecer`. 70 pruebas nuevas y 20 mutaciones detectadas de 20
+  (una prueba se agregó antes de mutar para cubrir al actor que queda INACTIVO tras el reinicio).
+- **Fase 2, paso 10: terminado (2026-11-18).** Cuenta propia, seguimiento y configuración: 11 servicios, 2 ayudantes de insights y la regla pura de
+  Configuración, 306 pruebas nuevas netas (1.942 → 2.248 en 87 archivos) y 80 mutaciones detectadas de 80, en cuatro
+  commits de código (`d8f89b4`, `84c438d`, `185c6ae` y `66ff605`). Con esto terminan **todos los servicios de la Fase 2**;
+  queda el paso 11 (consultas con alcance por rol).
+- **Fase 2, paso 11: plan aprobado (2026-11-18)** con las decisiones Q1 a Q9 en la opción recomendada; detalle en
+  `DECISIONES.md`. En resumen: consultas de **todos** los módulos, «livianas» (entidades de `domain/` más campos derivados);
+  tres acciones nuevas de `puede()` para los módulos solo del Administrador y `puedeEnRol` para el permiso de módulo;
+  `NO_ENCONTRADO` si no existe y `FUERA_DE_ALCANCE` si es ajeno; **una vista (tipo) por rol** cuando cambian los campos
+  visibles; las pantallas filtran pestañas y búsqueda en memoria (salvo Historial e Indicadores); alertas del Dashboard de
+  Crítico a Informativo, sin revisadas y con tope 5; postulaciones decididas y puntaje promedio por área en `domain/`; `ids_proyecto`
+  de los insights recortado al Supervisor; y seis supuestos menores confirmados. El paso se parte en **11A a 11E**.
+- **Fase 2, sub-paso 11A: terminado (2026-11-18).** Commit A (`3bd4460`, `domain/`): `VER_POSTULACIONES`, `VER_SUPERVISORES` y
+  `VER_DIRECTORIO_PRACTICANTES` (58 acciones en total), `puedeEnRol`, `accionesDeTarea` y los ayudantes de `consultas.ts`.
+  Commit B (`5821b99`, `src/services/consultas/`): la base común y 7 consultas de proyectos (`listarProyectos`,
+  `listarMisProyectos`, `obtenerProyecto`, `obtenerEquipoProyecto`, `obtenerTableroProyecto`, `listarTerminadasDeProyecto` y
+  `obtenerResumenProyectoAnterior`). 178 pruebas y 68 mutaciones detectadas de 68 (una era código muerto y se retiró).
+- **Fase 2, sub-paso 11B: terminado (2026-11-18).** Commit `b6a0d1b`: `listarTareas`, `obtenerTarea` (con las acciones de
+  `domain/`), `listarMiHistorial`, `listarMisTareasEnCurso` y `listarPullRequestsPorAtender`, más
+  `observacionDevolucionVigente` en `domain/`. 92 pruebas y 30 mutaciones detectadas de 30.
+- **Fase 2, sub-paso 11C: terminado (2026-11-18).** Commit `6d6b79a`: `listarPracticantes`, `obtenerPracticante`,
+  `listarPracticantesACargo`, `obtenerPracticanteACargo`, `listarSupervisores`, `obtenerSupervisor`, `listarPostulaciones`,
+  `obtenerPostulacion`, `listarCatalogoEvaluacion` y `obtenerConfiguracion`. El tipo del Supervisor no tiene área técnica ni
+  postulación de origen. 133 pruebas y 47 mutaciones detectadas de 47.
+- **Fase 2, sub-paso 11D: terminado (2026-11-18).** Commit `31d127d`: `indicadoresDePostulaciones` en `domain/` y
+  `listarInsights`, `obtenerIndicadores`, `listarHistorial`, `obtenerLineaDeTiempo` y `listarNotificaciones`. 125 pruebas y
+  67 mutaciones detectadas de 67 (dos mutantes equivalentes se descartaron; de uno de ellos se retiró además el código redundante).
+- **Fase 2, sub-paso 11E: terminado (2026-11-18).** Commit `006022d`: `obtenerDashboardAdministrador`,
+  `obtenerDashboardSupervisor` y `obtenerInicioPracticante`, que componen las consultas anteriores sin cálculo propio. 60
+  pruebas y 40 mutaciones detectadas de 41 (la restante es equivalente: el chequeo del parámetro ausente lo repite
+  `alertasDe`).
+- **Fase 2, paso 11: terminado (2026-11-18).** **30 consultas con alcance por rol** en `src/services/consultas/`, más
+  `puedeEnRol`, tres acciones de `puede()`, `accionesDeTarea`, los ayudantes de `domain/consultas.ts` (incluida
+  `observacionDevolucionVigente`) e `indicadoresDePostulaciones`. 588 pruebas nuevas (2.248 → **2.836 en 99 archivos**) y 253
+  mutaciones, **252 detectadas y 1 equivalente** (el 100 % de las no equivalentes), en seis commits de código (`3bd4460`,
+  `5821b99`, `b6a0d1b`, `6d6b79a`, `31d127d` y `006022d`).
+- **Fase 2: terminada (2026-11-18).** Almacén y semilla, utilidades, servicios de escritura (pasos 5 a 10) y consultas con
+  alcance por rol (paso 11). El «Listo cuando» del plan §9 queda cubierto por código: el flujo completo (aprobar postulación,
+  asignar, crear tarea, tomar, enviar, aprobar y crear PR) está en `src/services/practicantes/flujo.test.ts` y
+  `src/services/tareas/flujo.test.ts`; los servicios tienen caso exitoso, sin permiso, datos inválidos e inexistente;
+  el alcance (un supervisor no obtiene datos de un proyecto ajeno; un practicante no recibe correo ni celular de un
+  compañero) está probado campo por campo en las consultas; y restablecer la semilla deja el sistema consistente (paso 3).
+- **Siguiente:** cerrar la rama (PR de `feat/fase2-cuenta-consultas` a `development`, revisado por ambos autores, y después
+  `development` → `main` con la etiqueta `fase-2-completa`, plan §11) y empezar a **conectar las pantallas**: cada una llama a
+  `services/` (para actuar) y a `services/consultas/` (para leer), y se retira `src/app/ejemplos/`.
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»).
-- **Rama:** `feat/fase2-servicios-modulos` (sale de `development`, con el Bloque 2 ya fusionado en el PR #23).
+- **Rama:** `feat/fase2-cuenta-consultas` (sale de `development` tras fusionar el paso 9, PR #24). Antes:
+  `feat/fase2-servicios-modulos`.
 
 ## Pasos terminados
 
@@ -311,7 +383,15 @@
 | 2026-11-17 | 8A. Asignar, quitar, finalizar y reactivar practicantes; editar datos de la práctica | A (reglas de reactivación en `domain/`) `861c5f3`; B (servicios) `df57b0d`; docs `14e94cb` |
 | 2026-11-17 | 8B. Supervisores, restablecer contraseña y aviso de fin de práctica (cierra el paso 8) | `a52fe0c`; docs `cdbbb26` |
 | 2026-11-18 | 9A. Crear y editar proyectos, rama base, reunión y enlaces | `30b27ab`; docs `a3b124f` |
-| 2026-11-18 | 9B. Cambiar supervisor, reasignar proyectos, pausar, reanudar, finalizar y reactivar proyectos (cierra el paso 9) | A (reglas de estado en `domain/`) `e15e4f5`; B (servicios) `12efa20`; docs pendientes de commit |
+| 2026-11-18 | 9B. Cambiar supervisor, reasignar proyectos, pausar, reanudar, finalizar y reactivar proyectos (cierra el paso 9) | A (reglas de estado en `domain/`) `e15e4f5`; B (servicios) `12efa20`; docs `dacc9e0`; PR #24 fusionado en `905758b` |
+| 2026-11-18 | 10A. Acceso desde `data/`, Mi perfil y contraseña propia | `d8f89b4` |
+| 2026-11-18 | 10B. Insights revisados, «Notificar» desde un insight y notificaciones leídas | `84c438d` |
+| 2026-11-18 | 10C. Configuración y restablecer datos de demostración (cierra el paso 10) | A (validación en `domain/`) `185c6ae`; B (servicios) `66ff605`; docs `37eb072` |
+| 2026-11-18 | 11A. Permisos de lectura, acciones de tarea, ayudantes de consulta y consultas de proyectos | A (`domain/`) `3bd4460`; B (consultas) `5821b99` |
+| 2026-11-18 | 11B. Consultas de tareas y vistas del practicante | `b6a0d1b` |
+| 2026-11-18 | 11C. Consultas de practicantes, supervisores, postulaciones, catálogo y Configuración | `6d6b79a` |
+| 2026-11-18 | 11D. Insights, indicadores, historial, líneas de tiempo y notificaciones | `31d127d` |
+| 2026-11-18 | 11E. Dashboards y Inicio (cierra el paso 11 y la Fase 2) | `006022d`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -333,12 +413,14 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-18):** 1942 pruebas en 79 archivos (de la Fase 2: 22 del almacén, 180 de la
+**Estado de pruebas (2026-11-18):** 2836 pruebas en 99 archivos (de la Fase 2: 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
 —50 en 5A, 82 en 5B y 33 en 5C—, 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—, 110
 del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—, 127 del sub-paso 8A —19 en
-`domain/`—, 105 del sub-paso 8B, 164 del sub-paso 9A y 117 del sub-paso 9B —35 en `domain/`—, las de 8B y 9A todas
-en `services/`);
+`domain/`—, 105 del sub-paso 8B, 164 del sub-paso 9A, 117 del sub-paso 9B —35 en `domain/`—, 70 netas del 10A (se retiraron las 8 de
+`auth/iniciarSesion`), 73 del 10B, 93 del 10C parte 1 —todas en `domain/`— y 70 del 10C parte 2; las de 8B, 9A, 10A, 10B y
+10C parte 2 todas en `services/`; y 588 del paso 11: 79 de 11A parte 1 —todas en `domain/`—, 99 de 11A parte 2, 92 de 11B
+—9 en `domain/`—, 133 de 11C, 125 de 11D —17 en `domain/`— y 60 de 11E);
 `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
@@ -428,15 +510,35 @@ en `services/`);
 - [ ] Ajustar a mano la propuesta §5.4 con los supuestos del paso 9: el repositorio es
       `https://github.com/{organización}/{repositorio}`; la rama base no lleva espacios; la reunión y los enlaces
       también se editan en un proyecto finalizado; quitar la reunión avisa al equipo; reactivar no avisa.
-- [ ] Paso 10 (login): `iniciarSesion` debe leer de `data/` para que `Usuario.estado = INACTIVO` bloquee de verdad
+- [x] Paso 10 (login): hecho en 10A (`d8f89b4`). `iniciarSesion` debe leer de `data/` para que `Usuario.estado = INACTIVO` bloquee de verdad
       el acceso de quien finalizó su práctica o de un supervisor desactivado (hoy el bloqueo solo lo aplican los
       servicios y `puede()`); y llamar a `emitirAvisosFinDePractica` al iniciar sesión (F6-A: si ese día exacto nadie
       lo ejecuta, el aviso se pierde). El servicio ya es idempotente y no escribe cuando no hay nada nuevo.
-- [ ] Paso 10 (Mi perfil): el cambio de correo propio y el de celular usan `esquemaCorreo`, `esquemaCelular` y
+- [x] Paso 10 (Mi perfil): hecho en 10A (`d8f89b4`). El cambio de correo propio y el de celular usan `esquemaCorreo`, `esquemaCelular` y
       `correoEnUso` de `src/services/cuentas/validaciones.ts`; el cambio de contraseña propia va en
       `src/services/cuentas/`, junto a `restablecerContrasena`, y su evento nunca lleva la contraseña (el historial
       rechaza cualquier campo cuyo nombre la contenga, también `debe_cambiar_contrasena`).
-- [ ] Paso 11 (consultas con alcance por rol): las pantallas de supervisores y practicantes (Fases 5.2, 5.3 y 6.3)
+- [ ] Fase 3/4 (sesión): `GuardaRuta` no revalida la sesión guardada en el navegador: quien queda INACTIVO con la sesión
+      abierta sigue viendo las pantallas hasta cerrarla (los servicios sí lo deniegan con `USUARIO_INACTIVO`). Decidir en la
+      fase de interfaz si la guarda consulta el estado en `data/`.
+- [ ] Fase 4 (Mi perfil): `editarMiPerfil` y `cambiarMiContrasena` devuelven la `SesionUsuario` nueva y la pantalla la
+      aplica con `abrirSesion` (si no, la barra superior y la franja de contraseña temporal no se refrescan). Los errores
+      vienen por campo en `campos` (`nombre`, `correo`, `celular`, `discord`, `cuenta_github`, `disponibilidad_horaria`,
+      `contrasenaActual`, `contrasenaNueva`, `confirmacion`). Discord y GitHub vacíos quitan el dato. El Administrador no
+      tiene Discord, GitHub ni disponibilidad: el servicio rechaza esos campos (ver «Decisiones pendientes»).
+- [ ] Fase 4 (campana) y Reportes (5.6 y 6.4): la campana usa `marcarNotificacionLeida` al abrir un aviso y
+      `marcarTodasLeidas`; Reportes usa `marcarInsightRevisado` (`INSIGHT_YA_REVISADO` desactiva el botón) y
+      `notificarDesdeInsight` (sin campo libre; el aviso de supervisión demorada apunta a la tarea).
+- [ ] Fase 5.8 (Configuración): los formularios llaman a `guardarConfiguracionSeccion` y `restaurarSeccionConfiguracion`
+      por sección, muestran `campos` (`CLAVE` o `CLAVE.campo`, por ejemplo `EVALUACION_BANDA_AMBIGUA.minimo`) y usan
+      `etiquetaParametro` para los títulos. «Restablecer datos» aplica el `{ usuario }` que devuelve el servicio
+      (refresca o cierra la sesión) y vuelve al inicio.
+- [x] Paso 11 (hecho en 11D, `31d127d`, y 11E, `006022d`): las consultas de insights (Dashboard y Reportes) reutilizan `calcularInsightsVigentes`,
+      `filtrarInsightsPorAlcance` y `aplicarRevisiones` (o `insightsParaUsuario`) con los umbrales de `umbralesDe`.
+- [ ] Ajustar a mano la propuesta con los supuestos del paso 10: §8.2 (Discord y GitHub sin espacios, hasta 32 y 39
+      caracteres, vacío quita el dato), §8.1 (el aviso «Notificar» lleva el texto del insight y marcar como leída no tiene
+      fila en la matriz de §4) y §5.8 (proporción de enteros de 0 a 100 que suman 100; `100/0` y `0/100` son válidas).
+- [x] Paso 11 (hecho en 11C, `6d6b79a`; consultas con alcance por rol): las pantallas de supervisores y practicantes (Fases 5.2, 5.3 y 6.3)
       leen con consultas del paso 11; `emitirAvisosFinDePractica` y los demás servicios del paso 8 no son consultas.
 - [ ] Fase 5.3 (Supervisores): «Nuevo supervisor» usa `crearSupervisor` y muestra la contraseña temporal una sola
       vez; desactivar muestra el mensaje con la cantidad de proyectos que trae el servicio; restablecer contraseña
@@ -446,14 +548,14 @@ en `services/`);
       liberadas» (el servicio las calcula con `finalizarPractica` de `domain/`); la contraseña temporal de
       restablecer se muestra una sola vez; editar datos propone la nueva fecha de fin con `fechaFinPrevista` y envía
       ambas fechas (F5-A); reactivar no cambia la fecha de fin, que puede quedar vencida (F4-A).
-- [ ] Pasos 10 y 11 (Bloque 3; los pasos 5 a 9 ya están terminados): servicios por módulo, consultas con
+- [x] Paso 11 (Bloque 3; terminado en 11A a 11E): servicios por módulo, consultas con
       alcance por rol (pueden usar `ejecutarConsulta`), más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
       dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos
       nuevos que no traigan `mensaje` del dominio (una prueba exige que todo código conocido tenga mensaje).
 - [ ] Mientras no haya escrituras, la semilla se regenera con la fecha de hoy en cada carga; tras la primera
       escritura los datos quedan fijos hasta restablecer (`restablecer`, paso 3).
-- [ ] Paso 10 (servicios de configuración): servicio `restablecerDatosDemostracion(usuario)` que valide
+- [x] Paso 10 (servicios de configuración): hecho en 10C (`185c6ae` y `66ff605`). Servicio `restablecerDatosDemostracion(usuario)` que valide
       `puede('RESTABLECER_DATOS_DEMOSTRACION')` (ya existe: solo Administrador), devuelva el resultado estándar
       y simule la demora. Contrato de la sesión activa: si el usuario sigue existiendo en la semilla nueva se
       conserva y se refresca su copia (nombre, correo, contraseña temporal); si no existe, se cierra la sesión.
@@ -466,7 +568,7 @@ en `services/`);
       GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
       Definido en 6A (`59dc320`): «rama inexistente» con `feature/<código>-rama-eliminada` (P2-A) y el
       catálogo `feature/<código>-NNN` (P1-A).
-- [ ] Login: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
+- [x] Login: hecho en 10A (`d8f89b4`); `auth/usuariosDemo.ts` ya no existe (queda `auth/sesionDePrueba.ts`, solo para tests). Antes: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
       mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
       `CUENTAS_DEMO`.
 - [ ] Semilla: `ultimo_numero_tarea` es el mayor `numero` de las tareas existentes. Si se añade a la semilla
@@ -493,7 +595,43 @@ en `services/`);
       C1), **tras crear el PR** en 6A (`59dc320`, `PR_CREADO` y `GITHUB_INFORMA` por conflictos) y **tras
       cerrarlo** en 6B (`9600f46`, `PR_CERRADO_DESDE_SISTEMA`). Completo.
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
-- [ ] Paso explícito: migrar las pantallas de `src/app/ejemplos/` a `services/`.
+- [ ] **Siguiente fase: conectar las pantallas y retirar `src/app/ejemplos/`.** Cada pantalla llama a `services/` (acciones) y a
+      `src/services/consultas/` (lecturas) y no filtra ni decide nada. Se retiran `accionesDeTarea.ts` (lo reemplaza
+      `accionesDeTarea` de `domain/`, que `obtenerTarea` ya trae como `acciones`), `almacenNotificaciones.ts`, `datos.ts`,
+      `PaginaDesarrollo.tsx` y `PaginaPerfil.tsx`.
+- [ ] Fase 3 y 4 (adaptadores): las consultas devuelven la forma de `domain/` (snake_case y fechas ISO). Un adaptador en la
+      interfaz las convierte a los tipos de los componentes compartidos (`TareaDetalle`, `TareaTablero`, `EventoLinea`,
+      `NotificacionItem`), con `parseISO` en el borde. El detalle de tarea usa `acciones` y `solo_lectura` de `obtenerTarea`.
+- [ ] Fase 4 (campana y «Ver todas»): `listarNotificaciones` con `limite: 8` para la campana; `enlace_activo` y `destino`
+      (`DETALLE` o `RESUMEN_PROYECTO_ANTERIOR`) deciden el enlace; `no_leidas` da el punto verde.
+- [ ] Fase 5 y 6 (listados): las consultas devuelven el conjunto completo del alcance con contadores por pestaña; la pantalla
+      filtra pestañas y búsqueda en memoria. Solo `listarHistorial` y `obtenerIndicadores` reciben filtros.
+- [ ] Fase 7 (Practicante): `listarMisProyectos`, `obtenerProyecto` (variante `PRACTICANTE`), `obtenerEquipoProyecto`,
+      `listarMiHistorial` y `obtenerInicioPracticante`. Una tarea que el supervisor devolvió o reabrió y que quedó a nombre de
+      alguien que ya salió del proyecto no aparece en «Mis tareas en curso» (solo en proyectos vigentes), pero sí en
+      `listarTareas` y en `obtenerTarea` (decisión D6-A del paso 5).
+- [ ] Cierre de la Fase 2: PR de `feat/fase2-cuenta-consultas` a `development`, revisado por ambos autores, y, cuando lo confirmen,
+      `development` → `main` con la etiqueta `fase-2-completa` (plan §11).
+- [ ] Ajustar a mano `docs/` con las decisiones del paso 11 (los autores; el agente no toca `docs/`):
+      - **Propuesta §4 (matriz):** filas «Ver postulaciones», «Ver supervisores» y «Ver el directorio de practicantes»
+        (solo Administrador).
+      - **§5.1:** «Requieren revisión» son las postulaciones **pendientes** con la marca de revisión manual.
+      - **§5.2:** «Activos» incluye a los «Sin proyecto»; «Sin proyecto» incluye a quien solo sigue asignado a un proyecto
+        finalizado.
+      - **§5.6:** «postulaciones decididas» (aprobadas o rechazadas con la decisión dentro del periodo, extremos incluidos) y
+        «puntaje promedio por área» (promedio del puntaje final de esas postulaciones, con un decimal, sin las que no
+        tienen evaluación); el gráfico «practicantes por área» cuenta a los activos y, con filtro de proyecto, a los asignados.
+      - **§5.9:** las alertas van de Crítico a Informativo (los de «Fin de práctica» entran si sobra lugar), sin revisadas y
+        hasta cinco; «demasiado tiempo» usa el parámetro de Supervisión demorada. El Dashboard del Administrador devuelve
+        además «por revisar», próximas reuniones y avance de proyectos (no están en §5.9): decidir si se muestran.
+      - **§9.1.2:** «Activo» es quien tiene una asignación vigente en alguno de sus proyectos y cuenta activa; el detalle trae
+        la fecha de fin y no el área ni la postulación.
+      - **§9.1.5 y §9.2.3:** el estado vacío total del Supervisor es no tener ningún proyecto y el del Practicante, no tener
+        un proyecto vigente; las reuniones y el avance incluyen los proyectos en pausa y excluyen los finalizados.
+      - **§9.2.1:** un proyecto del que salió el practicante dice «Ya no participas» aunque además esté finalizado.
+      - **§8.1:** el enlace de una notificación está activo solo si el elemento existe y quien mira puede abrirlo.
+      - **§6.7:** la línea de tiempo de una tarea ajena que el practicante puede abrir trae todos sus eventos, también la
+        nota de una devolución; «lo suyo» (Mi actividad) son los eventos de los que es autor.
 - [x] `fecha_ingreso` del practicante al aprobar (`aprobarPostulacion`, `debd47e`). Sigue abierto: en
       configuración, `id === clave`.
 - [x] ID legible: guardar `numero` y `ultimo_numero_tarea` en una sola operación (`crearTarea`, `2c54c04`).
@@ -505,10 +643,10 @@ en `services/`);
       `calcularPuntaje` y genera la justificación; si `calcularPuntaje` devuelve un error no se escribe nada
       y las decisiones no se bloquean (E3-A, `debd47e`). Sigue abierto: el formulario de criterios y el de Configuración exigen enteros.
       Detalle en `DECISIONES.md` (paso 7).
-- [ ] Insights: el servicio arma `UmbralesInsight` con los valores vigentes de Configuración y pasa `ahora`
+- [x] Insights: hecho en 10B (`84c438d`; `umbralesDe` y `calcularInsightsVigentes`). El servicio arma `UmbralesInsight` con los valores vigentes de Configuración y pasa `ahora`
       en ISO UTC con `Z` (`new Date().toISOString()`); si no, el resultado es `AHORA_INVALIDO`. Detalle en
       `DECISIONES.md` (paso 8).
-- [ ] Insights: marcar como revisado pasa por `puede('MARCAR_INSIGHT_REVISADO', { insight, proyectos })`.
+- [x] Insights: hecho en 10B (`84c438d`). Marcar como revisado pasa por `puede('MARCAR_INSIGHT_REVISADO', { insight, proyectos })`.
 - [ ] Insights: los formularios de Configuración (Fase 5.8) exigen lo mismo que `validarUmbrales`.
 - [ ] Indicadores: `fecha_termino` de la tarea y la fecha del evento que la cierra (`TAREA_TERMINADA` o
       `TAREA_APROBADA`) deben salir del **mismo instante**. Si el evento queda unos milisegundos después,
@@ -523,7 +661,7 @@ en `services/`);
 - [ ] Indicadores: la «última actividad» de las tablas de Reportes solo cuenta eventos con proyecto del
       alcance; los eventos de cuenta (`CUENTA_*`) no entran, tampoco para el Administrador. Confirmarlo al
       construir las tablas (la función `ultimaActividadDeUsuario` sí es global para las Fases 5.2 y 5.3).
-- [ ] Ciclo de vida (queda solo el bloqueo real del acceso, paso 10): los servicios aplican los efectos de
+- [x] Ciclo de vida (el bloqueo real del acceso llegó en el paso 10, 10A `d8f89b4`): los servicios aplican los efectos de
       `finalizarPractica`, `finalizarProyecto` y `puedeQuitarPracticante`: bajas de las asignaciones, tareas EN_PROGRESO a DISPONIBLE con **un evento
       `TAREA_LIBERADA` por cada una** (autor Administrador, nota = motivo o nota del cierre), `Usuario.estado`
       en INACTIVO y acceso bloqueado al finalizar la práctica, y `fecha_fin_real` al finalizar el proyecto.
@@ -531,13 +669,13 @@ en `services/`);
       `DECISIONES.md` (paso 10). **Hecho para quitar un practicante y finalizar su práctica** en 8A (`df57b0d`) y
       **para finalizar un proyecto** en 9B (`12efa20`: tareas liberadas con un evento por cada una y `fecha_fin_real`);
       queda el bloqueo real del acceso (paso 10).
-- [ ] Ciclo de vida: notificaciones de los efectos: «práctica finalizada con tareas liberadas» a
+- [x] Ciclo de vida: notificaciones de los efectos: «práctica finalizada con tareas liberadas» a
       `supervisores_a_avisar`; asignado y quitado; proyecto finalizado al equipo; el **aviso previo** lo emite
       el servicio una sola vez, cuando `dias_restantes === avisoDias` (`situacionFinPractica`). **Hechos en 8A:**
       práctica finalizada (un aviso por supervisor y proyecto afectado), asignado y quitado (más un aviso por
       cada tarea liberada). **El aviso previo está hecho en 8B** (`emitirAvisosFinDePractica`, `a52fe0c`) y **el
       proyecto finalizado en 9B** (`12efa20`: al equipo, más un aviso `TAREA_LIBERADA` a cada responsable).
-      **Completo**, salvo llamar al aviso previo al iniciar sesión (paso 10).
+      **Completo**; el aviso previo se llama al iniciar sesión desde 10A (`d8f89b4`).
 - [x] Ciclo de vida: usar `fechaFinPrevista` al aprobar una postulación (`fecha_ingreso` + la duración vigente
       de Configuración) (`aprobarPostulacion`, `debd47e`). Los formularios de Configuración exigen enteros: duración de 1 a 24 meses y aviso de 1
       a 365 días (`DURACION_MAXIMA_MESES`, `AVISO_MAXIMO_DIAS`).
@@ -559,7 +697,8 @@ en `services/`);
 - [ ] Fase 4, pasos 6 y 9 a 11: completar con datos reales cuando existan los servicios.
 - [ ] El Kanban (`TableroKanban.tsx:54`) migra a `estaVencida`: hoy marca en rojo una tarea que vence hoy
       desde las 00:00 (hallazgo H1 del paso 8).
-- [ ] Los dashboards (Fases 5.9 y 6.5) quitan de las alertas los insights con `revisado: true`.
+- [x] Los dashboards (Fases 5.9 y 6.5) quitan de las alertas los insights con `revisado: true`. Hecho en 11E (`006022d`):
+      `obtenerDashboardAdministrador` y `obtenerDashboardSupervisor` ya los excluyen (tope 5); la pantalla solo muestra lo que devuelven.
 
 ### Verificaciones y cierres
 
@@ -618,5 +757,6 @@ en `services/`);
 - Mi perfil: Discord y GitHub del Administrador están bloqueados (la propuesta no los lista); decidir si se
   ocultan.
 - Conversión de fechas ISO a `Date` en el borde de la interfaz con `parseISO` (propuesta de Roxana).
-- Fase 5.9: ¿los insights Informativos (fin de práctica próximo) entran en las alertas del Dashboard y en qué
-  orden?
+- ~~Fase 5.9: ¿los insights Informativos (fin de práctica próximo) entran en las alertas del Dashboard y en qué
+  orden?~~ **Decidido (2026-11-18, Q6-A del paso 11):** orden de `ordenarInsights` (Crítico, Atención, Informativo), sin los
+  revisados y hasta cinco; los Informativos entran si sobra lugar.

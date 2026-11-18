@@ -65,6 +65,18 @@ export type {
   ValorParametro,
 } from './configuracion';
 export {
+  CODIGOS_CONFIGURACION,
+  clavesDeSeccion,
+  validarSeccionConfiguracion,
+} from './configuracionValidacion';
+export type {
+  CampoConfiguracion,
+  CodigoConfiguracion,
+  ErrorConfiguracion,
+  ResultadoConfiguracion,
+  ValoresConfiguracion,
+} from './configuracionValidacion';
+export {
   ACCIONES_PERMISO,
   AMBITO_POR_ACCION,
   AMBITOS_PERMISO,
@@ -72,6 +84,7 @@ export {
   REGLAS_INSIGHT_VISIBLES,
   insightEnAlcance,
   puede,
+  puedeEnRol,
 } from './permisos';
 export type {
   AccionPermiso,
@@ -297,3 +310,27 @@ export type {
   ResultadoQuitarPracticante,
   ResultadoSimple,
 } from './cicloVida';
+
+export { ACCIONES_TAREA_ADICIONALES, accionesDeTarea } from './accionesTarea';
+export type { AccionDeTarea, AccionDisponible, AccionTareaAdicional } from './accionesTarea';
+
+export {
+  TERMINADAS_EN_TABLERO,
+  observacionDevolucionVigente,
+  ordenarReuniones,
+  ordenarTareasEnCurso,
+  ordenarTerminadas,
+  prPorAtender,
+  proximaReunion,
+  situacionPracticante,
+  terminadasRecientes,
+} from './consultas';
+export type { ReunionProxima, SituacionPracticante, TerminadasRecientes } from './consultas';
+
+export { indicadoresDePostulaciones } from './indicadoresPostulaciones';
+export type {
+  DatosIndicadoresPostulaciones,
+  IndicadoresPostulaciones,
+  IndicadoresPostulacionesArea,
+  PeriodoPostulaciones,
+} from './indicadoresPostulaciones';

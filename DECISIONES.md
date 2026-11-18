@@ -3239,3 +3239,332 @@ Commits de código: `e15e4f5` (reglas de estado en `domain/`) y `12efa20` (servi
 - **Fase 5.4:** los botones de estado salen de `accionesDeEstadoDisponibles`; reactivar avisa que primero hay que reactivar
   al supervisor si está inactivo; finalizar muestra el bloqueo por tareas esperando o la cantidad de tareas que se liberan;
   reactivar no avisa al equipo (G2-A).
+
+## 2026-11-18 — [A+B] Fase 2, paso 10: cuenta propia, seguimiento y configuración (cierra los servicios de la Fase 2)
+
+Paso partido en tres sub-pasos, cada uno con su parada y su commit: **10A** (acceso, Mi perfil y contraseña propia),
+**10B** (insights y notificaciones) y **10C** (configuración y datos de demostración, en dos commits: la regla en
+`domain/` y los servicios). Commits de código: `d8f89b4`, `84c438d`, `185c6ae` y `66ff605`.
+
+### Decisiones del plan (aprobadas por los autores)
+
+- **Partición en tres sub-pasos** (la alternativa era dos, mezclando cuenta, acceso y seguimiento en el primero; se descartó
+  por el tamaño del diff).
+- **Marcar notificaciones como leídas, sin acción nueva en `puede()`:** la matriz de §4 no tiene una fila para esto, así que
+  la matriz de las 55 acciones de la Fase 1 no cambia. El servicio exige que quien actúa exista y esté ACTIVO
+  (`USUARIO_INACTIVO` si no) y que la notificación sea suya; una ajena responde `NO_ENCONTRADO`, igual que una
+  inexistente, para no revelar que está. Son idempotentes: si ya estaba leída, o no había nada pendiente, devuelven éxito
+  con `cambios: null` (sin escribir, ni siquiera en el navegador). Se descartó agregar `MARCAR_NOTIFICACION_LEIDA` a
+  `puede()`: cumpliría «toda acción pasa por `domain/permisos`», pero cambiaría un contrato probado que la propuesta no pide.
+- **Discord y GitHub en Mi perfil:** §8.2 dice que «se escriben como nombre de usuario» sin más formato. Se valida solo que
+  no tengan espacios y un largo máximo de **32** (Discord) y **39** (GitHub); vacío o `null` quita el dato. No se inventan
+  las reglas estrictas de cada plataforma (se descartaron por no estar en la propuesta).
+- **«Notificar» desde un insight:** el aviso lleva un **texto automático** (`título. motivo` del insight) y no hay un campo
+  libre, porque §8.1 y §5.6 no lo definen. Inactividad avisa al practicante (el aviso apunta a su usuario); supervisión
+  demorada avisa al supervisor del proyecto de la tarea y el aviso apunta a la **tarea** (elemento `TAREA`). Se puede avisar
+  más de una vez por el mismo insight (la propuesta no pone un límite) y también uno ya revisado.
+- **Proporción de la nota (`100/0` y `0/100`):** se aceptan enteros de **0 a 100 que sumen 100**, como ya dejaba escrito el
+  paso 7. No se impone un mínimo mayor que 0 porque la propuesta no lo define; si lo quieren, es una decisión de los autores.
+- **Desacople de la sesión al restablecer los datos:** `restablecerDatosDemostracion` devuelve `{ usuario: SesionUsuario |
+  null }` y la pantalla lo aplica; `services/` no importa el almacén de sesión. `usuario` es la copia del actor en la semilla
+  nueva si sigue existiendo y está ACTIVO; si no, `null` y la pantalla cierra la sesión. Cumple el contrato que dejó el paso 3.
+
+### Qué se construyó
+
+- **10A, `src/services/cuentas/`:**
+  - `sesion.ts`: `iniciarSesion`, `accesoRapido` y `aSesionUsuario` (el tipo `SesionUsuario`, sin contraseña, estado ni
+    celular). Reemplazan a `CUENTAS_DEMO`, `auth/usuariosDemo.ts` y `auth/iniciarSesion.ts`, que se retiraron.
+    `src/data/index.ts` exporta `ID_ADMIN`, `ID_SUPERVISOR_DEMO`, `ID_PRACTICANTE_DEMO` y `CONTRASENA_DEMO`;
+    `auth/sesionDePrueba.ts` es solo para tests.
+  - `perfil.ts`: `editarMiPerfil`. `contrasenaPropia.ts`: `cambiarMiContrasena` y `LARGO_MINIMO_CONTRASENA`.
+  - Códigos nuevos: `CREDENCIALES_INVALIDAS`, `CONTRASENA_ACTUAL_INCORRECTA` y `CONTRASENA_IGUAL_A_LA_ACTUAL`.
+  - `PaginaAcceso` llama a los servicios (su demora propia de 300 ms se retiró; sus pruebas esperan hasta 3 s porque el
+    servicio simula 600 ms).
+- **10B, `src/services/seguimiento/`:** `comun.ts` (`umbralesDe` y `calcularInsightsVigentes`), `insights.ts`
+  (`marcarInsightRevisado` y `notificarDesdeInsight`) y `notificaciones.ts` (`marcarNotificacionLeida` y
+  `marcarTodasLeidas`). Código nuevo: `INSIGHT_YA_REVISADO`.
+- **10C parte 1, `src/domain/configuracionValidacion.ts`:** `validarSeccionConfiguracion`, `clavesDeSeccion` y los códigos
+  `PARAMETRO_INVALIDO`, `VALOR_NO_ENTERO`, `VALOR_FUERA_DE_RANGO`, `BANDA_MINIMO_NO_MENOR` y `PROPORCION_NO_SUMA_100`
+  (los de Seguimiento siguen siendo `UMBRAL_INVALIDO`, de `validarUmbrales`).
+- **10C parte 2, `src/services/configuracion/`:** `comun.ts` (`aplicarSeccion`, el núcleo), `configuracion.ts`
+  (`guardarConfiguracionSeccion` y `restaurarSeccionConfiguracion`) y `restablecer.ts` (`restablecerDatosDemostracion`).
+  `AlmacenServicio` pasó a exponer `restablecer` además de `transaccion`, y `etiquetas.ts` ganó `etiquetaParametro`.
+
+### Decisiones de implementación
+
+- **Acceso (10A):** el correo se compara normalizado en los dos lados (antes se comparaba exacto, y un correo guardado con
+  mayúsculas no habría entrado). Primero las credenciales y **después** el estado: una cuenta INACTIVO con la contraseña
+  correcta recibe `USUARIO_INACTIVO`; con una contraseña falsa recibe el mensaje genérico de siempre. Tras un acceso
+  correcto se llama a `emitirAvisosFinDePractica` con la demora en 0 (para no sumar otra espera); si falla, queda un
+  `console.warn` y el acceso sigue. No se registra el inicio de sesión (§5.7). `accesoRapido` entra por los ID de
+  demostración de la semilla y respeta INACTIVO.
+- **Mi perfil (10A):** un `puede()` por campo (`EDITAR_*_PROPIO`); un campo que el rol no puede editar **se rechaza** con el
+  código del permiso (no se ignora) y el permiso se comprueba antes que el correo repetido. El correo es único sin
+  distinguir mayúsculas ni espacios, y escribir otra vez el propio no es un duplicado. Solo nombre y correo van al
+  historial (`CUENTA_NOMBRE_CAMBIADO` y `CUENTA_CORREO_CAMBIADO`, un evento por cada uno); celular, Discord, GitHub y
+  disponibilidad no dejan evento. La disponibilidad es un entero mayor que 0 o `null`. Devuelve la `SesionUsuario` nueva
+  para que la pantalla refresque la sesión.
+- **Contraseña propia (10A):** orden Zod → actor → permiso → contraseña actual → distinta de la actual; la actual se
+  comprueba **antes**, así que con la actual mal no se dice que la nueva se repite. Las contraseñas **no se recortan** (los
+  espacios cuentan; ocho espacios es válida). El evento `CUENTA_CONTRASENA_CAMBIADA` no lleva «cambios»: el historial no
+  guarda ninguna contraseña, ni el marcador `debe_cambiar_contrasena`.
+- **Insights (10B):** un insight no se guarda, así que se identifica por `tipo_regla` y `elemento` y se **recalcula** al actuar;
+  si la condición ya no se cumple, `NO_ENCONTRADO`. Primero se resuelve el insight y después `puede()` decide por rol y
+  alcance (el Supervisor no ve «postulaciones sin decidir» ni «fin de práctica»: `ROL_NO_PERMITIDO`; uno de otro proyecto:
+  `FUERA_DE_ALCANCE`). Marcar como revisado guarda una `InsightRevision` del actor con la severidad actual, la fecha de la
+  marca y la nota recortada o `null`; es independiente por persona; un insight ya revisado (y que no reapareció) da
+  `INSIGHT_YA_REVISADO`. Ni revisar ni notificar dejan evento de historial (§5.7 no los lista).
+- **«Notificar» (10B):** un destinatario inactivo da `USUARIO_OBJETIVO_INACTIVO` y uno que ya no existe, `NO_ENCONTRADO`. Con
+  `calcularInsightsVigentes` se arma una sola receta de cálculo para este paso y para las consultas del paso 11.
+- **Configuración (10C):** el servicio **mezcla** lo recibido con los valores vigentes de la sección y valida la sección
+  **completa** con `domain/` antes de escribir (un valor bueno que choca con uno vigente, como atención en 20 días con
+  crítico en 14, se rechaza). Escribe solo lo que cambió y deja un `PARAMETRO_CONFIGURACION_CAMBIADO` por parámetro, con los
+  campos que cambiaron (`minimo`/`maximo`, `area`/`especialidad` o `valor`); sin cambios, `SIN_CAMBIOS`. Un parámetro de otra
+  sección se **rechaza** con `DATOS_INVALIDOS` (`domain/` lo ignoraría; el servicio no calla algo que la pantalla pudo
+  enviar por error). Los errores traen `campos` con la clave del parámetro (`CLAVE` o `CLAVE.campo`, como
+  `EVALUACION_BANDA_AMBIGUA.minimo`). Restaurar usa `valor_predeterminado` y también valida (un predeterminado guardado
+  inválido da el error de `domain/` sin escribir). No recalcula evaluaciones ni toca practicantes, y no avisa a nadie.
+- **Restablecer datos (10C):** no usa `ejecutarServicio`, porque su operación solo sabe escribir devolviendo colecciones desde
+  `transaccion`; duplicar la semilla ahí sería peor. El permiso se comprueba con `ejecutarConsulta` (con demora), se llama a
+  `almacen.restablecer(entorno.ahora())` (una sola escritura) y se lee al actor otra vez, sin demora. No deja evento de
+  historial. Si algo lanza, `ERROR_INESPERADO` y los datos quedan como estaban.
+
+### Pruebas y mutaciones
+
+- **Pruebas:** 306 netas (1.942 → 2.248 en 87 archivos): 10A 70 netas (se retiraron las 8 de `auth/iniciarSesion`; 23 de
+  `sesion`, la de perfil y la de contraseña propia, más las de `PaginaAcceso` y la semilla actualizadas), 10B 73, 10C
+  parte 1 93 (todas en `domain/`) y 10C parte 2 70.
+- **Mutaciones del agente (80, con `git add` previo y `git restore` después de cada una; todas detectadas y
+  restauradas):** 20 en 10A (entrar a un INACTIVO, revelar INACTIVO antes de la contraseña, no normalizar el correo, avisos
+  de fin de práctica con y sin acceso correcto, omitir el correo único o su excepción para el propio correo, editar un campo
+  no autorizado, el evento de correo con el celular, aceptar espacios en Discord o disponibilidad 0, contraseña igual a la
+  actual, sin comprobar la actual, sin limpiar la marca temporal, mínimo de 7, contraseña en el historial, INACTIVO que
+  cambia la contraseña y recorte de espacios), 20 en 10B (permisos y alcance de revisar y notificar, marcar dos veces,
+  revisión a nombre de otro usuario, nota sin recortar o descartada, severidad fija, tipo de elemento, supervisor del
+  proyecto, destinatario inactivo, texto y elemento del aviso, notificación ajena, no idempotencia, INACTIVO, `marcarTodas`
+  de otros o escribiendo sin pendientes, y los umbrales), 20 en la regla de `domain/` (topes y pisos de la banda y de la
+  proporción, mínimo igual al máximo, suma de 100, enteros, rango abierto en cada extremo, duración y aviso, reutilizar
+  `validarUmbrales`, forma y orden) y 20 en los servicios de configuración (permisos, otra sección, sin validar, sin
+  mezclar, todos como cambiados, sin `SIN_CAMBIOS`, comparaciones de rango y número, eventos, valor predeterminado,
+  restaurar al valor vigente, `campos`, y el reinicio: permiso, no reiniciar, reloj y actor INACTIVO).
+- **Hallazgo de las mutaciones:** la mutación «devolver al actor aunque quede INACTIVO» habría quedado sin detectar, porque
+  la semilla de prueba siempre trae al administrador activo. Se agregó una prueba (con un `restablecer` envuelto que lo deja
+  inactivo) **antes** de correr las 20 mutaciones de esa parte.
+
+### Cierre del paso 10
+
+- **Cuatro commits de código:** `d8f89b4` (10A), `84c438d` (10B), `185c6ae` (10C, `domain/`) y `66ff605` (10C, servicios).
+- **11 servicios nuevos** (`iniciarSesion`, `accesoRapido`, `editarMiPerfil`, `cambiarMiContrasena`, `marcarInsightRevisado`,
+  `notificarDesdeInsight`, `marcarNotificacionLeida`, `marcarTodasLeidas`, `guardarConfiguracionSeccion`,
+  `restaurarSeccionConfiguracion` y `restablecerDatosDemostracion`, más los ayudantes `calcularInsightsVigentes` y
+  `umbralesDe`) y la regla pura de Configuración. 306 pruebas netas y 80 mutaciones detectadas de 80.
+- **Pendientes del plan que se cierran:** el bloqueo real del acceso a un INACTIVO, el aviso previo de fin de práctica al
+  iniciar sesión, retirar las `CUENTAS_DEMO`, los servicios de Mi perfil, de insights, de notificaciones y de
+  configuración, y el contrato de la sesión activa al restablecer datos.
+- **Con esto terminan todos los servicios de la Fase 2.** Queda el paso 11 (consultas con alcance por rol).
+
+### Divergencias con `docs/` (para que los autores las actualicen a mano)
+
+- **§8.2:** Discord y GitHub sin espacios, hasta 32 y 39 caracteres; vacío quita el dato; la disponibilidad puede quitarse.
+- **§8.1 y §4:** marcar una notificación como leída no tiene fila en la matriz; el aviso de «Notificar» lleva el texto del
+  insight (sin campo libre) y el de supervisión demorada apunta a la tarea.
+- **§5.8:** la proporción de la nota admite `100/0` y `0/100` (enteros de 0 a 100 que suman 100).
+
+### Pendientes
+
+- **Sesión abierta:** `GuardaRuta` no revalida la sesión guardada; quien queda INACTIVO con la sesión abierta sigue viendo las
+  pantallas hasta cerrarla (los servicios sí lo deniegan). Decidir en la fase de interfaz.
+- **Fase 4 (Mi perfil y campana):** las pantallas aplican la `SesionUsuario` que devuelven `editarMiPerfil` y
+  `cambiarMiContrasena`, muestran los errores por campo y llaman a `marcarNotificacionLeida` y `marcarTodasLeidas`.
+- **Fases 5.6 y 6.4 (Reportes):** usan `marcarInsightRevisado` (`INSIGHT_YA_REVISADO` desactiva el botón) y
+  `notificarDesdeInsight`.
+- **Fase 5.8 (Configuración):** formularios por sección con los errores `CLAVE` o `CLAVE.campo`; «Restablecer datos» aplica el
+  `{ usuario }` del servicio y vuelve al inicio.
+- **Paso 11:** consultas con alcance por rol; las de insights reutilizan `calcularInsightsVigentes`,
+  `filtrarInsightsPorAlcance` y `aplicarRevisiones`.
+
+## 2026-11-18 — [A+B] Fase 2, paso 11: consultas con alcance por rol (cierra la Fase 2)
+
+Paso partido en cinco sub-pasos, cada uno con su parada y su commit: **11A** (permisos de lectura en `domain/`, la base
+común y las consultas de proyectos; dos commits), **11B** (tareas y vistas del practicante), **11C** (practicantes,
+supervisores, postulaciones, catálogo y Configuración), **11D** (insights, indicadores, historial, líneas de tiempo y
+notificaciones) y **11E** (los tres resúmenes de entrada). Commits de código: `3bd4460`, `5821b99`, `b6a0d1b`, `6d6b79a`,
+`31d127d` y `006022d`.
+
+### Decisiones del plan (aprobadas por los autores)
+
+- **Q1, alcance del paso:** consultas de **todos** los módulos, «livianas» (entidades de `domain/` más los campos derivados que
+  hoy se calcularían en pantalla), en cinco sub-pasos. Se descartó dejar postulaciones, supervisores y Configuración para sus
+  módulos de la Fase 5: la Fase 2 habría quedado con la lectura incompleta.
+- **Q2, módulos solo del Administrador:** tres acciones nuevas de `puede()` (`VER_POSTULACIONES`, `VER_SUPERVISORES` y
+  `VER_DIRECTORIO_PRACTICANTES`, de ámbito global) y `puedeEnRol(usuario, accion)`, que aplica solo los pasos 1 y 2 de `puede()`
+  (usuario activo y rol) para el **permiso de módulo**, donde todavía no hay un proyecto que dar de contexto (un supervisor
+  sin proyectos igual tiene permiso de módulo). La matriz pasó de 55 a **58 acciones** y de 16 a 19 globales. Se descartaron
+  comprobar el rol dentro de las consultas (rompe «toda acción pasa por `domain/permisos`») y reutilizar acciones existentes
+  (funciona hoy y miente mañana).
+- **Q3, recurso inexistente o ajeno:** igual que los servicios de escritura: `NO_ENCONTRADO` si no existe y `FUERA_DE_ALCANCE`
+  si es ajeno. Se descartó unificar ambos en `NO_ENCONTRADO` para no revelar que el id existe (en un prototipo los ids no
+  son secretos).
+- **Q4, una vista por rol:** cuando los campos visibles cambian con el rol, el tipo de retorno es distinto (o una unión con
+  `vista`, cuyo valor lo fija el rol de quien consulta, nunca la entrada), de modo que el tipo del Supervisor **no tiene** el
+  campo del área técnica ni la postulación de origen y no puede filtrarlos por descuido.
+- **Q5, filtros:** cada listado entrega el conjunto completo del alcance con sus campos derivados y los **contadores por
+  pestaña**; la pantalla filtra pestañas y búsqueda en memoria. Excepciones: `listarHistorial` y `obtenerIndicadores` reciben
+  filtros, porque cambian el cálculo o el tamaño de lo que se lee.
+- **Q6, alertas de los Dashboards:** orden de `ordenarInsights` (Crítico, Atención, Informativo), sin los `revisado` y con
+  tope 5; los Informativos («Fin de práctica») entran si sobra lugar. Resuelve la contradicción de §5.9 («críticos y luego
+  atención» frente a «incluyen los practicantes próximos a finalizar») y cierra la pregunta que estaba abierta en
+  `PROGRESO.md`.
+- **Q7, postulaciones en Indicadores:** «decidida en el periodo» es una postulación hoy APROBADA o RECHAZADA cuya última decisión
+  (`POSTULACION_APROBADA` o `POSTULACION_RECHAZADA`) cae en el periodo, con los dos extremos incluidos; el «puntaje promedio por
+  área» es el promedio del puntaje final de esas postulaciones, con la evaluación más reciente de cada una, **sin** las que no
+  tienen evaluación (cuentan como decididas, no en el promedio), con **un decimal**, mitades hacia arriba y sin coma
+  flotante, y `null` («Sin datos») si no hay ninguna. Función pura en `domain/` (`indicadoresDePostulaciones`).
+- **Q8, privacidad:** el `ids_proyecto` de un insight del Supervisor se **recorta** a sus proyectos (un practicante compartido
+  con otro supervisor no revela el proyecto ajeno); los **permisos** se deciden con el insight completo y solo después se
+  recorta lo que se entrega. «Lo suyo» del Practicante en una línea de tiempo son los eventos de los que es **autor**. Los
+  eventos `CUENTA_*` de otra persona **nunca** salen para el Supervisor ni el Practicante (sí los propios y, para el
+  Administrador, todos). El `motivo` de «Carga desbalanceada» se deja como lo define §5.6 (cuenta todos los proyectos de la
+  persona); recalcularlo cambiaría una regla cerrada en el paso 8.
+- **Q9, supuestos menores (los seis confirmados):** el actor INACTIVO recibe `USUARIO_INACTIVO` también en los listados;
+  «Requieren revisión» son las pendientes con la marca; «demasiado tiempo» esperando supervisión es el parámetro de
+  Supervisión demorada y no un 3 fijo; el enlace de una notificación está activo si el elemento existe **y** quien mira puede
+  abrirlo; «próximas reuniones» van por la próxima ocurrencia desde hoy en hora de Perú; y las pantallas de ejemplo no se
+  tocan en este paso.
+
+### Qué se construyó
+
+- **11A, `domain/` (`3bd4460`):**
+  - `permisos.ts`: las tres acciones `VER_*` y `puedeEnRol`.
+  - `accionesTarea.ts`: `accionesDeTarea(tarea, usuario, contexto)` reúne las siete transiciones, editar, cambiar las dos
+    opciones, crear y cerrar el PR y eliminar, cada una con el texto que exige (`MOTIVO` o `NOTA`). Reemplaza la lógica que
+    `src/app/ejemplos/accionesDeTarea.ts` tenía en la capa de pantalla.
+  - `consultas.ts`: `terminadasRecientes` y `ordenarTerminadas` (la columna «Terminada», 5), `ordenarTareasEnCurso`,
+    `prPorAtender`, `situacionPracticante`, `proximaReunion` y `ordenarReuniones`. Después, en 11B, `observacionDevolucionVigente`.
+- **11A, `src/services/consultas/` (`5821b99`):** `comun.ts` (`cargarActorActivo`, `exigirRol`, `proyectosVisibles`,
+  `cargarProyectoConPermiso`, `conAutor`, `aTareaDeTablero`, entre otros) y `proyectos.ts`: `listarProyectos`,
+  `listarMisProyectos`, `obtenerProyecto`, `obtenerEquipoProyecto`, `obtenerTableroProyecto`, `listarTerminadasDeProyecto` y
+  `obtenerResumenProyectoAnterior`.
+- **11B (`b6a0d1b`), `tareas.ts`:** `listarTareas`, `obtenerTarea`, `listarMiHistorial`, `listarMisTareasEnCurso` y
+  `listarPullRequestsPorAtender`.
+- **11C (`6d6b79a`):** `practicantes.ts` (`listarPracticantes`, `obtenerPracticante`, `listarPracticantesACargo` y
+  `obtenerPracticanteACargo`), `supervisores.ts` (`listarSupervisores` y `obtenerSupervisor`) y `postulaciones.ts`
+  (`listarPostulaciones`, `obtenerPostulacion`, `listarCatalogoEvaluacion` y `obtenerConfiguracion`).
+- **11D (`31d127d`):** `domain/indicadoresPostulaciones.ts`; `reportes.ts` (`listarInsights`, `obtenerIndicadores` y
+  `practicantesPorArea`), `historial.ts` (`listarHistorial` y `obtenerLineaDeTiempo`) y `notificaciones.ts`
+  (`listarNotificaciones`).
+- **11E (`006022d`), `dashboards.ts`:** `obtenerDashboardAdministrador`, `obtenerDashboardSupervisor` y
+  `obtenerInicioPracticante`. Para no duplicar cálculos se extrajeron de consultas anteriores `insightsVisibles`,
+  `filasDePostulaciones`, `practicantesACargoDe`, `aTareaListado`, `porMasTiempoEsperando`, `tareasEnCursoDe` y `prsPorAtenderDe`,
+  sin cambiar su comportamiento (las 423 pruebas anteriores siguieron pasando).
+
+### Decisiones de implementación
+
+- **Orden de comprobación (todas las consultas):** Zod, actor inexistente (`NO_ENCONTRADO`), actor INACTIVO
+  (`USUARIO_INACTIVO`), vista del rol (`ROL_NO_PERMITIDO`) o permiso de módulo, recurso inexistente (`NO_ENCONTRADO`),
+  `puede()` sobre el recurso (`FUERA_DE_ALCANCE`) y, al final, la proyección. Los listados filtran el alcance en silencio y un
+  listado vacío es un éxito (alimenta el estado vacío). Todas usan `ejecutarConsulta`: no escriben, ni en `data/` ni en el
+  navegador (una prueba lo comprueba en cada una).
+- **Elegir la vista por rol (`exigirRol`):** `listarProyectos` y `listarMisProyectos`, `listarPracticantes` y
+  `listarPracticantesACargo`, y los tres resúmenes eligen la proyección de cada rol con una comprobación de rol, porque
+  `puede()` con alcance de proyecto no tiene contexto para un listado. Qué proyectos o tareas entran en esa vista lo sigue
+  decidiendo `puede()` con cada recurso.
+- **Proyectos (11A):** vigente es una asignación vigente en un proyecto que no está FINALIZADO (`VER_PROYECTO`). Un proyecto con
+  baja sale como «Ya no participas»; sin baja y finalizado, como «Finalizado»; si volvió, una sola vez con la asignación más
+  reciente. El Resumen, el Equipo y el Tablero tienen una variante `GESTION` y otra `PRACTICANTE`: la del Practicante no trae
+  actividad ni conteos del equipo, ni correo ni celular de nadie, ni compañeros anteriores, y solo ve la marca «Devuelta» en
+  sus tareas. La carga del equipo es la de **ese** proyecto. «Mis tareas» del Resumen son las suyas todavía abiertas.
+- **Tareas (11B):** `obtenerTarea` trae `acciones` (de `domain/`) y `solo_lectura` (sin acciones). La marca «Devuelta» y su
+  nota se ocultan en la tarea de un compañero, pero la nota sigue en su línea de tiempo (§6.7: se ve completa en cualquier
+  detalle que pueda abrir). Con la etiqueta de PR «Pendiente» no se ofrece la URL de un PR anterior. «Mis tareas en curso» y
+  «Pull Requests por atender» cuentan solo proyectos vigentes; una tarea devuelta que quedó a nombre de quien ya salió del
+  proyecto (D6-A) sigue visible en `listarTareas` y `obtenerTarea`, no en el Inicio. Mi historial excluye las liberadas y
+  filtra por un proyecto en el que estuvo (`VER_RESUMEN_PROYECTO_ANTERIOR`).
+- **Personas (11C):** «Activos» incluye a los «Sin proyecto» (y estos incluyen a quien sigue asignado a un proyecto
+  finalizado); un finalizado nunca está «sin proyecto» y no trae estado de fin. Para el Supervisor, «Activo» es quien tiene
+  una asignación vigente en alguno de sus proyectos y cuenta activa; la carga, «esperando mi revisión» y la última actividad
+  cuentan solo sus proyectos; una persona en dos proyectos suyos sale en **una** fila. «A cargo» de un supervisor son los
+  proyectos activos o en pausa, la misma regla que bloquea desactivarlo. Las postulaciones van por puntaje de mayor a menor
+  (a igual puntaje, la más antigua primero; las sin evaluar, al final) y el desglose es el guardado, no el del catálogo actual.
+- **Seguimiento (11D):** `listarInsights` calcula con `calcularInsightsVigentes` y aplica el alcance y las revisiones de quien
+  mira; `puede_marcar_revisado` exige además que no esté ya revisado, y `puede_notificar` es solo `puede()`. El historial
+  global filtra por días de calendario de Perú, con los dos extremos incluidos; el texto busca sin distinguir mayúsculas ni
+  tildes (`\p{M}`) en la etiqueta, el id, la acción, la nota y el autor. `obtenerLineaDeTiempo` aplica un filtro final
+  de eventos de cuenta para el Supervisor y el Practicante. Las notificaciones traen solo las propias, con `no_leidas` (de
+  todas las suyas), `total` (antes del límite) y `destino`: `DETALLE`, `RESUMEN_PROYECTO_ANTERIOR` o `null`.
+- **Resúmenes (11E):** no calculan nada propio. El estado vacío total es un éxito con `{ vacio: true }` y sin tarjetas: para el
+  Supervisor, no tener ningún proyecto; para el Practicante, no tener un proyecto vigente. Las reuniones y el avance incluyen
+  los proyectos en pausa («todo lo demás sigue igual», §5.4) y excluyen los finalizados; «disponibles» del Inicio no cuenta
+  los proyectos en pausa. El Dashboard del Administrador devuelve además «por revisar», reuniones y avance (no están en §5.9).
+
+### Pruebas y mutaciones
+
+- **Pruebas:** 588 nuevas (2.248 → 2.836 en 99 archivos): 11A parte 1, 79 (en `domain/`); 11A parte 2, 99; 11B, 92 (9 en
+  `domain/`); 11C, 133; 11D, 125 (17 en `domain/`); y 11E, 60. Cada consulta se prueba con éxito, actor inexistente, INACTIVO
+  en los tres roles, entrada vacía, rol denegado y «no escribe nada»; además cada combinación de rol y alcance (supervisor
+  propio, ajeno y sin proyectos; practicante con asignación vigente, con baja, sin asignación, con proyecto finalizado y con
+  proyecto en pausa) y la **privacidad por campo**: el Practicante nunca recibe correo ni celular, el Supervisor nunca recibe
+  el área técnica ni la postulación de origen, y ninguna vista trae contraseñas.
+- **Mutaciones del agente (253, con `git add` previo y `git restore` después de cada una; 252 detectadas y 1 equivalente):**
+  28 en 11A parte 1 (las tres acciones y su ámbito, `puedeEnRol`, las acciones de la tarea y los ayudantes), 40 en 11A parte 2,
+  30 en 11B, 47 en 11C, 67 en 11D y 41 en 11E. Cubren permisos de módulo y de vista, alcance por proyecto, privacidad de
+  campos, deduplicación, recortes, ordenamientos, topes de 5, comparaciones de extremos, estados vacíos, proyectos en pausa y
+  finalizados, y los cálculos de `domain/`.
+- **Hallazgos de las mutaciones** (cada uno se resolvió antes de dar el sub-paso por bueno):
+  - *Código muerto retirado:* en 11A, el criterio «vencidas» de `ordenarTareasEnCurso` nunca cambiaba el orden (una vencida
+    tiene la fecha límite anterior a hoy), así que se quitó junto con el parámetro `hoy`; en 11C, un filtro de tareas del
+    detalle del Supervisor repetía lo que ya hacía `conProyecto`; en 11D, el guard `texto === ''` era redundante.
+  - *Pruebas que faltaban (se agregaron):* el tope de «mi actividad» (11A), la devolución propia frente a la de otra tarea (11B),
+    una cuenta inactiva con asignación vigente, la última actividad con un proyecto de otro supervisor y la de la lista de
+    supervisores (11C), y las asignaciones con baja en el gráfico por área (11D).
+  - *Equivalentes:* en 11D, `no_leidas` calculado sobre la lista filtrada da lo mismo que sobre la completa (la lista filtrada
+    solo quita leídas); en 11E, el chequeo explícito del parámetro de Supervisión demorada en el Dashboard del Administrador
+    lo repite `alertasDe` con el mismo error (se conserva porque el tipo `Resultado` lo exige).
+  - *Hallazgo en el código:* al escribir el regex de tildes con `̀-ͯ` quedaron caracteres combinantes literales en el
+    archivo; se cambió por `\p{M}`, que se lee y se prueba igual.
+  - *Hallazgo de privacidad (documentado, no corregido):* la nota de una devolución es visible para el Practicante en la línea de
+    tiempo de la tarea de un compañero aunque el campo `observacion` del detalle se oculte; sigue lo aprobado en Q8 y §6.7.
+
+### Cierre del paso 11 y de la Fase 2
+
+- **Seis commits de código:** `3bd4460` (11A, `domain/`), `5821b99` (11A, consultas), `b6a0d1b` (11B), `6d6b79a` (11C),
+  `31d127d` (11D) y `006022d` (11E).
+- **30 consultas** con alcance por rol, `puedeEnRol`, tres acciones de `puede()`, `accionesDeTarea`, ocho ayudantes puros de
+  consulta e `indicadoresDePostulaciones`. 588 pruebas netas y 252 mutaciones detectadas de 253 (la restante es equivalente).
+- **Con esto termina la Fase 2.** Del «Listo cuando» del plan §9: el flujo completo por código está cubierto (aprobar
+  postulación, asignar, crear tarea, tomar, enviar, aprobar y crear PR), los servicios se prueban con caso exitoso, sin
+  permiso, datos inválidos e inexistente, el alcance por rol está probado campo por campo y restablecer la semilla deja el
+  sistema consistente.
+- **Pendientes del plan que se cierran:** las consultas con alcance por rol (proyectos, tareas, practicantes, supervisores e
+  insights), la exclusión de los insights revisados en los Dashboards, y las acciones disponibles de la tarea, que dejan de
+  vivir en la capa de pantalla.
+
+### Divergencias con `docs/` (para que los autores las actualicen a mano)
+
+- **§4 (matriz):** filas «Ver postulaciones», «Ver supervisores» y «Ver el directorio de practicantes» (solo Administrador).
+- **§5.1:** «Requieren revisión» son las pendientes con la marca de revisión manual.
+- **§5.2:** «Activos» incluye a los «Sin proyecto»; «Sin proyecto» incluye a quien solo sigue asignado a un proyecto finalizado.
+- **§5.6:** definición de «postulaciones decididas» y de «puntaje promedio por área» (un decimal; sin las no evaluadas); el
+  gráfico «practicantes por área» cuenta a los activos y, con filtro de proyecto, a los asignados.
+- **§5.9:** alertas de Crítico a Informativo, sin revisadas y hasta cinco; «demasiado tiempo» es el parámetro de Supervisión
+  demorada; y el Dashboard del Administrador devuelve además «por revisar», reuniones y avance (decidir si se muestran).
+- **§9.1.2:** «Activo» y los datos del detalle del practicante a cargo (fecha de fin sí; área y postulación no).
+- **§9.1.5 y §9.2.3:** el estado vacío total es no tener ningún proyecto (Supervisor) o ningún proyecto vigente (Practicante);
+  reuniones y avance incluyen los proyectos en pausa.
+- **§9.2.1:** «Ya no participas» cuando hay baja, aunque el proyecto además esté finalizado.
+- **§8.1:** el enlace de una notificación está activo solo si el elemento existe y quien mira puede abrirlo.
+- **§6.7:** la línea de tiempo de una tarea ajena trae todos sus eventos, también la nota de una devolución.
+
+### Pendientes
+
+- **Conectar las pantallas y retirar `src/app/ejemplos/`:** cada pantalla llama a `services/` para actuar y a
+  `services/consultas/` para leer, sin filtrar ni decidir. Se retiran `accionesDeTarea.ts`, `almacenNotificaciones.ts`,
+  `datos.ts`, `PaginaDesarrollo.tsx` y `PaginaPerfil.tsx`.
+- **Adaptadores de la interfaz:** las consultas devuelven la forma de `domain/` (snake_case y fechas ISO); un adaptador convierte
+  a los tipos de los componentes compartidos, con `parseISO` en el borde.
+- **Campana y notificaciones:** `limite: 8` para la campana; `destino` y `enlace_activo` deciden el enlace.
+- **Reportes y Dashboards:** la pantalla muestra lo que devuelven `listarInsights`, `obtenerIndicadores` y los resúmenes; los
+  filtros de pestaña, tipo y estado de los insights se aplican en memoria (Q5).
+- **Sesión abierta** (pendiente desde el paso 10): decidir en la fase de interfaz si `GuardaRuta` revalida la sesión guardada.
+- **Cierre de la rama:** PR de `feat/fase2-cuenta-consultas` a `development`, revisado por ambos autores, y después
+  `development` → `main` con la etiqueta `fase-2-completa` (plan §11).

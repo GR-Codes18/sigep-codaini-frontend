@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { accesoRapido } from './iniciarSesion';
+import { sesionDePrueba } from './sesionDePrueba';
 import { useAlmacenSesion } from './almacenSesion';
 
 describe('almacenSesion', () => {
@@ -13,7 +13,7 @@ describe('almacenSesion', () => {
   });
 
   it('abre y cierra sesión, y lo persiste', () => {
-    useAlmacenSesion.getState().abrirSesion(accesoRapido('SUPERVISOR'));
+    useAlmacenSesion.getState().abrirSesion(sesionDePrueba('SUPERVISOR'));
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('SUPERVISOR');
     expect(localStorage.getItem('sigep-sesion')).toContain('SUPERVISOR');
 
@@ -48,7 +48,7 @@ describe('almacenSesion', () => {
   });
 
   it('recupera una sesión válida guardada', async () => {
-    const usuario = accesoRapido('PRACTICANTE');
+    const usuario = sesionDePrueba('PRACTICANTE');
     localStorage.setItem('sigep-sesion', JSON.stringify({ state: { usuario }, version: 0 }));
     await useAlmacenSesion.persist.rehydrate();
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('PRACTICANTE');

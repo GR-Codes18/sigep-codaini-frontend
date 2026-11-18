@@ -107,6 +107,9 @@ export const ACCIONES_PERMISO = [
   'DESACTIVAR_SUPERVISOR',
   'REACTIVAR_SUPERVISOR',
   'CAMBIAR_CONTRASENA_PROPIA',
+  'VER_POSTULACIONES',
+  'VER_SUPERVISORES',
+  'VER_DIRECTORIO_PRACTICANTES',
   // Seguimiento y sistema
   'VER_REPORTES',
   'MARCAR_INSIGHT_REVISADO',
@@ -179,6 +182,9 @@ export const AMBITO_POR_ACCION = {
   DESACTIVAR_SUPERVISOR: 'GLOBAL',
   REACTIVAR_SUPERVISOR: 'GLOBAL',
   CAMBIAR_CONTRASENA_PROPIA: 'PROPIO',
+  VER_POSTULACIONES: 'GLOBAL',
+  VER_SUPERVISORES: 'GLOBAL',
+  VER_DIRECTORIO_PRACTICANTES: 'GLOBAL',
   // Seguimiento y sistema
   VER_REPORTES: 'PROYECTO',
   MARCAR_INSIGHT_REVISADO: 'PROYECTO',
@@ -286,6 +292,9 @@ type ContextoDeAccion = {
   DESACTIVAR_SUPERVISOR: ContextoPersona;
   REACTIVAR_SUPERVISOR: ContextoPersona;
   CAMBIAR_CONTRASENA_PROPIA: ContextoPersona;
+  VER_POSTULACIONES: SinContexto;
+  VER_SUPERVISORES: SinContexto;
+  VER_DIRECTORIO_PRACTICANTES: SinContexto;
   // Seguimiento y sistema
   VER_REPORTES: { proyecto: Proyecto };
   MARCAR_INSIGHT_REVISADO: ContextoInsight;
@@ -411,6 +420,9 @@ const REGLAS_POR_ACCION: Record<AccionPermiso, ReglaAccion> = {
   DESACTIVAR_SUPERVISOR: { roles: ['ADMINISTRADOR'] },
   REACTIVAR_SUPERVISOR: { roles: ['ADMINISTRADOR'] },
   CAMBIAR_CONTRASENA_PROPIA: { roles: ['ADMINISTRADOR', 'SUPERVISOR', 'PRACTICANTE'] },
+  VER_POSTULACIONES: { roles: ['ADMINISTRADOR'] },
+  VER_SUPERVISORES: { roles: ['ADMINISTRADOR'] },
+  VER_DIRECTORIO_PRACTICANTES: { roles: ['ADMINISTRADOR'] },
   // Seguimiento y sistema
   VER_REPORTES: { roles: ['ADMINISTRADOR', 'SUPERVISOR'] },
   MARCAR_INSIGHT_REVISADO: { roles: ['ADMINISTRADOR', 'SUPERVISOR'] },
@@ -602,6 +614,9 @@ function comprobarAlcance(usuario: Usuario, solicitud: SolicitudPermiso): Codigo
     case 'EDITAR_GITHUB_PROPIO':
     case 'EDITAR_DISPONIBILIDAD_PROPIA':
     case 'CAMBIAR_CONTRASENA_PROPIA':
+    case 'VER_POSTULACIONES':
+    case 'VER_SUPERVISORES':
+    case 'VER_DIRECTORIO_PRACTICANTES':
     case 'VER_HISTORIAL_GLOBAL':
     case 'GESTIONAR_CONFIGURACION':
     case 'RESTABLECER_DATOS_DEMOSTRACION':
@@ -746,6 +761,23 @@ function textoDe(regla: ReglaAccion, rol: Rol): TextoExigido {
   if (texto === undefined || texto === null) return null;
   if (typeof texto === 'string') return texto;
   return texto.porRol[rol] ?? null;
+}
+
+/**
+ * Permiso de **módulo**: los pasos 1 y 2 de `puede()` sin contexto (usuario ACTIVO y rol
+ * permitido). Sirve a las consultas de listado, donde aún no hay un proyecto ni una tarea que
+ * dar como contexto (un supervisor sin proyectos igual tiene permiso de módulo). No comprueba
+ * alcance ni identidad: eso lo hace `puede()` con la entidad ya resuelta.
+ */
+export function puedeEnRol(usuario: Usuario, accion: AccionPermiso): ResultadoPermiso {
+  if (usuario.estado !== 'ACTIVO') {
+    return { permitido: false, codigo: 'USUARIO_INACTIVO' };
+  }
+  const regla = REGLAS_POR_ACCION[accion];
+  if (!regla.roles.includes(usuario.rol)) {
+    return { permitido: false, codigo: 'ROL_NO_PERMITIDO' };
+  }
+  return { permitido: true, exige_texto: textoDe(regla, usuario.rol) };
 }
 
 /**
