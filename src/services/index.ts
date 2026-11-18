@@ -23,6 +23,9 @@ export type {
   SolicitudPR,
   TareaConsultable,
 } from './github';
+export { generarContrasenaTemporal } from './contrasena';
+export { EVALUADOR_SIMULADO } from './evaluador';
+export type { PuertoEvaluador } from './evaluador';
 export { etiquetaPostulante, etiquetaProyecto, etiquetaTarea, etiquetaUsuario } from './etiquetas';
 export {
   AUTOR_SISTEMA,
@@ -50,7 +53,117 @@ export type { CamposConError, ErrorServicio, Fallo, Resultado } from './resultad
 export { conEfectos, ejecutarConsulta, ejecutarServicio } from './transaccional';
 export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
+export { denegarCicloVida } from './cicloVida';
+export {
+  correoEnUso,
+  esquemaCelular,
+  esquemaCorreo,
+  normalizarCorreo,
+  restablecerContrasena,
+} from './cuentas';
+export type { ContrasenaRestablecida, EntradaRestablecerContrasena } from './cuentas';
+
 // Servicios por módulo
+export {
+  agregarEnlace,
+  cambiarRamaBase,
+  cambiarSupervisor,
+  crearProyecto,
+  finalizarProyecto,
+  pausarProyecto,
+  reactivarProyecto,
+  reanudarProyecto,
+  reasignarProyectosDeSupervisor,
+  definirReunion,
+  editarDatosProyecto,
+  editarEnlace,
+  equipoDelProyecto,
+  esquemaDescripcionProyecto,
+  esquemaDiaReunion,
+  esquemaFechaProyecto,
+  esquemaHoraReunion,
+  esquemaNombreEnlace,
+  esquemaNombreProyecto,
+  esquemaRamaBase,
+  esquemaRepositorio,
+  esquemaUrlEnlace,
+  quitarEnlace,
+  textoReunion,
+} from './proyectos';
+export type {
+  EntradaAgregarEnlace,
+  EntradaCambiarEstadoProyecto,
+  EntradaCambiarRamaBase,
+  EntradaCambiarSupervisor,
+  EntradaReasignarProyectosDeSupervisor,
+  ProyectoFinalizado,
+  EntradaCrearProyecto,
+  EntradaDefinirReunion,
+  EntradaEditarDatosProyecto,
+  EntradaEditarEnlace,
+  EntradaQuitarEnlace,
+} from './proyectos';
+export {
+  crearSupervisor,
+  desactivarSupervisor,
+  editarSupervisor,
+  reactivarSupervisor,
+} from './supervisores';
+export type {
+  EntradaCambiarEstadoSupervisor,
+  EntradaCrearSupervisor,
+  EntradaEditarSupervisor,
+  SupervisorCreado,
+} from './supervisores';
+export {
+  asignarPracticantes,
+  editarDatosPractica,
+  emitirAvisosFinDePractica,
+  finalizarPractica,
+  quitarPracticante,
+  reactivarPractica,
+} from './practicantes';
+export type {
+  AvisosFinDePractica,
+  EntradaAsignarPracticantes,
+  EntradaEditarDatosPractica,
+  EntradaFinalizarPractica,
+  EntradaQuitarPracticante,
+  EntradaReactivarPractica,
+  PracticaFinalizada,
+} from './practicantes';
+export {
+  cambiarActivoAreaTecnica,
+  cambiarActivoEspecialidad,
+  crearAreaTecnica,
+  crearEspecialidad,
+  editarAreaTecnica,
+  editarEspecialidad,
+  guardarCriteriosDeBloque,
+} from './catalogoEvaluacion';
+export type {
+  EntradaCambiarActivoAreaTecnica,
+  EntradaCambiarActivoEspecialidad,
+  EntradaCrearAreaTecnica,
+  EntradaCrearEspecialidad,
+  EntradaEditarAreaTecnica,
+  EntradaEditarEspecialidad,
+  EntradaGuardarCriteriosDeBloque,
+} from './catalogoEvaluacion';
+export {
+  aprobarPostulacion,
+  evaluarPostulacion,
+  rechazarPostulacion,
+  reconsiderarPostulacion,
+} from './postulaciones';
+export type {
+  EntradaAprobarPostulacion,
+  EntradaEvaluarPostulacion,
+  EntradaReconsiderarPostulacion,
+  EntradaRechazarPostulacion,
+  EvaluacionCreada,
+  PostulacionAprobada,
+} from './postulaciones';
 export {
   NOTA_PR_VINCULADO,
   cerrarPullRequest,

@@ -26,8 +26,9 @@ export const MENSAJE_GENERICO = 'No se pudo completar la acción.';
 
 /**
  * Mensajes de los códigos de `domain/` que no traen texto (permisos, transiciones, edición y PR)
- * y de los propios de `services/`. Los códigos de ciclo de vida, puntaje, ID e indicadores ya
- * traen su `mensaje` y pasan tal cual por `denegar`. Cada servicio nuevo suma aquí los códigos que
+ * y de los propios de `services/`. Los códigos de puntaje, ID, indicadores y reactivación ya traen su
+ * `mensaje` y pasan tal cual por `denegar`; los de ciclo de vida solo traen el código (y a veces una
+ * cantidad), así que su mensaje está aquí. Cada servicio nuevo suma aquí los códigos que
  * necesite; una prueba exige que ningún código conocido se quede sin mensaje.
  */
 export const MENSAJES: Readonly<Record<string, string>> = {
@@ -57,6 +58,41 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   ESTADO_PR_NO_APLICA: 'El Pull Request no está en un estado que permita esta acción.',
   FALTA_CONSULTA_GITHUB: 'No se pudo consultar el estado del Pull Request. Intenta de nuevo.',
   RAMA_INEXISTENTE: 'La rama elegida ya no existe en GitHub. Elige otra rama.',
+  // Postulaciones (los de la decisión traen su mensaje desde `domain/`)
+  POSTULACION_YA_EVALUADA: 'Esta postulación ya tiene una evaluación y no se vuelve a calcular.',
+  CORREO_YA_REGISTRADO: 'Ya existe una cuenta con ese correo.',
+  USUARIO_OBJETIVO_INACTIVO:
+    'Esta cuenta está inactiva: reactívala antes de restablecer su contraseña.',
+  CONFIGURACION_INVALIDA:
+    'Falta un parámetro de Configuración o no tiene el formato esperado. Restaura sus valores.',
+  // Ciclo de vida (`domain/cicloVida.ts` devuelve solo el código y, a veces, una cantidad: el mensaje
+  // lo pone `denegarCicloVida`, que agrega la cantidad donde corresponde)
+  AHORA_INVALIDO: 'La hora del sistema no es válida. Recarga la página e intenta de nuevo.',
+  PRACTICANTE_YA_FINALIZADO: 'La práctica de esta persona ya está finalizada.',
+  PROYECTO_YA_FINALIZADO: 'El proyecto ya está finalizado.',
+  TAREAS_ESPERANDO_SUPERVISION:
+    'El proyecto tiene tareas esperando supervisión: resuélvelas antes de finalizarlo.',
+  SUPERVISOR_CON_PROYECTOS:
+    'El supervisor tiene proyectos activos o en pausa: reasígnalos antes de desactivarlo.',
+  SUPERVISOR_YA_INACTIVO: 'El supervisor ya está inactivo.',
+  PRACTICANTE_NO_ACTIVO: 'Solo se puede asignar a un practicante activo.',
+  ASIGNACION_VIGENTE_EXISTENTE: 'El practicante ya está asignado a ese proyecto.',
+  ASIGNACION_NO_VIGENTE: 'El practicante no está asignado a ese proyecto.',
+  SUPERVISOR_NO_VALIDO: 'Elige un supervisor activo.',
+  MISMO_SUPERVISOR: 'Esa persona ya es el supervisor del proyecto.',
+  // Datos de la práctica
+  ESPECIALIDAD_INACTIVA: 'La especialidad elegida está inactiva. Elige una especialidad activa.',
+  FIN_ANTES_DE_INGRESO: 'La fecha de fin prevista no puede ser anterior a la fecha de ingreso.',
+  // Proyectos (los de `validarCodigoProyecto` traen su mensaje desde `domain/`)
+  PROYECTO_NO_ES_DEL_SUPERVISOR: 'Ese proyecto no está a cargo del supervisor indicado.',
+  CODIGO_INMUTABLE: 'El código del proyecto no se puede cambiar.',
+  FIN_ANTES_DE_INICIO: 'La fecha de fin prevista no puede ser anterior a la fecha de inicio.',
+  // Catálogo de evaluación (áreas, especialidades y criterios)
+  NOMBRE_DUPLICADO: 'Ya existe un elemento con ese nombre.',
+  CRITERIOS_INCOMPLETOS:
+    'Faltan criterios del bloque. Los criterios no se borran: desactívalos para dejarlos fuera.',
+  CRITERIO_DE_OTRO_BLOQUE: 'Un criterio no pertenece a este bloque.',
+  ESPECIALIDAD_DE_OTRA_AREA: 'La especialidad no pertenece a esa área técnica.',
   // Propios de `services/`
   NO_ENCONTRADO: 'No se encontró el elemento. Puede que ya no exista.',
   DATOS_INVALIDOS: 'Revisa los datos ingresados.',

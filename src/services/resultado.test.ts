@@ -49,6 +49,7 @@ describe('mensajes de los códigos de domain/', () => {
     ['transiciones (CODIGOS_TRANSICION)', CODIGOS_TRANSICION],
     ['edición (CODIGOS_EDICION)', CODIGOS_EDICION],
     ['Pull Request (CODIGOS_PR)', CODIGOS_PR],
+    ['ciclo de vida (CODIGOS_CICLO_VIDA)', CODIGOS_CICLO_VIDA],
   ];
 
   it.each(codigos)('todo código de %s tiene un mensaje propio en español', (_nombre, lista) => {
@@ -67,13 +68,23 @@ describe('mensajes de los códigos de domain/', () => {
       'ERROR_INESPERADO',
       'SIN_CAMBIOS',
       'RAMA_INEXISTENTE',
+      'POSTULACION_YA_EVALUADA',
+      'CORREO_YA_REGISTRADO',
+      'CONFIGURACION_INVALIDA',
+      'PROYECTO_NO_ES_DEL_SUPERVISOR',
+      'CODIGO_INMUTABLE',
+      'FIN_ANTES_DE_INICIO',
+      'NOMBRE_DUPLICADO',
+      'CRITERIOS_INCOMPLETOS',
+      'CRITERIO_DE_OTRO_BLOQUE',
+      'ESPECIALIDAD_DE_OTRA_AREA',
     ]) {
       expect(mensajeDe(codigo), codigo).not.toBe(MENSAJE_GENERICO);
     }
   });
 
-  it('los códigos de ciclo de vida traen su propio mensaje desde domain/ (pasan tal cual)', () => {
-    // No están en la tabla: el dominio ya devuelve `mensaje`.
+  it('un mensaje propio del dominio pasa tal cual (los de reactivación, puntaje o ID)', () => {
+    // Si el dominio ya devuelve `mensaje`, `denegar` no lo cambia.
     expect(CODIGOS_CICLO_VIDA.length).toBeGreaterThan(0);
     expect(denegar({ codigo: 'SUPERVISOR_CON_PROYECTOS', mensaje: 'Tiene 2 proyectos.' })).toEqual({
       ok: false,

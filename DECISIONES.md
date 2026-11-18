@@ -2638,3 +2638,604 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   la otra hasta que vuelva a llegar.
 - **Bloque 3 (pasos 7 a 11):** postulaciones, practicantes y supervisores, proyectos, cuenta y consultas con
   alcance por rol, en una sesión nueva desde `development`.
+
+---
+
+## 2026-11-17 — [A+B] Fase 2, paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones
+
+Commits de código: `42c0b25` (regla de decisión en `domain/`) y `debd47e` (servicios de 7A). El paso 7 se parte
+en dos sub-pasos: 7A (este) y 7B (áreas técnicas, especialidades y criterios; propuesta aparte).
+
+### Decisiones aprobadas (todas en la opción recomendada)
+
+- **E1-A — el «modelo» es un puerto.** `Entorno.evaluador` (`PuertoEvaluador.juzgar`) con la simulación
+  determinista `EVALUADOR_SIMULADO` (`src/services/evaluador.ts`): hash FNV-1a de `id_postulante|id_criterio`,
+  cumple cerca del 70 % y usa las mismas observaciones de la semilla. Es repetible, como pide §10.1; las pruebas
+  inyectan juicios fijos para llegar a los bordes 49/50/69/70 y al criterio obligatorio. Descartadas: función
+  local sin puerto (pruebas de bordes incómodas) y juicio por palabras clave (frágil).
+- **E2-A — contraseña temporal.** `Entorno.generarContrasena` (`src/services/contrasena.ts`): 10 caracteres de
+  `crypto.getRandomValues`, sin 0/O/1/l/I, descartando los bytes que sesgarían el reparto; supera el mínimo de 8
+  de §8.3. Se devuelve **una sola vez** en el resultado de `aprobarPostulacion` y se guarda tal cual en
+  `Usuario.contrasena` (como la semilla); **nunca** va al historial. Descartadas: derivarla de `generarId`
+  (predecible) y una fija `demo12345` (todas las cuentas nuevas compartirían clave).
+- **E3-A — error de `calcularPuntaje`.** `evaluarPostulacion` devuelve el mismo `codigo` y `mensaje` de `domain/`
+  y no escribe nada; la postulación queda sin evaluación y el Administrador puede aprobarla o rechazarla igual
+  («decide siempre, con o sin marca»). Descartadas: bloquear las decisiones hasta que haya evaluación, e inventar
+  una evaluación con puntaje 0 (contradice «explicable», §10.1).
+- **E4-B — la regla de estado vive en `domain/`.** `src/domain/decisionPostulacion.ts`:
+  `puedeDecidirPostulacion(estado, accion)` y `decisionesDisponibles(estado)`, con las únicas transiciones
+  PENDIENTE→APROBADA, PENDIENTE→RECHAZADA y RECHAZADA→PENDIENTE. Servicio y pantalla (qué botón se ve) consultan
+  la misma regla, como `transicionesDisponibles` en tareas. Trae su propio `mensaje`
+  (`POSTULACION_NO_PENDIENTE`, `POSTULACION_NO_RECHAZADA`), así que no están en `MENSAJES`. No cambia ningún tipo.
+- **E5-A — `evaluarPostulacion` es un proceso del sistema.** Sin actor y con autor `SISTEMA`; no hay una acción
+  en la matriz de §4 que lo autorice a una persona. La semilla ya evalúa a las 42 postulaciones, así que hoy solo
+  se dispara por código; **cómo se ve «Analizando…» se decide en la Fase 5.1** (p. ej. una postulación de la
+  semilla sin evaluar). No se inventa ninguna pantalla.
+- **Supuesto confirmado — `fecha_ingreso`.** Es el día de la aprobación en hora de Perú (`marca.hoy`), igual que
+  la semilla; `fecha_fin_prevista` sale de `fechaFinPrevista(fecha_ingreso, PRACTICA_DURACION_MESES)`. El
+  Administrador podrá cambiarlas luego (`editarDatosPractica`, paso 8). **Falta que los autores lo escriban en
+  la propuesta §5.1/§5.2** (hoy no dice de dónde sale la fecha de ingreso).
+
+### Qué se construyó
+
+- `src/domain/decisionPostulacion.ts` (+ prueba) y su reexportación en `src/domain/index.ts`.
+- `src/services/postulaciones/`: `comun.ts` (esquemas, contexto actor → postulante, lectura de la banda, la
+  proporción y la duración vigentes con verificación de `tipo`), `evaluacion.ts` (`evaluarPostulacion` y
+  `redactarJustificacion`), `decisiones.ts` (`aprobarPostulacion`, `rechazarPostulacion`,
+  `reconsiderarPostulacion`) e `index.ts`.
+- `src/services/evaluador.ts` y `src/services/contrasena.ts`; `Entorno` gana `evaluador` y `generarContrasena`
+  (y `crearEntornoDePrueba` acepta un `evaluador` y numera las contraseñas: `Clave-t001`).
+- Códigos nuevos en `MENSAJES`: `POSTULACION_YA_EVALUADA`, `CORREO_YA_REGISTRADO` y `CONFIGURACION_INVALIDA`
+  (parámetro ausente o de otro `tipo`: dato roto, no error del usuario).
+
+### Decisiones de implementación
+
+- **Orden de las decisiones:** Zod → actor → postulante → `puede()` → estado (`puedeDecidirPostulacion`) → texto
+  ausente (`exigirTexto`) → reglas propias → escritura. Por eso un Supervisor sobre una postulación aprobada
+  recibe `ROL_NO_PERMITIDO`, y rechazar una aprobada sin motivo recibe `POSTULACION_NO_PENDIENTE`.
+- **Aprobar** crea `Usuario` (PRACTICANTE, ACTIVO, `debe_cambiar_contrasena: true`, correo recortado) y
+  `Practicante` (área y especialidad heredadas; Discord, GitHub y disponibilidad en `null`), pasa el postulante a
+  APROBADA y registra `POSTULACION_APROBADA` y `PRACTICANTE_CREADO` con el mismo instante, todo en una escritura.
+  **No asigna a ningún proyecto** (§5.1: es otra acción) y **no notifica a nadie** (§8.1).
+- **Correo único:** se compara sin distinguir mayúsculas ni espacios (`CORREO_YA_REGISTRADO`). La duración
+  inválida de Configuración devuelve `MESES_INVALIDOS` de `domain/` sin escribir.
+- **Reconsiderar** conserva la evaluación y su desglose (no se recalcula, §5.1).
+- **Evaluar:** el modelo solo ve los criterios activos del área (generales) y de la especialidad; la banda y la
+  proporción se leen de Configuración en cada evaluación; una postulación ya evaluada responde
+  `POSTULACION_YA_EVALUADA`. La justificación usa el mismo texto que la semilla (hay una prueba que lo exige).
+- **Limitación conocida:** en rechazar y reconsiderar, un motivo o nota que no sea texto falla en el campo
+  `texto` y no en `motivo` o `nota`; se ajusta con la pantalla de la Fase 5.1 si hace falta.
+
+### Pruebas y mutaciones
+
+- 110 pruebas nuevas (1.287 en 56 archivos en total): 12 de la regla de `domain/`; 25 de la evaluación; 51 de
+  las decisiones (permisos y datos de las tres, rejilla estado × decisión, fechas con fin de mes, año bisiesto y
+  cambio de año, duraciones de 1 a 24 y fuera de rango, correo repetido); flujo evaluar → rechazar →
+  reconsiderar → aprobar; contraseña (alfabeto, longitud, bytes sesgados); evaluador (determinista, porcentaje).
+- **Mutaciones del agente (17, con `git add` previo y `git restore` después; todas detectadas y restauradas):**
+  aprobar sin `puede()`; aprobar desde RECHAZADA; reconsiderar desde APROBADA; sin `exigirTexto`;
+  `debe_cambiar_contrasena: false`; 4 meses fijos; ingreso en UTC; contraseña en el historial; aviso al aprobar;
+  banda fija; proporción fija; sin `POSTULACION_YA_EVALUADA`; sin comprobar el correo duplicado; correo sin
+  normalizar; contraseña sin descartar bytes sesgados; evaluación firmada por una persona; reconsiderar que
+  borra la evaluación.
+- No se hizo una mutación de atomicidad: la escritura única la garantiza `transaccion` y todas las pruebas de
+  error comprueban que el almacén queda idéntico.
+
+### Pendientes
+
+- **Fase 5.1:** cómo se muestra «Analizando…» (E5-A) y qué texto sale cuando la evaluación falla (E3-A: «No se
+  pudo evaluar: <mensaje>»); mostrar la contraseña temporal una sola vez al aprobar.
+- **Autores, a mano en `docs/`:** propuesta §5.1/§5.2: la fecha de ingreso de un practicante nuevo es el día de la
+  aprobación (hora de Perú) y la de fin se calcula con la duración vigente.
+- **Paso 8:** `editarDatosPractica` (fecha de ingreso y de fin), restablecer contraseña y asignar al proyecto.
+- **7B:** áreas técnicas, especialidades y criterios (propuesta aparte).
+
+---
+
+## 2026-11-17 — [A+B] Fase 2, paso 7B: áreas técnicas, especialidades y criterios de evaluación (cierra el paso 7)
+
+Commits de código: `3368603` (validación del bloque en `domain/`) y `5eb54a4` (servicios de 7B).
+
+### Decisiones aprobadas (todas en la opción recomendada)
+
+- **C1-B — el bloque se guarda completo.** `guardarCriteriosDeBloque` recibe el estado deseado de un bloque (el
+  general de un área o el de una especialidad): crea los criterios sin `id`, edita los demás, activa o
+  desactiva, y valida **una sola vez, al final**, que los criterios activos sean enteros mayores que 0 y sumen
+  100. Así repartir 30/70 → 40/60 no pasa por una suma distinta de 100. Como nada se borra, la lista debe traer
+  **todos** los criterios existentes del bloque: si falta alguno, `CRITERIOS_INCOMPLETOS` (nombra el que falta).
+  Descartadas: validar en cada acción individual (impide cualquier reparto) y un CRUD libre que valide solo al
+  evaluar (el bloque puede quedar roto sin que nadie lo vea y, con E3-A, las evaluaciones fallarían en silencio).
+- **C2-B — áreas y especialidades nacen inactivas.** Solo se activan cuando su propio bloque de criterios activos
+  es válido. Un bloque sin criterios activos solo se admite si su especialidad (o su área) está inactiva; con
+  criterios activos siempre valen los 100 puntos. Descartado dejarlas nacer activas con un catálogo que no
+  puede calcular.
+- **C3 — la regla vive en `domain/`.** `validarBloqueCriterios(criterios, bloque)` (y `sumaPesosActivos`) en
+  `src/domain/criteriosBloque.ts`, con los **mismos códigos y mensajes** que `calcularPuntaje`
+  (`BLOQUE_SIN_CRITERIOS`, `PESO_INVALIDO`, `PESOS_NO_SUMAN_100`). La pantalla puede mostrar «Suma actual: N/100»
+  con la misma regla. **No se modificó `puntaje.ts` ni ningún tipo**; una prueba compara las dos funciones sobre
+  9 casos × 2 bloques para que no se separen.
+- **Supuestos confirmados** (no están en los docs): nombres únicos por nivel (áreas entre sí; especialidades
+  dentro de su área; criterios dentro de su bloque), sin distinguir mayúsculas ni espacios de más
+  (`NOMBRE_DUPLICADO`); **sin cascadas** al desactivar; la especialidad no cambia de área; sin límite de largo
+  en los nombres.
+- **Activación independiente (confirmada tras la entrega):** activar una especialidad solo valida su propio
+  bloque; **no** exige que su área esté activa, y activar un área no activa ni desactiva sus especialidades.
+
+### Qué se construyó
+
+- `src/domain/criteriosBloque.ts` (+ prueba) y su reexportación en `src/domain/index.ts`.
+- `src/services/catalogoEvaluacion/`: `comun.ts` (permiso, bloques de un área o especialidad, normalización de
+  nombres, evento del catálogo), `areas.ts` y `especialidades.ts` (`crear*`, `editar*` y `cambiarActivo*`),
+  `criterios.ts` (`guardarCriteriosDeBloque`) e `index.ts`: **7 servicios**.
+- `src/services/pruebas/almacen.ts` (solo para tests): `prepararPrueba` y `sinEscritura`.
+- Códigos nuevos en `MENSAJES`: `NOMBRE_DUPLICADO`, `CRITERIOS_INCOMPLETOS`, `CRITERIO_DE_OTRO_BLOQUE` y
+  `ESPECIALIDAD_DE_OTRA_AREA`; los de bloque pasan con el mensaje del dominio.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → `puede('GESTIONAR_CRITERIOS_EVALUACION')` (solo Administrador, sin texto) → entidades →
+  reglas propias (nombre único, bloque válido) → «sin cambios» → una sola escritura. Ningún servicio notifica
+  (§8.1).
+- **Eventos:** `AREA_TECNICA_*`, `ESPECIALIDAD_*` y `CRITERIO_*`, con `id_proyecto` nulo. Al guardar un bloque,
+  **un evento por cambio**: `CRITERIO_CREADO` (con nombre, tipo, peso, obligatorio y activo), `CRITERIO_EDITADO`
+  (solo nombre, tipo, peso y obligatorio) y `CRITERIO_ACTIVADO` o `CRITERIO_DESACTIVADO`; un criterio editado y
+  activado a la vez deja dos eventos, en ese orden, y todos comparten el instante.
+- **La especialidad no cambia de área:** `editarEspecialidad` usa una entrada estricta (`z.strictObject`); un
+  campo de área en la entrada da `DATOS_INVALIDOS`.
+- **El peso se valida solo en los criterios activos** (como `calcularPuntaje`): un criterio inactivo puede
+  conservar un peso que no sirva, y la regla vuelve a exigirse al activarlo.
+- **Las evaluaciones ya hechas no se tocan:** guardar un bloque deja `evaluaciones` y `detalles_evaluacion`
+  intactos (cada detalle guarda su copia del nombre y el peso); una evaluación posterior usa los pesos nuevos.
+- Los criterios nuevos se agregan al final de la colección; los demás conservan su lugar.
+
+### Pruebas y mutaciones
+
+- 142 pruebas nuevas (1.429 en 61 archivos en total): 32 de `validarBloqueCriterios` y su contraste con
+  `calcularPuntaje`; 110 de los servicios (permisos de los siete, nombres duplicados por nivel, activación con
+  bloque válido e inválido, el reparto de pesos en una sola operación, un evento por cambio, criterios
+  incompletos o de otro bloque, evaluaciones que no se recalculan y el flujo crear área → crear especialidad →
+  configurar bloques → activar → evaluar).
+- **Mutaciones del agente (17, con `git add` previo y `git restore` después; todas detectadas y restauradas):**
+  sin `puede()`; suma ≤ 100 aceptada; peso 0; peso decimal; omitir criterios existentes; un solo evento por
+  bloque; activar un área y una especialidad con el bloque inválido; área y especialidad que nacen activas;
+  nombres sensibles a mayúsculas; guardar el bloque borrando el desglose de las evaluaciones; aceptar criterios
+  de otro bloque; guardar aunque no sume 100; `CRITERIO_EDITADO` cuando solo cambió `activo`; entrada no
+  estricta en especialidad; bloque vacío con el dueño activo; nombre de especialidad único en todo el catálogo;
+  sin `SIN_CAMBIOS`.
+
+### Cierre del paso 7 (postulaciones y catálogo de evaluación)
+
+- **Cuatro commits de código:** `42c0b25` y `debd47e` (7A), `3368603` y `5eb54a4` (7B); docs `801a992` (7A).
+- **11 servicios nuevos:** 4 de postulaciones (evaluar, aprobar, rechazar y reconsiderar) y 7 del catálogo; más
+  dos funciones puras de `domain/` (`puedeDecidirPostulacion` y `validarBloqueCriterios`), el puerto `evaluador`
+  y `generarContrasena` en `Entorno`. 252 pruebas nuevas y 34 mutaciones detectadas de 34.
+
+### Pendientes
+
+- **Fase 5.1:** el editor de criterios llama a `guardarCriteriosDeBloque` con el bloque completo (se desactiva,
+  no se borra), muestra «Suma actual: N/100» y solo ofrece activar un área o especialidad con su bloque válido.
+- **Paso 8:** practicantes y supervisores (propuesta aparte).
+
+---
+
+## 2026-11-17 — [A+B] Fase 2, paso 8A: asignar, quitar, finalizar y reactivar practicantes
+
+Commits de código: `861c5f3` (reglas de reactivación en `domain/`) y `df57b0d` (servicios de 8A); docs del paso 7B
+`752aad3`. El paso 8 se parte en dos sub-pasos: **8A** (este: practicantes) y **8B** (supervisores, contraseñas y
+aviso de fin de práctica).
+
+### Decisiones aprobadas del paso 8 (todas en la opción A)
+
+- **F1-A — «reasignar proyectos» del supervisor va en el paso 9.** Necesita escribir `Proyecto.id_supervisor`, el
+  evento `PROYECTO_SUPERVISOR_CAMBIADO` y el aviso al nuevo supervisor, que son del módulo de proyectos. Se
+  construirá `reasignarProyectosDeSupervisor` (encadena el cambio y registra `SUPERVISOR_PROYECTOS_REASIGNADOS`) junto
+  con «cambiar supervisor». Descartado: una versión provisional en 8B que duplicaría lógica.
+- **F2-A — asignar es una lista de pares, todo o nada.** `asignarPracticantes({ idActor, asignaciones: [{ idPracticante,
+  idProyecto }] })` cubre el atajo de «Sin proyecto», varios proyectos para una persona y varios practicantes para un
+  proyecto con una sola confirmación; si un par falla, no se guarda ninguno y el error señala cuál. Descartado: un
+  servicio por par (un lote podría quedar a medias).
+- **F3-A — al quitar, el aviso de salida más uno por cada tarea liberada.** Sigue la tabla de §8.1 («salida del
+  proyecto» y «tarea liberada por otra persona») y la semilla; un practicante con 5 tareas recibe 6 avisos.
+  Descartado: solo el de salida con el número de tareas en el mensaje.
+- **F4-A — reactivar conserva la fecha de fin prevista.** Si ya venció, el Administrador la edita después con
+  `editarDatosPractica`. Descartado: exigir una fecha nueva al reactivar (no está en la propuesta).
+- **F5-A — editar datos de la práctica:** cualquier especialidad **activa** y el área pasa a ser la de la especialidad;
+  fechas reales de calendario; `fecha_fin_prevista >= fecha_ingreso` comprobado con los valores que quedarían
+  (también si solo cambia uno); el servicio **nunca recalcula el fin**: la pantalla puede proponerlo con
+  `fechaFinPrevista` y enviar ambas fechas. Descartado: solo especialidades de la misma área y recalcular el fin al
+  cambiar el ingreso (pisaría una fecha ajustada a mano).
+- **F6-A — aviso previo de fin de práctica (se construye en 8B).** `emitirAvisosFinDePractica` es un servicio del
+  sistema, idempotente, que avisa el día exacto en que `dias_restantes === PRACTICA_AVISO_FIN_DIAS` (fiel a §5.2); el
+  cableado al iniciar sesión llega en el paso 10. Si ese día nadie lo ejecuta, el aviso se pierde (riesgo aceptado).
+  Descartados: «ponerse al día» (distinto de la regla textual) y dejarlo fuera del paso.
+- **F7-A — formato del celular (se aplica en 8B y se reutiliza en Mi perfil, paso 10):** nueve dígitos que empiezan
+  con 9, como la semilla. Descartado: de 7 a 15 dígitos con «+» opcional.
+- **Supuestos menores confirmados:** (1) se pueden editar los datos de la práctica de un practicante **finalizado**
+  (corregir el historial); (2) restablecer la contraseña solo funciona con personas activas, y con un practicante
+  finalizado el mensaje dice que primero se reactive (`USUARIO_OBJETIVO_INACTIVO`, en 8B); (3) un correo cambiado
+  mantiene la unicidad sin distinguir mayúsculas ni espacios (8B).
+- **E4-B como precedente:** las reglas de reactivación viven en `domain/` (nuevo `reactivacion.ts`), sin tocar
+  `cicloVida.ts`, para que servicio y pantalla consulten la misma regla.
+
+### Qué se construyó
+
+- `src/domain/reactivacion.ts` (+ prueba) y su reexportación en `src/domain/index.ts`: `reactivarPractica` (nota
+  obligatoria) y `reactivarSupervisor` (sin texto, para 8B), con los códigos `PRACTICANTE_NO_FINALIZADO` y
+  `SUPERVISOR_YA_ACTIVO`, que traen su mensaje. Orden: `puede()` → estado → texto.
+- `src/services/practicantes/`: `comun.ts` (`cargarPersona` y `liberarTareasDe`, la liberación de tareas que comparten
+  quitar y finalizar), `asignaciones.ts` (`asignarPracticantes` y `quitarPracticante`), `ciclo.ts`
+  (`finalizarPractica` y `reactivarPractica`), `datosPractica.ts` (`editarDatosPractica`) e `index.ts`.
+- `src/services/cicloVida.ts`: `denegarCicloVida`, que convierte el resultado negativo de `domain/cicloVida.ts` y de
+  `domain/reactivacion.ts` en un fallo con mensaje. **Hallazgo:** los 11 códigos de `CODIGOS_CICLO_VIDA` solo traían
+  código (y a veces `cantidad`), sin mensaje, y el comentario de `resultado.ts` decía lo contrario. Ahora sus mensajes
+  están en `MENSAJES` y la función agrega la cantidad donde corresponde («El supervisor tiene 2 proyectos activos o
+  en pausa: reasígnalos antes de desactivarlo.»). Lo reutilizarán 8B y el paso 9.
+- Códigos nuevos en `MENSAJES`: los 11 de ciclo de vida, `ESPECIALIDAD_INACTIVA` y `FIN_ANTES_DE_INGRESO`.
+  `PRACTICANTE_NO_FINALIZADO` y `SUPERVISOR_YA_ACTIVO` traen el mensaje desde `domain/`.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → proyecto o persona → regla de `domain/` (`puede()` incluido) → texto ausente (`exigirTexto`)
+  → reglas propias → una sola escritura. Igual que en tareas y postulaciones.
+- **Asignar:** cada par pasa por `puedeAsignarPracticante`; la `fecha_alta` es `marca.hoy` (hora de Perú); el evento
+  `PRACTICANTE_ASIGNADO_A_PROYECTO` tiene como elemento a la persona (no al proyecto), con `id_proyecto` y el cambio
+  `proyecto` null → código, como la semilla; el aviso `ASIGNADO_A_PROYECTO` va **solo al practicante** (el supervisor
+  no recibe nada) con el proyecto como elemento. Un par repetido da `DATOS_INVALIDOS` (`asignaciones.N`); un proyecto o
+  practicante inexistente, `NO_ENCONTRADO`. Un proyecto en pausa admite asignaciones; uno finalizado, no.
+- **Quitar:** da `fecha_baja` a la asignación, libera las tareas `EN_PROGRESO` **de ese proyecto** y registra
+  `PRACTICANTE_QUITADO_DE_PROYECTO` (primero) y un `TAREA_LIBERADA` por tarea; el motivo es opcional (la matriz no lo
+  exige) y se guarda recortado. Las tareas `ESPERANDO_SUPERVISION` se quedan con su responsable (riesgo D6-A ya anotado).
+  Devuelve `{ asignacion, tareas_liberadas }`.
+- **`liberarTareasDe`:** produce el mismo evento que `liberarTarea` (cambios `estado` y `responsable`); una prueba
+  compara ambos. Si no hay tareas que liberar, ni se escribe la colección `tareas`.
+- **Finalizar:** una sola escritura con la baja de **todas** las asignaciones vigentes (también en un proyecto
+  finalizado), las tareas liberadas, `Usuario.estado = INACTIVO`, un solo `PRACTICANTE_FINALIZADO` sin proyecto (como
+  la semilla) y los `TAREA_LIBERADA` (nota = motivo). El aviso `PRACTICA_FINALIZADA_CON_TAREAS_LIBERADAS` va **a cada
+  supervisor, una vez por proyecto afectado**, con el proyecto como elemento para que el enlace lleve a él; el mensaje
+  trae la cantidad en singular o plural. **La persona finalizada no recibe nada** (su acceso queda bloqueado).
+- **Acceso bloqueado:** lo que bloquea es `Usuario.estado = INACTIVO`; `puede()` ya responde `USUARIO_INACTIVO`. El
+  bloqueo real de la entrada a la aplicación llega con el paso 10, cuando `iniciarSesion` lea de `data/`.
+- **Reactivar:** `Usuario.estado = ACTIVO` con `PRACTICANTE_REACTIVADO` (nota recortada); no reactiva asignaciones (queda
+  «Sin proyecto») y no cambia la fecha de fin.
+- **Editar datos:** exige al menos un dato; si la especialidad es la misma que la actual no se vuelve a validar (puede
+  estar inactiva); el evento registra `especialidad` y `area` por nombre, y las fechas; sin avisos (§8.1).
+
+### Pruebas y mutaciones
+
+- 127 pruebas nuevas (1.556 en 67 archivos en total): 19 de `domain/reactivacion`; 32 de asignar y 17 de quitar (en
+  `asignaciones.test.ts`, con permisos, éxito, lotes, todo o nada y errores); finalizar y reactivar (`ciclo.test.ts`,
+  incluidos practicantes en tres proyectos con dos supervisores, plural del aviso, tareas esperando, proyecto
+  finalizado y sin tareas); editar datos (fechas, bisiesto, especialidad, área); `denegarCicloVida` y el flujo.
+- **Mutaciones del agente (28, con `git add` previo y `git restore` después; todas detectadas y restauradas):** 4 en
+  `domain/reactivacion` (sin `puede()`, reactivar a un activo, sin la nota vacía, supervisor ya activo) y 24 en
+  `services` (asignar ignora las existentes, `fecha_alta` en UTC, lote que no es todo o nada, sin aviso, aviso también al
+  supervisor, quitar sin liberar o liberando otros proyectos, un solo evento de liberación, sin baja, motivo sin recortar,
+  finalizar sin baja, cuenta sin `INACTIVO`, liberar las que esperan supervisión, aviso a la persona finalizada, sin
+  exigir el motivo, evento con proyecto, reactivar reactivando asignaciones, sin exigir la nota, editar sin permiso, fin
+  antes del ingreso, especialidad inactiva, área que no sigue a la especialidad, fin recalculado y mensajes sin
+  cantidad). Una comprobación defensiva (los pares ya creados en el mismo lote) es equivalente: el esquema ya rechaza antes
+  los pares repetidos; no se contó.
+- La mutación de «liberar las tareas de otros proyectos» obligó a reforzar una prueba (una tarea `EN_PROGRESO` también en
+  RSV): sin ella, la mutación sobrevivía.
+
+### Cierre del «Listo cuando» de la Fase 2 (flujo por código)
+
+- `src/services/practicantes/flujo.test.ts` recorre **aprobar postulación → asignar → crear tarea → tomar → quitar
+  (tarea liberada) → asignar de nuevo → tomar → finalizar práctica → reactivar**, con los 12 eventos en orden, los
+  autores correctos y los avisos esperados; comprueba además que con la cuenta bloqueada ya no puede tomar tareas.
+  Junto con `src/services/tareas/flujo.test.ts` (crear tarea → tomar → enviar → aprobar → crear PR) cubre el flujo
+  completo que pide el plan §9. Quedan las pruebas por servicio de los pasos 8B a 11, el alcance por rol y los efectos
+  en cascada de proyectos.
+
+### Pendientes
+
+- **8B:** supervisores (crear, editar, desactivar, reactivar), `restablecerContrasena` y `emitirAvisosFinDePractica`.
+- **Paso 9:** `reasignarProyectosDeSupervisor` y «cambiar supervisor» (F1-A); `finalizarProyecto` con sus efectos.
+- **Paso 10:** `iniciarSesion` lee de `data/` para que `INACTIVO` bloquee de verdad; `emitirAvisosFinDePractica` al
+  iniciar sesión.
+- **Fase 5.2:** «Asignar a proyecto» con una lista de pares; el aviso previo a finalizar («Tiene N tareas en progreso
+  que serán liberadas») sale del dominio; una fecha de fin vencida tras reactivar aparece como alerta (F4-A).
+
+---
+
+## 2026-11-17 — [A+B] Fase 2, paso 8B: supervisores, contraseñas y aviso de fin de práctica (cierra el paso 8)
+
+Commit de código: `a52fe0c` (solo `services/`; usa las reglas de `domain/` que ya existían). Docs de 8A: `14e94cb`.
+
+### Decisiones del paso 8 que se aplican aquí
+
+- **F6-A — aviso previo de fin de práctica.** `emitirAvisosFinDePractica` es un servicio del sistema (autor
+  `SISTEMA`, sin actor), idempotente, que avisa **el día exacto** en que `dias_restantes === PRACTICA_AVISO_FIN_DIAS`
+  (`situacionFinPractica`, día de Perú). Si ese día nadie lo ejecuta, el aviso se pierde (riesgo aceptado). El cableado
+  al iniciar sesión es del paso 10.
+- **F7-A — celular:** nueve dígitos que empiezan con 9 (`esquemaCelular`), como la semilla. Queda en
+  `src/services/cuentas/validaciones.ts` junto con `esquemaCorreo` y `correoEnUso`, para que Mi perfil (paso 10) los
+  reutilice.
+- **F1-A (sin cambios):** `reasignarProyectosDeSupervisor` **no** se construyó aquí; va en el paso 9 junto con
+  «cambiar supervisor». Mientras tanto, `desactivarSupervisor` solo responde `SUPERVISOR_CON_PROYECTOS`.
+- **Supuestos menores confirmados:** (1) se puede editar a un supervisor **inactivo**, igual que los datos de un
+  practicante finalizado; (2) `restablecerContrasena` solo funciona con personas **activas**
+  (`USUARIO_OBJETIVO_INACTIVO`, con el mensaje «reactívala antes de restablecer su contraseña»); (3) el correo es único
+  **sin distinguir mayúsculas ni espacios**, tanto al crear como al editar (la propia persona no choca consigo misma).
+- **E4-B como precedente:** `domain/` no cambia en este sub-paso: `reactivarSupervisor` (8A) y `desactivarSupervisor`
+  (paso 10 de la Fase 1) ya existían.
+
+### Qué se construyó
+
+- `src/services/supervisores/supervisores.ts` (+ `index.ts`): `crearSupervisor`, `editarSupervisor`,
+  `desactivarSupervisor` y `reactivarSupervisor`.
+- `src/services/cuentas/`: `restablecerContrasena.ts`, `validaciones.ts` e `index.ts`. El paso 10 sumará aquí el
+  cambio de contraseña propia.
+- `src/services/practicantes/avisoFin.ts`: `emitirAvisosFinDePractica`.
+- `src/services/transaccional.ts`: `SalidaOperacion` admite ahora `cambios: null` («éxito sin nada que escribir»).
+  `ejecutarServicio` ya devolvía lo que recibía a `transaccion`, que con `null` no escribe; solo cambió el tipo y su
+  documentación (y una prueba).
+- `src/services/resultado.ts`: `USUARIO_OBJETIVO_INACTIVO` (nuevo) y `CORREO_YA_REGISTRADO` pasa a un texto general
+  («Ya existe una cuenta con ese correo.»), porque ya no es solo de postulaciones.
+- `src/services/index.ts` reexporta todo lo anterior.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → persona → regla de `domain/` o `puede()` → reglas propias (correo, estado) → una sola
+  escritura. Ninguna de estas acciones notifica a nadie (§8.1), salvo el aviso previo, que es del sistema.
+- **`crearSupervisor`:** crea `Usuario` (rol SUPERVISOR, activo, `debe_cambiar_contrasena: true`) y el detalle
+  `Supervisor` (Discord y GitHub en `null`), con `SUPERVISOR_CREADO` (cambios: nombre y correo). La contraseña temporal
+  (`entorno.generarContrasena`) vuelve **una sola vez** en el resultado y nunca va al historial. Un supervisor nuevo no
+  tiene proyectos (el estado vacío del panel).
+- **`editarSupervisor`:** solo nombre y correo (una credencial que entrega la empresa); exige al menos uno; sin cambios
+  reales responde `SIN_CAMBIOS`; el evento registra las diferencias con `diferencias(..., ['nombre', 'correo'])`, que
+  nunca incluye contraseñas.
+- **`desactivarSupervisor` y `reactivarSupervisor`:** usan las reglas del dominio y `denegarCicloVida`. El mensaje trae la
+  cantidad de proyectos pendientes («1 proyecto activo o en pausa» / «2 proyectos activos o en pausa»); los proyectos
+  finalizados no cuentan; un supervisor nunca se elimina. Reactivar no pide texto.
+- **`restablecerContrasena`:** un solo servicio para practicantes y supervisores (el tipo de evento sale del rol);
+  solo el Administrador; a un administrador responde `FUERA_DE_ALCANCE`; el permiso se comprueba antes que el estado de
+  la persona. **El evento no lleva «cambios»:** el historial rechaza cualquier campo cuyo nombre contenga «contraseña»,
+  también `debe_cambiar_contrasena`. No se compara con la contraseña anterior (con 10 caracteres aleatorios la
+  coincidencia no se considera).
+- **`emitirAvisosFinDePractica`:** recorre los practicantes **activos**; avisa al practicante, a los supervisores de sus
+  proyectos con asignación vigente (sin repetir) y a los administradores, solo a cuentas activas; el mensaje es el de la
+  semilla («La práctica de X finaliza el AAAA-MM-DD.») y lleva la fecha de fin, por lo que, si el Administrador mueve esa
+  fecha, el aviso puede darse de nuevo. Un aviso con el mismo tipo, persona y mensaje no se repite. No deja eventos en el
+  historial y, si no hay nada nuevo, **no escribe nada** (`cambios: null`), de modo que llamarlo en cada inicio de sesión
+  no toca el almacenamiento del navegador. Una configuración rota responde `CONFIGURACION_INVALIDA` o `AVISO_INVALIDO`.
+- **Hallazgo de la semilla:** `usr-pra-15` queda a 15 días de su fin; al día siguiente de cargar la semilla recibirá su
+  aviso previo. Las pruebas lo tienen en cuenta.
+
+### Pruebas y mutaciones
+
+- 105 pruebas nuevas (1.661 en 71 archivos en total): permisos y datos de los cuatro servicios de supervisores (con tabla
+  común), crear (cuenta, detalle, evento, contraseña ausente del historial, correo repetido con otras mayúsculas y con
+  espacios, celular y nombre inválidos), editar (nombre, correo, ambos, sin cambios, propio correo, otro supervisor
+  inactivo), desactivar (con proyectos activos, en pausa, finalizados, ya inactivo) y reactivar; restablecer contraseña
+  (practicante, supervisor, inactivo, administrador, permiso antes que estado, contraseña fuera del historial);
+  `emitirAvisosFinDePractica` (día exacto, un día antes y después, idempotencia, fecha movida, supervisores
+  distintos, bajas, cuentas inactivas, configuración, hora de Perú, «sin escribir»); validaciones; y `cambios: null` en
+  `ejecutarServicio`.
+- **Mutaciones del agente (27, con `git add` previo y `git restore` después; todas detectadas y restauradas):** crear sin
+  `puede()`, sin marcar la contraseña como temporal, con el rol equivocado, sin comprobar el correo, sin el detalle, con
+  la contraseña en el historial; editar con el correo chocando consigo mismo, sin permiso y sin `SIN_CAMBIOS`; desactivar
+  ignorando los proyectos y sin dejar la cuenta inactiva; reactivar sin dejarla activa; restablecer sin permiso, a
+  personas inactivas, sin marcar el cambio obligatorio, sin cambiar la contraseña, con el evento equivocado y con la
+  contraseña en el historial; aviso en cualquier día del periodo, sin evitar repetidos, sin el Administrador, a
+  practicantes finalizados, a supervisores de proyectos ya dejados y escribiendo aunque no haya avisos; `cambios: null`
+  que escribe igual; celular sin exigir el 9 y correo repetido sensible a mayúsculas. Se descartó la mutación «contraseña
+  igual a la anterior» por lo dicho arriba.
+
+### Cierre del paso 8 (practicantes y supervisores)
+
+- **Tres commits de código:** `861c5f3` y `df57b0d` (8A), `a52fe0c` (8B); docs de 8A `14e94cb`.
+- **11 servicios:** 5 de practicantes (asignar, quitar, finalizar, reactivar y editar datos de la práctica) y 6 de
+  supervisores y cuentas (crear, editar, desactivar, reactivar, restablecer contraseña y aviso de fin de práctica), más
+  las reglas de reactivación de `domain/` y `denegarCicloVida`. 232 pruebas nuevas y 55 mutaciones detectadas de 55.
+- **Qué queda de lo que toca a personas:** `reasignarProyectosDeSupervisor` (paso 9), el bloqueo real del acceso y el
+  aviso previo al iniciar sesión (paso 10) y las consultas con alcance por rol (paso 11).
+
+### Pendientes
+
+- **Paso 9:** servicios de proyectos, con «cambiar supervisor» y `reasignarProyectosDeSupervisor` (F1-A); la reactivación de
+  un proyecto debe exigir un supervisor activo; `finalizarProyecto` con sus efectos y avisos al equipo.
+- **Paso 10:** `iniciarSesion` lee de `data/` (así `INACTIVO` bloquea de verdad) y llama a `emitirAvisosFinDePractica`; Mi
+  perfil reutiliza `esquemaCorreo`, `esquemaCelular` y `correoEnUso`; el cambio de contraseña propia va en
+  `src/services/cuentas/` y no deja la contraseña en el historial.
+- **Paso 11:** consultas con alcance por rol para las pantallas de practicantes y supervisores.
+- **Fase 5.3:** «Nuevo supervisor» y «Restablecer contraseña» muestran la contraseña temporal una sola vez; desactivar
+  muestra el mensaje con la cantidad de proyectos.
+
+---
+
+## 2026-11-18 — [A+B] Fase 2, paso 9A: crear y editar proyectos, reunión y enlaces
+
+Commit de código: `30b27ab` (solo `services/`; `domain/` no cambia). Docs de 8B: `cdbbb26`. El paso 9 se parte en
+dos sub-pasos: **9A** (este: datos del proyecto) y **9B** (ciclo de vida y supervisor, con una regla nueva de `domain/`).
+
+### Decisiones aprobadas del paso 9 (todas en la opción A)
+
+- **G1-A — forma de `repositorio_url`:** `https://github.com/{organización}/{repositorio}`, sin «/» final ni «.git»
+  (`esquemaRepositorio`). La URL de cada Pull Request se arma con él (`${repositorio_url}/pull/N`, en `github.ts` y en
+  la semilla), así que una dirección con «/» final o de otro sitio produciría PR mal formados. Descartado: cualquier
+  URL http(s).
+- **G2-A — reactivar un proyecto no avisa.** §8.1 no lo lista y no existe un tipo `PROYECTO_REACTIVADO`; no se
+  reutiliza `PROYECTO_REANUDADO` ni se cambia el contrato de `domain/`. Los autores pueden sumar esa fila a §8.1 más
+  adelante. (Se aplica en 9B.)
+- **G3-A — reunión semanal:** se puede definir, cambiar y **quitar** (día y hora juntos, o los dos en `null`); cada
+  cambio avisa al equipo, también al quitarla («quedó sin definir»). Descartado: no poder quitarla.
+- **G4-A — `reasignarProyectosDeSupervisor` (9B):** una lista atómica (todo o nada) de proyectos no finalizados del
+  supervisor; la pantalla propone todos los activos o en pausa. Descartado: exigir reasignar todos desde el servicio.
+- **Supuestos menores confirmados:** (1) el nombre del proyecto es editable por el Administrador (el historial
+  conserva la etiqueta anterior); (2) `fecha_fin_prevista ≥ fecha_inicio`; (3) la rama base no lleva espacios; (4) los
+  enlaces se pueden quitar de verdad (el evento `PROYECTO_ENLACE_QUITADO` deja el rastro); (5) un nombre de proyecto
+  repetido se permite (solo el código es único); (6) cambiar el repositorio no recalcula las URL de PR ya guardadas.
+- **E4-B como precedente (para 9B):** la regla de estado de pausar, reanudar y reactivar va en un archivo nuevo de
+  `domain/` (`estadoProyecto.ts`), sin tocar `cicloVida.ts` ni `reactivacion.ts`.
+
+### Qué se construyó
+
+- `src/services/proyectos/`:
+  - `comun.ts`: `cargarContextoProyecto`, **`equipoDelProyecto`** (supervisor y practicantes **activos** con asignación
+    vigente, sin repetidos; `crearNotificaciones` descarta después a quien hizo la acción), `textoReunion`
+    («lunes a las 10:00»), `eventoDeProyecto` y `reemplazarProyecto`.
+  - `esquemas.ts`: esquemas Zod reutilizables por los formularios de la Fase 5.4 (nombre, descripción, fechas de
+    calendario, repositorio, rama base, día y hora de reunión, y enlaces) y `exigirReunionCompleta`.
+  - `datos.ts`: `crearProyecto`, `editarDatosProyecto` y `cambiarRamaBase`; `reunion.ts`: `definirReunion`;
+    `enlaces.ts`: `agregarEnlace`, `editarEnlace` y `quitarEnlace`; e `index.ts`.
+- `src/services/resultado.ts`: `CODIGO_INMUTABLE` y `FIN_ANTES_DE_INICIO`. Los códigos de `validarCodigoProyecto` traen
+  su mensaje desde `domain/`.
+- `src/services/index.ts` reexporta los siete servicios, los esquemas y las dos piezas reutilizables.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → proyecto → `puede()` → reglas propias → «sin cambios» → una sola escritura.
+- **`crearProyecto`** (solo el Administrador): el supervisor debe existir, ser SUPERVISOR y estar ACTIVO
+  (`SUPERVISOR_NO_VALIDO`: «siempre con un supervisor activo», §5.4). El código se valida con **`validarCodigoProyecto`**
+  contra los códigos de **todos** los proyectos (también los finalizados) y **tal como llega**: no se recorta ni se pasa
+  a mayúsculas (`tmv` y ` TMV ` fallan; lo normaliza la pantalla); el error sale con el mensaje del dominio y en
+  `campos.codigo`. El proyecto nace ACTIVO, sin equipo, con `ultimo_numero_tarea: 0` y `fecha_fin_real: null`; deja
+  `PROYECTO_CREADO` (con el supervisor como cambio) y un aviso `ASIGNADO_A_PROYECTO` al supervisor («Te asignaron como
+  supervisor del proyecto X.», como la semilla). Con reunión opcional (día y hora juntos) no hay aviso extra: el equipo
+  está vacío.
+- **`editarDatosProyecto`** (solo el Administrador, también con el proyecto FINALIZADO): nombre, descripción, fechas y
+  repositorio. **El código no cambia nunca:** uno distinto da `CODIGO_INMUTABLE`; uno igual se ignora (un formulario puede
+  mandarlo todo); si solo viene el código, `DATOS_INVALIDOS`. `fecha_fin_prevista ≥ fecha_inicio` se comprueba con los
+  valores que quedarían (también si solo cambia una). Un cambio de nombre, descripción o fechas es `PROYECTO_EDITADO`
+  y uno de repositorio, `PROYECTO_REPOSITORIO_CAMBIADO`, con el mismo instante. No avisa a nadie (§8.1) y no toca las
+  tareas.
+- **`cambiarRamaBase`** (Administrador y Supervisor del proyecto, también con el proyecto FINALIZADO):
+  `PROYECTO_RAMA_BASE_CAMBIADA`; la misma rama es `SIN_CAMBIOS`.
+- **`definirReunion`** (Administrador y Supervisor del proyecto, también con el proyecto FINALIZADO): el evento guarda
+  el valor anterior y el nuevo como texto («lunes a las 10:00», `null` si no hay); el aviso `REUNION_SEMANAL_CAMBIADA`
+  va al equipo sin quien lo hizo (si lo define el Supervisor, no se avisa a sí mismo; el Administrador no es del equipo).
+- **Enlaces** (Administrador y Supervisor del proyecto, también con el proyecto FINALIZADO): nombre y dirección http(s)
+  (`javascript:` y `ftp:` se rechazan); un enlace de otro proyecto es `NO_ENCONTRADO`; ninguno avisa a nadie. Quitar borra
+  el enlace (es configuración; el evento deja el rastro).
+- **Hallazgo de la semilla:** `pry-pl2d` ya tiene `ultimo_numero_tarea: 21` y rama base `develop`; las pruebas leen los
+  valores de la semilla en vez de suponerlos.
+
+### Pruebas y mutaciones
+
+- 164 pruebas nuevas (1.825 en 75 archivos en total): esquemas (repositorio, rama, hora, día, fechas, enlaces y reunión
+  completa); crear (éxito exacto, código repetido también contra un finalizado, sin normalizar, supervisor inexistente,
+  inactivo o de otro rol, fechas, reunión incompleta, y que el proyecto nuevo ya sirve para asignar y crear una tarea
+  `TMV-001`); editar (los dos eventos con el mismo instante, `CODIGO_INMUTABLE`, un proyecto finalizado, fechas con una
+  sola cambiada); rama base; reunión (definir, cambiar, quitar, equipo sin bajas ni cuentas inactivas, autor excluido); y
+  enlaces (permisos de los tres, otro proyecto, direcciones inválidas).
+- **Mutaciones del agente (31, con `git add` previo y `git restore` después; todas detectadas y restauradas):** crear
+  sin `puede()`, sin comprobar el código, normalizándolo, con supervisor inactivo o que no lo es, con el contador o el
+  estado equivocados, sin avisar y con el fin antes del inicio; editar aceptando el código, sin permiso, sin el evento de
+  repositorio, con el fin antes del inicio y sin `SIN_CAMBIOS`; rama base sin permiso y sin `SIN_CAMBIOS`; reunión sin
+  permiso, avisando al autor, con practicantes dados de baja o cuentas inactivas en el equipo, sin avisar al quitarla y
+  sin `SIN_CAMBIOS`; enlaces sin permiso y de otro proyecto (editar y quitar); y los esquemas (repositorio con «/» o
+  «.git», hora 24:xx, rama con espacios, protocolo de enlace y reunión con día sin hora).
+
+### Pendientes
+
+- **9B:** reglas de estado en `domain/` (`estadoProyecto.ts`) y `cambiarSupervisor`, `reasignarProyectosDeSupervisor`,
+  `pausarProyecto`, `reanudarProyecto`, `finalizarProyecto` y `reactivarProyecto` (exige supervisor activo, sin aviso).
+- **Fase 5.4:** los formularios usan los esquemas de `esquemas.ts` y envían el código ya en mayúsculas y sin espacios;
+  el error del código se muestra en su campo; editar no ofrece el código; la reunión se quita enviando día y hora vacíos.
+- **Autores, a mano en `docs/`:** propuesta §5.4 con los supuestos del paso 9 (repositorio, rama base, reunión y enlaces
+  editables en un proyecto finalizado, quitar la reunión avisa, reactivar no avisa).
+
+---
+
+## 2026-11-18 — [A+B] Fase 2, paso 9B: cambiar supervisor, pausar, reanudar, finalizar y reactivar proyectos (cierra el paso 9)
+
+Commits de código: `e15e4f5` (reglas de estado en `domain/`) y `12efa20` (servicios de 9B). Docs de 9A: `a3b124f`.
+
+### Decisiones del paso 9 que se aplican aquí
+
+- **G2-A — reactivar un proyecto no avisa.** §8.1 no lo lista y no existe un tipo `PROYECTO_REACTIVADO`; no se reutiliza
+  `PROYECTO_REANUDADO` ni se cambia el contrato de `domain/`. El equipo recupera su acceso porque las asignaciones nunca se
+  cerraron. Los autores pueden sumar esa fila a §8.1.
+- **G4-A — `reasignarProyectosDeSupervisor`:** una lista atómica (todo o nada) de pares `{ idProyecto, idNuevoSupervisor }`
+  de proyectos **no finalizados** del supervisor indicado; el servicio no exige reasignar todos (la pantalla propone todos
+  los activos y en pausa). Cumple F1-A: es el atajo que permite desactivar a un supervisor con proyectos.
+- **E4-B como precedente:** la regla de estado vive en `domain/` (`estadoProyecto.ts`), en un archivo aparte y sin tocar
+  `cicloVida.ts` ni `reactivacion.ts`, para que servicio y pantalla consulten la misma regla.
+
+### Qué se construyó
+
+- `src/domain/estadoProyecto.ts` (+ prueba) y su reexportación en `src/domain/index.ts`:
+  - `puedePausarProyecto` (ACTIVO → EN_PAUSA), `puedeReanudarProyecto` (EN_PAUSA → ACTIVO) y
+    `puedeReactivarProyecto(usuario, proyecto, supervisor, texto?)` (FINALIZADO → ACTIVO, exigiendo un supervisor
+    SUPERVISOR y ACTIVO). Las tres piden una nota y siguen el orden `puede()` → estado → (reactivar) supervisor → nota.
+  - `accionesDeEstadoDisponibles(estado)`: los botones que la pantalla puede mostrar (activo: pausar y finalizar; en
+    pausa: reanudar y finalizar; finalizado: reactivar).
+  - Códigos propios con su mensaje: `PROYECTO_NO_ACTIVO`, `PROYECTO_NO_EN_PAUSA`, `PROYECTO_NO_FINALIZADO` y
+    `SUPERVISOR_DEL_PROYECTO_INACTIVO`. Finalizar sigue en `cicloVida.ts` (`finalizarProyecto`, del paso 10 de la Fase 1).
+- `src/services/proyectos/estado.ts`: `pausarProyecto`, `reanudarProyecto`, `finalizarProyecto` y `reactivarProyecto`.
+- `src/services/proyectos/supervisor.ts`: `cambiarSupervisor` y `reasignarProyectosDeSupervisor`.
+- `src/services/cicloVida.ts`: `denegarCicloVida` acepta también los errores de estado de proyecto.
+- `src/services/resultado.ts`: `PROYECTO_NO_ES_DEL_SUPERVISOR`. Los cuatro códigos de estado traen su mensaje desde `domain/`.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → proyecto → regla de `domain/` (`puede()` incluido) → nota ausente (`exigirTexto`) → una sola
+  escritura. Solo el Administrador; las cuatro acciones de estado exigen **nota**.
+- **Pausar y reanudar:** cambian el estado y dejan `PROYECTO_PAUSADO` o `PROYECTO_REANUDADO` con `estado` anterior y nuevo
+  y la nota recortada; avisan al equipo (supervisor y practicantes activos con asignación vigente, sin quien actúa; el
+  Administrador no es del equipo). No tocan tareas ni asignaciones.
+- **Finalizar** (desde ACTIVO o EN_PAUSA, con `finalizarProyecto` de `domain/cicloVida.ts`): se bloquea con tareas
+  ESPERANDO_SUPERVISION y el mensaje trae la cantidad («2 tareas esperando supervisión», «1 tarea…»); libera las
+  EN_PROGRESO con un `TAREA_LIBERADA` por cada una (nota = la del cierre) y fija `fecha_fin_real` con el día de Perú
+  (`marca.hoy`, vía el dominio). **No cierra las asignaciones.** Eventos: `PROYECTO_FINALIZADO` (cambios `estado` y
+  `fecha_fin_real`) primero y luego las liberaciones. Avisos: `PROYECTO_FINALIZADO` al equipo y `TAREA_LIBERADA` a cada
+  responsable (misma regla F3-A que al quitar a un practicante). No se escribe la colección `tareas` si no hay nada que
+  liberar. Con el proyecto finalizado, `puede()` deniega las acciones de tareas a todos (`PROYECTO_FINALIZADO`).
+- **Reactivar:** vuelve a ACTIVO y deja `fecha_fin_real` en `null`; evento `PROYECTO_REACTIVADO` con los dos cambios y la
+  nota; **sin avisos** (G2-A). Un supervisor inactivo (un proyecto finalizado puede haberlo quedado, porque desactivar a un
+  supervisor ignora los proyectos finalizados) da `SUPERVISOR_DEL_PROYECTO_INACTIVO`: hay que reactivar primero al
+  supervisor. Las tareas liberadas al finalizar se quedan DISPONIBLES.
+- **`cambiarSupervisor`:** `puedeCambiarSupervisor` (solo Administrador; no un proyecto finalizado; el nuevo debe ser un
+  supervisor ACTIVO y distinto). El supervisor es un dato del proyecto, así que las tareas que esperan supervisión pasan al
+  nuevo sin tocarlas. Evento `PROYECTO_SUPERVISOR_CAMBIADO` (supervisor anterior → nuevo, por nombre); avisos
+  `ASIGNADO_A_PROYECTO` al nuevo y `QUITADO_DE_PROYECTO` al anterior (§8.1).
+- **`reasignarProyectosDeSupervisor`:** comparte con `cambiarSupervisor` la pieza interna (`aplicarCambio`: evento y avisos
+  por proyecto) y deja además un `SUPERVISOR_PROYECTOS_REASIGNADOS` sobre el supervisor saliente (con los códigos de los
+  proyectos). Un proyecto repetido en la lista es `DATOS_INVALIDOS`; uno que no es del supervisor,
+  `PROYECTO_NO_ES_DEL_SUPERVISOR` (con `campos` `reasignaciones.N`); el permiso y las reglas del dominio se comprueban antes
+  que la pertenencia.
+- **Hallazgo de las pruebas:** en las pruebas de «sin nota», un parámetro por defecto del ayudante convertía `undefined` en
+  una nota válida; se corrigió y las cuatro pruebas pasaron a detectar la falta de nota.
+
+### Pruebas y mutaciones
+
+- 117 pruebas nuevas (1.942 en 79 archivos en total): 35 de la regla de `domain/` (rejilla estado × acción, nota, supervisor
+  activo y botones) y 82 de los servicios (permisos de las cuatro acciones de estado con tabla común, éxito exacto de
+  cada una, bloqueo con tareas esperando y su cantidad, finalizar desde la pausa, sin tareas en progreso, fecha real en
+  hora de Perú, reactivar con supervisor inactivo, cambiar supervisor y reasignar, todo o nada); y la prueba de flujo
+  **crear proyecto → asignar → tareas → pausar → finalizar → reasignar → desactivar al supervisor → reactivar el
+  proyecto (falla) → reactivar al supervisor → reactivar el proyecto → el practicante vuelve a tomar la tarea**.
+- **Mutaciones del agente (33, con `git add` previo y `git restore` después; todas detectadas y restauradas):** 11 en
+  `domain/estadoProyecto` (pausar, reanudar y reactivar sin `puede()`; cada acción desde un estado que no corresponde;
+  reactivar con el supervisor inactivo y con una cuenta que no es de supervisor; pausar sin exigir la nota vacía;
+  estado nuevo equivocado y botones) y 22 en `services` (ignorar la regla del dominio, sin exigir la nota ausente en las
+  cuatro acciones, sin avisar al equipo, finalizar sin liberar, cerrando las asignaciones, con la fecha real en UTC y sin
+  avisar al equipo ni al responsable, reactivar sin limpiar la fecha real, avisando y mirando a la persona equivocada
+  como supervisor, cambiar supervisor sin la regla, sin cambiar el supervisor y sin avisar al nuevo o al anterior, y
+  reasignar que no es todo o nada, de otro supervisor, con el evento equivocado, sin el evento de cada proyecto y con el
+  mismo proyecto dos veces). Una mutación sobre el autor del aviso de pausar y reanudar no se contó: el Administrador nunca
+  es del equipo, así que no tiene efecto observable (el autor excluido sí se prueba en `definirReunion`).
+
+### Cierre del paso 9 (servicios de proyectos)
+
+- **Tres commits de código:** `30b27ab` (9A), `e15e4f5` y `12efa20` (9B); docs de 9A `a3b124f`.
+- **13 servicios:** 7 de datos (crear, editar, rama base, reunión y tres de enlaces) y 6 de estado y supervisor (cambiar
+  supervisor, reasignar, pausar, reanudar, finalizar y reactivar), más la regla de `domain/estadoProyecto.ts`, los esquemas
+  reutilizables para la Fase 5.4 y `equipoDelProyecto`. 281 pruebas nuevas y 64 mutaciones detectadas de 64.
+- **Pendientes del plan que se cierran:** `reasignarProyectosDeSupervisor` (F1-A), `finalizarProyecto` con sus efectos y
+  avisos, `reactivarProyecto` exigiendo supervisor activo y el uso de `validarCodigoProyecto` en el servicio (9A).
+- **Con esto terminan los servicios de los módulos de negocio del Bloque 3** (postulaciones, catálogo de evaluación,
+  practicantes, supervisores y proyectos). Quedan el paso 10 (cuenta y configuración) y el 11 (consultas con alcance por rol).
+
+### Pendientes
+
+- **Paso 10:** `iniciarSesion` lee de `data/` (así `INACTIVO` bloquea de verdad) y llama a `emitirAvisosFinDePractica`; Mi
+  perfil reutiliza `esquemaCorreo`, `esquemaCelular` y `correoEnUso`; el cambio de contraseña propia va en
+  `src/services/cuentas/` y no deja la contraseña en el historial; marcar insight revisado, notificar desde un insight,
+  marcar notificaciones leídas y la configuración.
+- **Paso 11:** consultas con alcance por rol para las pantallas (proyectos, tareas, practicantes, supervisores e insights).
+- **Fase 5.3:** la pantalla propone reasignar todos los proyectos activos o en pausa del supervisor antes de desactivarlo.
+- **Fase 5.4:** los botones de estado salen de `accionesDeEstadoDisponibles`; reactivar avisa que primero hay que reactivar
+  al supervisor si está inactivo; finalizar muestra el bloqueo por tareas esperando o la cantidad de tareas que se liberan;
+  reactivar no avisa al equipo (G2-A).
