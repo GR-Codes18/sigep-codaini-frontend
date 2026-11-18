@@ -13,23 +13,37 @@ const crear = (i: number, extra: Partial<NotificacionItem> = {}): NotificacionIt
   ...extra,
 });
 
-const props = { onAbrir: () => {}, onMarcarTodas: () => {}, onVerTodas: () => {} };
+const props = { noLeidas: 0, onAbrir: () => {}, onMarcarTodas: () => {}, onVerTodas: () => {} };
 
 describe('CampanaNotificaciones', () => {
-  it('indica cuántas hay sin leer', () => {
-    render(
-      <CampanaNotificaciones {...props} notificaciones={[crear(1), crear(2, { leida: true })]} />,
-    );
-    expect(screen.getByRole('button', { name: 'Notificaciones (1 sin leer)' })).toBeInTheDocument();
+  it('indica cuántas hay sin leer según el total recibido, no según la lista', () => {
+    render(<CampanaNotificaciones {...props} noLeidas={12} notificaciones={[crear(1)]} />);
+    expect(
+      screen.getByRole('button', { name: 'Notificaciones (12 sin leer)' }),
+    ).toBeInTheDocument();
   });
 
-  it('muestra solo las últimas 8', async () => {
+  it('sin avisos sin leer no hay contador y «Marcar todas» queda desactivado', async () => {
     const user = userEvent.setup();
-    const todas = Array.from({ length: 10 }, (_, i) => crear(i + 1));
-    render(<CampanaNotificaciones {...props} notificaciones={todas} />);
+    render(<CampanaNotificaciones {...props} notificaciones={[crear(1, { leida: true })]} />);
+    await user.click(screen.getByRole('button', { name: 'Notificaciones' }));
+    expect(screen.getByText('Marcar todas como leídas')).toBeDisabled();
+  });
+
+  it('muestra todo lo que recibe y en el orden recibido (la consulta ya limita y ordena)', async () => {
+    const user = userEvent.setup();
+    const recibidas = [crear(3), crear(9), crear(1)];
+    render(<CampanaNotificaciones {...props} noLeidas={3} notificaciones={recibidas} />);
     await user.click(screen.getByRole('button', { name: /Notificaciones/ }));
-    expect(screen.getByText('Aviso 10')).toBeInTheDocument();
-    expect(screen.queryByText('Aviso 1')).not.toBeInTheDocument();
+    const textos = screen.getAllByText(/^Aviso [0-9]$/).map((e) => e.textContent);
+    expect(textos).toEqual(['Aviso 3', 'Aviso 9', 'Aviso 1']);
+  });
+
+  it('sin avisos muestra el estado vacío', async () => {
+    const user = userEvent.setup();
+    render(<CampanaNotificaciones {...props} notificaciones={[]} />);
+    await user.click(screen.getByRole('button', { name: 'Notificaciones' }));
+    expect(screen.getByText('No tienes notificaciones.')).toBeInTheDocument();
   });
 
   it('avisa al abrir una y al marcar todas', async () => {
@@ -41,6 +55,7 @@ describe('CampanaNotificaciones', () => {
         {...props}
         onAbrir={onAbrir}
         onMarcarTodas={onMarcarTodas}
+        noLeidas={1}
         notificaciones={[crear(1)]}
       />,
     );

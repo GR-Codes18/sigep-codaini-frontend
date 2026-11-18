@@ -3670,3 +3670,28 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   notificación usa una tabla de destino a ruta del panel mientras no existan los módulos (D4-A); se conecta solo «editar» de
   `FormularioTarea` (D6-A); se retira el bloque «Asignaciones y responsabilidades» de Mi perfil, que no está en §8.2 (D7-A); y se
   ocultan Discord, GitHub y disponibilidad a quien su rol no los edita (D8-A).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso a): adaptadores de las consultas
+
+- **Commit:** `0ed86c9` (adaptadores de las consultas a los componentes compartidos).
+- **Qué se construyó.** Funciones puras en `src/app/adaptadores/`, una por modelo de presentación, con sus pruebas (44 en 4
+  archivos): `aTareaDetalle` (`TareaDetalleVista` → `TareaDetalle`), `aTareaTablero` y `aTareasDelTablero` (`TareaDeTablero` y
+  `TableroProyecto` → `TareaTablero`), `aEventosLinea` (`EventoConAutor` → `EventoLinea`) y `aNotificacionItem` con
+  `rutaDeNotificacion` (`NotificacionVista` → `NotificacionItem`). Aún no los usa ningún componente: se conectan en b) y c).
+- **Decisión: los cuatro tipos se conservan.** `TareaDetalle`, `TareaTablero`, `EventoLinea` y `NotificacionItem` dejan de llamarse
+  «provisionales» y quedan como el modelo de presentación de los componentes; el contrato con las consultas son los adaptadores.
+  Alternativa descartada: que los componentes reciban directamente la forma de las consultas (snake_case e ISO), que los
+  acoplaría a ella.
+- **Decisión: los adaptadores no calculan reglas.** Renombran, aplanan y convierten fechas con `parseISO` en el borde. La etiqueta
+  de PR visible, la marca «Devuelta», la observación, `vencida` y las acciones ya vienen decididas por la consulta. Mientras tanto
+  `DetalleTarea` y `TableroKanban` siguen recalculando `etiquetaPRVisible` y `estaVencida`; se retira en el sub-paso c).
+- **Autor no resuelto.** La consulta devuelve el ID como nombre cuando la cuenta del autor no se encuentra; el adaptador lo detecta
+  (`autor_rol` nulo con autor de tipo `USUARIO`) y muestra «Usuario desconocido», nunca un ID.
+- **Enlaces de las notificaciones (D4-A).** `RUTA_DE_MODULO` es una constante de datos con la página del módulo por rol y tipo de
+  elemento; un aviso de la propia cuenta lleva a `/<panel>/perfil`; un tipo sin entrada cae al inicio del rol; y si la consulta
+  dice `destino: null`, no hay ruta y el enlace queda desactivado. Qué puede abrir cada persona sigue decidiéndolo la consulta.
+  Una prueba comprueba que toda ruta de la tabla exista en el menú de su rol. Cuando los módulos tengan detalle, se afina en este
+  archivo sin tocar los componentes.
+- **Etiqueta de acciones.** El mapa de etiquetas de la línea de tiempo (los 15 tipos de tarea y de Pull Request) se migró de
+  `src/app/ejemplos/datos.ts`; un tipo sin etiqueta muestra su código.
+- **Pruebas.** 2.871 → 2.915 en 108 archivos (+44 en 4 archivos nuevos).

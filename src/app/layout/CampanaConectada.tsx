@@ -2,18 +2,19 @@ import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
-import { useAlmacen } from '@/data';
 import { marcarNotificacionLeida, marcarTodasLeidas } from '@/services';
 import { CampanaNotificaciones } from '@/compartido/CampanaNotificaciones';
-import { notificacionesParaVista } from './notificacionVista';
+import { useNotificaciones } from './useNotificaciones';
+
+/** La campana lee las últimas 8 (§8.1). */
+const LIMITE_CAMPANA = 8;
 
 export function CampanaConectada() {
   const { sesion } = useSesionActiva();
-  const datos = useAlmacen((s) => s.datos);
+  const { items, noLeidas } = useNotificaciones({ limite: LIMITE_CAMPANA });
   const navegar = useNavigate();
   if (!sesion) return null;
   const idUsuario = sesion.id;
-  const notificaciones = notificacionesParaVista(datos, idUsuario, sesion.rol);
 
   async function marcarTodas() {
     const resultado = await marcarTodasLeidas({ idActor: idUsuario });
@@ -22,7 +23,8 @@ export function CampanaConectada() {
 
   return (
     <CampanaNotificaciones
-      notificaciones={notificaciones}
+      notificaciones={items}
+      noLeidas={noLeidas}
       onAbrir={async (n) => {
         const resultado = await marcarNotificacionLeida({
           idActor: idUsuario,

@@ -12,15 +12,18 @@
   consultas con alcance por rol. El cierre y los sub-pasos constan en el historial inferior.
 - **Fase 4 — componentes compartidos: construidos y probados; conexión a `services/consultas/` en curso.** Los pasos 1 a 11
   están construidos y probados en aislamiento. Las acciones ya pasan por `services/`, pero las pantallas aún leen el almacén
-  directamente; faltan los adaptadores, la campana y «Ver todas», el detalle y el Kanban con consultas, Mi perfil y retirar
-  `src/app/ejemplos/` (sub-pasos a a e). `FormularioTarea` no tiene todavía pantalla anfitriona. Se cierra al terminar esos
+  directamente; faltan la campana y «Ver todas», el detalle y el Kanban con consultas, Mi perfil y retirar
+  `src/app/ejemplos/` (sub-pasos b a e). `FormularioTarea` no tiene todavía pantalla anfitriona. Se cierra al terminar esos
   sub-pasos.
 - **Conexión de pantallas, sub-paso 0: terminado (2026-11-18, `83b1315`).** La interfaz usa los servicios de la Fase 2
   (`cuentas/` y `seguimiento/`) y se retiraron los duplicados de la Fase 4.
-- **Verificación (en `83b1315`):** 2.871 pruebas en 104 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+- **Conexión de pantallas, sub-paso a): terminado (2026-11-18, `0ed86c9`).** Adaptadores puros en `src/app/adaptadores/`
+  (`tarea`, `tablero`, `eventos` y `notificacion`, con `parseISO` en el borde y sin reglas), más la tabla de rutas de las
+  notificaciones por rol. Aún no los usa ningún componente: se conectan en b) y c).
+- **Verificación (en `0ed86c9`):** 2.915 pruebas en 108 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el sub-paso 0 (`83b1315`).
-- **Siguiente paso:** sub-paso a) de la conexión de pantallas (adaptadores en `src/app/adaptadores/`), y después b) a e);
+- **Actualizado:** 2026-11-18, tras el sub-paso a) (`0ed86c9`).
+- **Siguiente paso:** sub-paso b) de la conexión de pantallas (campana y «Ver todas»), y después c) a e);
   al terminar, Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
@@ -346,7 +349,7 @@
 - **Siguiente:** **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
   y se retira `src/app/ejemplos/`. La integración de las ramas de interfaz con el Bloque 3 de `development` ya está hecha
   (`48abbbc`). Va en sub-pasos, cada uno con su commit: **0** unificar servicios y acceso (hecho, `83b1315`); **a**
-  adaptadores; **b** campana y «Ver todas»; **c** detalle de tarea y Kanban; **d** Mi perfil y sesión; **e** retirar
+  adaptadores (hecho, `0ed86c9`); **b** campana y «Ver todas»; **c** detalle de tarea y Kanban; **d** Mi perfil y sesión; **e** retirar
   `ejemplos/`. Después sigue la Fase 5, módulo 5.1 (Postulaciones).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
@@ -426,11 +429,12 @@
 | 2026-11-18 | 4 | 6–11. Integración de detalle, PR, formulario, notificaciones y perfil; limpieza final de la página temporal | `4d7b47d` (tablero y detalle con la semilla) y `a4d2e54` (cierre de la Fase 4) |
 | 2026-11-18 | 3–4 | Integración del Bloque 3 de la Fase 2 en las ramas de interfaz | `48abbbc` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso 0. Acceso, Mi perfil y notificaciones usan los servicios de la Fase 2 (`cuentas/`, `seguimiento/`); se retiran `services/cuenta.ts`, `autenticacion.ts`, `marcar*` de `notificaciones.ts` y `auth/iniciarSesion.ts`. El acceso vuelve a emitir los avisos de fin de práctica (F6-A) | `83b1315` |
+| 2026-11-18 | 4 | Conexión de pantallas, sub-paso a). Adaptadores de las consultas a los componentes compartidos en `src/app/adaptadores/` (`tarea`, `tablero`, `eventos`, `notificacion`) y tabla de rutas de las notificaciones | `0ed86c9` |
 
-**Estado de pruebas (2026-11-18, en `83b1315`):** 2.871 pruebas en 104 archivos, todas aprobadas (`npx vitest run`); antes eran
-2.890 en 108 (`48abbbc`): se retiraron 23 pruebas por duplicadas y se agregaron 4. `npx tsc -b`, `npx prettier --check src` y
-`npm run build` sin errores; `npx eslint` con 0 errores y el aviso conocido en `src/compartido/ui/button.tsx` (Vite avisa que el chunk principal supera
-500 kB). Estado anterior (en `48abbbc`): 2.890 pruebas en 108 archivos.
+**Estado de pruebas (2026-11-18, en `0ed86c9`):** 2.915 pruebas en 108 archivos, todas aprobadas (`npx vitest run`); antes eran
+2.871 en 104 (`83b1315`): el sub-paso a) sumó 44 pruebas en 4 archivos. Y antes, 2.890 en 108 (`48abbbc`): el sub-paso 0 retiró 23
+pruebas por duplicadas y agregó 4. `npx tsc -b`, `npx prettier --check` y `npm run build` sin errores; `npx eslint` con 0 errores y el aviso conocido en
+`src/compartido/ui/button.tsx` (Vite avisa que el chunk principal supera 500 kB).
 `npx tsc -b` y `npx prettier --check .` sin errores; `npx eslint .` con 0 errores y el aviso conocido en
 `src/compartido/ui/button.tsx`; `npm run build` OK (Vite avisa que el chunk principal supera 500 kB). Desglose de la
 Fase 2 (2.836 pruebas en 99 archivos antes de la integración): 22 del almacén, 180 de la
@@ -628,9 +632,11 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       `src/services/consultas/` (lecturas) y no filtra ni decide nada. Se retiran `accionesDeTarea.ts` (lo reemplaza
       `accionesDeTarea` de `domain/`, que `obtenerTarea` ya trae como `acciones`), `almacenNotificaciones.ts`, `datos.ts`,
       `PaginaDesarrollo.tsx` y `PaginaPerfil.tsx`.
-- [ ] Fase 3 y 4 (adaptadores): las consultas devuelven la forma de `domain/` (snake_case y fechas ISO). Un adaptador en la
-      interfaz las convierte a los tipos de los componentes compartidos (`TareaDetalle`, `TareaTablero`, `EventoLinea`,
-      `NotificacionItem`), con `parseISO` en el borde. El detalle de tarea usa `acciones` y `solo_lectura` de `obtenerTarea`.
+- [x] Fase 3 y 4 (adaptadores): hecho en el sub-paso a) (`0ed86c9`). Las consultas devuelven la forma de `domain/` (snake_case y
+      fechas ISO) y los adaptadores de `src/app/adaptadores/` las convierten a los tipos de los componentes compartidos
+      (`TareaDetalle`, `TareaTablero`, `EventoLinea`, `NotificacionItem`), con `parseISO` en el borde. Esos cuatro tipos se
+      conservan como tipos de presentación (ya no son «provisionales»). Sigue pendiente conectarlos: el detalle de tarea usa
+      `acciones` y `solo_lectura` de `obtenerTarea` (sub-paso c) y la campana, `listarNotificaciones` (sub-paso b).
 - [ ] Fase 4 (campana y «Ver todas»): `listarNotificaciones` con `limite: 8` para la campana; `enlace_activo` y `destino`
       (`DETALLE` o `RESUMEN_PROYECTO_ANTERIOR`) deciden el enlace; `no_leidas` da el punto verde.
 - [ ] Fase 5 y 6 (listados): las consultas devuelven el conjunto completo del alcance con contadores por pestaña; la pantalla
@@ -726,9 +732,9 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [ ] `ACCESO_RAPIDO_NO_DISPONIBLE` (`services/resultado.ts` y `resultado.test.ts`) quedó sin uso tras el sub-paso 0; decidir si se retira.
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
-- [ ] Reemplazar tipos provisionales (`TareaTablero`, `EventoLinea`, `TareaDetalle`,
-      `NotificacionItem`) cuando existan los servicios. `auth/tipos.ts` ya reutiliza `Rol` y `Usuario`
-      de `domain/` (`0307f83`).
+- [x] Tipos provisionales (`TareaTablero`, `EventoLinea`, `TareaDetalle`, `NotificacionItem`): se conservan como tipos de
+      presentación de los componentes, con adaptadores desde las consultas (`0ed86c9`). `auth/tipos.ts` ya reutiliza `Rol` y
+      `Usuario` de `domain/` (`0307f83`).
 - [x] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
 - [x] Con `estado_pr === 'PENDIENTE'` y `url_pull_request` no nula (PR fusionado recalculado), no mostrar la
       URL como el PR vigente; la etiqueta se resuelve con `etiquetaPRVisible`.
