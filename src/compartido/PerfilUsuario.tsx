@@ -1,5 +1,4 @@
 import { useState, type SetStateAction } from 'react';
-import type { DatosPerfilCuenta } from '@/services';
 import type { Resultado } from '@/services';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
@@ -18,8 +17,9 @@ interface Props {
   valores: DatosPerfil;
   /** Qué campos puede editar este rol (propuesta §8.2). */
   editables: CampoPerfil[];
-  onGuardarPerfil: (datos: DatosPerfil) => Promise<Resultado<DatosPerfilCuenta>>;
-  onCambiarContrasena: (datos: DatosContrasena) => Promise<Resultado<void>>;
+  /** Al guardar bien, la pantalla vuelve a derivar `valores` del almacén. */
+  onGuardarPerfil: (datos: DatosPerfil) => Promise<Resultado<unknown>>;
+  onCambiarContrasena: (datos: DatosContrasena) => Promise<Resultado<unknown>>;
 }
 
 const ETIQUETAS: Record<CampoPerfil, string> = {
@@ -86,7 +86,6 @@ export function PerfilUsuario({
         setErrores(resultado.campos ?? {});
         return;
       }
-      setDatos(resultado.valor);
     } finally {
       setGuardando(false);
     }

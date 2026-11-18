@@ -64,4 +64,63 @@ describe('PaginaPerfil', () => {
     });
     expect(await screen.findByLabelText('Celular')).toHaveValue('987654321');
   });
+
+  it('sin cambios no llama al servicio y lo dice', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PaginaPerfil />
+      </MemoryRouter>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(useAlmacen.getState().datos.usuarios).toEqual(datosIniciales.usuarios);
+  });
+
+  it('muestra junto al campo el error del servicio y no escribe', async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PaginaPerfil />
+      </MemoryRouter>,
+    );
+    const celular = screen.getByLabelText('Celular');
+    await user.clear(celular);
+    await user.type(celular, '12345678');
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+    expect(await screen.findByText(/9 dígitos|nueve dígitos|empiece con 9/i)).toBeInTheDocument();
+    expect(
+      useAlmacen.getState().datos.usuarios.find((item) => item.id === practicante.id)?.celular,
+    ).toBe(practicante.celular);
+  });
+
+  it('cambia la contraseña, quita la marca temporal y refresca la sesión', async () => {
+    useAlmacen.setState({
+      datos: {
+        ...datosIniciales,
+        usuarios: datosIniciales.usuarios.map((item) =>
+          item.id === practicante.id ? { ...item, debe_cambiar_contrasena: true } : item,
+        ),
+      },
+    });
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <PaginaPerfil />
+      </MemoryRouter>,
+    );
+    await user.type(screen.getByLabelText('Contraseña actual'), practicante.contrasena);
+    await user.type(screen.getByLabelText('Nueva contraseña'), 'nueva-clave-1');
+    await user.type(screen.getByLabelText('Confirmar nueva contraseña'), 'nueva-clave-1');
+    await user.click(screen.getByRole('button', { name: 'Cambiar contraseña' }));
+
+    await waitFor(() => {
+      expect(useAlmacenSesion.getState().usuario?.debe_cambiar_contrasena).toBe(false);
+    });
+    expect(
+      useAlmacen.getState().datos.usuarios.find((item) => item.id === practicante.id)?.contrasena,
+    ).toBe('nueva-clave-1');
+  });
 });

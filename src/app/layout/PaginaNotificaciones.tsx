@@ -7,7 +7,7 @@ import { useSesionActiva } from '@/auth/useSesionActiva';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { useAlmacen } from '@/data';
-import { marcarNotificacionLeida, marcarTodasNotificacionesLeidas } from '@/services';
+import { marcarNotificacionLeida, marcarTodasLeidas } from '@/services';
 import { notificacionesParaVista } from './notificacionVista';
 
 export function PaginaNotificaciones() {
@@ -24,7 +24,7 @@ export function PaginaNotificaciones() {
   );
 
   async function marcarTodas() {
-    const resultado = await marcarTodasNotificacionesLeidas({ idActor: idUsuario });
+    const resultado = await marcarTodasLeidas({ idActor: idUsuario });
     if (!resultado.ok) toast.error(resultado.mensaje);
   }
 

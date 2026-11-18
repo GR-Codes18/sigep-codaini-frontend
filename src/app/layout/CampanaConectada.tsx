@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 import { useAlmacen } from '@/data';
-import { marcarNotificacionLeida, marcarTodasNotificacionesLeidas } from '@/services';
+import { marcarNotificacionLeida, marcarTodasLeidas } from '@/services';
 import { CampanaNotificaciones } from '@/compartido/CampanaNotificaciones';
 import { notificacionesParaVista } from './notificacionVista';
 
@@ -16,7 +16,7 @@ export function CampanaConectada() {
   const notificaciones = notificacionesParaVista(datos, idUsuario, sesion.rol);
 
   async function marcarTodas() {
-    const resultado = await marcarTodasNotificacionesLeidas({ idActor: idUsuario });
+    const resultado = await marcarTodasLeidas({ idActor: idUsuario });
     if (!resultado.ok) toast.error(resultado.mensaje);
   }
 

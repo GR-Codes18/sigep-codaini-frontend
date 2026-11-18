@@ -2,12 +2,19 @@ import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { useMemo } from 'react';
+import { useAlmacenSesion } from '@/auth/almacenSesion';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { PerfilUsuario } from '@/compartido/PerfilUsuario';
 import type { CampoPerfil, DatosContrasena, DatosPerfil } from '@/compartido/esquemasPerfil';
 import { useAlmacen } from '@/data';
 import type { Rol } from '@/domain';
-import { actualizarPerfil, cambiarContrasenaPropia } from '@/services';
+import {
+  cambiarMiContrasena,
+  editarMiPerfil,
+  fallo,
+  type EntradaEditarMiPerfil,
+  type Resultado,
+} from '@/services';
 import { responsabilidadesPendientes } from './responsabilidadesPerfil';
 
 const EDITABLES: Record<Rol, CampoPerfil[]> = {
@@ -29,12 +36,26 @@ const ESTADO_TAREA = {
   TERMINADA: 'Terminada',
 } as const;
 
+/** Los errores del servicio vienen con sus nombres (`cuenta_github`); el formulario usa los suyos. */
+function renombrarCampos<T>(
+  resultado: Resultado<T>,
+  nombres: Record<string, string>,
+): Resultado<T> {
+  if (resultado.ok || !resultado.campos) return resultado;
+  const campos: Record<string, string> = {};
+  for (const [campo, mensaje] of Object.entries(resultado.campos)) {
+    campos[nombres[campo] ?? campo] = mensaje;
+  }
+  return { ...resultado, campos };
+}
+
 function fechaVisible(fecha: string): string {
   return format(parseISO(fecha), 'd MMM yyyy', { locale: es });
 }
 
 export function PaginaPerfil() {
   const { usuario } = useSesionActiva();
+  const abrirSesion = useAlmacenSesion((estado) => estado.abrirSesion);
   const datos = useAlmacen((estado) => estado.datos);
   const practicante =
     usuario?.rol === 'PRACTICANTE'
@@ -91,19 +112,44 @@ export function PaginaPerfil() {
     );
   }
 
+  const editables = new Set(EDITABLES[usuario.rol]);
+
   async function guardarPerfil(datosPerfil: DatosPerfil) {
-    const resultado = await actualizarPerfil({ idActor: idUsuario, datos: datosPerfil });
-    if (resultado.ok) toast.success('Perfil actualizado');
-    return resultado;
+    // El servicio rechaza un campo que el rol no puede editar: solo se envía lo editable que cambió.
+    const cambia = (campo: CampoPerfil) =>
+      editables.has(campo) && datosPerfil[campo] !== valores?.[campo];
+    const cambios: Omit<EntradaEditarMiPerfil, 'idActor'> = {};
+    if (cambia('nombre')) cambios.nombre = datosPerfil.nombre;
+    if (cambia('correo')) cambios.correo = datosPerfil.correo;
+    if (cambia('celular')) cambios.celular = datosPerfil.celular;
+    if (cambia('discord')) cambios.discord = datosPerfil.discord;
+    if (cambia('github')) cambios.cuenta_github = datosPerfil.github;
+    if (cambia('disponibilidad')) cambios.disponibilidad_horaria = datosPerfil.disponibilidad;
+    if (Object.keys(cambios).length === 0) return fallo('SIN_CAMBIOS');
+
+    const resultado = await editarMiPerfil({ idActor: idUsuario, ...cambios });
+    if (resultado.ok) {
+      abrirSesion(resultado.valor);
+      toast.success('Perfil actualizado');
+    }
+    return renombrarCampos(resultado, {
+      cuenta_github: 'github',
+      disponibilidad_horaria: 'disponibilidad',
+    });
   }
 
   async function cambiarContrasena(datosContrasena: DatosContrasena) {
-    const resultado = await cambiarContrasenaPropia({
+    const resultado = await cambiarMiContrasena({
       idActor: idUsuario,
-      ...datosContrasena,
+      contrasenaActual: datosContrasena.actual,
+      contrasenaNueva: datosContrasena.nueva,
+      confirmacion: datosContrasena.confirmacion,
     });
-    if (resultado.ok) toast.success('Contraseña actualizada');
-    return resultado;
+    if (resultado.ok) {
+      abrirSesion(resultado.valor);
+      toast.success('Contraseña actualizada');
+    }
+    return renombrarCampos(resultado, { contrasenaActual: 'actual', contrasenaNueva: 'nueva' });
   }
 
   return (

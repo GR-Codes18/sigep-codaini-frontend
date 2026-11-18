@@ -15,12 +15,7 @@ import type {
   TipoNotificacion,
   Usuario,
 } from '@/domain';
-import { z } from 'zod';
-import { obtenerActor } from './actor';
-import { ENTORNO, type Entorno } from './entorno';
 import type { Marca } from './marca';
-import { fallo, validarEntrada, type Resultado } from './resultado';
-import { ejecutarServicio } from './transaccional';
 
 export interface EntradaNotificacion {
   /** Quien hizo la acción. `SISTEMA` o `null` si no la hizo ninguna persona. */
@@ -68,83 +63,4 @@ export function agregarNotificaciones(
   ...nuevas: readonly Notificacion[]
 ): Notificacion[] {
   return [...existentes, ...nuevas];
-}
-
-const esquemaId = z.string().trim().min(1);
-
-const esquemaMarcarUna = z.object({
-  idActor: esquemaId,
-  idNotificacion: esquemaId,
-});
-
-const esquemaMarcarTodas = z.object({
-  idActor: esquemaId,
-});
-
-export type EntradaMarcarNotificacionLeida = z.input<typeof esquemaMarcarUna>;
-export type EntradaMarcarTodasNotificacionesLeidas = z.input<typeof esquemaMarcarTodas>;
-
-function actorActivo(datos: { usuarios: Usuario[] }, idActor: Id): Resultado<Usuario> {
-  const resultado = obtenerActor(datos, idActor);
-  if (!resultado.ok) return resultado;
-  if (resultado.valor.estado !== 'ACTIVO') return fallo('USUARIO_INACTIVO');
-  return resultado;
-}
-
-export function marcarNotificacionLeida(
-  entrada: EntradaMarcarNotificacionLeida,
-  entorno: Entorno = ENTORNO,
-): Promise<Resultado<void>> {
-  return ejecutarServicio(entorno, ({ datos }) => {
-    const validacion = validarEntrada(esquemaMarcarUna, entrada);
-    if (!validacion.ok) return validacion;
-
-    const actor = actorActivo(datos, validacion.valor.idActor);
-    if (!actor.ok) return actor;
-
-    const notificacion = datos.notificaciones.find(
-      (item) =>
-        item.id === validacion.valor.idNotificacion && item.id_destinatario === actor.valor.id,
-    );
-    if (notificacion === undefined) return fallo('NO_ENCONTRADO');
-    if (notificacion.leida) return { ok: true, valor: undefined, cambios: {} };
-
-    return {
-      ok: true,
-      valor: undefined,
-      cambios: {
-        notificaciones: datos.notificaciones.map((item) =>
-          item.id === notificacion.id ? { ...item, leida: true } : item,
-        ),
-      },
-    };
-  });
-}
-
-export function marcarTodasNotificacionesLeidas(
-  entrada: EntradaMarcarTodasNotificacionesLeidas,
-  entorno: Entorno = ENTORNO,
-): Promise<Resultado<void>> {
-  return ejecutarServicio(entorno, ({ datos }) => {
-    const validacion = validarEntrada(esquemaMarcarTodas, entrada);
-    if (!validacion.ok) return validacion;
-
-    const actor = actorActivo(datos, validacion.valor.idActor);
-    if (!actor.ok) return actor;
-
-    const tieneSinLeer = datos.notificaciones.some(
-      (item) => item.id_destinatario === actor.valor.id && !item.leida,
-    );
-    if (!tieneSinLeer) return { ok: true, valor: undefined, cambios: {} };
-
-    return {
-      ok: true,
-      valor: undefined,
-      cambios: {
-        notificaciones: datos.notificaciones.map((item) =>
-          item.id_destinatario === actor.valor.id ? { ...item, leida: true } : item,
-        ),
-      },
-    };
-  });
 }
