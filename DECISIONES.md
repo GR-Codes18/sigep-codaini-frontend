@@ -2352,3 +2352,101 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 - **Paso 6:** ampliar `PuertoGitHub` con listar ramas, crear y cerrar PR, y el caso de error preparado.
 - **Semilla (opcional):** ninguna tarea EN_PROGRESO tiene un PR previo, así que el recálculo al volver a
   llegar no se ve en la demostración sin reabrir antes una tarea con PR.
+
+## 2026-11-17 — [A+B] Fase 2, paso 5C: opciones de la tarea y prueba de flujo (cierra el paso 5)
+
+- **Commit:** `98ead18` (`feat: agrega los servicios de opciones de tarea y la prueba de flujo (Fase 2, paso 5C)`). Verificación: 1125 pruebas en 49 archivos (33 nuevas), `tsc -b`, `eslint src/services`,
+  `prettier --check src/services` y `build` OK; `git diff -- docs` vacío.
+
+### Qué se construyó
+
+- `src/services/tareas/opciones.ts`: `cambiarRequiereSupervision` (`EntradaRequiereSupervision`: `idActor`,
+  `idTarea`, `valor`) y `cambiarRequierePR` (`EntradaRequierePR`: lo mismo más `motivo?`). `valor` es el valor
+  deseado (`true` = activar). Devuelven la `Tarea` resultante.
+- `src/services/tareas/flujo.test.ts`: flujo completo por código con servicios reales y la semilla real.
+- Reexportaciones en `src/services/tareas/index.ts` y `src/services/index.ts`. Sin códigos nuevos (se
+  reutilizan `SIN_CAMBIOS`, `TAREA_NO_EDITABLE`, `TAREA_YA_TIENE_PR` y `TEXTO_OBLIGATORIO`).
+
+### Decisiones de implementación
+
+- **Orden de `cambiarRequiereSupervision`:** Zod → contexto → `puedeCambiarRequiereSupervision` (`puede()` y
+  estado: solo DISPONIBLE o EN_PROGRESO, si no `TAREA_NO_EDITABLE`) → `SIN_CAMBIOS` → escritura. Evento
+  `TAREA_OPCIONES_CAMBIADAS` con el cambio en Sí/No; sin aviso (§8.1 no lo lista).
+- **Orden de `cambiarRequierePR`:** Zod → contexto → `puedeCambiarRequierePR` (`puede()` → PR existente →
+  motivo vacío) → `exigirTexto` (motivo ausente) → `SIN_CAMBIOS` → `siguienteEstadoPR` (C1) → escritura. Por
+  ese orden, un practicante que intenta activar recibe `ROL_NO_PERMITIDO` aunque ya esté activo; un practicante
+  que desactiva una tarea con PR sin motivo recibe `TAREA_YA_TIENE_PR`; y uno que desactiva algo ya desactivado
+  sin motivo recibe `TEXTO_OBLIGATORIO`, no `SIN_CAMBIOS`.
+- **C1 sobre la tarea original:** el evento `REQUIERE_PR_CAMBIADO` solo mira el estado de la tarea y
+  `estado_pr`, no `requiere_pr`. Activar en ESPERANDO_SUPERVISION o TERMINADA con `estado_pr === null` →
+  PENDIENTE, con el cambio de `estado_pr` en el mismo evento que el de `requiere_pr`; activar antes de llegar
+  deja `null`; activar con un `estado_pr` ya calculado lo conserva; desactivar nunca lo cambia (la etiqueta la
+  oculta `etiquetaPRVisible`).
+- **Mapeo (D5-A):**
+
+  | Caso | `TipoAccionHistorial` | `cambios` | `nota` | Aviso (§8.1) |
+  |---|---|---|---|---|
+  | Requiere supervisión | `TAREA_OPCIONES_CAMBIADAS` | `requiere_supervision` | — | ninguno |
+  | Requiere PR, activar (Admin o Supervisor) | `TAREA_OPCIONES_CAMBIADAS` | `requiere_pr` (+ `estado_pr` si C1 lo cambia) | motivo si lo escribieron | ninguno |
+  | Requiere PR, desactivar (Admin o Supervisor) | `PULL_REQUEST_NO_REQUERIDO` | `requiere_pr` | motivo si lo escribieron | ninguno |
+  | Requiere PR, desactivar (practicante responsable) | `PULL_REQUEST_NO_REQUERIDO` | `requiere_pr` | motivo recortado (obligatorio) | `PULL_REQUEST_NO_REQUERIDO_POR_PRACTICANTE` → supervisor del proyecto |
+
+- **El aviso se decide por el rol** (`actor.rol === 'PRACTICANTE'`) y no por `exige_texto`, para que se lea
+  igual que §8.1; el practicante solo puede desactivar. El texto del aviso («{nombre} marcó «X» (PL2D-010) como
+  «No requiere PR».») es nuevo: la semilla no tiene ninguno de este tipo.
+
+### Prueba de flujo
+
+- **Flujo principal:** el Supervisor crea una tarea con supervisión → el practicante demo la toma y la envía
+  (llega en PENDIENTE) → el Supervisor la aprueba. Comprueba la tarea final (TERMINADA, `fecha_termino` igual
+  al último evento, `ultimo_numero_tarea` + 1), el historial en orden (`TAREA_CREADA`, `TAREA_TOMADA`,
+  `TAREA_ENVIADA_A_SUPERVISION`, `TAREA_APROBADA`, con autor, etiqueta e `id_proyecto`), exactamente 2 avisos
+  nuevos en todo el sistema (el envío al Supervisor y la aprobación al practicante), y que los indicadores de
+  `domain/` leen bien lo escrito: `tiempoCicloMs` igual al tiempo entre tomar y aprobar, `vecesDevuelta` 0,
+  `devolucionVigente` falso y la etiqueta PENDIENTE.
+- **Variante con devolución:** crear → tomar → enviar → devolver → enviar → aprobar: `vecesDevuelta` 1, la marca
+  «Devuelta» se enciende al devolver y se apaga al reenviar, la nota de la devolución queda en el evento y llegan
+  los 4 avisos esperados.
+- **Variante «No requiere PR»:** el practicante lo marca mientras la tarea espera supervisión; la etiqueta deja
+  de verse, `estado_pr` se conserva y el supervisor recibe el aviso.
+- El reloj avanza un minuto entre pasos para que el historial quede en orden cronológico real.
+
+### Pruebas y mutaciones
+
+- `opciones.test.ts` (30 pruebas): los dos roles que pueden, los estados permitidos y prohibidos, C1 en sus
+  cuatro casos (con dos casos reales de la semilla: `PL2D-002`, TERMINADA sin «Requiere PR», pasa a PENDIENTE;
+  `PL2D-001`, con PR fusionado, responde `TAREA_YA_TIENE_PR`), desactivar con los tres roles, motivo ausente,
+  vacío o con solo espacios, PR existente (también cerrado) antes que el texto, `SIN_CAMBIOS` y su orden,
+  alcance, FINALIZADO, INACTIVO, inexistentes y `valor` inválido. `flujo.test.ts`: 3 pruebas.
+- En la primera corrida falló una sola prueba, y era de la propia prueba (buscaba la primera devolución de todo
+  el historial, que era de la semilla); se corrigió filtrando por la tarea.
+- **Mutaciones del agente (11, con `git add` previo y `git restore` después):** 10 detectadas y restauradas
+  (`SIN_CAMBIOS` antes que el permiso; sin `SIN_CAMBIOS` en «Requiere PR»; no llamar a `siguienteEstadoPR`;
+  desactivar registra `TAREA_OPCIONES_CAMBIADAS`; avisar también si desactiva el Administrador; nunca avisar;
+  no exigir el motivo ausente; `SIN_CAMBIOS` antes que `exigirTexto`; no guardar el motivo; aviso al responsable
+  en vez de al supervisor).
+- **Mutación equivalente (anticipada en la propuesta):** pasar a `siguienteEstadoPR` la tarea con
+  `requiere_pr` ya cambiado da el mismo resultado, porque `REQUIERE_PR_CAMBIADO` no lee ese campo. No se puede
+  detectar con pruebas; se usa la tarea original y un comentario lo explica en el código.
+
+### Cierre del paso 5 (servicios de tareas)
+
+- **Tres commits de código:** 5A `2c54c04` (crear, editar, eliminar), 5B `2726b9a` (las 7 transiciones y el
+  puerto de GitHub) y 5C `98ead18` (opciones y prueba de flujo); docs `b6683dd` y `ed6a6bc`.
+- **Doce servicios** en `src/services/tareas/` (`datosTarea.ts`, `transiciones.ts`, `opciones.ts`, con
+  `comun.ts`), el puerto `github` en `Entorno` (`src/services/github.ts`) y 165 pruebas nuevas. Mutaciones:
+  13 de 13 en 5A, 10 de 11 en 5B y 10 de 11 en 5C (las 2 restantes, equivalentes).
+- **Pendientes del plan del paso 5 que quedan cumplidos:** guardar `numero` y `ultimo_numero_tarea` juntos;
+  avisar al responsable al editar una tarea EN_PROGRESO; `fecha_termino` y el evento de cierre con la misma
+  marca; pasar siempre `github` al volver a llegar; aplicar C1 al cambiar «Requiere PR»; avisar al supervisor
+  cuando el practicante desactiva «Requiere PR»; y, en todos los servicios de tareas, pasar las asignaciones de
+  quien actúa y rechazar el texto ausente.
+- **Queda para los autores (a mano):** ajustar el plan §9, Fase 2, paso 6 (D3: «No requiere PR» ya está en el
+  paso 5).
+- **Queda para la Fase 4:** señalar en el detalle de tarea el caso de D6-A (responsable INACTIVO o con baja en
+  una tarea EN_PROGRESO).
+
+### Pendientes
+
+- **Paso 6 (servicios de Pull Request):** crear el PR con ramas de ejemplo, el caso de error preparado (plan
+  §8), detectar un PR existente, cerrar el PR y el recálculo, ampliando el mismo `PuertoGitHub`.
