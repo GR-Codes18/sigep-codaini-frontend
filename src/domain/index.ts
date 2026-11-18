@@ -164,6 +164,14 @@ export type {
   TransicionPostulacion,
 } from './decisionPostulacion';
 
+export {
+  CODIGOS_BLOQUE_CRITERIOS,
+  PESO_TOTAL_BLOQUE,
+  sumaPesosActivos,
+  validarBloqueCriterios,
+} from './criteriosBloque';
+export type { CodigoBloqueCriterios, ResultadoBloqueCriterios } from './criteriosBloque';
+
 export { CODIGOS_PUNTAJE, MOTIVOS_REVISION, calcularPuntaje } from './puntaje';
 export type {
   BandaAmbigua,
