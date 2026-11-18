@@ -215,7 +215,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 - Tareas en cada estado y en cada etiqueta de PR (Pendiente, Creado, Con conflictos, Fusionado, Cerrado), tareas con y sin `requiere_supervision`, devueltas con observaciones (con nota), vencidas, sin asignar, una esperando supervisión hace más de 3 días, una reabierta, y un proyecto con más de 5 tareas terminadas (para la regla de "5 más recientes").
 - Postulaciones en cada estado, con puntajes variados, una con la marca "Requiere revisión manual" por criterio obligatorio y otra por banda ambigua (50–69).
 - Notificaciones y eventos de historial coherentes con los datos (el historial es la fuente de varios indicadores, así que la semilla debe generar eventos reales, no solo estados finales).
-- Un caso de error de PR preparado ("rama inexistente" o "GitHub no disponible").
+- Un caso de error de PR preparado: la rama de ejemplo «rama inexistente» (`feature/<código>-rama-eliminada`), que aparece en la lista pero GitHub rechaza. Las ramas de ejemplo son `feature/<código>-NNN`, más `feature/<código>-con-conflictos`, que crea el PR y lo deja con conflictos.
 - Acceso rápido por rol: "Entrar como Administrador / Supervisor / Practicante" con un aviso discreto "Prototipo: autenticación simulada".
 
 ---
@@ -270,7 +270,7 @@ La semilla **debe incluir casos para poder demostrar todo**:
 **Pruebas obligatorias (casos mínimos)**
 - Matriz completa de transiciones: **cada combinación estado × rol × condición**, tanto la permitida como las prohibidas (por ejemplo, un practicante no puede aprobar su propia tarea; no se salta de DISPONIBLE a TERMINADA; no se envía a supervisión una tarea sin `requiere_supervision`).
 - Tomar una tarea en un proyecto EN_PAUSA → rechazada.
-- Motivo/nota faltante cuando es obligatorio → rechazada.
+- Motivo o nota obligatorios: vacío o solo espacios → rechazada (TEXTO_OBLIGATORIO); si todavía no se escribió, la acción queda pendiente de texto y devuelve qué texto exige (el servicio la rechaza si falta).
 - Puntaje: el ejemplo 80/90 → 86; redondeo (86,4 → 86; 69,5 → 70) y cálculo con enteros, sin coma flotante; pesos que no suman 100 y bloque sin criterios activos; criterio obligatorio incumplido → marca, sin anular el bloque; puntaje 49, 50, 69 y 70 en los bordes de la banda; banda y proporción por parámetro.
 - Insights: justo en el umbral y un valor por debajo; reaparición de un insight revisado (empeora o 7 días).
 - Permisos: cada fila de la matriz de §4 para cada rol; alcance (supervisor ajeno, practicante sin asignación o con fecha_baja, responsable vs. otro practicante); proyecto FINALIZADO (acciones de tareas denegadas a todos; editar reunión, enlaces y rama base permitido); usuario INACTIVO.
@@ -294,13 +294,13 @@ La semilla **debe incluir casos para poder demostrar todo**:
 2. **Semilla** según la sección 8, generada por funciones con fechas relativas a hoy. Debe generar también los eventos de historial.
 3. **Restablecer datos de demostración.**
 4. **Utilidades de `services/`:** registrar evento, crear notificación (respetando "no notificar la acción propia"), simular demora, resultado de éxito/error estándar.
-5. **Servicios de tareas** (crear, editar, tomar, liberar, enviar a supervisión, terminar, aprobar, devolver, reabrir, eliminar, cambiar opciones). **Primero estos**, porque son el corazón. Crear una tarea usa `siguienteNumeroTarea` y guarda `ultimo_numero_tarea` y el `numero` de la tarea en una sola operación.
-6. **Servicios de Pull Request** (crear con ramas de ejemplo, caso de error preparado, detectar PR existente, cerrar, "No requiere PR", recálculo).
+5. **Servicios de tareas** (crear, editar, tomar, liberar, enviar a supervisión, terminar, aprobar, devolver, reabrir, eliminar, cambiar opciones: «Requiere supervisión», «Requiere PR» y «No requiere PR»). **Primero estos**, porque son el corazón. Crear una tarea usa `siguienteNumeroTarea` y guarda `ultimo_numero_tarea` y el `numero` de la tarea en una sola operación.
+6. **Servicios de Pull Request** (listar ramas de ejemplo, crear con ramas de ejemplo, caso de error preparado, detectar PR existente, cerrar, recálculo). «No requiere PR» se hace en el paso 5, con las demás opciones de la tarea.
 7. **Servicios de postulaciones** (evaluación simulada, aprobar —crea practicante con contraseña temporal—, rechazar, reconsiderar, criterios, áreas y especialidades).
 8. **Servicios de practicantes y supervisores** (asignar, quitar, finalizar práctica, reactivar, restablecer contraseña, crear supervisor, editar, reasignar proyectos, desactivar).
 9. **Servicios de proyectos** (crear, editar, cambiar supervisor, pausar, reanudar, finalizar, reactivar, reunión, enlaces, rama base). El servicio de crear proyecto valida el código con `validarCodigoProyecto`, pasando los códigos de todos los proyectos (también los finalizados); el servicio de editar proyecto rechaza cualquier cambio del código.
 10. **Servicios de cuenta** (perfil, cambiar contraseña, marcar insight revisado, notificar desde insight, marcar notificaciones leídas, configuración).
-11. **Consultas con alcance por rol:** funciones que devuelven "lo que este usuario puede ver" (proyectos, tareas, practicantes, insights). El alcance se aplica **aquí**, no en las pantallas.
+11. **Consultas con alcance por rol:** funciones que devuelven "lo que este usuario puede ver" (proyectos, tareas, practicantes, supervisores, postulaciones, criterios, Configuración, insights, indicadores, historial, notificaciones y los tres resúmenes de entrada). El alcance se aplica **aquí**, no en las pantallas.
 
 **Pruebas obligatorias**
 - Por cada servicio: caso exitoso, caso sin permiso, caso de datos inválidos y caso de dato inexistente. Verificar que cada acción exitosa deja su **evento de historial** y sus **notificaciones** correctas.
