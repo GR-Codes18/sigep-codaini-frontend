@@ -3239,3 +3239,146 @@ Commits de código: `e15e4f5` (reglas de estado en `domain/`) y `12efa20` (servi
 - **Fase 5.4:** los botones de estado salen de `accionesDeEstadoDisponibles`; reactivar avisa que primero hay que reactivar
   al supervisor si está inactivo; finalizar muestra el bloqueo por tareas esperando o la cantidad de tareas que se liberan;
   reactivar no avisa al equipo (G2-A).
+
+## 2026-11-18 — [A+B] Fase 2, paso 10: cuenta propia, seguimiento y configuración (cierra los servicios de la Fase 2)
+
+Paso partido en tres sub-pasos, cada uno con su parada y su commit: **10A** (acceso, Mi perfil y contraseña propia),
+**10B** (insights y notificaciones) y **10C** (configuración y datos de demostración, en dos commits: la regla en
+`domain/` y los servicios). Commits de código: `d8f89b4`, `84c438d`, `185c6ae` y `66ff605`.
+
+### Decisiones del plan (aprobadas por los autores)
+
+- **Partición en tres sub-pasos** (la alternativa era dos, mezclando cuenta, acceso y seguimiento en el primero; se descartó
+  por el tamaño del diff).
+- **Marcar notificaciones como leídas, sin acción nueva en `puede()`:** la matriz de §4 no tiene una fila para esto, así que
+  la matriz de las 55 acciones de la Fase 1 no cambia. El servicio exige que quien actúa exista y esté ACTIVO
+  (`USUARIO_INACTIVO` si no) y que la notificación sea suya; una ajena responde `NO_ENCONTRADO`, igual que una
+  inexistente, para no revelar que está. Son idempotentes: si ya estaba leída, o no había nada pendiente, devuelven éxito
+  con `cambios: null` (sin escribir, ni siquiera en el navegador). Se descartó agregar `MARCAR_NOTIFICACION_LEIDA` a
+  `puede()`: cumpliría «toda acción pasa por `domain/permisos`», pero cambiaría un contrato probado que la propuesta no pide.
+- **Discord y GitHub en Mi perfil:** §8.2 dice que «se escriben como nombre de usuario» sin más formato. Se valida solo que
+  no tengan espacios y un largo máximo de **32** (Discord) y **39** (GitHub); vacío o `null` quita el dato. No se inventan
+  las reglas estrictas de cada plataforma (se descartaron por no estar en la propuesta).
+- **«Notificar» desde un insight:** el aviso lleva un **texto automático** (`título. motivo` del insight) y no hay un campo
+  libre, porque §8.1 y §5.6 no lo definen. Inactividad avisa al practicante (el aviso apunta a su usuario); supervisión
+  demorada avisa al supervisor del proyecto de la tarea y el aviso apunta a la **tarea** (elemento `TAREA`). Se puede avisar
+  más de una vez por el mismo insight (la propuesta no pone un límite) y también uno ya revisado.
+- **Proporción de la nota (`100/0` y `0/100`):** se aceptan enteros de **0 a 100 que sumen 100**, como ya dejaba escrito el
+  paso 7. No se impone un mínimo mayor que 0 porque la propuesta no lo define; si lo quieren, es una decisión de los autores.
+- **Desacople de la sesión al restablecer los datos:** `restablecerDatosDemostracion` devuelve `{ usuario: SesionUsuario |
+  null }` y la pantalla lo aplica; `services/` no importa el almacén de sesión. `usuario` es la copia del actor en la semilla
+  nueva si sigue existiendo y está ACTIVO; si no, `null` y la pantalla cierra la sesión. Cumple el contrato que dejó el paso 3.
+
+### Qué se construyó
+
+- **10A, `src/services/cuentas/`:**
+  - `sesion.ts`: `iniciarSesion`, `accesoRapido` y `aSesionUsuario` (el tipo `SesionUsuario`, sin contraseña, estado ni
+    celular). Reemplazan a `CUENTAS_DEMO`, `auth/usuariosDemo.ts` y `auth/iniciarSesion.ts`, que se retiraron.
+    `src/data/index.ts` exporta `ID_ADMIN`, `ID_SUPERVISOR_DEMO`, `ID_PRACTICANTE_DEMO` y `CONTRASENA_DEMO`;
+    `auth/sesionDePrueba.ts` es solo para tests.
+  - `perfil.ts`: `editarMiPerfil`. `contrasenaPropia.ts`: `cambiarMiContrasena` y `LARGO_MINIMO_CONTRASENA`.
+  - Códigos nuevos: `CREDENCIALES_INVALIDAS`, `CONTRASENA_ACTUAL_INCORRECTA` y `CONTRASENA_IGUAL_A_LA_ACTUAL`.
+  - `PaginaAcceso` llama a los servicios (su demora propia de 300 ms se retiró; sus pruebas esperan hasta 3 s porque el
+    servicio simula 600 ms).
+- **10B, `src/services/seguimiento/`:** `comun.ts` (`umbralesDe` y `calcularInsightsVigentes`), `insights.ts`
+  (`marcarInsightRevisado` y `notificarDesdeInsight`) y `notificaciones.ts` (`marcarNotificacionLeida` y
+  `marcarTodasLeidas`). Código nuevo: `INSIGHT_YA_REVISADO`.
+- **10C parte 1, `src/domain/configuracionValidacion.ts`:** `validarSeccionConfiguracion`, `clavesDeSeccion` y los códigos
+  `PARAMETRO_INVALIDO`, `VALOR_NO_ENTERO`, `VALOR_FUERA_DE_RANGO`, `BANDA_MINIMO_NO_MENOR` y `PROPORCION_NO_SUMA_100`
+  (los de Seguimiento siguen siendo `UMBRAL_INVALIDO`, de `validarUmbrales`).
+- **10C parte 2, `src/services/configuracion/`:** `comun.ts` (`aplicarSeccion`, el núcleo), `configuracion.ts`
+  (`guardarConfiguracionSeccion` y `restaurarSeccionConfiguracion`) y `restablecer.ts` (`restablecerDatosDemostracion`).
+  `AlmacenServicio` pasó a exponer `restablecer` además de `transaccion`, y `etiquetas.ts` ganó `etiquetaParametro`.
+
+### Decisiones de implementación
+
+- **Acceso (10A):** el correo se compara normalizado en los dos lados (antes se comparaba exacto, y un correo guardado con
+  mayúsculas no habría entrado). Primero las credenciales y **después** el estado: una cuenta INACTIVO con la contraseña
+  correcta recibe `USUARIO_INACTIVO`; con una contraseña falsa recibe el mensaje genérico de siempre. Tras un acceso
+  correcto se llama a `emitirAvisosFinDePractica` con la demora en 0 (para no sumar otra espera); si falla, queda un
+  `console.warn` y el acceso sigue. No se registra el inicio de sesión (§5.7). `accesoRapido` entra por los ID de
+  demostración de la semilla y respeta INACTIVO.
+- **Mi perfil (10A):** un `puede()` por campo (`EDITAR_*_PROPIO`); un campo que el rol no puede editar **se rechaza** con el
+  código del permiso (no se ignora) y el permiso se comprueba antes que el correo repetido. El correo es único sin
+  distinguir mayúsculas ni espacios, y escribir otra vez el propio no es un duplicado. Solo nombre y correo van al
+  historial (`CUENTA_NOMBRE_CAMBIADO` y `CUENTA_CORREO_CAMBIADO`, un evento por cada uno); celular, Discord, GitHub y
+  disponibilidad no dejan evento. La disponibilidad es un entero mayor que 0 o `null`. Devuelve la `SesionUsuario` nueva
+  para que la pantalla refresque la sesión.
+- **Contraseña propia (10A):** orden Zod → actor → permiso → contraseña actual → distinta de la actual; la actual se
+  comprueba **antes**, así que con la actual mal no se dice que la nueva se repite. Las contraseñas **no se recortan** (los
+  espacios cuentan; ocho espacios es válida). El evento `CUENTA_CONTRASENA_CAMBIADA` no lleva «cambios»: el historial no
+  guarda ninguna contraseña, ni el marcador `debe_cambiar_contrasena`.
+- **Insights (10B):** un insight no se guarda, así que se identifica por `tipo_regla` y `elemento` y se **recalcula** al actuar;
+  si la condición ya no se cumple, `NO_ENCONTRADO`. Primero se resuelve el insight y después `puede()` decide por rol y
+  alcance (el Supervisor no ve «postulaciones sin decidir» ni «fin de práctica»: `ROL_NO_PERMITIDO`; uno de otro proyecto:
+  `FUERA_DE_ALCANCE`). Marcar como revisado guarda una `InsightRevision` del actor con la severidad actual, la fecha de la
+  marca y la nota recortada o `null`; es independiente por persona; un insight ya revisado (y que no reapareció) da
+  `INSIGHT_YA_REVISADO`. Ni revisar ni notificar dejan evento de historial (§5.7 no los lista).
+- **«Notificar» (10B):** un destinatario inactivo da `USUARIO_OBJETIVO_INACTIVO` y uno que ya no existe, `NO_ENCONTRADO`. Con
+  `calcularInsightsVigentes` se arma una sola receta de cálculo para este paso y para las consultas del paso 11.
+- **Configuración (10C):** el servicio **mezcla** lo recibido con los valores vigentes de la sección y valida la sección
+  **completa** con `domain/` antes de escribir (un valor bueno que choca con uno vigente, como atención en 20 días con
+  crítico en 14, se rechaza). Escribe solo lo que cambió y deja un `PARAMETRO_CONFIGURACION_CAMBIADO` por parámetro, con los
+  campos que cambiaron (`minimo`/`maximo`, `area`/`especialidad` o `valor`); sin cambios, `SIN_CAMBIOS`. Un parámetro de otra
+  sección se **rechaza** con `DATOS_INVALIDOS` (`domain/` lo ignoraría; el servicio no calla algo que la pantalla pudo
+  enviar por error). Los errores traen `campos` con la clave del parámetro (`CLAVE` o `CLAVE.campo`, como
+  `EVALUACION_BANDA_AMBIGUA.minimo`). Restaurar usa `valor_predeterminado` y también valida (un predeterminado guardado
+  inválido da el error de `domain/` sin escribir). No recalcula evaluaciones ni toca practicantes, y no avisa a nadie.
+- **Restablecer datos (10C):** no usa `ejecutarServicio`, porque su operación solo sabe escribir devolviendo colecciones desde
+  `transaccion`; duplicar la semilla ahí sería peor. El permiso se comprueba con `ejecutarConsulta` (con demora), se llama a
+  `almacen.restablecer(entorno.ahora())` (una sola escritura) y se lee al actor otra vez, sin demora. No deja evento de
+  historial. Si algo lanza, `ERROR_INESPERADO` y los datos quedan como estaban.
+
+### Pruebas y mutaciones
+
+- **Pruebas:** 306 netas (1.942 → 2.248 en 87 archivos): 10A 70 netas (se retiraron las 8 de `auth/iniciarSesion`; 23 de
+  `sesion`, la de perfil y la de contraseña propia, más las de `PaginaAcceso` y la semilla actualizadas), 10B 73, 10C
+  parte 1 93 (todas en `domain/`) y 10C parte 2 70.
+- **Mutaciones del agente (80, con `git add` previo y `git restore` después de cada una; todas detectadas y
+  restauradas):** 20 en 10A (entrar a un INACTIVO, revelar INACTIVO antes de la contraseña, no normalizar el correo, avisos
+  de fin de práctica con y sin acceso correcto, omitir el correo único o su excepción para el propio correo, editar un campo
+  no autorizado, el evento de correo con el celular, aceptar espacios en Discord o disponibilidad 0, contraseña igual a la
+  actual, sin comprobar la actual, sin limpiar la marca temporal, mínimo de 7, contraseña en el historial, INACTIVO que
+  cambia la contraseña y recorte de espacios), 20 en 10B (permisos y alcance de revisar y notificar, marcar dos veces,
+  revisión a nombre de otro usuario, nota sin recortar o descartada, severidad fija, tipo de elemento, supervisor del
+  proyecto, destinatario inactivo, texto y elemento del aviso, notificación ajena, no idempotencia, INACTIVO, `marcarTodas`
+  de otros o escribiendo sin pendientes, y los umbrales), 20 en la regla de `domain/` (topes y pisos de la banda y de la
+  proporción, mínimo igual al máximo, suma de 100, enteros, rango abierto en cada extremo, duración y aviso, reutilizar
+  `validarUmbrales`, forma y orden) y 20 en los servicios de configuración (permisos, otra sección, sin validar, sin
+  mezclar, todos como cambiados, sin `SIN_CAMBIOS`, comparaciones de rango y número, eventos, valor predeterminado,
+  restaurar al valor vigente, `campos`, y el reinicio: permiso, no reiniciar, reloj y actor INACTIVO).
+- **Hallazgo de las mutaciones:** la mutación «devolver al actor aunque quede INACTIVO» habría quedado sin detectar, porque
+  la semilla de prueba siempre trae al administrador activo. Se agregó una prueba (con un `restablecer` envuelto que lo deja
+  inactivo) **antes** de correr las 20 mutaciones de esa parte.
+
+### Cierre del paso 10
+
+- **Cuatro commits de código:** `d8f89b4` (10A), `84c438d` (10B), `185c6ae` (10C, `domain/`) y `66ff605` (10C, servicios).
+- **11 servicios nuevos** (`iniciarSesion`, `accesoRapido`, `editarMiPerfil`, `cambiarMiContrasena`, `marcarInsightRevisado`,
+  `notificarDesdeInsight`, `marcarNotificacionLeida`, `marcarTodasLeidas`, `guardarConfiguracionSeccion`,
+  `restaurarSeccionConfiguracion` y `restablecerDatosDemostracion`, más los ayudantes `calcularInsightsVigentes` y
+  `umbralesDe`) y la regla pura de Configuración. 306 pruebas netas y 80 mutaciones detectadas de 80.
+- **Pendientes del plan que se cierran:** el bloqueo real del acceso a un INACTIVO, el aviso previo de fin de práctica al
+  iniciar sesión, retirar las `CUENTAS_DEMO`, los servicios de Mi perfil, de insights, de notificaciones y de
+  configuración, y el contrato de la sesión activa al restablecer datos.
+- **Con esto terminan todos los servicios de la Fase 2.** Queda el paso 11 (consultas con alcance por rol).
+
+### Divergencias con `docs/` (para que los autores las actualicen a mano)
+
+- **§8.2:** Discord y GitHub sin espacios, hasta 32 y 39 caracteres; vacío quita el dato; la disponibilidad puede quitarse.
+- **§8.1 y §4:** marcar una notificación como leída no tiene fila en la matriz; el aviso de «Notificar» lleva el texto del
+  insight (sin campo libre) y el de supervisión demorada apunta a la tarea.
+- **§5.8:** la proporción de la nota admite `100/0` y `0/100` (enteros de 0 a 100 que suman 100).
+
+### Pendientes
+
+- **Sesión abierta:** `GuardaRuta` no revalida la sesión guardada; quien queda INACTIVO con la sesión abierta sigue viendo las
+  pantallas hasta cerrarla (los servicios sí lo deniegan). Decidir en la fase de interfaz.
+- **Fase 4 (Mi perfil y campana):** las pantallas aplican la `SesionUsuario` que devuelven `editarMiPerfil` y
+  `cambiarMiContrasena`, muestran los errores por campo y llaman a `marcarNotificacionLeida` y `marcarTodasLeidas`.
+- **Fases 5.6 y 6.4 (Reportes):** usan `marcarInsightRevisado` (`INSIGHT_YA_REVISADO` desactiva el botón) y
+  `notificarDesdeInsight`.
+- **Fase 5.8 (Configuración):** formularios por sección con los errores `CLAVE` o `CLAVE.campo`; «Restablecer datos» aplica el
+  `{ usuario }` del servicio y vuelve al inicio.
+- **Paso 11:** consultas con alcance por rol; las de insights reutilizan `calcularInsightsVigentes`,
+  `filtrarInsightsPorAlcance` y `aplicarRevisiones`.
