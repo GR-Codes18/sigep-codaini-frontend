@@ -62,6 +62,12 @@ export const MENSAJES: Readonly<Record<string, string>> = {
   CORREO_YA_REGISTRADO: 'Ya existe una cuenta con el correo de esta postulación.',
   CONFIGURACION_INVALIDA:
     'Falta un parámetro de Configuración o no tiene el formato esperado. Restaura sus valores.',
+  // Catálogo de evaluación (áreas, especialidades y criterios)
+  NOMBRE_DUPLICADO: 'Ya existe un elemento con ese nombre.',
+  CRITERIOS_INCOMPLETOS:
+    'Faltan criterios del bloque. Los criterios no se borran: desactívalos para dejarlos fuera.',
+  CRITERIO_DE_OTRO_BLOQUE: 'Un criterio no pertenece a este bloque.',
+  ESPECIALIDAD_DE_OTRA_AREA: 'La especialidad no pertenece a esa área técnica.',
   // Propios de `services/`
   NO_ENCONTRADO: 'No se encontró el elemento. Puede que ya no exista.',
   DATOS_INVALIDOS: 'Revisa los datos ingresados.',

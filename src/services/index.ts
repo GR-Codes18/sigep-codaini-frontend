@@ -55,6 +55,24 @@ export type { ContextoOperacion, SalidaOperacion } from './transaccional';
 
 // Servicios por módulo
 export {
+  cambiarActivoAreaTecnica,
+  cambiarActivoEspecialidad,
+  crearAreaTecnica,
+  crearEspecialidad,
+  editarAreaTecnica,
+  editarEspecialidad,
+  guardarCriteriosDeBloque,
+} from './catalogoEvaluacion';
+export type {
+  EntradaCambiarActivoAreaTecnica,
+  EntradaCambiarActivoEspecialidad,
+  EntradaCrearAreaTecnica,
+  EntradaCrearEspecialidad,
+  EntradaEditarAreaTecnica,
+  EntradaEditarEspecialidad,
+  EntradaGuardarCriteriosDeBloque,
+} from './catalogoEvaluacion';
+export {
   aprobarPostulacion,
   evaluarPostulacion,
   rechazarPostulacion,
