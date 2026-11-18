@@ -8,14 +8,15 @@
 
 ## Estado general (común)
 
-- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: paso 7 terminado y sub-paso 8A
-  terminado.** **7A:** evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`). **7B:**
-  áreas técnicas, especialidades y criterios (`3368603` y `5eb54a4`). **8A:** asignar, quitar, finalizar y
-  reactivar practicantes y editar los datos de su práctica (`861c5f3` y `df57b0d`). El Bloque 2 (pasos 5 y 6,
-  servicios de tareas y de Pull Request) está fusionado en `development` (PR #23) y el Bloque 1 (pasos 1 a 4) en
-  el PR #22. Siguiente: el **sub-paso 8B** (supervisores, contraseñas y aviso de fin de práctica), luego los
-  pasos 9 a 11.
-- **Actualizado:** 2026-11-17, al cerrar el sub-paso 8A (rama `feat/fase2-servicios-modulos`).
+- **Fase actual:** Fase 2 (`data/` y `services/`), **Bloque 3 en curso: pasos 7 y 8 terminados.** **7A:**
+  evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`). **7B:** áreas técnicas,
+  especialidades y criterios (`3368603` y `5eb54a4`). **8A:** asignar, quitar, finalizar y reactivar practicantes y
+  editar los datos de su práctica (`861c5f3` y `df57b0d`). **8B:** supervisores, restablecer contraseña y aviso de fin
+  de práctica (`a52fe0c`). El Bloque 2 (pasos 5 y 6, servicios de tareas y de Pull Request) está fusionado en
+  `development` (PR #23) y el Bloque 1 (pasos 1 a 4) en el PR #22. Siguiente: el **paso 9** (servicios de
+  proyectos, con «reasignar proyectos» del supervisor), luego los pasos 10 y 11.
+- **Actualizado:** 2026-11-17, al cerrar el sub-paso 8B y con él el paso 8 (rama
+  `feat/fase2-servicios-modulos`).
 
 ### Cierres de fase
 
@@ -220,12 +221,25 @@
   `src/services/practicantes/flujo.test.ts` recorre aprobar postulación → asignar → crear tarea → tomar → quitar
   → asignar de nuevo → tomar → finalizar práctica → reactivar, con historial y avisos coherentes; junto con
   `src/services/tareas/flujo.test.ts` (crear tarea → tomar → enviar → aprobar → crear PR) cubre el flujo completo
-  que pide el plan §9. Faltan las demás pruebas por servicio (pasos 8B a 11), el alcance por rol y revisar que
+  que pide el plan §9. Faltan las demás pruebas por servicio (pasos 9 a 11), el alcance por rol y revisar que
   restablecer la semilla deja el sistema consistente (ya probado en el paso 3).
-- **Siguiente:** propuesta ya aprobada; **implementar el sub-paso 8B** (`crearSupervisor`, `editarSupervisor`,
-  `desactivarSupervisor`, `reactivarSupervisor`, `restablecerContrasena` y `emitirAvisosFinDePractica`) y, después,
-  los pasos 9 a 11 (proyectos —con «reasignar proyectos» del supervisor—, cuenta y consultas con alcance por
-  rol).
+- **Fase 2, sub-paso 8B: terminado (2026-11-17).** Seis servicios nuevos en `src/services/` (`a52fe0c`):
+  `crearSupervisor`, `editarSupervisor`, `desactivarSupervisor` y `reactivarSupervisor`
+  (`supervisores/supervisores.ts`); `restablecerContrasena`, para practicantes y supervisores
+  (`cuentas/restablecerContrasena.ts`); y `emitirAvisosFinDePractica`, un proceso del sistema
+  (`practicantes/avisoFin.ts`). Más las validaciones de correo y celular (`cuentas/validaciones.ts`) y un ajuste a
+  `SalidaOperacion` (`cambios: null` = éxito sin nada que escribir, para que el aviso del sistema no escriba nada
+  cuando no hay avisos nuevos). 105 pruebas nuevas y 27 mutaciones detectadas de 27. Detalle en `DECISIONES.md`.
+  Aplica F6-A (aviso el día exacto, idempotente), F7-A (celular de 9 dígitos que empieza con 9) y los tres supuestos
+  menores (editar datos de un practicante finalizado, restablecer solo a personas activas y correo único sin
+  distinguir mayúsculas ni espacios, también al editar). **`reasignarProyectosDeSupervisor` no está en este paso:
+  va en el paso 9 (F1-A).**
+- **Fase 2, paso 8: terminado (2026-11-17).** Practicantes (8A) y supervisores, contraseñas y aviso de fin de
+  práctica (8B): 11 servicios (5 y 6), 232 pruebas nuevas y 55 mutaciones detectadas de 55, en tres commits de
+  código (`861c5f3`, `df57b0d` y `a52fe0c`); docs de 8A `14e94cb`.
+- **Siguiente:** propuesta y OK del **paso 9** (servicios de proyectos: crear, editar, cambiar supervisor, pausar,
+  reanudar, finalizar, reactivar, reunión, enlaces y rama base, más `reasignarProyectosDeSupervisor`) y, después, los
+  pasos 10 (cuenta y configuración) y 11 (consultas con alcance por rol).
 - **Luego:** del «Listo cuando» de la Fase 1 quedan dos cosas de los autores: que revisen los tipos de
   `domain/` y que ajusten una línea del plan (ver «Pendientes»).
 - **Rama:** `feat/fase2-servicios-modulos` (sale de `development`, con el Bloque 2 ya fusionado en el PR #23).
@@ -265,7 +279,8 @@
 | 2026-11-17 | 6B. Cerrar Pull Request y flujo de punta a punta (cierra el paso 6 y el Bloque 2) | `9600f46`; docs `03d246c`; PR #23 fusionado en `34e0656` |
 | 2026-11-17 | 7A. Evaluar, aprobar, rechazar y reconsiderar postulaciones | A (regla en `domain/`) `42c0b25`; B (servicios) `debd47e`; docs `801a992` |
 | 2026-11-17 | 7B. Áreas técnicas, especialidades y criterios de evaluación (cierra el paso 7) | A (validación del bloque en `domain/`) `3368603`; B (servicios) `5eb54a4`; docs `752aad3` |
-| 2026-11-17 | 8A. Asignar, quitar, finalizar y reactivar practicantes; editar datos de la práctica | A (reglas de reactivación en `domain/`) `861c5f3`; B (servicios) `df57b0d`; docs pendientes de commit |
+| 2026-11-17 | 8A. Asignar, quitar, finalizar y reactivar practicantes; editar datos de la práctica | A (reglas de reactivación en `domain/`) `861c5f3`; B (servicios) `df57b0d`; docs `14e94cb` |
+| 2026-11-17 | 8B. Supervisores, restablecer contraseña y aviso de fin de práctica (cierra el paso 8) | `a52fe0c`; docs pendientes de commit |
 
 ### Fases 3 y 4 — acceso, layout y `compartido/`
 
@@ -287,11 +302,11 @@
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
 
-**Estado de pruebas (2026-11-17):** 1556 pruebas en 67 archivos (de la Fase 2: 22 del almacén, 180 de la
+**Estado de pruebas (2026-11-17):** 1661 pruebas en 71 archivos (de la Fase 2: 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
 —50 en 5A, 82 en 5B y 33 en 5C—, 52 de los servicios de Pull Request del paso 6 —36 en 6A y 16 en 6B—, 110
-del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`— y 127 del sub-paso 8A —19 en
-`domain/`—);
+del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—, 127 del sub-paso 8A —19 en
+`domain/`— y 105 del sub-paso 8B, todas en `services/`);
 `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
 
 ## Pendientes
@@ -357,22 +372,32 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       aprobación (hora de Perú) y la de fin se calcula con la duración vigente (supuesto confirmado en 7A).
 - [x] Sub-paso 8A: asignar, quitar, finalizar y reactivar practicantes y editar los datos de su práctica
       (`861c5f3` y `df57b0d`).
-- [ ] Sub-paso 8B: `crearSupervisor`, `editarSupervisor`, `desactivarSupervisor`, `reactivarSupervisor`,
-      `restablecerContrasena` (practicante y supervisor) y `emitirAvisosFinDePractica`; usa `reactivarSupervisor` de
-      `domain/reactivacion.ts` y `denegarCicloVida`. Celular de 9 dígitos que empieza con 9 (F7-A; Mi perfil, paso 10,
-      lo reutiliza). Códigos pendientes: `USUARIO_OBJETIVO_INACTIVO` (restablecer contraseña a quien está inactivo).
+- [x] Sub-paso 8B: `crearSupervisor`, `editarSupervisor`, `desactivarSupervisor`, `reactivarSupervisor`,
+      `restablecerContrasena` (practicante y supervisor) y `emitirAvisosFinDePractica` (`a52fe0c`). **Paso 8
+      terminado.** Las validaciones de correo y celular (F7-A: 9 dígitos que empieza con 9) quedan en
+      `src/services/cuentas/validaciones.ts` para que Mi perfil (paso 10) las reutilice.
 - [ ] Paso 9: «reasignar proyectos» de un supervisor (`reasignarProyectosDeSupervisor`, F1-A) junto con «cambiar
       supervisor» de un proyecto; la pantalla de supervisores (Fase 5.3) depende de él para poder desactivar a
-      un supervisor con proyectos.
+      un supervisor con proyectos (hoy `desactivarSupervisor` solo responde `SUPERVISOR_CON_PROYECTOS`).
 - [ ] Paso 10 (login): `iniciarSesion` debe leer de `data/` para que `Usuario.estado = INACTIVO` bloquee de verdad
-      el acceso de quien finalizó su práctica (hoy el bloqueo solo lo aplican los servicios y `puede()`); y llamar a
-      `emitirAvisosFinDePractica` al iniciar sesión (F6-A).
+      el acceso de quien finalizó su práctica o de un supervisor desactivado (hoy el bloqueo solo lo aplican los
+      servicios y `puede()`); y llamar a `emitirAvisosFinDePractica` al iniciar sesión (F6-A: si ese día exacto nadie
+      lo ejecuta, el aviso se pierde). El servicio ya es idempotente y no escribe cuando no hay nada nuevo.
+- [ ] Paso 10 (Mi perfil): el cambio de correo propio y el de celular usan `esquemaCorreo`, `esquemaCelular` y
+      `correoEnUso` de `src/services/cuentas/validaciones.ts`; el cambio de contraseña propia va en
+      `src/services/cuentas/`, junto a `restablecerContrasena`, y su evento nunca lleva la contraseña (el historial
+      rechaza cualquier campo cuyo nombre la contenga, también `debe_cambiar_contrasena`).
+- [ ] Paso 11 (consultas con alcance por rol): las pantallas de supervisores y practicantes (Fases 5.2, 5.3 y 6.3)
+      leen con consultas del paso 11; `emitirAvisosFinDePractica` y los demás servicios del paso 8 no son consultas.
+- [ ] Fase 5.3 (Supervisores): «Nuevo supervisor» usa `crearSupervisor` y muestra la contraseña temporal una sola
+      vez; desactivar muestra el mensaje con la cantidad de proyectos que trae el servicio; restablecer contraseña
+      también se muestra una sola vez. Un supervisor nuevo no tiene proyectos (estado vacío del panel).
 - [ ] Fase 5.2 (Practicantes): «Asignar a proyecto» usa `asignarPracticantes` con una lista de pares (atajo de
       «Sin proyecto», varios proyectos o varios practicantes); finalizar avisa «Tiene N tareas en progreso que serán
       liberadas» (el servicio las calcula con `finalizarPractica` de `domain/`); la contraseña temporal de
       restablecer se muestra una sola vez; editar datos propone la nueva fecha de fin con `fechaFinPrevista` y envía
       ambas fechas (F5-A); reactivar no cambia la fecha de fin, que puede quedar vencida (F4-A).
-- [ ] Pasos 9 a 11 (Bloque 3; los pasos 5, 6, 7 y 8A ya están terminados): servicios por módulo, consultas con
+- [ ] Pasos 9 a 11 (Bloque 3; los pasos 5, 6, 7 y 8 ya están terminados): servicios por módulo, consultas con
       alcance por rol (pueden usar `ejecutarConsulta`), más sus pruebas. Cada servicio recibe
       `(entrada con idActor, entorno = ENTORNO)`, usa `ejecutarServicio`, resuelve al actor con `obtenerActor`
       dentro de la transacción, valida con `validarEntrada` (Zod) y `puede()`, y suma a `MENSAJES` los códigos
@@ -459,7 +484,8 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       `supervisores_a_avisar`; asignado y quitado; proyecto finalizado al equipo; el **aviso previo** lo emite
       el servicio una sola vez, cuando `dias_restantes === avisoDias` (`situacionFinPractica`). **Hechos en 8A:**
       práctica finalizada (un aviso por supervisor y proyecto afectado), asignado y quitado (más un aviso por
-      cada tarea liberada). Quedan el aviso previo (8B) y el proyecto finalizado (paso 9).
+      cada tarea liberada). **El aviso previo está hecho en 8B** (`emitirAvisosFinDePractica`, `a52fe0c`); queda el
+      proyecto finalizado (paso 9).
 - [x] Ciclo de vida: usar `fechaFinPrevista` al aprobar una postulación (`fecha_ingreso` + la duración vigente
       de Configuración) (`aprobarPostulacion`, `debd47e`). Los formularios de Configuración exigen enteros: duración de 1 a 24 meses y aviso de 1
       a 365 días (`DURACION_MAXIMA_MESES`, `AVISO_MAXIMO_DIAS`).

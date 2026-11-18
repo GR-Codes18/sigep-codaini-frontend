@@ -2935,3 +2935,109 @@ aviso de fin de práctica).
   iniciar sesión.
 - **Fase 5.2:** «Asignar a proyecto» con una lista de pares; el aviso previo a finalizar («Tiene N tareas en progreso
   que serán liberadas») sale del dominio; una fecha de fin vencida tras reactivar aparece como alerta (F4-A).
+
+---
+
+## 2026-11-17 — [A+B] Fase 2, paso 8B: supervisores, contraseñas y aviso de fin de práctica (cierra el paso 8)
+
+Commit de código: `a52fe0c` (solo `services/`; usa las reglas de `domain/` que ya existían). Docs de 8A: `14e94cb`.
+
+### Decisiones del paso 8 que se aplican aquí
+
+- **F6-A — aviso previo de fin de práctica.** `emitirAvisosFinDePractica` es un servicio del sistema (autor
+  `SISTEMA`, sin actor), idempotente, que avisa **el día exacto** en que `dias_restantes === PRACTICA_AVISO_FIN_DIAS`
+  (`situacionFinPractica`, día de Perú). Si ese día nadie lo ejecuta, el aviso se pierde (riesgo aceptado). El cableado
+  al iniciar sesión es del paso 10.
+- **F7-A — celular:** nueve dígitos que empiezan con 9 (`esquemaCelular`), como la semilla. Queda en
+  `src/services/cuentas/validaciones.ts` junto con `esquemaCorreo` y `correoEnUso`, para que Mi perfil (paso 10) los
+  reutilice.
+- **F1-A (sin cambios):** `reasignarProyectosDeSupervisor` **no** se construyó aquí; va en el paso 9 junto con
+  «cambiar supervisor». Mientras tanto, `desactivarSupervisor` solo responde `SUPERVISOR_CON_PROYECTOS`.
+- **Supuestos menores confirmados:** (1) se puede editar a un supervisor **inactivo**, igual que los datos de un
+  practicante finalizado; (2) `restablecerContrasena` solo funciona con personas **activas**
+  (`USUARIO_OBJETIVO_INACTIVO`, con el mensaje «reactívala antes de restablecer su contraseña»); (3) el correo es único
+  **sin distinguir mayúsculas ni espacios**, tanto al crear como al editar (la propia persona no choca consigo misma).
+- **E4-B como precedente:** `domain/` no cambia en este sub-paso: `reactivarSupervisor` (8A) y `desactivarSupervisor`
+  (paso 10 de la Fase 1) ya existían.
+
+### Qué se construyó
+
+- `src/services/supervisores/supervisores.ts` (+ `index.ts`): `crearSupervisor`, `editarSupervisor`,
+  `desactivarSupervisor` y `reactivarSupervisor`.
+- `src/services/cuentas/`: `restablecerContrasena.ts`, `validaciones.ts` e `index.ts`. El paso 10 sumará aquí el
+  cambio de contraseña propia.
+- `src/services/practicantes/avisoFin.ts`: `emitirAvisosFinDePractica`.
+- `src/services/transaccional.ts`: `SalidaOperacion` admite ahora `cambios: null` («éxito sin nada que escribir»).
+  `ejecutarServicio` ya devolvía lo que recibía a `transaccion`, que con `null` no escribe; solo cambió el tipo y su
+  documentación (y una prueba).
+- `src/services/resultado.ts`: `USUARIO_OBJETIVO_INACTIVO` (nuevo) y `CORREO_YA_REGISTRADO` pasa a un texto general
+  («Ya existe una cuenta con ese correo.»), porque ya no es solo de postulaciones.
+- `src/services/index.ts` reexporta todo lo anterior.
+
+### Decisiones de implementación
+
+- **Orden:** Zod → actor → persona → regla de `domain/` o `puede()` → reglas propias (correo, estado) → una sola
+  escritura. Ninguna de estas acciones notifica a nadie (§8.1), salvo el aviso previo, que es del sistema.
+- **`crearSupervisor`:** crea `Usuario` (rol SUPERVISOR, activo, `debe_cambiar_contrasena: true`) y el detalle
+  `Supervisor` (Discord y GitHub en `null`), con `SUPERVISOR_CREADO` (cambios: nombre y correo). La contraseña temporal
+  (`entorno.generarContrasena`) vuelve **una sola vez** en el resultado y nunca va al historial. Un supervisor nuevo no
+  tiene proyectos (el estado vacío del panel).
+- **`editarSupervisor`:** solo nombre y correo (una credencial que entrega la empresa); exige al menos uno; sin cambios
+  reales responde `SIN_CAMBIOS`; el evento registra las diferencias con `diferencias(..., ['nombre', 'correo'])`, que
+  nunca incluye contraseñas.
+- **`desactivarSupervisor` y `reactivarSupervisor`:** usan las reglas del dominio y `denegarCicloVida`. El mensaje trae la
+  cantidad de proyectos pendientes («1 proyecto activo o en pausa» / «2 proyectos activos o en pausa»); los proyectos
+  finalizados no cuentan; un supervisor nunca se elimina. Reactivar no pide texto.
+- **`restablecerContrasena`:** un solo servicio para practicantes y supervisores (el tipo de evento sale del rol);
+  solo el Administrador; a un administrador responde `FUERA_DE_ALCANCE`; el permiso se comprueba antes que el estado de
+  la persona. **El evento no lleva «cambios»:** el historial rechaza cualquier campo cuyo nombre contenga «contraseña»,
+  también `debe_cambiar_contrasena`. No se compara con la contraseña anterior (con 10 caracteres aleatorios la
+  coincidencia no se considera).
+- **`emitirAvisosFinDePractica`:** recorre los practicantes **activos**; avisa al practicante, a los supervisores de sus
+  proyectos con asignación vigente (sin repetir) y a los administradores, solo a cuentas activas; el mensaje es el de la
+  semilla («La práctica de X finaliza el AAAA-MM-DD.») y lleva la fecha de fin, por lo que, si el Administrador mueve esa
+  fecha, el aviso puede darse de nuevo. Un aviso con el mismo tipo, persona y mensaje no se repite. No deja eventos en el
+  historial y, si no hay nada nuevo, **no escribe nada** (`cambios: null`), de modo que llamarlo en cada inicio de sesión
+  no toca el almacenamiento del navegador. Una configuración rota responde `CONFIGURACION_INVALIDA` o `AVISO_INVALIDO`.
+- **Hallazgo de la semilla:** `usr-pra-15` queda a 15 días de su fin; al día siguiente de cargar la semilla recibirá su
+  aviso previo. Las pruebas lo tienen en cuenta.
+
+### Pruebas y mutaciones
+
+- 105 pruebas nuevas (1.661 en 71 archivos en total): permisos y datos de los cuatro servicios de supervisores (con tabla
+  común), crear (cuenta, detalle, evento, contraseña ausente del historial, correo repetido con otras mayúsculas y con
+  espacios, celular y nombre inválidos), editar (nombre, correo, ambos, sin cambios, propio correo, otro supervisor
+  inactivo), desactivar (con proyectos activos, en pausa, finalizados, ya inactivo) y reactivar; restablecer contraseña
+  (practicante, supervisor, inactivo, administrador, permiso antes que estado, contraseña fuera del historial);
+  `emitirAvisosFinDePractica` (día exacto, un día antes y después, idempotencia, fecha movida, supervisores
+  distintos, bajas, cuentas inactivas, configuración, hora de Perú, «sin escribir»); validaciones; y `cambios: null` en
+  `ejecutarServicio`.
+- **Mutaciones del agente (27, con `git add` previo y `git restore` después; todas detectadas y restauradas):** crear sin
+  `puede()`, sin marcar la contraseña como temporal, con el rol equivocado, sin comprobar el correo, sin el detalle, con
+  la contraseña en el historial; editar con el correo chocando consigo mismo, sin permiso y sin `SIN_CAMBIOS`; desactivar
+  ignorando los proyectos y sin dejar la cuenta inactiva; reactivar sin dejarla activa; restablecer sin permiso, a
+  personas inactivas, sin marcar el cambio obligatorio, sin cambiar la contraseña, con el evento equivocado y con la
+  contraseña en el historial; aviso en cualquier día del periodo, sin evitar repetidos, sin el Administrador, a
+  practicantes finalizados, a supervisores de proyectos ya dejados y escribiendo aunque no haya avisos; `cambios: null`
+  que escribe igual; celular sin exigir el 9 y correo repetido sensible a mayúsculas. Se descartó la mutación «contraseña
+  igual a la anterior» por lo dicho arriba.
+
+### Cierre del paso 8 (practicantes y supervisores)
+
+- **Tres commits de código:** `861c5f3` y `df57b0d` (8A), `a52fe0c` (8B); docs de 8A `14e94cb`.
+- **11 servicios:** 5 de practicantes (asignar, quitar, finalizar, reactivar y editar datos de la práctica) y 6 de
+  supervisores y cuentas (crear, editar, desactivar, reactivar, restablecer contraseña y aviso de fin de práctica), más
+  las reglas de reactivación de `domain/` y `denegarCicloVida`. 232 pruebas nuevas y 55 mutaciones detectadas de 55.
+- **Qué queda de lo que toca a personas:** `reasignarProyectosDeSupervisor` (paso 9), el bloqueo real del acceso y el
+  aviso previo al iniciar sesión (paso 10) y las consultas con alcance por rol (paso 11).
+
+### Pendientes
+
+- **Paso 9:** servicios de proyectos, con «cambiar supervisor» y `reasignarProyectosDeSupervisor` (F1-A); la reactivación de
+  un proyecto debe exigir un supervisor activo; `finalizarProyecto` con sus efectos y avisos al equipo.
+- **Paso 10:** `iniciarSesion` lee de `data/` (así `INACTIVO` bloquea de verdad) y llama a `emitirAvisosFinDePractica`; Mi
+  perfil reutiliza `esquemaCorreo`, `esquemaCelular` y `correoEnUso`; el cambio de contraseña propia va en
+  `src/services/cuentas/` y no deja la contraseña en el historial.
+- **Paso 11:** consultas con alcance por rol para las pantallas de practicantes y supervisores.
+- **Fase 5.3:** «Nuevo supervisor» y «Restablecer contraseña» muestran la contraseña temporal una sola vez; desactivar
+  muestra el mensaje con la cantidad de proyectos.
