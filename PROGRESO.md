@@ -10,14 +10,18 @@
 
 - **Fase 2 — `data/` y `services/`: terminada (2026-11-18).** Bloques 1, 2 y 3 cerrados; el paso 11 completa las
   consultas con alcance por rol. El cierre y los sub-pasos constan en el historial inferior.
-- **Fase 4 — componentes compartidos: terminada (2026-11-18).** Pasos 1 a 5 registrados; pasos 6 a 10 conectados
-  con servicios y almacén; paso 11 completado con la limpieza de la página de desarrollo temporal. La vista integra
-  detalle de tarea, Pull Requests, formulario, notificaciones y perfil.
-- **Verificación (en `48abbbc`):** 2.890 pruebas en 108 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+- **Fase 4 — componentes compartidos: construidos y probados; conexión a `services/consultas/` en curso.** Los pasos 1 a 11
+  están construidos y probados en aislamiento. Las acciones ya pasan por `services/`, pero las pantallas aún leen el almacén
+  directamente; faltan los adaptadores, la campana y «Ver todas», el detalle y el Kanban con consultas, Mi perfil y retirar
+  `src/app/ejemplos/` (sub-pasos a a e). `FormularioTarea` no tiene todavía pantalla anfitriona. Se cierra al terminar esos
+  sub-pasos.
+- **Conexión de pantallas, sub-paso 0: terminado (2026-11-18, `83b1315`).** La interfaz usa los servicios de la Fase 2
+  (`cuentas/` y `seguimiento/`) y se retiraron los duplicados de la Fase 4.
+- **Verificación (en `83b1315`):** 2.871 pruebas en 104 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras la integración `48abbbc`.
-- **Siguiente paso:** conectar las pantallas a `services/` y `services/consultas/` y retirar `src/app/ejemplos/`; después,
-  Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
+- **Actualizado:** 2026-11-18, tras el sub-paso 0 (`83b1315`).
+- **Siguiente paso:** sub-paso a) de la conexión de pantallas (adaptadores en `src/app/adaptadores/`), y después b) a e);
+  al terminar, Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
 
@@ -341,11 +345,13 @@
   compañero) está probado campo por campo en las consultas; y restablecer la semilla deja el sistema consistente (paso 3).
 - **Siguiente:** **conectar las pantallas**: cada una llama a `services/` (para actuar) y a `services/consultas/` (para leer),
   y se retira `src/app/ejemplos/`. La integración de las ramas de interfaz con el Bloque 3 de `development` ya está hecha
-  (`48abbbc`); después sigue la Fase 5, módulo 5.1 (Postulaciones).
+  (`48abbbc`). Va en sub-pasos, cada uno con su commit: **0** unificar servicios y acceso (hecho, `83b1315`); **a**
+  adaptadores; **b** campana y «Ver todas»; **c** detalle de tarea y Kanban; **d** Mi perfil y sesión; **e** retirar
+  `ejemplos/`. Después sigue la Fase 5, módulo 5.1 (Postulaciones).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
-- **Rama:** `feat/fase4-vistas-lectura`, que contiene el merge `48abbbc` (Bloque 3 de la Fase 2 integrado con las Fases 3 y 4,
-  sobre la base `9286694`, punta de `development` con el PR #30).
+- **Rama:** `feat/fase4-conectar-pantallas` (sale de `development`, que ya contiene el merge `48abbbc`: Bloque 3 de la Fase 2
+  integrado con las Fases 3 y 4). Antes: `feat/fase4-vistas-lectura`.
 - **Integración (2026-11-18):** Integración del Bloque 3 de la Fase 2 en las ramas de interfaz — `48abbbc`.
 
 ## Pasos terminados
@@ -419,8 +425,12 @@
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | eliminación `d0f35ce` (PR #9, `8316b1b`); devolución `70f6510`; redirecciones y acciones `6eb2516`; docs `9d644dd`; PR #10 fusionado en `884b2e9` |
 | 2026-11-18 | 4 | 6–11. Integración de detalle, PR, formulario, notificaciones y perfil; limpieza final de la página temporal | `4d7b47d` (tablero y detalle con la semilla) y `a4d2e54` (cierre de la Fase 4) |
 | 2026-11-18 | 3–4 | Integración del Bloque 3 de la Fase 2 en las ramas de interfaz | `48abbbc` |
+| 2026-11-18 | 4 | Conexión de pantallas, sub-paso 0. Acceso, Mi perfil y notificaciones usan los servicios de la Fase 2 (`cuentas/`, `seguimiento/`); se retiran `services/cuenta.ts`, `autenticacion.ts`, `marcar*` de `notificaciones.ts` y `auth/iniciarSesion.ts`. El acceso vuelve a emitir los avisos de fin de práctica (F6-A) | `83b1315` |
 
-**Estado de pruebas (2026-11-18, en `48abbbc`):** 2.890 pruebas en 108 archivos, todas aprobadas (`npx vitest run`).
+**Estado de pruebas (2026-11-18, en `83b1315`):** 2.871 pruebas en 104 archivos, todas aprobadas (`npx vitest run`); antes eran
+2.890 en 108 (`48abbbc`): se retiraron 23 pruebas por duplicadas y se agregaron 4. `npx tsc -b`, `npx prettier --check src` y
+`npm run build` sin errores; `npx eslint` con 0 errores y el aviso conocido en `src/compartido/ui/button.tsx` (Vite avisa que el chunk principal supera
+500 kB). Estado anterior (en `48abbbc`): 2.890 pruebas en 108 archivos.
 `npx tsc -b` y `npx prettier --check .` sin errores; `npx eslint .` con 0 errores y el aviso conocido en
 `src/compartido/ui/button.tsx`; `npm run build` OK (Vite avisa que el chunk principal supera 500 kB). Desglose de la
 Fase 2 (2.836 pruebas en 99 archivos antes de la integración): 22 del almacén, 180 de la
@@ -531,9 +541,9 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       `correoEnUso` de `src/services/cuentas/validaciones.ts`; el cambio de contraseña propia va en
       `src/services/cuentas/`, junto a `restablecerContrasena`, y su evento nunca lleva la contraseña (el historial
       rechaza cualquier campo cuyo nombre la contenga, también `debe_cambiar_contrasena`).
-- [ ] Fase 3/4 (sesión): `GuardaRuta` no revalida la sesión guardada en el navegador: quien queda INACTIVO con la sesión
-      abierta sigue viendo las pantallas hasta cerrarla (los servicios sí lo deniegan con `USUARIO_INACTIVO`). Decidir en la
-      fase de interfaz si la guarda consulta el estado en `data/`.
+- [x] Fase 3/4 (sesión): `GuardaRuta` revalida la sesión guardada contra el almacén (`useSesionActiva`, `a4d2e54`): exige que la
+      cuenta exista, esté ACTIVO y conserve el rol, cierra la sesión si no y refresca el resumen persistido. Lo cubren las
+      pruebas de `GuardaRuta.test.tsx` (cuenta inactiva, cambio de rol y refresco).
 - [ ] Fase 4 (Mi perfil): `editarMiPerfil` y `cambiarMiContrasena` devuelven la `SesionUsuario` nueva y la pantalla la
       aplica con `abrirSesion` (si no, la barra superior y la franja de contraseña temporal no se refrescan). Los errores
       vienen por campo en `campos` (`nombre`, `correo`, `celular`, `discord`, `cuenta_github`, `disponibilidad_horaria`,
@@ -708,6 +718,12 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 
 ### Fases 3 y 4 (interfaz)
 
+- [x] Conexión de pantallas, sub-paso 0 (`83b1315`): la interfaz usa `cuentas/` y `seguimiento/`; regresión H2 resuelta (el acceso
+      vuelve a llamar a `emitirAvisosFinDePractica`, F6-A).
+- [ ] H3 (Mi perfil): `src/compartido/esquemasPerfil.ts` conserva la regex laxa del celular (`^\+?[0-9 ]{7,15}$`); el servicio ya exige
+      9 dígitos que empiezan con 9 (F7-A) y lo rechaza, pero el formulario no. Se resuelve en el sub-paso d) reutilizando
+      `esquemaCelular` y `esquemaCorreo` de `services/`.
+- [ ] `ACCESO_RAPIDO_NO_DISPONIBLE` (`services/resultado.ts` y `resultado.test.ts`) quedó sin uso tras el sub-paso 0; decidir si se retira.
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
 - [ ] Reemplazar tipos provisionales (`TareaTablero`, `EventoLinea`, `TareaDetalle`,

@@ -3638,3 +3638,35 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   500 kB.
 - No se anotan hashes: esta actualización se hizo bajo la restricción expresa de no ejecutar comandos de Git.
 
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso 0: servicios unificados y acceso
+
+- **Commit:** `83b1315` (`refactor: unifica el acceso, Mi perfil y las notificaciones en los servicios de la Fase 2`).
+- **Por qué.** La fusión `48abbbc` dejó dos implementaciones de lo mismo y la interfaz usaba las de la Fase 4:
+  `services/cuenta.ts` frente a `cuentas/perfil.ts` y `cuentas/contrasenaPropia.ts`; `marcar*` de `services/notificaciones.ts` frente
+  a `seguimiento/notificaciones.ts`; y `services/autenticacion.ts` con `auth/iniciarSesion.ts` frente a `cuentas/sesion.ts`.
+  Las de la Fase 4 validaban menos (celular con formato laxo, sin un `puede()` por campo) y el acceso no llamaba a
+  `emitirAvisosFinDePractica`: el aviso previo de fin de práctica (F6-A) dejó de emitirse (regresión H2).
+- **Decisión (D1-A).** La interfaz adopta los servicios de la Fase 2 y se retiran los duplicados: `services/cuenta.ts`,
+  `services/autenticacion.ts`, `marcarNotificacionLeida` y `marcarTodasNotificacionesLeidas` de `services/notificaciones.ts` (que
+  conserva `crearNotificaciones` y `agregarNotificaciones`) y `auth/iniciarSesion.ts`, con sus pruebas. Antes de retirarlas se
+  comprobó caso por caso que las pruebas de `cuentas/` y `seguimiento/` cubren todo lo que probaban. Alternativas descartadas:
+  conservar ambas (dos validaciones del mismo dato y el login sin avisos) o arreglar solo el login.
+- **Acceso.** `PaginaAcceso` llama a `iniciarSesion` y `accesoRapido` de `cuentas/`: con contraseña correcta una cuenta inactiva
+  recibe «Tu cuenta está inactiva…»; con una falsa, el mensaje genérico, sin revelar que la cuenta existe (decisión de 10A).
+- **Mi perfil.** `PaginaPerfil` envía solo los campos editables del rol que cambiaron, porque el servicio rechaza un campo
+  prohibido aunque no cambie. Los errores del servicio (`cuenta_github`, `disponibilidad_horaria`, `contrasenaActual`,
+  `contrasenaNueva`) se renombran a los del formulario. Sin cambios devuelve `SIN_CAMBIOS`. La `SesionUsuario` devuelta se
+  aplica con `abrirSesion`. `PerfilUsuario` acepta `Resultado<unknown>` y deja de reemplazar el formulario con el valor devuelto:
+  los valores se derivan del almacén.
+- **Pruebas.** 2.890 → 2.871 en 104 archivos: 23 retiradas por duplicadas y 4 nuevas (contraseña falsa sin revelar la cuenta
+  inactiva y tres de Mi perfil). Dos pruebas de `PaginaAcceso` se ajustaron al mensaje de 10A.
+- **Abierto.** H3: `esquemasPerfil.ts` conserva la regex laxa del celular; el servicio ya aplica la regla real. Se resuelve en el
+  sub-paso d). `ACCESO_RAPIDO_NO_DISPONIBLE` quedó sin uso real.
+- **Sesión (cierre de pendiente).** `GuardaRuta` ya revalida la sesión contra el almacén (existe, ACTIVO, mismo rol) desde `a4d2e54`.
+- **Plan de la conexión.** Sub-pasos a) adaptadores en `src/app/adaptadores/`, b) campana y «Ver todas», c) detalle de tarea y
+  Kanban, d) Mi perfil y sesión, e) retirar `src/app/ejemplos/`. Decisiones de los autores: `PaginaDesarrollo` se conserva como contenedor
+  de integración, sin simulaciones, hasta la Fase 7 (D2-B); la señal D6-A pasará a una consulta (D3-A); el enlace de una
+  notificación usa una tabla de destino a ruta del panel mientras no existan los módulos (D4-A); se conecta solo «editar» de
+  `FormularioTarea` (D6-A); se retira el bloque «Asignaciones y responsabilidades» de Mi perfil, que no está en §8.2 (D7-A); y se
+  ocultan Discord, GitHub y disponibilidad a quien su rol no los edita (D8-A).
