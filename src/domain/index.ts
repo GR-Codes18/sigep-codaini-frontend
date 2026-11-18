@@ -150,6 +150,20 @@ export type {
   ResultadoSiguienteNumero,
 } from './idLegible';
 
+export {
+  ACCIONES_DECISION_POSTULACION,
+  CODIGOS_DECISION_POSTULACION,
+  TRANSICIONES_POSTULACION,
+  decisionesDisponibles,
+  puedeDecidirPostulacion,
+} from './decisionPostulacion';
+export type {
+  AccionDecisionPostulacion,
+  CodigoDecisionPostulacion,
+  ResultadoDecisionPostulacion,
+  TransicionPostulacion,
+} from './decisionPostulacion';
+
 export { CODIGOS_PUNTAJE, MOTIVOS_REVISION, calcularPuntaje } from './puntaje';
 export type {
   BandaAmbigua,
