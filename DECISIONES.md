@@ -2150,6 +2150,25 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 - El historial queda en orden de escritura, que coincide con el cronológico porque la marca se toma dentro de
   la transacción.
 
+
+## 2026-11-17 — [A+B] Autenticación simulada desde el almacén
+
+- **Commit:** `0307f83` (`feat(auth): integrar inicio de sesión con servicios de fase 2 y actualizar interfaz`).
+- `src/services/autenticacion.ts` consulta `entorno.almacen.getState().datos.usuarios`; es una consulta de solo
+  lectura, con demora simulada y un `Entorno` inyectable para pruebas. Amplía `AlmacenServicio` para exponer
+  los datos junto con `transaccion`.
+- `iniciarSesion` delega en el servicio. Las credenciales incorrectas, inexistentes o de una cuenta INACTIVA
+  comparten `CREDENCIALES_INVALIDAS` y el mismo mensaje. El acceso rápido consulta por IDs fijos de la semilla,
+  valida también el rol y devuelve `ACCESO_RAPIDO_NO_DISPONIBLE` si la cuenta falta o está INACTIVA.
+- `usuariosDemo.ts` deja de duplicar cuentas y contraseñas; conserva solo el mapa de roles a IDs de acceso
+  rápido. `UsuarioSesion` usa los tipos `Rol` y `Usuario` de `domain/`. `almacenSesion.ts` no cambia: conserva
+  la validación y persistencia de un resumen sin contraseña.
+- `semilla.test.ts` comprueba directamente las tres cuentas previstas y ya no importa desde `auth/`, evitando
+  invertir la dependencia entre `data/` y `auth/`.
+- Verificación: 966 pruebas en 44 archivos; `tsc -b`, ESLint y Prettier pasan; `npm run build` pasa con el
+  aviso existente de chunk mayor a 500 kB. No se modificaron los servicios de mutación de tareas ni otras
+  mutaciones del almacén.
+
 ## 2026-11-17 — [A+B] Fase 2, paso 5A: servicios para crear, editar y eliminar tareas
 
 - **Commit:** `2c54c04` (`feat: agrega los servicios para crear, editar y eliminar tareas (Fase 2, paso5A)`). Verificación: 1010 pruebas en 45 archivos (50 nuevas en `src/services/tareas/`), `tsc -b`,
@@ -2638,8 +2657,6 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   la otra hasta que vuelva a llegar.
 - **Bloque 3 (pasos 7 a 11):** postulaciones, practicantes y supervisores, proyectos, cuenta y consultas con
   alcance por rol, en una sesión nueva desde `development`.
-
----
 
 ## 2026-11-17 — [A+B] Fase 2, paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones
 
@@ -3577,3 +3594,47 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Sesión abierta** (pendiente desde el paso 10): decidir en la fase de interfaz si `GuardaRuta` revalida la sesión guardada.
 - **Cierre de la rama:** PR de `feat/fase2-cuenta-consultas` a `development`, revisado por ambos autores, y después
   `development` → `main` con la etiqueta `fase-2-completa` (plan §11).
+
+## 2026-11-18 — [A+B] Cierre de Fase 4, pasos 6–11, e integración del Bloque 2
+
+### Alcance registrado
+
+- Se completan los pasos 6 a 11 de Fase 4: detalle de tarea con acciones reales y señal D6-A; creación y cierre
+  de Pull Requests; formulario conectado a crear/editar tarea; notificaciones desde el almacén; perfil y sesión
+  conectados con la cuenta actual; limpieza de la página de desarrollo temporal para dejarla como contenedor
+  de integración.
+- El Bloque 2 de Fase 2 (pasos 5 y 6) queda registrado como terminado: servicios de tareas y Pull Request,
+  puerto de GitHub simulado, y flujos con historial y notificaciones. El cierre no afirma que el PR del bloque
+  se haya fusionado.
+- La Fase 2, Bloque 3 no se declara cerrado en esta entrada.
+
+### Decisiones de arquitectura aplicadas
+
+- **Sesión validada contra el almacén actual:** el resumen persistido no basta para autorizar ni para mostrar el
+  estado de cuenta. Se resuelve el usuario actual por ID y se exige que exista, esté ACTIVO y conserve el rol
+  de la sesión. Si falta, está INACTIVO o cambió de rol, se cierra la sesión. Los cambios vigentes de nombre,
+  correo y contraseña temporal se sincronizan al resumen de sesión.
+- **Las acciones de cuenta pasan por `services/`:** el servicio resuelve al actor actual, aplica permisos de
+  `domain/`, valida los datos y devuelve `Resultado<T>`. Las pantallas no escriben en el almacén. Las
+  contraseñas no se incluyen en el historial ni en el resumen de sesión.
+- **Persistencia de perfil:** las ediciones permitidas se guardan mediante las transacciones del almacén, que
+  persiste en `localStorage`; el cambio de contraseña solo registra el evento de cuenta sin almacenar claves
+  en historial o notificaciones.
+- **Responsabilidades del perfil:** el practicante ve sus tareas no terminadas; el supervisor, las tareas no
+  terminadas de sus proyectos no finalizados; el administrador, las tareas no terminadas de todos los proyectos
+  no finalizados. El filtro por rol y permisos se aplica antes de presentar la lista.
+- **Notificaciones:** la interfaz lee las notificaciones persistidas y filtra por destinatario; marcarlas como
+  leídas usa el servicio correspondiente. Los eventos y avisos derivados de mutaciones siguen siendo
+  responsabilidad de los servicios.
+- **Paso 11 de Fase 4:** la página temporal deja de fabricar tareas o simular mutaciones; sirve únicamente para
+  componer las vistas con estado global y servicios.
+
+### Verificación
+
+- `npm.cmd test`: **1,223 pruebas en 58 archivos**, todas aprobadas.
+- `npx.cmd tsc -b`, Prettier y `npm.cmd run build`: correctos.
+- ESLint: sin errores; permanece el aviso conocido de `react-refresh/only-export-components` en
+  `src/compartido/ui/button.tsx`. La compilación conserva el aviso de Vite por el chunk principal mayor a
+  500 kB.
+- No se anotan hashes: esta actualización se hizo bajo la restricción expresa de no ejecutar comandos de Git.
+

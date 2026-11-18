@@ -8,23 +8,16 @@
 
 ## Estado general (común)
 
-- **Fase actual:** **Fase 2 (`data/` y `services/`) terminada**; sigue la conexión de las pantallas. El **Bloque 1**
-  (pasos 1 a 4) está en el PR #22, el **Bloque 2** (pasos 5 y 6, servicios de tareas y de Pull Request) en el PR #23 y el
-  **Bloque 3** (pasos 7 a 11) en el PR #25 (rama `feat/fase2-cuenta-consultas`), todos ya en `development`. **7A:** evaluar, aprobar,
-  rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`). **7B:** áreas técnicas, especialidades y criterios
-  (`3368603` y `5eb54a4`). **8A:** asignar, quitar, finalizar y reactivar practicantes y editar los datos de su práctica
-  (`861c5f3` y `df57b0d`). **8B:** supervisores, restablecer contraseña y aviso de fin de práctica (`a52fe0c`). **9A:**
-  crear y editar proyectos, rama base, reunión y enlaces (`30b27ab`). **9B:** cambiar supervisor, reasignar los proyectos de un
-  supervisor, pausar, reanudar, finalizar y reactivar proyectos (`e15e4f5` y `12efa20`). **10A:** acceso desde `data/`, Mi
-  perfil y contraseña propia (`d8f89b4`). **10B:** insights revisados, «Notificar» desde un insight y notificaciones leídas
-  (`84c438d`). **10C:** validación de las secciones de Configuración en `domain/` (`185c6ae`) y guardar, restaurar y restablecer
-  datos de demostración (`66ff605`). **11A:** permisos de lectura, acciones de tarea y ayudantes de consulta en `domain/`
-  (`3bd4460`) y consultas de proyectos (`5821b99`). **11B:** consultas de tareas y vistas del practicante (`b6a0d1b`). **11C:**
-  consultas de practicantes, supervisores, postulaciones, catálogo y Configuración (`6d6b79a`). **11D:** insights,
-  indicadores, historial, líneas de tiempo y notificaciones (`31d127d`). **11E:** Dashboards y Inicio (`006022d`). Siguiente:
-  **revisar e integrar** las ramas de interfaz `feat/fase3-interfaz-conexion` y `feat/fase4-vistas-lectura` y **conectar las
-  pantallas** a servicios y consultas, retirando `src/app/ejemplos/` (ver «Siguiente paso»).
-- **Actualizado:** 2026-11-18, al etiquetar `fase-1-completa` y `fase-2-completa` en `main` (rama `docs/etiquetas-fases-1-y-2`).
+- **Fase 2 — `data/` y `services/`: terminada (2026-11-18).** Bloques 1, 2 y 3 cerrados; el paso 11 completa las
+  consultas con alcance por rol. El cierre y los sub-pasos constan en el historial inferior.
+- **Fase 4 — componentes compartidos: terminada (2026-11-18).** Pasos 1 a 5 registrados; pasos 6 a 10 conectados
+  con servicios y almacén; paso 11 completado con la limpieza de la página de desarrollo temporal. La vista integra
+  detalle de tarea, Pull Requests, formulario, notificaciones y perfil.
+- **Verificación de Fase 2:** 2,836 pruebas en 99 archivos; `tsc -b` y `npm run build` correctos.
+- **Verificación de Fase 4:** 1,223 pruebas en 58 archivos; TypeScript, Prettier y compilación de producción OK.
+  ESLint sin errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB.
+- **Actualizado:** 2026-11-18. Se conservan ambos cierres sin consultar Git ni anotar hashes nuevos.
+- **Siguiente paso:** Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
 
 ### Cierres de fase
 
@@ -76,7 +69,7 @@
 - **Cierre:** PR #1 fusionado en `development`, PR #2 fusionado en `main` y etiqueta `fase-0-completa`
   publicada.
 
-## Siguiente paso
+## Registro detallado de avances anteriores
 
 - **Sesión de verificación: terminada (2026-11-13).** `iniciarSesion.ts` y `App.tsx` ya no fallan; el único
   fallo era `.claude/settings.json` en `format:check`, ya corregido en `a232922`.
@@ -140,6 +133,12 @@
   `crearEvento`/`agregarEventos` (el historial solo se agrega; `id_proyecto` obligatorio donde el dominio lo
   exige; nunca una contraseña), `diferencias` y etiquetas; y `crearNotificaciones` (nunca notifica al autor).
   Detalle en `DECISIONES.md`.
+- **Migración del acceso a la semilla: terminada (2026-11-17).** `src/services/autenticacion.ts` consulta
+  los usuarios del almacén; `src/auth/iniciarSesion.ts` delega en el servicio y `PaginaAcceso.tsx` muestra
+  los errores de acceso. Se eliminan las cuentas duplicadas de `auth/usuariosDemo.ts`, se conservan los
+  accesos rápidos por IDs estables y se bloquean las cuentas INACTIVAS sin revelar si existen. La sesión
+  sigue guardando solo el resumen sin contraseña. Commit `0307f83`; verificación: 966 pruebas, `tsc -b`,
+  ESLint, Prettier y `build` OK (aviso conocido de chunk mayor a 500 kB). Detalle en `DECISIONES.md`.
 - **Fase 2, Bloque 1 cerrado.** Pasos 1 a 4 en una sola sesión, con parada y commit por paso. Quedan los
   pasos 5 a 11 (servicios y consultas con alcance por rol); ver «Decisiones pendientes» sobre cómo partirlos
   en sesiones.
@@ -418,6 +417,11 @@
 | 2026-10-24 | 4 | 5. Tablero Kanban | `aab2185` |
 | 2026-10-25 | 4 | 2, 3, 4, 7 y 8 (insignias, tarjetas, línea de tiempo, modal PR, formulario de tarea) | `7a78c98` |
 | 2026-11-07 | 3–4 | Eliminar página de prueba, extraer redirecciones de sesión, migrar acciones a `domain/`, derivar devolución del historial | fusionado en `development` (hash por confirmar) |
+| 2026-11-18 | 4 | 6–11. Integración de detalle, PR, formulario, notificaciones y perfil; limpieza final de la página temporal | sin hash (no consultado por restricción) |
+
+**Estado de pruebas (2026-11-18):** 1,223 pruebas en 58 archivos, todas aprobadas. `tsc -b`, Prettier y
+`npm run build` OK. ESLint sin errores (un aviso conocido en `button.tsx`); Vite avisa que el chunk principal
+supera 500 kB.
 
 **Estado de pruebas (2026-11-18):** 2836 pruebas en 99 archivos (de la Fase 2: 22 del almacén, 180 de la
 semilla, 11 de restablecer, 136 de las utilidades de `services/`, 165 de los servicios de tareas del paso 5
@@ -428,7 +432,6 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
 10C parte 2 todas en `services/`; y 588 del paso 11: 79 de 11A parte 1 —todas en `domain/`—, 99 de 11A parte 2, 92 de 11B
 —9 en `domain/`—, 133 de 11C, 125 de 11D —17 en `domain/`— y 60 de 11E);
 `build` OK (aviso de Vite por chunk > 500 kB, no es de seguridad).
-
 ## Pendientes
 
 ### Fase 1 (`domain/`)
@@ -476,6 +479,11 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       ramas de ejemplo son `feature/<código>-NNN` más `…-con-conflictos` (P1-A, P5-A).
 - [ ] Riesgo aceptado (P3-A): si dos tareas comparten un PR vinculado y una lo cierra, la otra conserva su
       etiqueta hasta que vuelva a llegar a supervisión o a terminada.
+- [x] Fase 4 (detalle de tarea): se señala el caso D6-A en que una tarea EN_PROGRESO conserva como responsable
+      a un practicante INACTIVO o con la asignación de baja; Administrador o Supervisor pueden identificar que
+      deben liberarla con motivo.
+- [ ] Pasos 7 a 11 (Bloque 3; los pasos 5 y 6 ya están terminados): servicios por módulo, consultas con
+
 - [ ] Fase 4 (detalle de tarea): con la decisión D6-A, una tarea devuelta o reabierta puede quedar EN_PROGRESO
       a nombre de un practicante INACTIVO o con la asignación de baja. La interfaz debe señalarlo para que el
       Administrador o el Supervisor la liberen con motivo.
@@ -572,8 +580,15 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       pestaña conserva sus datos hasta recargar y los sobrescribiría con su próxima escritura.
 - [x] Paso 6 (servicios de PR): definir el «caso de error de PR preparado» del plan §8 (rama inexistente o
       GitHub no disponible) y las ramas de ejemplo; la semilla deja tareas en `PENDIENTE` listas para crear PR.
+
+- [x] Login: `iniciarSesion` consulta los usuarios del almacén por medio de `services/autenticacion.ts`;
+      `CUENTAS_DEMO` se retiró y los accesos rápidos usan IDs estables (`0307f83`).
+
       Definido en 6A (`59dc320`): «rama inexistente» con `feature/<código>-rama-eliminada` (P2-A) y el
       catálogo `feature/<código>-NNN` (P1-A).
+- [x] Login: `iniciarSesion` consulta la semilla a través de `services/autenticacion.ts`; se retiraron las
+      cuentas duplicadas y los accesos rápidos conservan IDs estables (`0307f83`).
+
 - [x] Login: hecho en 10A (`d8f89b4`); `auth/usuariosDemo.ts` ya no existe (queda `auth/sesionDePrueba.ts`, solo para tests). Antes: `auth/usuariosDemo.ts` sigue provisional. La semilla ya trae los tres accesos rápidos con los
       mismos ID, nombre, correo y contraseña; falta que `iniciarSesion` lea de `data/` y retirar las
       `CUENTAS_DEMO`.
@@ -601,6 +616,11 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
       C1), **tras crear el PR** en 6A (`59dc320`, `PR_CREADO` y `GITHUB_INFORMA` por conflictos) y **tras
       cerrarlo** en 6B (`9600f46`, `PR_CERRADO_DESDE_SISTEMA`). Completo.
 - [x] Aviso al responsable al editar una tarea `EN_PROGRESO` (`editarTarea`, `2c54c04`).
+
+- [x] Paso explícito: migrar las pantallas integradas de `src/app/ejemplos/` a `services/` y a selectores del
+      almacén; la página de desarrollo temporal queda como contenedor de integración, sin simulaciones locales.
+- [ ] `fecha_ingreso` del practicante al aprobar; en configuración, `id === clave`.
+
 - [ ] **Siguiente fase: conectar las pantallas y retirar `src/app/ejemplos/`.** Cada pantalla llama a `services/` (acciones) y a
       `src/services/consultas/` (lecturas) y no filtra ni decide nada. Se retiran `accionesDeTarea.ts` (lo reemplaza
       `accionesDeTarea` de `domain/`, que `obtenerTarea` ya trae como `acciones`), `almacenNotificaciones.ts`, `datos.ts`,
@@ -697,6 +717,17 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
 
 - [ ] Checklist manual de los pasos 2 a 5 de la Fase 3.
 - [ ] Logo real de CODAINI (hoy hay un placeholder con colores a mano).
+- [ ] Reemplazar tipos provisionales (`TareaTablero`, `EventoLinea`, `TareaDetalle`,
+      `NotificacionItem`) cuando existan los servicios. `auth/tipos.ts` ya reutiliza `Rol` y `Usuario`
+      de `domain/` (`0307f83`).
+- [x] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.
+- [x] Con `estado_pr === 'PENDIENTE'` y `url_pull_request` no nula (PR fusionado recalculado), no mostrar la
+      URL como el PR vigente; la etiqueta se resuelve con `etiquetaPRVisible`.
+- [x] Fase 4, pasos 6 a 11: detalle, creación y cierre de PR, formulario, notificaciones, perfil y limpieza de
+      la página de desarrollo temporal conectados con los servicios y el almacén.
+- [x] El Kanban usa `estaVencida` para el resaltado de fechas límite y no marca como vencida una tarea que
+      vence hoy.
+- [ ] Los dashboards (Fases 5.9 y 6.5) quitan de las alertas los insights con `revisado: true`.
 - [ ] Reemplazar tipos provisionales (`auth/tipos.ts`, `TareaTablero`, `EventoLinea`, `TareaDetalle`,
       `NotificacionItem`) cuando existan los servicios.
 - [ ] Mostrar la acción «No requiere PR» al practicante responsable ya en `EN_PROGRESO`.

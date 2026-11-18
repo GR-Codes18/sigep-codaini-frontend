@@ -1,24 +1,41 @@
 import { useNavigate } from 'react-router';
-import { useAlmacenNotificaciones } from '@/app/ejemplos/almacenNotificaciones';
-import { useAlmacenSesion } from '@/auth/almacenSesion';
+import { toast } from 'sonner';
+import { useSesionActiva } from '@/auth/useSesionActiva';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
+import { useAlmacen } from '@/data';
+import { marcarNotificacionLeida, marcarTodasNotificacionesLeidas } from '@/services';
 import { CampanaNotificaciones } from '@/compartido/CampanaNotificaciones';
+import { notificacionesParaVista } from './notificacionVista';
 
 export function CampanaConectada() {
-  const rol = useAlmacenSesion((s) => s.usuario?.rol);
+  const { sesion } = useSesionActiva();
+  const datos = useAlmacen((s) => s.datos);
   const navegar = useNavigate();
-  const { notificaciones, marcarLeida, marcarTodas } = useAlmacenNotificaciones();
-  if (!rol) return null;
+  if (!sesion) return null;
+  const idUsuario = sesion.id;
+  const notificaciones = notificacionesParaVista(datos, idUsuario, sesion.rol);
+
+  async function marcarTodas() {
+    const resultado = await marcarTodasNotificacionesLeidas({ idActor: idUsuario });
+    if (!resultado.ok) toast.error(resultado.mensaje);
+  }
 
   return (
     <CampanaNotificaciones
       notificaciones={notificaciones}
-      onAbrir={(n) => {
-        marcarLeida(n.id);
+      onAbrir={async (n) => {
+        const resultado = await marcarNotificacionLeida({
+          idActor: idUsuario,
+          idNotificacion: n.id,
+        });
+        if (!resultado.ok) {
+          toast.error(resultado.mensaje);
+          return;
+        }
         if (n.existe && n.ruta) navegar(n.ruta);
       }}
       onMarcarTodas={marcarTodas}
-      onVerTodas={() => navegar(`${PREFIJO_POR_ROL[rol]}/notificaciones`)}
+      onVerTodas={() => navegar(`${PREFIJO_POR_ROL[sesion.rol]}/notificaciones`)}
     />
   );
 }

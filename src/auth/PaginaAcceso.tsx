@@ -6,7 +6,7 @@ import { Input } from '@/compartido/ui/input';
 import { Label } from '@/compartido/ui/label';
 import { useAlmacenSesion } from './almacenSesion';
 import { esquemaAcceso, type DatosAcceso } from './esquemaAcceso';
-import { accesoRapido, iniciarSesion } from '@/services';
+import { accesoRapido, iniciarSesion } from './iniciarSesion';
 import type { Rol } from './tipos';
 
 const ACCESOS_RAPIDOS: { rol: Rol; etiqueta: string }[] = [
@@ -29,25 +29,25 @@ export function PaginaAcceso() {
   const enviar = handleSubmit(async (datos) => {
     setErrorGeneral(null);
     setCargando(true);
-    const resultado = await iniciarSesion({ correo: datos.correo, contrasena: datos.contrasena });
+    const resultado = await iniciarSesion(datos.correo, datos.contrasena);
     if (!resultado.ok) {
       setCargando(false);
       setErrorGeneral(resultado.mensaje);
       return;
     }
-    abrirSesion(resultado.valor);
+    abrirSesion(resultado.usuario);
   });
 
   async function entrarComo(rol: Rol) {
     setErrorGeneral(null);
     setCargando(true);
-    const resultado = await accesoRapido({ rol });
+    const resultado = await accesoRapido(rol);
     if (!resultado.ok) {
       setCargando(false);
       setErrorGeneral(resultado.mensaje);
       return;
     }
-    abrirSesion(resultado.valor);
+    abrirSesion(resultado.usuario);
   }
 
   return (

@@ -1,13 +1,23 @@
 import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
-import type { EstadoPR, EstadoTarea } from '@/domain';
+import {
+  etiquetaPRVisible,
+  type EstadoPR,
+  type EstadoTarea,
+  type Fecha,
+  type FechaHora,
+} from '@/domain';
 import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo, type EventoLinea } from '@/compartido/LineaTiempo';
 import { ModalConfirmacion, type OpcionMotivo } from '@/compartido/ModalConfirmacion';
 import { Button } from '@/compartido/ui/button';
+import { useAlmacen } from '@/data';
+import type { Resultado } from '@/services';
 
 export interface TareaDetalle {
   id: string;
+  idLegible: string;
   numero: number;
   titulo: string;
   descripcion: string;
@@ -16,10 +26,11 @@ export interface TareaDetalle {
   proyecto: string;
   idPracticante: string | null;
   responsable?: string;
-  fechaLimite: Date;
+  fechaLimite: Fecha;
   requiereSupervision: boolean;
   requierePr: boolean;
-  estadoPr?: EstadoPR;
+  estadoPr: EstadoPR | null;
+  fechaTermino?: FechaHora;
   urlPr?: string;
   ramaOrigen?: string;
   ramaBase?: string;
@@ -32,6 +43,10 @@ export interface AccionTarea {
   etiqueta: string;
   destructivo?: boolean;
   pedirMotivo?: OpcionMotivo;
+  deshabilitada?: boolean;
+  avisoDeshabilitacion?: string;
+  mensajeExito?: string;
+  ejecutar?: (motivo?: string) => Promise<Resultado<unknown>>;
 }
 
 interface Props {
@@ -44,30 +59,73 @@ interface Props {
 
 export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
   const [pendiente, setPendiente] = useState<AccionTarea | null>(null);
+  const estadoResponsable = useAlmacen((estado) =>
+    tarea.idPracticante === null
+      ? null
+      : (estado.datos.usuarios.find((usuario) => usuario.id === tarea.idPracticante)?.estado ??
+        null),
+  );
+  const asignacionVigente = useAlmacen(
+    (estado) =>
+      tarea.idPracticante !== null &&
+      estado.datos.asignaciones.some(
+        (asignacion) =>
+          asignacion.id_practicante === tarea.idPracticante &&
+          asignacion.id_proyecto === tarea.idProyecto &&
+          asignacion.fecha_baja === null,
+      ),
+  );
+  const estadoPrVisible = etiquetaPRVisible({
+    estado: tarea.estado,
+    requiere_pr: tarea.requierePr,
+    estado_pr: tarea.estadoPr,
+  });
+  const urlPrVisible =
+    estadoPrVisible !== null && estadoPrVisible !== 'PENDIENTE' ? tarea.urlPr : undefined;
+  const requiereAtencionResponsable =
+    tarea.estado === 'EN_PROGRESO' &&
+    tarea.idPracticante !== null &&
+    (estadoResponsable !== 'ACTIVO' || !asignacionVigente);
 
   async function alHacerClic(accion: AccionTarea) {
+    if (accion.deshabilitada) return;
     if (accion.pedirMotivo || accion.destructivo) {
       setPendiente(accion);
       return;
     }
     try {
-      await onEjecutar(accion.clave);
+      await ejecutarAccion(accion);
     } catch (e) {
       toast.error(e instanceof Error && e.message ? e.message : 'No se pudo completar la acción.');
     }
+  }
+
+  async function ejecutarAccion(accion: AccionTarea, motivo?: string) {
+    if (!accion.ejecutar) {
+      if (motivo === undefined) {
+        await onEjecutar(accion.clave);
+      } else {
+        await onEjecutar(accion.clave, motivo);
+      }
+      return;
+    }
+
+    const resultado = await accion.ejecutar(motivo);
+    if (!resultado.ok) throw new Error(resultado.mensaje);
+    toast.success(accion.mensajeExito ?? 'Acción aplicada');
   }
 
   return (
     <article className="space-y-6">
       <header className="space-y-2">
         <p className="text-xs text-text-2 tabular-nums">
-          {tarea.id} · {tarea.proyecto}
+          {tarea.idLegible} · {tarea.proyecto}
         </p>
         <h1 className="text-text">{tarea.titulo}</h1>
         <div className="flex flex-wrap items-center gap-2">
           <Insignia tipo="tarea" estado={tarea.estado} />
           {tarea.devuelta && <Insignia tipo="marca" estado="DEVUELTA" />}
-          {tarea.estadoPr && <Insignia tipo="pr" estado={tarea.estadoPr} />}
+          {estadoPrVisible && <Insignia tipo="pr" estado={estadoPrVisible} />}
         </div>
       </header>
 
@@ -80,6 +138,25 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
         </section>
       )}
 
+      {requiereAtencionResponsable && (
+        <section
+          role="status"
+          className="rounded-xl bg-state-warning-bg p-4 text-state-warning-text"
+        >
+          <h2 className="text-sm font-semibold">Revisar el responsable de la tarea</h2>
+          <p className="mt-1 text-sm">
+            {estadoResponsable === 'INACTIVO'
+              ? 'La cuenta del responsable está inactiva. '
+              : estadoResponsable === null
+                ? 'No se encontró la cuenta del responsable. '
+                : ''}
+            {!asignacionVigente &&
+              'El responsable ya no tiene una asignación vigente en este proyecto. '}
+            Un Administrador o Supervisor puede liberar la tarea con un motivo.
+          </p>
+        </section>
+      )}
+
       <dl className="grid gap-3 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
         <div>
           <dt className="text-text-2">Responsable</dt>
@@ -88,7 +165,7 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
         <div>
           <dt className="text-text-2">Fecha límite</dt>
           <dd className="text-text tabular-nums">
-            {tarea.fechaLimite.toLocaleDateString('es-PE')}
+            {format(parseISO(tarea.fechaLimite), 'dd/MM/yyyy')}
           </dd>
         </div>
         <div>
@@ -99,12 +176,12 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
           <dt className="text-text-2">Requiere PR</dt>
           <dd className="text-text">{tarea.requierePr ? 'Sí' : 'No'}</dd>
         </div>
-        {tarea.urlPr && (
+        {urlPrVisible && (
           <div className="sm:col-span-2">
             <dt className="text-text-2">Pull Request</dt>
             <dd>
-              <a href={tarea.urlPr} className="text-link underline underline-offset-2">
-                {tarea.urlPr}
+              <a href={urlPrVisible} className="text-link underline underline-offset-2">
+                {urlPrVisible}
               </a>
               {tarea.ramaOrigen && tarea.ramaBase && (
                 <span className="text-text-2">
@@ -125,14 +202,22 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
       {acciones.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {acciones.map((a) => (
-            <Button
-              key={a.clave}
-              type="button"
-              variant={a.destructivo ? 'outline' : 'default'}
-              onClick={() => alHacerClic(a)}
-            >
-              {a.etiqueta}
-            </Button>
+            <div key={a.clave} className="space-y-1">
+              <Button
+                type="button"
+                variant={a.destructivo ? 'outline' : 'default'}
+                onClick={() => alHacerClic(a)}
+                disabled={a.deshabilitada}
+                aria-describedby={a.avisoDeshabilitacion ? `aviso-${a.clave}` : undefined}
+              >
+                {a.etiqueta}
+              </Button>
+              {a.avisoDeshabilitacion && (
+                <p id={`aviso-${a.clave}`} className="max-w-56 text-xs text-text-2">
+                  {a.avisoDeshabilitacion}
+                </p>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -147,11 +232,11 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
           abierto
           onCerrar={() => setPendiente(null)}
           titulo={pendiente.etiqueta}
-          descripcion={`${tarea.id} · ${tarea.titulo}`}
+          descripcion={`${tarea.idLegible} · ${tarea.titulo}`}
           etiquetaConfirmar={pendiente.etiqueta}
           destructivo={pendiente.destructivo}
           pedirMotivo={pendiente.pedirMotivo ?? false}
-          onConfirmar={(motivo) => onEjecutar(pendiente.clave, motivo)}
+          onConfirmar={(motivo) => ejecutarAccion(pendiente, motivo)}
         />
       )}
     </article>

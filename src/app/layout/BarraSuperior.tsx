@@ -3,6 +3,7 @@ import { DropdownMenu } from 'radix-ui';
 import { useLocation, useNavigate } from 'react-router';
 import { AlternadorTema } from '@/app/tema/AlternadorTema';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
+import { useSesionActiva } from '@/auth/useSesionActiva';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 import { etiquetaDeRuta } from '@/app/menus';
 import { CampanaConectada } from './CampanaConectada';
@@ -11,7 +12,7 @@ const ITEM =
   'text-text hover:bg-surface-2 focus:bg-surface-2 flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm outline-none';
 
 export function BarraSuperior() {
-  const usuario = useAlmacenSesion((s) => s.usuario);
+  const { usuario } = useSesionActiva();
   const cerrarSesion = useAlmacenSesion((s) => s.cerrarSesion);
   const { pathname } = useLocation();
   const navegar = useNavigate();

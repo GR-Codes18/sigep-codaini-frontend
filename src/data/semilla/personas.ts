@@ -2,8 +2,8 @@
  * Personas con cuenta: 1 administrador, 3 supervisores y 24 practicantes.
  *
  * Contraseñas de DEMOSTRACIÓN: todas las cuentas usan `CONTRASENA_DEMO` y el correo
- * `nombre.apellido@codaini.demo`. Los tres accesos rápidos conservan el ID, el nombre y el
- * correo de `auth/usuariosDemo.ts`. Los nombres son inventados.
+ * `nombre.apellido@codaini.demo`. Las tres cuentas de acceso rápido tienen IDs estables. Los
+ * nombres son inventados.
  *
  * La fecha de fin de cada práctica sale de `fechaFinPrevista` (Fase 1, paso 10): para los
  * casos «cerca de su fin» y «ya la superó» se retrocede la fecha de ingreso según la duración

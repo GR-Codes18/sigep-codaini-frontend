@@ -1,45 +1,79 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
-import type { UsuarioSesion } from '@/auth/tipos';
-import type { EstadoTarea, EventoHistorial, TipoAccionHistorial, Usuario } from '@/domain';
-import { devolucionVigente } from '@/domain';
+import { devolucionVigente, etiquetaPRVisible, puede } from '@/domain';
 import { DetalleTarea } from '@/compartido/DetalleTarea';
-import { ModalCrearPR } from '@/compartido/ModalCrearPR';
+import { ModalCrearPR, type DatosPR } from '@/compartido/ModalCrearPR';
 import { TableroKanban, type TareaTablero } from '@/compartido/TableroKanban';
 import { Button } from '@/compartido/ui/button';
+import { useAlmacen } from '@/data';
+import { crearPullRequest, fallo, listarRamasParaPullRequest, NOTA_PR_VINCULADO } from '@/services';
 import { accionesDeTarea } from './accionesDeTarea';
-import {
-  ASIGNACIONES_EJEMPLO,
-  eventosDeTarea,
-  HISTORIAL_EJEMPLO,
-  observacionDevolucionVigente,
-  proyectoPorId,
-  TAREAS_EJEMPLO,
-} from './datos';
+import { eventosDeTarea, observacionDevolucionVigente, tareaDetalleDesdeAlmacen } from './datos';
 
 // TEMPORAL (plan Fase 4, paso 11): se elimina al terminar la Fase 7.
-const RAMAS = ['feat/login', 'feat/menu', 'fix/tema'];
-
-function usuarioDeSesion(usuario: UsuarioSesion): Usuario {
-  return {
-    ...usuario,
-    celular: '',
-    contrasena: '',
-    estado: 'ACTIVO',
-    fecha_alta: new Date().toISOString(),
-  };
-}
+const ID_PROYECTO_DEMO = 'pry-pl2d';
 
 export function PaginaDesarrollo() {
-  const usuarioSesion = useAlmacenSesion((s) => s.usuario);
-  const [tareas, setTareas] = useState(TAREAS_EJEMPLO);
-  const [historial, setHistorial] = useState(HISTORIAL_EJEMPLO);
+  const idUsuario = useAlmacenSesion((s) => s.usuario?.id ?? null);
+  const usuarios = useAlmacen((s) => s.datos.usuarios);
+  const proyectos = useAlmacen((s) => s.datos.proyectos);
+  const tareasAlmacen = useAlmacen((s) => s.datos.tareas);
+  const asignaciones = useAlmacen((s) => s.datos.asignaciones);
+  const historialAlmacen = useAlmacen((s) => s.datos.historial);
+  const usuarioAlmacen = usuarios.find((item) => item.id === idUsuario);
+  const proyecto = proyectos.find((item) => item.id === ID_PROYECTO_DEMO);
+  const tareasBase = proyecto
+    ? tareasAlmacen
+        .filter((item) => item.id_proyecto === proyecto.id)
+        .map((item) => tareaDetalleDesdeAlmacen(item, proyecto, usuarios))
+    : [];
   const [abierta, setAbierta] = useState<string | null>(null);
   const [crearPr, setCrearPr] = useState(false);
-  if (!usuarioSesion) return null;
-  const usuario = usuarioDeSesion(usuarioSesion);
+  const listarRamas = useCallback(() => {
+    if (idUsuario === null || abierta === null) return Promise.resolve(fallo('NO_ENCONTRADO'));
+    return listarRamasParaPullRequest({ idActor: idUsuario, idTarea: abierta });
+  }, [abierta, idUsuario]);
+  const crearPRDesdeModal = useCallback(
+    async (datos: DatosPR) => {
+      if (idUsuario === null || abierta === null) return fallo('NO_ENCONTRADO');
+      const resultado = await crearPullRequest({
+        idActor: idUsuario,
+        idTarea: abierta,
+        rama_origen: datos.ramaOrigen,
+        titulo: datos.titulo,
+        descripcion: datos.descripcion,
+      });
+      if (resultado.ok) {
+        if (resultado.valor.vinculado) toast.info(NOTA_PR_VINCULADO);
+        else toast.success('Pull Request creado');
+      }
+      return resultado;
+    },
+    [abierta, idUsuario],
+  );
+  if (idUsuario === null) return null;
+  if (!usuarioAlmacen) {
+    return <p role="alert">No se encontró el usuario de la sesión en los datos del sistema.</p>;
+  }
+  if (!proyecto) {
+    return <p role="alert">No se encontró el proyecto de demostración PL2D.</p>;
+  }
 
+  const usuario = usuarioAlmacen;
+  const asignacionesUsuario = asignaciones.filter(
+    (asignacion) => asignacion.id_practicante === usuario.id,
+  );
+  const permisoVerProyecto = puede(usuario, 'VER_PROYECTO', {
+    proyecto,
+    asignaciones: asignacionesUsuario,
+  });
+  if (!permisoVerProyecto.permitido) {
+    return <p role="alert">No tienes acceso al proyecto de demostración PL2D.</p>;
+  }
+
+  const tareas = tareasBase;
+  const historial = historialAlmacen;
   const tareasConDevolucion = tareas.map((tarea) => {
     const devuelta = devolucionVigente(tarea.id, historial);
     return {
@@ -52,68 +86,27 @@ export function PaginaDesarrollo() {
 
   const tablero: TareaTablero[] = tareasConDevolucion.map((t) => ({
     id: t.id,
+    idLegible: t.idLegible,
     titulo: t.titulo,
     estado: t.estado,
     responsable: t.responsable,
     esMia: t.idPracticante === usuario.id,
     fechaLimite: t.fechaLimite,
-    fechaTermino: t.estado === 'TERMINADA' ? new Date() : undefined,
+    fechaTermino: t.fechaTermino ? new Date(t.fechaTermino) : undefined,
     requiereSupervision: t.requiereSupervision,
-    estadoPr: t.estadoPr,
+    estadoPr: etiquetaPRVisible({
+      estado: t.estado,
+      requiere_pr: t.requierePr,
+      estado_pr: t.estadoPr,
+    }),
     devuelta: t.devuelta,
   }));
 
-  const SIGUIENTE: Record<
-    string,
-    { estado: EstadoTarea; tipoAccion: TipoAccionHistorial; quitarResponsable?: boolean }
-  > = {
-    tomar: { estado: 'EN_PROGRESO', tipoAccion: 'TAREA_TOMADA' },
-    liberar: { estado: 'DISPONIBLE', tipoAccion: 'TAREA_LIBERADA', quitarResponsable: true },
-    enviar: { estado: 'ESPERANDO_SUPERVISION', tipoAccion: 'TAREA_ENVIADA_A_SUPERVISION' },
-    terminar: { estado: 'TERMINADA', tipoAccion: 'TAREA_TERMINADA' },
-    aprobar: { estado: 'TERMINADA', tipoAccion: 'TAREA_APROBADA' },
-    devolver: { estado: 'EN_PROGRESO', tipoAccion: 'TAREA_DEVUELTA' },
-    reabrir: { estado: 'EN_PROGRESO', tipoAccion: 'TAREA_REABIERTA' },
-  };
-
-  async function ejecutar(clave: string, nota?: string) {
-    if (!tarea) return;
-    if (clave === 'crear_pr') {
-      setCrearPr(true);
-      return;
+  async function ejecutar(clave: string): Promise<void> {
+    if (clave !== 'crear_pr') {
+      throw new Error('La acción de tarea no está disponible.');
     }
-    if (clave === 'eliminar') {
-      setTareas((ts) => ts.filter((t) => t.id !== tarea.id));
-      setAbierta(null);
-      toast.success('Tarea eliminada');
-      return;
-    }
-    const sig = SIGUIENTE[clave];
-    if (!sig) return;
-    const evento: EventoHistorial = {
-      id: crypto.randomUUID(),
-      fecha: new Date().toISOString(),
-      autor: { tipo: 'USUARIO', id_usuario: usuario.id },
-      tipo_accion: sig.tipoAccion,
-      elemento: { tipo: 'TAREA', id: tarea.id, etiqueta: `${tarea.id} · ${tarea.titulo}` },
-      id_proyecto: tarea.idProyecto,
-      cambios: [{ campo: 'estado', valor_anterior: tarea.estado, valor_nuevo: sig.estado }],
-      nota: nota ?? null,
-    };
-    setHistorial((eventos) => [...eventos, evento]);
-    setTareas((ts) =>
-      ts.map((t) =>
-        t.id === tarea.id
-          ? {
-              ...t,
-              estado: sig.estado,
-              responsable: sig.quitarResponsable ? undefined : (t.responsable ?? usuario.nombre),
-              idPracticante: sig.quitarResponsable ? null : (t.idPracticante ?? usuario.id),
-            }
-          : t,
-      ),
-    );
-    toast.success('Acción aplicada');
+    setCrearPr(true);
   }
 
   return (
@@ -132,30 +125,20 @@ export function PaginaDesarrollo() {
             tarea={tarea}
             acciones={accionesDeTarea(tarea, {
               usuario,
-              proyecto: proyectoPorId(tarea.idProyecto),
-              asignaciones:
-                usuario.rol === 'PRACTICANTE'
-                  ? ASIGNACIONES_EJEMPLO.filter(
-                      (asignacion) => asignacion.id_practicante === usuario.id,
-                    )
-                  : [],
+              proyecto,
+              asignaciones: asignacionesUsuario,
             })}
-            eventos={eventosDeTarea(historial, tarea.id)}
+            eventos={eventosDeTarea(historial, tarea.id, usuarios)}
             onEjecutar={ejecutar}
           />
           <ModalCrearPR
             abierto={crearPr}
             onCerrar={() => setCrearPr(false)}
-            tituloPropuesto={`${tarea.id} ${tarea.titulo}`}
+            tituloPropuesto={`${tarea.idLegible} ${tarea.titulo}`}
             plantillaDescripcion="Qué se hizo:"
-            ramas={RAMAS}
-            ramaBase="main"
-            onCrear={async () => {
-              setTareas((ts) =>
-                ts.map((t) => (t.id === tarea.id ? { ...t, estadoPr: 'CREADO' } : t)),
-              );
-              toast.success('Pull Request creado');
-            }}
+            onListarRamas={listarRamas}
+            ramaBase={proyecto.rama_base}
+            onCrear={crearPRDesdeModal}
           />
         </div>
       ) : (

@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/compartido/utils';
 
-/** Forma provisional: se reemplaza por el tipo Notificacion de domain/. */
+/** Datos de presentación derivados de una notificación del almacén. */
 export interface NotificacionItem {
   id: string;
   texto: string;
@@ -75,11 +75,12 @@ export function CampanaNotificaciones({
                 <li key={n.id}>
                   <button
                     type="button"
+                    disabled={!n.existe || !n.ruta}
                     onClick={() => onAbrir(n)}
                     aria-disabled={!n.existe || !n.ruta}
                     className={cn(
                       'flex w-full gap-2 px-3 py-2 text-left hover:bg-surface-2',
-                      (!n.existe || !n.ruta) && 'cursor-default',
+                      (!n.existe || !n.ruta) && 'cursor-default opacity-60',
                     )}
                   >
                     <Info

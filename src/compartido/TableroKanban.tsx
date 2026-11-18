@@ -1,22 +1,25 @@
 import { useState } from 'react';
+import { format, parseISO } from 'date-fns';
 import { ShieldCheck } from 'lucide-react';
+import { estaVencida, hoyEn, type EstadoPR, type Fecha } from '@/domain';
 import { Insignia } from '@/compartido/Insignia';
 import { Button } from '@/compartido/ui/button';
 import { cn } from '@/compartido/utils';
 
-/** Forma provisional: se reemplaza por el tipo Tarea de domain/ cuando entre feat/fase1-tipos. */
+/** Datos de presentación por tarjeta; `id` conserva el identificador interno de dominio. */
 export interface TareaTablero {
   id: string;
+  idLegible: string;
   titulo: string;
   estado: 'DISPONIBLE' | 'EN_PROGRESO' | 'ESPERANDO_SUPERVISION' | 'TERMINADA';
   responsable?: string;
   /** Para marcar "Solo mis tareas". */
   esMia?: boolean;
-  fechaLimite: Date;
+  fechaLimite: Fecha;
   fechaTermino?: Date;
   requiereSupervision: boolean;
-  /** Solo se pasa en tareas ESPERANDO_SUPERVISION o TERMINADA que requieren PR. */
-  estadoPr?: string;
+  /** Solo se pasa cuando `etiquetaPRVisible` devuelve un estado. */
+  estadoPr?: EstadoPR | null;
   devuelta?: boolean;
 }
 
@@ -26,7 +29,7 @@ interface Props {
   /** Muestra el filtro "Solo mis tareas" (Practicante). */
   permitirSoloMias?: boolean;
   onVerTerminadas: () => void;
-  hoy?: Date;
+  hoy?: Fecha;
 }
 
 const COLUMNAS: { estado: TareaTablero['estado']; titulo: string; borde: string }[] = [
@@ -48,10 +51,10 @@ function Tarjeta({
   onAbrir,
 }: {
   t: TareaTablero;
-  hoy: Date;
+  hoy: Fecha;
   onAbrir: (id: string) => void;
 }) {
-  const vencida = t.estado !== 'TERMINADA' && t.fechaLimite < hoy;
+  const vencida = estaVencida({ estado: t.estado, fecha_limite: t.fechaLimite }, hoy);
   return (
     <button
       type="button"
@@ -59,7 +62,7 @@ function Tarjeta({
       className="w-full space-y-2 rounded-xl border border-border bg-surface p-3 text-left outline-none hover:bg-surface-2 focus-visible:ring-2 focus-visible:ring-focus"
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-text-2 tabular-nums">{t.id}</span>
+        <span className="text-xs text-text-2 tabular-nums">{t.idLegible}</span>
         {t.requiereSupervision && (
           <ShieldCheck
             className="size-4 text-text-2"
@@ -75,7 +78,7 @@ function Tarjeta({
         {t.devuelta && <Insignia tipo="marca" estado="DEVUELTA" />}
       </div>
       <p className={cn('text-xs tabular-nums', vencida ? 'text-danger-text' : 'text-text-2')}>
-        Límite {t.fechaLimite.toLocaleDateString('es-PE')}
+        Límite {format(parseISO(t.fechaLimite), 'dd/MM/yyyy')}
       </p>
     </button>
   );
@@ -86,7 +89,7 @@ export function TableroKanban({
   onAbrir,
   permitirSoloMias,
   onVerTerminadas,
-  hoy = new Date(),
+  hoy = hoyEn(new Date().toISOString()),
 }: Props) {
   const [soloMias, setSoloMias] = useState(false);
   const visibles = soloMias ? tareas.filter((t) => t.esMia) : tareas;
