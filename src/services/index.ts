@@ -65,6 +65,35 @@ export type { ContrasenaRestablecida, EntradaRestablecerContrasena } from './cue
 
 // Servicios por módulo
 export {
+  agregarEnlace,
+  cambiarRamaBase,
+  crearProyecto,
+  definirReunion,
+  editarDatosProyecto,
+  editarEnlace,
+  equipoDelProyecto,
+  esquemaDescripcionProyecto,
+  esquemaDiaReunion,
+  esquemaFechaProyecto,
+  esquemaHoraReunion,
+  esquemaNombreEnlace,
+  esquemaNombreProyecto,
+  esquemaRamaBase,
+  esquemaRepositorio,
+  esquemaUrlEnlace,
+  quitarEnlace,
+  textoReunion,
+} from './proyectos';
+export type {
+  EntradaAgregarEnlace,
+  EntradaCambiarRamaBase,
+  EntradaCrearProyecto,
+  EntradaDefinirReunion,
+  EntradaEditarDatosProyecto,
+  EntradaEditarEnlace,
+  EntradaQuitarEnlace,
+} from './proyectos';
+export {
   crearSupervisor,
   desactivarSupervisor,
   editarSupervisor,
