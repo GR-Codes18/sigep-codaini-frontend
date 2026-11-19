@@ -7,6 +7,7 @@ import {
   textoReunion,
   type AccionSupervisor,
   type ListadoSupervisores,
+  type PersonaResumen,
   type ProyectoResumen,
   type SupervisorDetalle,
 } from '@/services';
@@ -102,6 +103,10 @@ export interface DetalleSupervisorParaVista {
   eventos: EventoLinea[];
   /** Lo que se puede hacer ahora; lo decide `domain/` y llega con la consulta. */
   acciones: AccionSupervisor[];
+  /** Cuántos proyectos bloquean desactivarlo; lo cuenta `domain/` y llega con la consulta. */
+  proyectosPendientes: number;
+  /** A quién se pueden reasignar sus proyectos; lo decide `domain/` y llega con la consulta. */
+  supervisoresDestino: PersonaResumen[];
 }
 
 /** El detalle de `obtenerSupervisor` al modelo de presentación (fechas con `parseISO`, sin reglas). */
@@ -133,5 +138,7 @@ export function aDetalleSupervisor(detalle: SupervisorDetalle): DetalleSuperviso
     })),
     eventos: aEventosLinea(detalle.eventos),
     acciones: detalle.acciones,
+    proyectosPendientes: detalle.proyectos_pendientes,
+    supervisoresDestino: detalle.supervisores_destino,
   };
 }

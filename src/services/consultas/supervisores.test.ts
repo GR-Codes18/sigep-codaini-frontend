@@ -313,40 +313,121 @@ describe('obtenerSupervisor', () => {
   });
 });
 
-// ── Acciones disponibles (Fase 5, módulo 5.3) ────────────────────────────────────────────────
+// ── Acciones, bloqueo y destinos (Fase 5, módulo 5.3) ────────────────────────────────────────
 
-describe('obtenerSupervisor: acciones', () => {
-  const ADMIN_ID = 'demo-admin';
-  const ACTIVO_ID = 'demo-supervisor';
+describe('obtenerSupervisor: acciones, proyectos pendientes y destinos', () => {
+  const detalle = async (p: PruebaPreparada, id: Id, idActor: Id = ADMIN) =>
+    valor(await obtenerSupervisor({ idActor, idSupervisor: id }, p.entorno));
 
-  it('una cuenta activa ofrece editar y restablecer la contraseña', async () => {
+  it('con proyectos a cargo ofrece editar, restablecer, reasignar y desactivar, pero no reactivar', async () => {
     const prueba = prepararPrueba();
 
-    const r = await obtenerSupervisor(
-      { idActor: ADMIN_ID, idSupervisor: ACTIVO_ID },
-      prueba.entorno,
-    );
+    const { acciones } = await detalle(prueba, SUPERVISOR);
 
-    expect(valor(r).acciones).toEqual(['EDITAR_DATOS', 'RESTABLECER_CONTRASENA']);
+    expect(acciones).toEqual([
+      'EDITAR_DATOS',
+      'RESTABLECER_CONTRASENA',
+      'REASIGNAR_PROYECTOS',
+      'DESACTIVAR',
+    ]);
   });
 
-  it('una cuenta inactiva ofrece editar, pero no restablecer la contraseña', async () => {
+  it('los proyectos pendientes son los activos y en pausa (los finalizados no cuentan)', async () => {
     const prueba = prepararPrueba();
-    desactivar(prueba, ACTIVO_ID);
+    const aCargo = prueba
+      .datos()
+      .proyectos.filter(
+        (p) => p.id_supervisor === SUPERVISOR_2 && p.estado !== 'FINALIZADO',
+      ).length;
+    const finalizados = prueba
+      .datos()
+      .proyectos.filter(
+        (p) => p.id_supervisor === SUPERVISOR_2 && p.estado === 'FINALIZADO',
+      ).length;
+    expect(finalizados).toBeGreaterThan(0);
 
-    const r = await obtenerSupervisor(
-      { idActor: ADMIN_ID, idSupervisor: ACTIVO_ID },
-      prueba.entorno,
-    );
+    const { proyectos_pendientes } = await detalle(prueba, SUPERVISOR_2);
 
-    expect(valor(r).acciones).toEqual(['EDITAR_DATOS']);
+    expect(proyectos_pendientes).toBe(aCargo);
+    expect(aCargo).toBeGreaterThan(0);
+  });
+
+  it('un proyecto en pausa también cuenta como pendiente', async () => {
+    const prueba = prepararPrueba();
+    const { proyectos_pendientes } = await detalle(prueba, SUPERVISOR_3);
+
+    expect(proyectos_pendientes).toBe(1);
+  });
+
+  it('sin proyectos a cargo: desactivar sin bloqueo, 0 pendientes, sin destinos y sin reasignar', async () => {
+    const prueba = prepararPrueba();
+    const id = crearSupervisorSinProyectos(prueba);
+
+    const r = await detalle(prueba, id);
+
+    expect(r.acciones).toEqual(['EDITAR_DATOS', 'RESTABLECER_CONTRASENA', 'DESACTIVAR']);
+    expect(r.proyectos_pendientes).toBe(0);
+    expect(r.supervisores_destino).toEqual([]);
+  });
+
+  it('una cuenta inactiva ofrece editar y reactivar, pero no restablecer ni desactivar', async () => {
+    const prueba = prepararPrueba();
+    const id = crearSupervisorSinProyectos(prueba);
+    desactivar(prueba, id);
+
+    const r = await detalle(prueba, id);
+
+    expect(r.acciones).toEqual(['EDITAR_DATOS', 'REACTIVAR']);
+    expect(r.proyectos_pendientes).toBe(0);
+  });
+
+  it('los destinos son los demás supervisores activos, por nombre, sin el propio', async () => {
+    const prueba = prepararPrueba();
+    const esperados = prueba
+      .datos()
+      .usuarios.filter(
+        (u) => u.rol === 'SUPERVISOR' && u.estado === 'ACTIVO' && u.id !== SUPERVISOR,
+      )
+      .map((u) => u.nombre)
+      .sort((a, b) => a.localeCompare(b, 'es'));
+
+    const { supervisores_destino } = await detalle(prueba, SUPERVISOR);
+
+    expect(supervisores_destino.map((s) => s.nombre)).toEqual(esperados);
+    expect(ids(supervisores_destino)).not.toContain(SUPERVISOR);
+  });
+
+  it('un supervisor inactivo no es destino', async () => {
+    const prueba = prepararPrueba();
+    desactivar(prueba, SUPERVISOR_3);
+
+    const { supervisores_destino } = await detalle(prueba, SUPERVISOR);
+
+    expect(ids(supervisores_destino)).not.toContain(SUPERVISOR_3);
+    expect(ids(supervisores_destino)).toContain(SUPERVISOR_2);
+  });
+
+  it('si todos sus proyectos están finalizados no hay destinos ni reasignación, y desactivar no se bloquea', async () => {
+    const prueba = prepararPrueba();
+    prueba.modificar((d) => ({
+      proyectos: d.proyectos.map((p) =>
+        p.id_supervisor === SUPERVISOR ? { ...p, estado: 'FINALIZADO' as const } : p,
+      ),
+    }));
+
+    const r = await detalle(prueba, SUPERVISOR);
+
+    expect(r.supervisores_destino).toEqual([]);
+    expect(r.proyectos_pendientes).toBe(0);
+    expect(r.acciones).not.toContain('REASIGNAR_PROYECTOS');
+    expect(r.acciones).toContain('DESACTIVAR');
   });
 
   it('no escribe', async () => {
     const prueba = prepararPrueba();
     const comprobar = sinEscritura(prueba);
 
-    await obtenerSupervisor({ idActor: ADMIN_ID, idSupervisor: ACTIVO_ID }, prueba.entorno);
+    await detalle(prueba, SUPERVISOR);
 
     comprobar();
   });

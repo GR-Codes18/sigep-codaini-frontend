@@ -157,6 +157,9 @@ export function PaginaDetalleSupervisor({ entorno = ENTORNO }: { entorno?: Entor
           idActor={idUsuario}
           supervisor={{ id: detalle.id, nombre: detalle.nombre, correo: detalle.correo }}
           acciones={detalle.acciones}
+          proyectosPendientes={detalle.proyectosPendientes}
+          proyectosACargo={detalle.proyectosACargo}
+          supervisoresDestino={detalle.supervisoresDestino}
           entorno={entorno}
         />
       </header>

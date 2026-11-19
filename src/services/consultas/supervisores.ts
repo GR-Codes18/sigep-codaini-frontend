@@ -9,8 +9,11 @@ import { z } from 'zod';
 import type { DatosAlmacen } from '@/data';
 import {
   diasEsperando,
+  desactivarSupervisor as reglaDesactivarSupervisor,
   hoyEn,
   puede,
+  puedeCambiarSupervisor,
+  reactivarSupervisor as reglaReactivarSupervisor,
   ultimaActividadDeUsuario,
   type EstadoUsuario,
   type Fecha,
@@ -33,6 +36,7 @@ import {
   resumenDeProyecto,
   type EntradaConActor,
   type EventoConAutor,
+  type PersonaResumen,
   type ProyectoResumen,
 } from './comun';
 import { asignacionesActivas, reunionDe, type ReunionDeProyecto } from './proyectos';
@@ -143,14 +147,21 @@ export interface ProyectoAnteriorDeSupervisor {
 }
 
 /** Lo que el Administrador puede hacer ahora con un supervisor (§5.3). */
-export type AccionSupervisor = 'EDITAR_DATOS' | 'RESTABLECER_CONTRASENA';
+export type AccionSupervisor =
+  'EDITAR_DATOS' | 'RESTABLECER_CONTRASENA' | 'REASIGNAR_PROYECTOS' | 'DESACTIVAR' | 'REACTIVAR';
 
 export interface SupervisorDetalle {
   /**
-   * Las acciones disponibles, decididas por `puede()` de `domain/`: la pantalla solo las ofrece. «Restablecer la
-   * contraseña» solo con la cuenta activa (el servicio pide reactivarla primero).
+   * Las acciones disponibles, decididas por `puede()` y las reglas de ciclo de vida de `domain/`: la pantalla solo las
+   * ofrece. «Restablecer la contraseña» solo con la cuenta activa (el servicio pide reactivarla primero); «Desactivar»
+   * solo con la cuenta activa, aunque tenga proyectos (en ese caso `proyectos_pendientes` dice cuántos); «Reactivar»
+   * solo con la cuenta inactiva.
    */
   acciones: AccionSupervisor[];
+  /** Cuántos proyectos activos o en pausa bloquean desactivarlo (§5.3); 0 si nada lo bloquea. Lo cuenta `domain/`. */
+  proyectos_pendientes: number;
+  /** A quién se pueden reasignar sus proyectos (supervisores activos y distintos); vacío si no tiene proyectos a cargo. */
+  supervisores_destino: PersonaResumen[];
   datos: {
     id: Id;
     nombre: string;
@@ -214,17 +225,41 @@ export function obtenerSupervisor(
       usuario_objetivo: usuario,
     });
     const restablecer = puede(actor.valor, 'RESTABLECER_CONTRASENA', { usuario_objetivo: usuario });
+    // Las reglas de ciclo de vida de `domain/` dicen si se puede y, si no, por qué: con proyectos a cargo, desactivar se
+    // ofrece igual (la pantalla explica el bloqueo con `proyectos_pendientes`); con la cuenta ya inactiva, no.
+    const desactivar = reglaDesactivarSupervisor(actor.valor, usuario, datos.proyectos);
+    const bloqueadoPorProyectos =
+      !desactivar.ok && desactivar.codigo === 'SUPERVISOR_CON_PROYECTOS';
+    const reactivar = reglaReactivarSupervisor(actor.valor, usuario);
+    // Quién puede recibir sus proyectos: lo decide `puedeCambiarSupervisor` (activo, distinto y proyecto no finalizado).
+    const destinos =
+      enCurso.length === 0
+        ? []
+        : supervisoresConCuenta(datos)
+            .filter(({ usuario: u }) =>
+              enCurso.some((p) => puedeCambiarSupervisor(actor.valor, p, u).ok),
+            )
+            .map(({ usuario: u }): PersonaResumen => ({ id: u.id, nombre: u.nombre }))
+            .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     const acciones: AccionSupervisor[] = [
       ...(editar.permitido ? (['EDITAR_DATOS'] as const) : []),
       ...(restablecer.permitido && usuario.estado === 'ACTIVO'
         ? (['RESTABLECER_CONTRASENA'] as const)
         : []),
+      ...(destinos.length > 0 ? (['REASIGNAR_PROYECTOS'] as const) : []),
+      ...(desactivar.ok || bloqueadoPorProyectos ? (['DESACTIVAR'] as const) : []),
+      ...(reactivar.ok ? (['REACTIVAR'] as const) : []),
     ];
 
     return {
       ok: true,
       valor: {
         acciones,
+        proyectos_pendientes:
+          !desactivar.ok && desactivar.codigo === 'SUPERVISOR_CON_PROYECTOS'
+            ? (desactivar.cantidad ?? 0)
+            : 0,
+        supervisores_destino: destinos,
         datos: {
           id: usuario.id,
           nombre: usuario.nombre,
