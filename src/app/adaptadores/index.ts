@@ -38,5 +38,16 @@ export {
   type PracticantesParaVista,
   type TareaDePracticanteParaVista,
 } from './practicantes';
+export {
+  aDetalleSupervisor,
+  aSupervisores,
+  type ContadoresSupervisores,
+  type DetalleSupervisorParaVista,
+  type FilaSupervisor,
+  type ProyectoACargoParaVista,
+  type ProyectoAnteriorParaVista,
+  type SupervisoresParaVista,
+  type TareaPorRevisarParaVista,
+} from './supervisores';
 export { aTareaDetalle } from './tarea';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';

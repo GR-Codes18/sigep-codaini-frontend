@@ -60,4 +60,15 @@ describe('Insignia', () => {
     expect(screen.getByText('Finalizado').className).toContain('state-neutral');
     expect(screen.getByText('Sin proyecto').className).toContain('state-warning');
   });
+
+  it('el supervisor es «Activo» (verde) o «Inactivo» (gris)', () => {
+    render(
+      <>
+        <Insignia tipo="supervisor" estado="ACTIVO" />
+        <Insignia tipo="supervisor" estado="INACTIVO" />
+      </>,
+    );
+    expect(screen.getByText('Activo').className).toContain('state-success');
+    expect(screen.getByText('Inactivo').className).toContain('state-neutral');
+  });
 });

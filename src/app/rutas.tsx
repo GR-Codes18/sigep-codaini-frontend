@@ -17,6 +17,9 @@ import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/post
 import { PaginaDetallePracticante } from '@/paneles/administrador/practicantes/PaginaDetallePracticante';
 import { PaginaPracticantes } from '@/paneles/administrador/practicantes/PaginaPracticantes';
 import { RUTA_PRACTICANTES } from '@/paneles/administrador/practicantes/rutas';
+import { PaginaDetalleSupervisor } from '@/paneles/administrador/supervisores/PaginaDetalleSupervisor';
+import { PaginaSupervisores } from '@/paneles/administrador/supervisores/PaginaSupervisores';
+import { RUTA_SUPERVISORES } from '@/paneles/administrador/supervisores/rutas';
 
 /**
  * Los módulos que ya tienen pantalla, por la ruta de su ítem del menú. Los demás siguen con su página vacía hasta que se
@@ -25,6 +28,7 @@ import { RUTA_PRACTICANTES } from '@/paneles/administrador/practicantes/rutas';
 const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_POSTULACIONES]: <PaginaPostulaciones />,
   [RUTA_PRACTICANTES]: <PaginaPracticantes />,
+  [RUTA_SUPERVISORES]: <PaginaSupervisores />,
 };
 
 /** Las páginas internas de un módulo (detalles), por la ruta que cuelga del módulo. */
@@ -33,6 +37,7 @@ const PAGINAS_INTERNAS: readonly RouteObject[] = [
   { path: RUTA_CRITERIOS, element: <PaginaCriterios /> },
   { path: `${RUTA_POSTULACIONES}/:idPostulante`, element: <PaginaDetallePostulacion /> },
   { path: `${RUTA_PRACTICANTES}/:idPracticante`, element: <PaginaDetallePracticante /> },
+  { path: `${RUTA_SUPERVISORES}/:idSupervisor`, element: <PaginaDetalleSupervisor /> },
 ];
 
 function rutasDeRol(rol: Rol): RouteObject[] {

@@ -11,7 +11,7 @@ const FAMILIA: Record<Familia, { caja: string; punto: string }> = {
 };
 
 export type TipoEstado =
-  'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca' | 'catalogo' | 'practicante';
+  'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca' | 'catalogo' | 'practicante' | 'supervisor';
 
 const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Familia }>> = {
   tarea: {
@@ -47,6 +47,11 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
     ACTIVO: { etiqueta: 'Activo', familia: 'success' },
     FINALIZADO: { etiqueta: 'Finalizado', familia: 'neutral' },
     SIN_PROYECTO: { etiqueta: 'Sin proyecto', familia: 'warning' },
+  },
+  // La cuenta de un supervisor (§5.3): activa, o desactivada (no puede iniciar sesión).
+  supervisor: {
+    ACTIVO: { etiqueta: 'Activo', familia: 'success' },
+    INACTIVO: { etiqueta: 'Inactivo', familia: 'neutral' },
   },
   marca: {
     DEVUELTA: { etiqueta: 'Devuelta con observaciones', familia: 'danger' },
