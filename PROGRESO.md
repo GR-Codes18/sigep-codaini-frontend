@@ -90,20 +90,24 @@
   `domain/`.
 - **Verificación (en `c5d5e0d`):** 3.477 pruebas en 141 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
   con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Fase 5 — módulo 5.4 (Proyectos), bloques 1 y 2: terminados (2026-11-19, `5431b8a` y `da41753`).** El módulo se hace en cuatro
-  bloques: 1) lectura, 2) tablero y detalle de tarea, 3) datos del proyecto (crear, editar, reunión y enlaces) y 4) equipo y ciclo de
-  vida. Lectura (`5431b8a`): listado en `/administrador/proyectos` con pestañas Activos (abre ahí), En pausa, Finalizados y Todos con
-  contadores, filtro por supervisor y búsqueda por nombre; detalle en `/administrador/proyectos/:idProyecto` con las pestañas en
-  `?pestana=` (Resumen y Equipo). Resumen: datos del proyecto, avance, tareas por estado, vencidas, enlaces y actividad reciente.
-  Tablero (`da41753`): pestaña `?pestana=tablero` con el Kanban, «Ver todas las terminadas» y avisos de proyecto finalizado (solo
-  lectura) y en pausa; el clic en una tarjeta abre el detalle de la tarea en `/administrador/proyectos/:idProyecto/tareas/:idTarea`
-  (contenedor `DetalleDeTarea`, extraído a `src/app/tareas/` y reutilizable en el módulo 5.5; `PaginaDesarrollo` lo usa también); y
-  «Nueva tarea» con el proyecto fijado. Cambios aditivos en la Fase 2: `obtenerTableroProyecto` trae `puede_crear_tarea`. Sin cambios
-  en `domain/`.
-- **Verificación (en `da41753`):** 3.571 pruebas en 147 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
-  con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-19, tras el bloque 2 del módulo 5.4 (`da41753`).
-- **Siguiente paso:** módulo 5.4, bloque 3 (crear y editar proyecto, reunión y enlaces).
+- **Fase 5 — módulo 5.4 (Proyectos): terminado (2026-11-19, `5431b8a`, `da41753`, `9b2b378` y el bloque 4, cuyo hash se registra en el
+  siguiente cierre).** Rama `feat/fase5-supervisores`, en cuatro bloques. Lectura (`5431b8a`): listado en `/administrador/proyectos` con
+  pestañas Activos (abre ahí), En pausa, Finalizados y Todos con contadores, filtro por supervisor y búsqueda por nombre; detalle en
+  `/administrador/proyectos/:idProyecto` con las pestañas en `?pestana=` (Resumen, Tablero y Equipo). Tablero (`da41753`): el Kanban con
+  «Ver todas las terminadas», avisos de proyecto finalizado y en pausa, detalle de tarea en
+  `/administrador/proyectos/:idProyecto/tareas/:idTarea` (`DetalleDeTarea`, en `src/app/tareas/`, reutilizable en el módulo 5.5) y «Nueva tarea».
+  Datos (`9b2b378`): «Nuevo proyecto» y «Editar proyecto» como diálogo (el código no se edita; cada grupo de campos lo decide `puede()`), la
+  reunión semanal, la rama base y los enlaces útiles. Equipo y ciclo de vida (bloque 4): pausar, reanudar, finalizar (bloqueado con tareas
+  esperando supervisión, con la cantidad) y reactivar, cada uno con nota obligatoria; cambiar de supervisor; y en «Equipo», asignar y quitar
+  practicantes (bloqueados en un proyecto finalizado). Cambios aditivos en la Fase 2: `obtenerTableroProyecto` (`puede_crear_tarea`),
+  `listarProyectos` (`puede_crear`, `supervisores_disponibles`), `obtenerProyecto` (`acciones`, `ciclo_de_vida`, `supervisores_destino`),
+  `obtenerEquipoProyecto` (`estado_proyecto`, `puede_asignar`, y por miembro `tareas_a_liberar` y `puede_quitar`) y la consulta nueva
+  `listarPracticantesAsignables`. Sin cambios en `domain/`.
+- **Verificación (bloque 3 en `9b2b378`; bloque 4, en el árbol de trabajo):** 3.686 pruebas en 152 archivos (3.622 en 150 tras el bloque 3);
+  `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle
+  en «Estado de pruebas».
+- **Actualizado:** 2026-11-19, tras el módulo 5.4.
+- **Siguiente paso:** módulo 5.5 (Tareas).
 
 ### Cierres de fase
 
@@ -528,9 +532,13 @@
 | 2026-11-19 | 5.3 Supervisores | Bloque 3: desactivar con bloqueo por proyectos pendientes, reactivar y reasignar proyectos; `proyectos_pendientes` y `supervisores_destino` en `obtenerSupervisor` | `c5d5e0d` |
 | 2026-11-19 | 5.4 Proyectos | Bloque 1 (lectura): listado con pestañas, filtro por supervisor y búsqueda; detalle con Resumen y Equipo en `?pestana=`; adaptador `proyectos`; eventos de proyecto en la línea de tiempo; el aviso de un proyecto lleva a su detalle | `5431b8a` |
 | 2026-11-19 | 5.4 Proyectos | Bloque 2 (tablero): pestaña «Tablero», detalle de tarea dentro del proyecto (`DetalleDeTarea` en `app/tareas/`), «Nueva tarea» y `puede_crear_tarea` en `obtenerTableroProyecto` | `da41753` |
+| 2026-11-19 | 5.4 Proyectos | Bloque 3 (datos): «Nuevo proyecto» y «Editar proyecto» como diálogo, reunión, rama base y enlaces; `puede_crear` y `supervisores_disponibles` en `listarProyectos`, `acciones` en `obtenerProyecto` | `9b2b378` |
+| 2026-11-19 | 5.4 Proyectos | Bloque 4 (equipo y ciclo de vida): pausar, reanudar, finalizar y reactivar con nota, cambiar supervisor, asignar y quitar practicantes; `ciclo_de_vida`, `supervisores_destino`, `puede_asignar`, `puede_quitar` y `listarPracticantesAsignables` | hash pendiente (se registra en el siguiente cierre) |
 
-**Estado de pruebas (2026-11-19, en `da41753`):** 3.571 pruebas en 147 archivos, todas aprobadas (`npx vitest run --testTimeout=60000`); los
-bloques 1 y 2 del módulo 5.4 sumaron 94 y 6 archivos de prueba (filtros, adaptador, listado y detalle de proyectos; tablero con «Nueva
+**Estado de pruebas (2026-11-19, bloque 4 en el árbol de trabajo):** 3.686 pruebas en 152 archivos, todas aprobadas (`npx vitest run --testTimeout=60000
+--maxWorkers=3`); el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
+3.622 pruebas en 150 archivos; el bloque 3 sumó 51 y 3 archivos de prueba (nuevo proyecto, editar proyecto y enlaces, más consultas). Antes, en
+`da41753`: 3.571 pruebas en 147 archivos; los bloques 1 y 2 del módulo 5.4 sumaron 94 y 6 archivos de prueba (filtros, adaptador, listado y detalle de proyectos; tablero con «Nueva
 tarea» y detalle de tarea; más ajustes en `tablero`, `FormularioTarea`, `eventos`, `notificacion` y las consultas). No se hicieron
 pruebas de mutación. Antes, en `c5d5e0d`: 3.477 pruebas en 141 archivos; el
 módulo 5.3 sumó 97 y 7 archivos de prueba (consultas ampliadas, adaptador, filtros, listado, detalle, nuevo supervisor, acciones y ciclo de
@@ -650,11 +658,11 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       poder desactivarlo (una prueba lo recorre: reasignar todos → `desactivarSupervisor`). Para la **Fase 5.3**: la
       pantalla propone todos los proyectos activos o en pausa del supervisor y exige elegir un nuevo supervisor para cada
       uno; el servicio no lo exige (G4-A), y `desactivarSupervisor` avisa cuántos quedan.
-- [ ] Fase 5.4 (Proyectos): los botones de estado salen de `accionesDeEstadoDisponibles(estado)` (reactivar además exige un
+- [x] (hecho en el bloque 4 del módulo 5.4) Fase 5.4 (Proyectos): los botones de estado salen de `accionesDeEstadoDisponibles(estado)` (reactivar además exige un
       supervisor activo: si no, el mensaje dice que primero se reactive al supervisor); pausar, reanudar, finalizar y
       reactivar piden una nota; finalizar muestra el aviso con la cantidad de tareas esperando supervisión (bloqueo) o la
       de tareas en progreso que se liberarán (el servicio las calcula con `finalizarProyecto` de `domain/`).
-- [ ] Fase 5.4 (Proyectos): los formularios usan los esquemas de `src/services/proyectos/esquemas.ts` y ponen el código en
+- [x] (hecho en `9b2b378`) Fase 5.4 (Proyectos): los formularios usan los esquemas de `src/services/proyectos/esquemas.ts` y ponen el código en
       mayúsculas y sin espacios **antes** de enviarlo (el servicio no lo normaliza, G1/9A); crear muestra el error del
       código en `campos.codigo`; editar no ofrece el código; la reunión se quita enviando día y hora vacíos; reactivar no
       avisa al equipo (G2-A) y los autores pueden sumar esa fila a §8.1 si lo quieren.

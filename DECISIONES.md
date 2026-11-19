@@ -4045,3 +4045,65 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni que las pestañas vayan en
   `?pestana=`, ni la dirección del detalle de tarea dentro del proyecto, ni dónde vive «Nueva tarea» entre 5.4 y 5.5, ni los textos de los avisos
   del tablero. Conviene pasarlos a §5.4.
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 3 y 4: datos, equipo y ciclo de vida
+
+- **Commits:** `9b2b378` (bloque 3, datos del proyecto) y el bloque 4 (equipo y ciclo de vida), cuyo hash se registra en el siguiente cierre porque
+  un commit no puede llevar su propio hash. Rama `feat/fase5-supervisores`. Con ellos termina el módulo 5.4.
+- **Bloque 3 — formulario de proyecto (decisión de los autores: diálogo).**
+  - **Crear.** Nombre, código, descripción, fechas, supervisor, repositorio, rama base y reunión opcional. El código se pone en mayúsculas y sin
+    espacios **antes** de enviarlo (`normalizarCodigoDeProyecto`, en `codigo.ts`) porque el servicio no lo normaliza (G1/9A); que sea de 3 a 5
+    caracteres y único entre todos los proyectos, también los finalizados, lo decide el servicio y su mensaje sale en el campo del código. El
+    repositorio, la rama base, el nombre, la descripción y las fechas se validan con los esquemas de `services/proyectos/esquemas.ts` (una sola
+    regla). Al crear se abre el detalle del proyecto nuevo.
+  - **Editar.** El código se muestra y **no es editable**. Cada grupo de campos (datos, rama base y reunión) solo se ofrece si `puede()` lo permite y
+    llega en `acciones`: el Supervisor del proyecto ve solo la rama base y la reunión. Se envía solo lo que cambió, cada grupo con su servicio
+    (`editarDatosProyecto`, `cambiarRamaBase` y `definirReunion`); si uno falla se muestra su mensaje y lo ya guardado no se reenvía (el guardado
+    no es atómico entre grupos). Un proyecto finalizado también se edita (§5.4). La reunión se quita dejando el día en «Sin definir» y la hora
+    vacía, y se avisa al equipo (lo hace el servicio).
+  - **Enlaces útiles.** Agregar, editar (solo lo que cambió) y quitar con confirmación; quien no puede gestionarlos (`GESTIONAR_ENLACES`) ve la lista
+    de solo lectura.
+  - **Ampliaciones aditivas de la Fase 2.** `listarProyectos` trae `puede_crear` (`puede('CREAR_PROYECTO')`) y `supervisores_disponibles` (los
+    supervisores activos, por nombre; vacío para quien no puede crear). `obtenerProyecto` (vista de gestión) trae `acciones`: `EDITAR_DATOS`,
+    `CAMBIAR_RAMA_BASE`, `DEFINIR_REUNION` y `GESTIONAR_ENLACES`, cada una decidida por `puede()`; el código nunca figura entre ellas.
+  - **Pendiente anotado (decisión de los autores).** La regla «un proyecto nuevo siempre con un supervisor activo» la comprueba `crearProyecto` con
+    código propio y la repite `listarProyectos` en `supervisores_disponibles`. Se deja así y pasa a un paso aparte, con la regla pura en `domain/`,
+    pruebas por combinación y mutación (anotado en `PROGRESO.md`).
+- **Bloque 4 — ciclo de vida del proyecto.**
+  - **Acciones desde la consulta.** `obtenerProyecto` suma a `acciones`: `PAUSAR`, `REANUDAR`, `FINALIZAR`, `REACTIVAR` y `CAMBIAR_SUPERVISOR`, que salen de
+    `puede()` y de las reglas de `domain/` (`puedePausarProyecto`, `puedeReanudarProyecto`, `finalizarProyecto`, `puedeReactivarProyecto` y
+    `puedeCambiarSupervisor`), no del estado en la pantalla. Finalizar con tareas «Esperando supervisión» y reactivar con el supervisor inactivo se
+    **ofrecen igual** (como desactivar a un supervisor con proyectos en el 5.3) para poder explicar el bloqueo.
+  - **`ciclo_de_vida`** (aditivo): `tareas_esperando_supervision` (la cantidad que bloquea finalizar, de la regla de `domain/`), `tareas_a_liberar`
+    (las «En progreso» que se liberarían; 0 si está bloqueado) y `supervisor_inactivo`. La pantalla no cuenta tareas. **`supervisores_destino`**:
+    supervisores activos y distintos del actual, con `puedeCambiarSupervisor`; vacío en un proyecto finalizado.
+  - **Pausar, reanudar, finalizar y reactivar** piden una **nota obligatoria**. Finalizar bloqueado dice «Tiene N tareas esperando supervisión» (singular
+    incluido); sin bloqueo avisa «Tiene N tareas en progreso que serán liberadas.» o «No tiene tareas en progreso.», guarda la fecha real, deja el
+    tablero en solo lectura y no cierra las asignaciones. Reactivar con el supervisor inactivo no se puede: lo explica y enlaza al supervisor para
+    reactivarlo primero; reactivar no avisa al equipo (G2-A). Si los datos cambian con el diálogo abierto (por ejemplo, llega una tarea a supervisión), la
+    pantalla pasa sola al aviso de bloqueo; si el servicio rechaza la acción, el mensaje queda en el diálogo y no se escribe nada.
+  - **Cambiar supervisor.** Diálogo con un selector (el mismo cuadro que la reasignación del módulo Supervisores, para un solo proyecto). Las tareas que
+    esperan supervisión siguen al proyecto y se avisa a quien entra y a quien sale (lo hace el servicio).
+- **Bloque 4 — pestaña «Equipo».**
+  - **Ampliaciones aditivas.** `obtenerEquipoProyecto` (gestión) trae `estado_proyecto`, `puede_asignar` (hay algún practicante a quien la regla
+    `puedeAsignarPracticante` deja asignar) y, por miembro activo, `tareas_a_liberar` y `puede_quitar` (con `puedeQuitarPracticante`). Consulta nueva
+    `listarPracticantesAsignables`: practicantes activos sin asignación vigente en el proyecto, por nombre, con su carga total de tareas en progreso;
+    vacía en un proyecto finalizado y para quien no es Administrador.
+  - **Asignar.** Diálogo con casillas (uno o varios) y la carga de cada uno; aplica `asignarPracticantes` con una lista de pares, todo o nada, y cada
+    practicante recibe un aviso. **Quitar.** Confirmación que avisa cuántas tareas «En progreso» de ese proyecto se liberarán (número de `domain/`), con
+    motivo opcional; la asignación recibe fecha de baja y el practicante pasa a «anteriores».
+  - **Proyecto finalizado.** No admite asignar ni quitar: la pantalla lo dice («si hace falta, se reactiva primero») y no ofrece los botones; lo hace
+    cumplir `domain/`, no la pantalla.
+- **Estructura.** En `src/paneles/administrador/proyectos/`: `FormularioProyecto`, `codigo.ts`, `SeccionEnlaces`, `AccionesDeProyecto`,
+  `CambiarSupervisorDelProyecto`, `EquipoDelProyecto` y `AsignarPracticantes`. El componente `Equipo` en línea del detalle se reemplaza por
+  `EquipoDelProyecto`.
+- **Pruebas.** Bloque 3: 3.571 → 3.622 en 150 archivos (+51 y +3 archivos). Bloque 4: 3.622 → 3.686 en 152 archivos (+64 y +2 archivos). `tsc -b`,
+  Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de
+  mutación. Con el equipo lento, `vitest` pierde workers al arrancar y algunas pruebas pesadas superan los 5 s: se verificó con
+  `--testTimeout=60000 --maxWorkers=3`, sin cambios de lógica.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define que «Editar proyecto» agrupe datos, rama base y
+  reunión en un solo diálogo ni que un guardado parcial conserve lo ya guardado; ni cómo se quita la reunión en pantalla; ni que «Nuevo proyecto» abra
+  el detalle del proyecto creado; ni los textos de los bloqueos de finalizar y reactivar (singular incluido); ni que finalizar y reactivar se ofrezcan
+  aunque estén bloqueados para explicarlo; ni cómo se ve el diálogo de asignar (casillas con la carga) ni el motivo opcional al quitar. Conviene pasarlos a
+  §5.4.
+- **Siguiente paso.** Módulo 5.5 (Tareas): reutiliza `DetalleDeTarea`, el formulario de «Nueva tarea» y el detalle en `/administrador/tareas/:idTarea`.
