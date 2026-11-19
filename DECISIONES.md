@@ -3638,3 +3638,196 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   500 kB.
 - No se anotan hashes: esta actualización se hizo bajo la restricción expresa de no ejecutar comandos de Git.
 
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso 0: servicios unificados y acceso
+
+- **Commit:** `83b1315` (`refactor: unifica el acceso, Mi perfil y las notificaciones en los servicios de la Fase 2`).
+- **Por qué.** La fusión `48abbbc` dejó dos implementaciones de lo mismo y la interfaz usaba las de la Fase 4:
+  `services/cuenta.ts` frente a `cuentas/perfil.ts` y `cuentas/contrasenaPropia.ts`; `marcar*` de `services/notificaciones.ts` frente
+  a `seguimiento/notificaciones.ts`; y `services/autenticacion.ts` con `auth/iniciarSesion.ts` frente a `cuentas/sesion.ts`.
+  Las de la Fase 4 validaban menos (celular con formato laxo, sin un `puede()` por campo) y el acceso no llamaba a
+  `emitirAvisosFinDePractica`: el aviso previo de fin de práctica (F6-A) dejó de emitirse (regresión H2).
+- **Decisión (D1-A).** La interfaz adopta los servicios de la Fase 2 y se retiran los duplicados: `services/cuenta.ts`,
+  `services/autenticacion.ts`, `marcarNotificacionLeida` y `marcarTodasNotificacionesLeidas` de `services/notificaciones.ts` (que
+  conserva `crearNotificaciones` y `agregarNotificaciones`) y `auth/iniciarSesion.ts`, con sus pruebas. Antes de retirarlas se
+  comprobó caso por caso que las pruebas de `cuentas/` y `seguimiento/` cubren todo lo que probaban. Alternativas descartadas:
+  conservar ambas (dos validaciones del mismo dato y el login sin avisos) o arreglar solo el login.
+- **Acceso.** `PaginaAcceso` llama a `iniciarSesion` y `accesoRapido` de `cuentas/`: con contraseña correcta una cuenta inactiva
+  recibe «Tu cuenta está inactiva…»; con una falsa, el mensaje genérico, sin revelar que la cuenta existe (decisión de 10A).
+- **Mi perfil.** `PaginaPerfil` envía solo los campos editables del rol que cambiaron, porque el servicio rechaza un campo
+  prohibido aunque no cambie. Los errores del servicio (`cuenta_github`, `disponibilidad_horaria`, `contrasenaActual`,
+  `contrasenaNueva`) se renombran a los del formulario. Sin cambios devuelve `SIN_CAMBIOS`. La `SesionUsuario` devuelta se
+  aplica con `abrirSesion`. `PerfilUsuario` acepta `Resultado<unknown>` y deja de reemplazar el formulario con el valor devuelto:
+  los valores se derivan del almacén.
+- **Pruebas.** 2.890 → 2.871 en 104 archivos: 23 retiradas por duplicadas y 4 nuevas (contraseña falsa sin revelar la cuenta
+  inactiva y tres de Mi perfil). Dos pruebas de `PaginaAcceso` se ajustaron al mensaje de 10A.
+- **Abierto.** H3: `esquemasPerfil.ts` conserva la regex laxa del celular; el servicio ya aplica la regla real. Se resuelve en el
+  sub-paso d). `ACCESO_RAPIDO_NO_DISPONIBLE` quedó sin uso real.
+- **Sesión (cierre de pendiente).** `GuardaRuta` ya revalida la sesión contra el almacén (existe, ACTIVO, mismo rol) desde `a4d2e54`.
+- **Plan de la conexión.** Sub-pasos a) adaptadores en `src/app/adaptadores/`, b) campana y «Ver todas», c) detalle de tarea y
+  Kanban, d) Mi perfil y sesión, e) retirar `src/app/ejemplos/`. Decisiones de los autores: `PaginaDesarrollo` se conserva como contenedor
+  de integración, sin simulaciones, hasta la Fase 7 (D2-B); la señal D6-A pasará a una consulta (D3-A); el enlace de una
+  notificación usa una tabla de destino a ruta del panel mientras no existan los módulos (D4-A); se conecta solo «editar» de
+  `FormularioTarea` (D6-A); se retira el bloque «Asignaciones y responsabilidades» de Mi perfil, que no está en §8.2 (D7-A); y se
+  ocultan Discord, GitHub y disponibilidad a quien su rol no los edita (D8-A).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso a): adaptadores de las consultas
+
+- **Commit:** `0ed86c9` (adaptadores de las consultas a los componentes compartidos).
+- **Qué se construyó.** Funciones puras en `src/app/adaptadores/`, una por modelo de presentación, con sus pruebas (44 en 4
+  archivos): `aTareaDetalle` (`TareaDetalleVista` → `TareaDetalle`), `aTareaTablero` y `aTareasDelTablero` (`TareaDeTablero` y
+  `TableroProyecto` → `TareaTablero`), `aEventosLinea` (`EventoConAutor` → `EventoLinea`) y `aNotificacionItem` con
+  `rutaDeNotificacion` (`NotificacionVista` → `NotificacionItem`). Aún no los usa ningún componente: se conectan en b) y c).
+- **Decisión: los cuatro tipos se conservan.** `TareaDetalle`, `TareaTablero`, `EventoLinea` y `NotificacionItem` dejan de llamarse
+  «provisionales» y quedan como el modelo de presentación de los componentes; el contrato con las consultas son los adaptadores.
+  Alternativa descartada: que los componentes reciban directamente la forma de las consultas (snake_case e ISO), que los
+  acoplaría a ella.
+- **Decisión: los adaptadores no calculan reglas.** Renombran, aplanan y convierten fechas con `parseISO` en el borde. La etiqueta
+  de PR visible, la marca «Devuelta», la observación, `vencida` y las acciones ya vienen decididas por la consulta. Mientras tanto
+  `DetalleTarea` y `TableroKanban` siguen recalculando `etiquetaPRVisible` y `estaVencida`; se retira en el sub-paso c).
+- **Autor no resuelto.** La consulta devuelve el ID como nombre cuando la cuenta del autor no se encuentra; el adaptador lo detecta
+  (`autor_rol` nulo con autor de tipo `USUARIO`) y muestra «Usuario desconocido», nunca un ID.
+- **Enlaces de las notificaciones (D4-A).** `RUTA_DE_MODULO` es una constante de datos con la página del módulo por rol y tipo de
+  elemento; un aviso de la propia cuenta lleva a `/<panel>/perfil`; un tipo sin entrada cae al inicio del rol; y si la consulta
+  dice `destino: null`, no hay ruta y el enlace queda desactivado. Qué puede abrir cada persona sigue decidiéndolo la consulta.
+  Una prueba comprueba que toda ruta de la tabla exista en el menú de su rol. Cuando los módulos tengan detalle, se afina en este
+  archivo sin tocar los componentes.
+- **Etiqueta de acciones.** El mapa de etiquetas de la línea de tiempo (los 15 tipos de tarea y de Pull Request) se migró de
+  `src/app/ejemplos/datos.ts`; un tipo sin etiqueta muestra su código.
+- **Pruebas.** 2.871 → 2.915 en 108 archivos (+44 en 4 archivos nuevos).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso b): campana y «Ver todas»
+
+- **Commit:** `7269ba6` (campana y «Ver todas» conectadas a `listarNotificaciones`).
+- **Qué se construyó.** El hook `useNotificaciones({ limite, soloNoLeidas })` (`src/app/layout/useNotificaciones.ts`) llama a
+  `listarNotificaciones`, adapta con `aNotificacionItem` y devuelve `{ items, noLeidas, total, cargando, error }`. La campana pide
+  las últimas 8; «Ver todas» hace dos consultas (todas y solo no leídas). `CampanaNotificaciones` recibe `noLeidas` por prop y ya no
+  cuenta, ordena ni recorta. Se retiró `notificacionVista.ts`, que decidía en la pantalla la existencia y la ruta de cada aviso
+  (y tenía el caso especial `pry-pl2d`).
+- **Decisión (recarga, opción A).** El hook vuelve a consultar al montarse y cada vez que cambia la lista de notificaciones del
+  almacén, que se usa solo como señal de cambio y no sale del hook: los componentes no leen el almacén. Alternativa descartada:
+  consultar solo al montar y tras las acciones propias, porque un aviso nuevo en la misma sesión no aparecería hasta navegar.
+- **Por qué `noLeidas` va aparte.** Con `limite: 8` la lista ya no trae todos los avisos; contar sobre ella daría un punto verde
+  equivocado. `no_leidas` de la consulta cuenta siempre todos los del usuario.
+- **Comportamiento.** Mientras llega una respuesta nueva se conserva la anterior (sin parpadeo); una respuesta que llega tarde no
+  pisa a otra más reciente; la respuesta de otra persona (cambio de sesión) no se muestra. Cada consulta conserva la demora de red
+  simulada de 600 ms, así que tras marcar un aviso el contador baja con ese retraso.
+- **Consecuencia de D4-A (divergencia temporal con §8.1).** Un aviso de una tarea lleva a la página vacía del módulo
+  (`/<panel>/tareas` o `/proyectos`) y ya no a `/desarrollo`: «se abre el elemento relacionado» se cumple cuando los módulos tengan
+  detalle. Mientras tanto, la única forma de abrir una tarea es `PaginaDesarrollo`.
+- **Pruebas.** 2.915 → 2.937 en 109 archivos: +23 (hook 9, campana conectada 6, «Ver todas» 6 más, `CampanaNotificaciones` 2 más) y
+  −1 (la de `notificacionVista`). Sin cobertura propia: el aviso de error de «Ver todas» (el hook sí lo prueba).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso c): detalle de tarea, Kanban y «Ver todas las terminadas»
+
+- **Commit:** `7354f39` (detalle de tarea, tablero y «Ver todas las terminadas» conectados a las consultas; incluye la regla D6-A de
+  `domain/` y los campos de `obtenerTarea`).
+- **Partición.** El sub-paso se planeó en tres commits (c1 dominio y consulta, c2 detalle y tablero, c3 listado y edición) y los
+  autores pidieron unirlos en uno solo para no multiplicar commits; el contenido es el mismo.
+- **Señal D6-A (D3-A).** Devolver o reabrir conserva al responsable, así que una tarea puede quedar EN_PROGRESO a nombre de alguien que
+  ya no puede trabajarla. La regla pura `motivosDeAtencionDelResponsable` (`src/domain/responsableTarea.ts`) devuelve los motivos
+  `CUENTA_INACTIVA`, `CUENTA_NO_ENCONTRADA` y `SIN_ASIGNACION_VIGENTE` (pueden darse varios, en ese orden; `[]` si no hay nada que
+  señalar). Solo aplica con la tarea EN_PROGRESO y con responsable. `obtenerTarea` la expone como `atencion_responsable`, que
+  **solo reciben el Administrador y el Supervisor** (quienes liberan la tarea); para el Practicante es `[]`, para que no se entere del
+  estado de la cuenta de un compañero. Se eligió un arreglo de motivos y no un booleano porque la interfaz distingue tres mensajes. 13
+  mutaciones detectadas de 13 (10 sobre la regla y 3 sobre la consulta); se aplicaron con un script que restaura el archivo, sin Git.
+- **Rama base del proyecto.** `obtenerTarea` trae `proyecto.rama_base`: el modal de «Crear Pull Request» la necesita aunque aún no
+  exista el PR (`pull_request.rama_base` es `null` hasta entonces). Antes se leía del almacén.
+- **Mapeador de acciones.** `src/app/tareas/accionesDelDetalle.ts` convierte las `AccionDisponible` que entrega la consulta en las
+  acciones de `DetalleTarea`: clave, etiqueta, si es destructiva, el texto que se pide (`MOTIVO` o `NOTA`) y el servicio al que
+  llama. No consulta permisos ni estados. La tabla está tipada `Record<AccionDeTarea, …>`, así que una acción nueva del dominio no
+  compila hasta describirla. Crear un PR y editar no llaman a un servicio: los resuelve la página (modal de PR y formulario).
+- **Componentes sin reglas.** `DetalleTarea` ya no lee el almacén ni recalcula la etiqueta de PR (llega decidida por la consulta, y
+  con «Pendiente» la consulta no trae URL). `TableroKanban` ya no usa `estaVencida` ni `hoy` (usa `vencida` de la consulta) ni
+  recorta o reordena las terminadas: recibe las 5 más recientes y `totalTerminadas` para el contador y el enlace «Ver todas».
+- **`useConsulta`.** Hook genérico (`src/app/useConsulta.ts`) con el patrón de `useNotificaciones`: vuelve a consultar cuando cambia
+  el almacén (usado solo como señal de cambio), conserva la respuesta anterior mientras llega la nueva, no muestra el valor de otra
+  consulta ni deja que una respuesta tardía pise a una reciente.
+- **«Ver todas las terminadas» (§6.8).** Vista dentro de `PaginaDesarrollo` (`ListadoTerminadas`): lista completa, búsqueda por título o
+  ID en memoria, clic al detalle y «Volver al listado» o «Volver al tablero». La búsqueda es un filtro de presentación sobre datos ya
+  limitados por la consulta.
+- **Selector de proyecto.** `PaginaDesarrollo` ya no está fijada a `pry-pl2d`: el Administrador y el Supervisor usan `listarProyectos`
+  y el Practicante, `listarMisProyectos` (solo los vigentes); por defecto, el primero. No hizo falta ajustar ninguna consulta.
+- **Editar tarea (D6-A).** Solo «editar» se conecta a `FormularioTarea`, desde el detalle y cuando la consulta ofrece `EDITAR_DATOS`.
+  Crear tarea no tiene todavía pantalla anfitriona: espera a los módulos 5.4 y 5.5.
+- **Retiros.** `ejemplos/accionesDeTarea.ts` y `ejemplos/datos.ts`, con sus pruebas. `PaginaDesarrollo` se conserva como contenedor
+  de integración hasta la Fase 7 (D2-B).
+- **Pruebas.** 2.937 → 3.017 en 112 archivos (+80 netas): la regla D6-A y la consulta, el mapeador, `useConsulta`, el listado de
+  terminadas, el detalle, el tablero, los adaptadores y `PaginaDesarrollo` reescrita (15). Las pruebas de la página usan un entorno sin
+  demora de red para no esperar 600 ms por consulta.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** (1) §6.5 y plan §5: la señal D6-A y quién la ve no están
+  documentadas. (2) §6.8 describe «Ver todas las terminadas» como un listado con búsqueda; hoy es una vista del contenedor temporal
+  hasta los módulos de las Fases 5 a 7. (3) «Solo mis tareas» actúa sobre las terminadas que muestra el tablero (las 5 más recientes):
+  conviene decidir si debe actuar sobre todas.
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso d): Mi perfil y sesión
+
+- **Commit:** `f2bb209` (Mi perfil conectado a `obtenerMiPerfil` y a los servicios de cuentas).
+- **Consulta nueva `obtenerMiPerfil`.** Hasta ahora ninguna consulta daba a una persona sus propios datos (`obtenerPracticante` es solo del
+  Administrador), así que `PaginaPerfil` leía el almacén. Se amplió `services/consultas/` (Fase 2): cada persona recibe **solo su cuenta**,
+  sea cual sea su rol, sin parámetro para pedir la de otra. Trae los bloques de lectura de §8.2: rol, estado y fecha de alta; para el
+  Practicante, área, especialidad y fechas de práctica; los datos personales; y los campos del formulario. Nunca devuelve la contraseña
+  ni la postulación de origen. Un usuario INACTIVO recibe `USUARIO_INACTIVO`, y un Practicante o Supervisor sin su detalle (o sin su
+  área o especialidad) recibe `NO_ENCONTRADO` en vez de un perfil a medias.
+- **Regla `camposDelPerfil` en `domain/` (`src/domain/perfil.ts`).** Decide qué campos **existen** para el rol y cuáles son **editables**, con
+  `puede(EDITAR_*_PROPIO)`; antes era una tabla escrita a mano en la pantalla que duplicaba los permisos. Practicante: los seis campos,
+  todos editables. Supervisor: nombre y correo de solo lectura («los fija el Administrador», §8.2) y celular, Discord y GitHub editables.
+  Administrador: nombre, correo y celular. Un usuario INACTIVO conserva sus campos pero no edita ninguno. Alternativa descartada: la
+  tabla en la página.
+- **Discord, GitHub y disponibilidad del Administrador (D8-A).** No se muestran: no existen en su modelo (no tiene registro de practicante
+  ni de supervisor). Mostrarlos bloqueados y vacíos hacía pensar en un error. Cierra la pregunta pendiente de «Decisiones pendientes».
+  Alternativa descartada: dejarlos bloqueados.
+- **Validación en el formulario (H3).** El correo y el celular reutilizan `esquemaCorreo` y `esquemaCelular` del servicio (9 dígitos que
+  empiezan con 9, F7-A), y el mínimo de la contraseña usa `LARGO_MINIMO_CONTRASENA`: desaparece la regex laxa del celular que dejaba pasar
+  números que el servicio rechazaba. Discord, GitHub y disponibilidad los valida el servicio y su error sale junto al campo. Solo se
+  validan los campos editables, así que un dato de solo lectura no bloquea guardar los demás.
+- **Formulario.** Todos los campos son texto con los nombres de los datos (`cuenta_github`, `disponibilidad_horaria`), así los errores del
+  servicio llegan al campo sin renombrar (solo se renombran los de la contraseña). La página envía únicamente los campos editables que
+  cambiaron (el servicio rechaza uno prohibido aunque no cambie); sin cambios devuelve `SIN_CAMBIOS`; vaciar Discord, GitHub o la
+  disponibilidad quita el dato. `PerfilUsuario` ya no reinicia el formulario cuando llegan los mismos valores en un objeto nuevo
+  (una consulta repetida no borra lo que se está escribiendo) y sí lo reinicia cuando cambian de verdad. Un `null` se muestra como vacío,
+  nunca como «null».
+- **Sesión.** `editarMiPerfil` y `cambiarMiContrasena` devuelven la `SesionUsuario` y la página la aplica con `abrirSesion`: la barra
+  superior y la franja de contraseña temporal se refrescan. `GuardaRuta` ya revalidaba la cuenta contra el almacén (`a4d2e54`).
+- **«Asignaciones y responsabilidades» (D7-A).** Se retiró: §8.2 define tres bloques y ese no estaba (regla de oro del plan §1). Con ello
+  salen `responsabilidadesPerfil.ts` y su cálculo de alcance en la pantalla.
+- **Ubicación.** `PaginaPerfil` pasa de `src/app/ejemplos/` a `src/app/perfil/`.
+- **Mutaciones.** 19 mutaciones, 18 detectadas y 1 equivalente (la disponibilidad usa el permiso del celular: el único rol que tiene ese
+  campo es el Practicante y para él ambos permisos dan el mismo resultado). Aplicadas con un script que restaura los archivos, sin Git.
+- **Pruebas.** 3.017 → 3.068 en 114 archivos (+51 netas): regla de `domain/` (9), consulta (12), adaptador (6), formulario (18) y página (19),
+  menos las de `PaginaPerfil` y `responsabilidadesPerfil` de `ejemplos/`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** §8.2 no dice que el Supervisor ve su nombre y correo en solo
+  lectura dentro del formulario (hoy son campos bloqueados); conviene aclararlo. El resto de §8.2 coincide con lo implementado.
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso e) y cierre de la Fase 4
+
+- **Commit:** `9ea9835` (mueve `PaginaDesarrollo` a `src/app/desarrollo/`, elimina `src/app/ejemplos/` y retira `ACCESO_RAPIDO_NO_DISPONIBLE`).
+- **`PaginaDesarrollo`.** Se movió con su prueba, sin cambios de comportamiento y con la misma ruta (`/<panel>/desarrollo`). La carpeta se llama
+  `desarrollo` porque la página es un contenedor temporal de integración y no un «ejemplo»; se elimina al terminar la Fase 7 (plan §9, D2-B).
+  No está en ningún menú: se llega escribiendo la URL.
+- **Código muerto.** `ACCESO_RAPIDO_NO_DISPONIBLE` (mensaje en `services/resultado.ts` y su entrada en `resultado.test.ts`) quedó sin uso
+  cuando el acceso pasó a los servicios de la Fase 2 (sub-paso 0, `83b1315`); se retira ahora y no en la limpieza de la Fase 8.
+- **Pendientes cerrados.** `src/app/ejemplos/` ya no existe. El pendiente de migrar los formateos de ID a `formatearIdLegible` dejó de aplicar: el
+  único código de la interfaz que formateaba IDs (`ejemplos/datos.ts`) se retiró en `7354f39`, y las consultas entregan `id_legible`.
+- **Pruebas.** Sin cambios en el total (3.068 en 114 archivos): se movieron las 15 de `PaginaDesarrollo` y se quitó un elemento de una lista.
+
+### Cierre de la Fase 4 (componentes compartidos)
+
+- **Qué quedó.** Los componentes compartidos de los pasos 1 a 11 están construidos, probados y conectados. Las pantallas llaman a `services/`
+  para actuar y a `services/consultas/` para leer, mediante adaptadores (`src/app/adaptadores/`) y los hooks `useConsulta` y
+  `useNotificaciones`. Ni las pantallas ni los componentes compartidos leen el almacén ni deciden reglas: el almacén solo se usa dentro de esos
+  dos hooks, como señal de cambio. El recorrido fue: 0 unificar servicios y acceso (`83b1315`), a adaptadores (`0ed86c9`), b campana y «Ver
+  todas» (`7269ba6`), c detalle, Kanban y terminadas (`7354f39`), d Mi perfil (`f2bb209`) y e retiro de `ejemplos/` (`9ea9835`).
+- **Salvedad.** `FormularioTarea` solo tiene pantalla anfitriona para **editar** (desde el detalle). Su modo **crear** no se aloja en ninguna
+  pantalla hasta los módulos 5.4 (Proyectos) y 5.5 (Tareas), que son quienes lo usan.
+- **Ampliaciones a la Fase 2 hechas durante la conexión** (aditivas, con sus pruebas): la regla `motivosDeAtencionDelResponsable` y los campos
+  `atencion_responsable` y `proyecto.rama_base` de `obtenerTarea`; la regla `camposDelPerfil` y la consulta `obtenerMiPerfil`.
+- **Siguiente.** Fase 5, módulo 5.1 (Postulaciones). Para cerrar la fase, los autores revisan el PR de esta rama a `development`; el cierre en
+  `main` con su etiqueta sigue el plan §11.
+- **Divergencias con `docs/` (consolidadas, para que los autores las actualicen a mano).**
+  1. §8.1 «se abre el elemento relacionado»: hoy el aviso lleva a la página del módulo, vacía hasta las Fases 5 a 7 (D4-A, temporal).
+  2. §6.5 y plan §5: no está documentada la señal D6-A (tarea EN_PROGRESO a cargo de alguien con la cuenta inactiva, sin cuenta o sin
+     asignación vigente) ni que solo la ven el Administrador y el Supervisor.
+  3. §6.8: «Ver todas las terminadas» es una vista dentro de `PaginaDesarrollo` mientras no existan los módulos.
+  4. §9.2.1: «Solo mis tareas» actúa sobre las 5 terminadas visibles del tablero; decidir si debe actuar sobre todas.
+  5. §8.2: aclarar que el Supervisor ve su nombre y correo en el formulario como campos de solo lectura.

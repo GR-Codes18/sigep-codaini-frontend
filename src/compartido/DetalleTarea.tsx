@@ -1,18 +1,11 @@
 import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
-import {
-  etiquetaPRVisible,
-  type EstadoPR,
-  type EstadoTarea,
-  type Fecha,
-  type FechaHora,
-} from '@/domain';
+import type { EstadoPR, EstadoTarea, Fecha, FechaHora, MotivoAtencionResponsable } from '@/domain';
 import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo, type EventoLinea } from '@/compartido/LineaTiempo';
 import { ModalConfirmacion, type OpcionMotivo } from '@/compartido/ModalConfirmacion';
 import { Button } from '@/compartido/ui/button';
-import { useAlmacen } from '@/data';
 import type { Resultado } from '@/services';
 
 export interface TareaDetalle {
@@ -36,7 +29,15 @@ export interface TareaDetalle {
   ramaBase?: string;
   devuelta?: boolean;
   observacion?: string;
+  /** Por qué el responsable ya no puede seguir con la tarea (D6-A); solo la reciben Administrador y Supervisor. */
+  atencionResponsable?: MotivoAtencionResponsable[];
 }
+
+const TEXTO_ATENCION: Record<MotivoAtencionResponsable, string> = {
+  CUENTA_INACTIVA: 'La cuenta del responsable está inactiva.',
+  CUENTA_NO_ENCONTRADA: 'No se encontró la cuenta del responsable.',
+  SIN_ASIGNACION_VIGENTE: 'El responsable ya no tiene una asignación vigente en este proyecto.',
+};
 
 export interface AccionTarea {
   clave: string;
@@ -59,33 +60,9 @@ interface Props {
 
 export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
   const [pendiente, setPendiente] = useState<AccionTarea | null>(null);
-  const estadoResponsable = useAlmacen((estado) =>
-    tarea.idPracticante === null
-      ? null
-      : (estado.datos.usuarios.find((usuario) => usuario.id === tarea.idPracticante)?.estado ??
-        null),
-  );
-  const asignacionVigente = useAlmacen(
-    (estado) =>
-      tarea.idPracticante !== null &&
-      estado.datos.asignaciones.some(
-        (asignacion) =>
-          asignacion.id_practicante === tarea.idPracticante &&
-          asignacion.id_proyecto === tarea.idProyecto &&
-          asignacion.fecha_baja === null,
-      ),
-  );
-  const estadoPrVisible = etiquetaPRVisible({
-    estado: tarea.estado,
-    requiere_pr: tarea.requierePr,
-    estado_pr: tarea.estadoPr,
-  });
-  const urlPrVisible =
-    estadoPrVisible !== null && estadoPrVisible !== 'PENDIENTE' ? tarea.urlPr : undefined;
-  const requiereAtencionResponsable =
-    tarea.estado === 'EN_PROGRESO' &&
-    tarea.idPracticante !== null &&
-    (estadoResponsable !== 'ACTIVO' || !asignacionVigente);
+  // La etiqueta de PR y su enlace llegan ya decididos por la consulta (§7.3): aquí solo se muestran.
+  const estadoPrVisible = tarea.estadoPr;
+  const motivosAtencion = tarea.atencionResponsable ?? [];
 
   async function alHacerClic(accion: AccionTarea) {
     if (accion.deshabilitada) return;
@@ -138,21 +115,15 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
         </section>
       )}
 
-      {requiereAtencionResponsable && (
+      {motivosAtencion.length > 0 && (
         <section
           role="status"
           className="rounded-xl bg-state-warning-bg p-4 text-state-warning-text"
         >
           <h2 className="text-sm font-semibold">Revisar el responsable de la tarea</h2>
           <p className="mt-1 text-sm">
-            {estadoResponsable === 'INACTIVO'
-              ? 'La cuenta del responsable está inactiva. '
-              : estadoResponsable === null
-                ? 'No se encontró la cuenta del responsable. '
-                : ''}
-            {!asignacionVigente &&
-              'El responsable ya no tiene una asignación vigente en este proyecto. '}
-            Un Administrador o Supervisor puede liberar la tarea con un motivo.
+            {motivosAtencion.map((motivo) => TEXTO_ATENCION[motivo]).join(' ')} Un Administrador o
+            Supervisor puede liberar la tarea con un motivo.
           </p>
         </section>
       )}
@@ -176,12 +147,12 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
           <dt className="text-text-2">Requiere PR</dt>
           <dd className="text-text">{tarea.requierePr ? 'Sí' : 'No'}</dd>
         </div>
-        {urlPrVisible && (
+        {tarea.urlPr && (
           <div className="sm:col-span-2">
             <dt className="text-text-2">Pull Request</dt>
             <dd>
-              <a href={urlPrVisible} className="text-link underline underline-offset-2">
-                {urlPrVisible}
+              <a href={tarea.urlPr} className="text-link underline underline-offset-2">
+                {tarea.urlPr}
               </a>
               {tarea.ramaOrigen && tarea.ramaBase && (
                 <span className="text-text-2">

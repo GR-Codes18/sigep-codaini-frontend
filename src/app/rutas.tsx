@@ -5,9 +5,9 @@ import type { Rol } from '@/auth/tipos';
 import { LayoutPanel } from '@/app/layout/LayoutPanel';
 import { PaginaVacia } from '@/app/layout/PaginaVacia';
 import { MENU_POR_ROL } from '@/app/menus';
-import { PaginaDesarrollo } from '@/app/ejemplos/PaginaDesarrollo';
+import { PaginaDesarrollo } from '@/app/desarrollo/PaginaDesarrollo';
 import { PaginaNotificaciones } from '@/app/layout/PaginaNotificaciones';
-import { PaginaPerfil } from '@/app/ejemplos/PaginaPerfil';
+import { PaginaPerfil } from '@/app/perfil/PaginaPerfil';
 import { AccesoSiNoHaySesion, RaizSegunSesion } from '@/app/RedireccionesSesion';
 
 function rutasDeRol(rol: Rol): RouteObject[] {

@@ -3,8 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { GuardaRuta } from './GuardaRuta';
 import { useAlmacenSesion } from './almacenSesion';
-import { accesoRapido } from './iniciarSesion';
-import { crearEntorno } from '@/services';
+import { accesoRapido, crearEntorno } from '@/services';
 import { crearSemilla } from '@/data/semilla';
 import { useAlmacen } from '@/data';
 
@@ -37,29 +36,29 @@ describe('GuardaRuta', () => {
   });
 
   it('deja pasar a un rol en su propio panel', async () => {
-    const resultado = await accesoRapido('PRACTICANTE', entorno);
+    const resultado = await accesoRapido({ rol: 'PRACTICANTE' }, entorno);
     if (!resultado.ok) throw new Error(resultado.mensaje);
-    useAlmacenSesion.setState({ usuario: resultado.usuario });
+    useAlmacenSesion.setState({ usuario: resultado.valor });
     renderEn('/practicante/inicio');
     expect(screen.getByText('Inicio practicante')).toBeInTheDocument();
   });
 
   it('redirige a su inicio si entra al panel de otro rol', async () => {
-    const resultado = await accesoRapido('PRACTICANTE', entorno);
+    const resultado = await accesoRapido({ rol: 'PRACTICANTE' }, entorno);
     if (!resultado.ok) throw new Error(resultado.mensaje);
-    useAlmacenSesion.setState({ usuario: resultado.usuario });
+    useAlmacenSesion.setState({ usuario: resultado.valor });
     renderEn('/administrador/dashboard');
     expect(screen.getByText('Inicio practicante')).toBeInTheDocument();
     expect(screen.queryByText('Dashboard admin')).not.toBeInTheDocument();
   });
 
   it('cierra la sesión y redirige si la cuenta real está inactiva', async () => {
-    const resultado = await accesoRapido('PRACTICANTE', entorno);
+    const resultado = await accesoRapido({ rol: 'PRACTICANTE' }, entorno);
     if (!resultado.ok) throw new Error(resultado.mensaje);
-    useAlmacenSesion.setState({ usuario: resultado.usuario });
+    useAlmacenSesion.setState({ usuario: resultado.valor });
     useAlmacen.getState().transaccion((datos) => ({
       usuarios: datos.usuarios.map((usuario) =>
-        usuario.id === resultado.usuario.id ? { ...usuario, estado: 'INACTIVO' } : usuario,
+        usuario.id === resultado.valor.id ? { ...usuario, estado: 'INACTIVO' } : usuario,
       ),
     }));
 
@@ -71,12 +70,12 @@ describe('GuardaRuta', () => {
   });
 
   it('cierra la sesión si el rol de la cuenta cambió desde el inicio de sesión', async () => {
-    const resultado = await accesoRapido('PRACTICANTE', entorno);
+    const resultado = await accesoRapido({ rol: 'PRACTICANTE' }, entorno);
     if (!resultado.ok) throw new Error(resultado.mensaje);
-    useAlmacenSesion.setState({ usuario: resultado.usuario });
+    useAlmacenSesion.setState({ usuario: resultado.valor });
     useAlmacen.getState().transaccion((datos) => ({
       usuarios: datos.usuarios.map((usuario) =>
-        usuario.id === resultado.usuario.id ? { ...usuario, rol: 'ADMINISTRADOR' } : usuario,
+        usuario.id === resultado.valor.id ? { ...usuario, rol: 'ADMINISTRADOR' } : usuario,
       ),
     }));
 
@@ -87,14 +86,12 @@ describe('GuardaRuta', () => {
   });
 
   it('refresca el resumen persistido al cambiar los datos del usuario activo', async () => {
-    const resultado = await accesoRapido('PRACTICANTE', entorno);
+    const resultado = await accesoRapido({ rol: 'PRACTICANTE' }, entorno);
     if (!resultado.ok) throw new Error(resultado.mensaje);
-    useAlmacenSesion.setState({ usuario: resultado.usuario });
+    useAlmacenSesion.setState({ usuario: resultado.valor });
     useAlmacen.getState().transaccion((datos) => ({
       usuarios: datos.usuarios.map((usuario) =>
-        usuario.id === resultado.usuario.id
-          ? { ...usuario, nombre: 'Nombre actualizado' }
-          : usuario,
+        usuario.id === resultado.valor.id ? { ...usuario, nombre: 'Nombre actualizado' } : usuario,
       ),
     }));
 

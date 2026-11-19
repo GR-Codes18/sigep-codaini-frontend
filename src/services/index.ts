@@ -4,14 +4,6 @@
  */
 
 export { obtenerActor } from './actor';
-export { autenticarUsuario, obtenerUsuarioDeAccesoRapido } from './autenticacion';
-export type { UsuarioAutenticado } from './autenticacion';
-export { actualizarPerfil, cambiarContrasenaPropia } from './cuenta';
-export type {
-  DatosPerfilCuenta,
-  EntradaActualizarPerfil,
-  EntradaCambiarContrasena,
-} from './cuenta';
 export { simularDemora } from './demora';
 export { DEMORA_PREDETERMINADA_MS, ENTORNO, crearEntorno } from './entorno';
 export type { AlmacenServicio, Entorno } from './entorno';
@@ -52,17 +44,8 @@ export {
 export type { EntradaEvento } from './historial';
 export { crearMarca } from './marca';
 export type { Marca } from './marca';
-export {
-  agregarNotificaciones,
-  crearNotificaciones,
-  marcarNotificacionLeida,
-  marcarTodasNotificacionesLeidas,
-} from './notificaciones';
-export type {
-  EntradaMarcarNotificacionLeida,
-  EntradaMarcarTodasNotificacionesLeidas,
-  EntradaNotificacion,
-} from './notificaciones';
+export { agregarNotificaciones, crearNotificaciones } from './notificaciones';
+export type { EntradaNotificacion } from './notificaciones';
 export {
   MENSAJES,
   MENSAJE_GENERICO,
@@ -116,12 +99,14 @@ export type {
 export {
   calcularInsightsVigentes,
   marcarInsightRevisado,
+  marcarNotificacionLeida,
   marcarTodasLeidas,
   notificarDesdeInsight,
   umbralesDe,
 } from './seguimiento';
 export type {
   EntradaMarcarInsightRevisado,
+  EntradaMarcarNotificacionLeida,
   EntradaMarcarTodasLeidas,
   EntradaNotificarDesdeInsight,
   InsightNotificado,
@@ -279,6 +264,7 @@ export {
   listarNotificaciones,
   obtenerIndicadores,
   obtenerLineaDeTiempo,
+  obtenerMiPerfil,
   practicantesPorArea,
   listarCatalogoEvaluacion,
   listarPostulaciones,
@@ -403,6 +389,8 @@ export type {
   TareaConProyecto,
   TareaDeHistorial,
   TareaDeTablero,
+  MiPerfil,
+  PracticaDelPerfil,
   TareaDetalleVista,
   TareaListado,
   TerminadasDeProyecto,
