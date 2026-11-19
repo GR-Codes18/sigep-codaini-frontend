@@ -78,8 +78,20 @@
   nueva `listarProyectosAsignables`. Sin cambios en `domain/`.
 - **Verificación (en `2f3a4c9`):** 3.380 pruebas en 134 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con
   el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el módulo 5.2 (`2f3a4c9`).
-- **Siguiente paso:** módulo 5.3 (Supervisores).
+- **Fase 5 — módulo 5.3 (Supervisores): terminado (2026-11-19, `b0d150f`, `97fda22`, `16b67b6` y `c5d5e0d`).** Rama
+  `feat/fase5-supervisores`, en cuatro commits. Lectura (`b0d150f`): listado en `/administrador/supervisores` con pestañas Activos (abre
+  ahí), Inactivos y Todos con contadores y búsqueda; «Tareas por revisar» se resalta en ámbar cuando es mayor que 0, sin umbral propio;
+  detalle en `/administrador/supervisores/:idSupervisor` con contacto de solo lectura, proyectos a cargo con su reunión y practicantes,
+  tareas por revisar con los días de espera, proyectos anteriores y línea de tiempo. `ModalContrasenaTemporal` pasa a `src/compartido/`
+  (`97fda22`; ya lo usan 5.1, 5.2 y 5.3). Cuenta (`16b67b6`): «Nuevo supervisor» (nombre, correo y celular; contraseña temporal una sola
+  vez), editar nombre y correo y restablecer contraseña. Ciclo de vida (`c5d5e0d`): desactivar (bloqueado con proyectos pendientes:
+  «Tiene N proyectos pendientes: reasígnalos primero»), reactivar y «Reasignar proyectos» (un selector por proyecto, todo o nada).
+  Cambios aditivos en la Fase 2: `obtenerSupervisor` trae `acciones`, `proyectos_pendientes` y `supervisores_destino`. Sin cambios en
+  `domain/`.
+- **Verificación (en `c5d5e0d`):** 3.477 pruebas en 141 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
+  con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-19, tras el módulo 5.3 (`c5d5e0d`).
+- **Siguiente paso:** módulo 5.4 (Proyectos).
 
 ### Cierres de fase
 
@@ -498,8 +510,16 @@
 | 2026-11-18 | 5.1 Postulaciones | Bloque 2 (decisiones): aprobar con la contraseña temporal una sola vez, rechazar, reconsiderar y «Analizando…» / error de evaluación | `f8baf90` |
 | 2026-11-18 | 5.1 Postulaciones | Bloque 3 (criterios, áreas y especialidades): página de criterios, editor de bloque con «Suma actual: N/100», adaptador `catalogo`, activar solo con bloque válido, `Insignia` de catálogo y ruta de sus notificaciones | `b47d571` |
 | 2026-11-18 | 5.2 Practicantes | Bloques 1 a 3: listado y detalle, «Asignar a proyecto», editar datos de la práctica, restablecer contraseña, finalizar y reactivar; `acciones`, `tareas_a_liberar` y `listarProyectosAsignables` en las consultas; `Insignia` de practicante; aviso que lleva al detalle | `2f3a4c9` |
+| 2026-11-19 | 5.3 Supervisores | Bloque 1 (lectura): listado con pestañas y búsqueda, detalle con proyectos a cargo, tareas por revisar y línea de tiempo; adaptador `supervisores`; `Insignia` de supervisor | `b0d150f` |
+| 2026-11-19 | 5.3 Supervisores | Bloque 2a: `ModalContrasenaTemporal` pasa de `postulaciones/` a `compartido/` | `97fda22` |
+| 2026-11-19 | 5.3 Supervisores | Bloque 2b: «Nuevo supervisor», editar nombre y correo y restablecer contraseña; `acciones` en `obtenerSupervisor` | `16b67b6` |
+| 2026-11-19 | 5.3 Supervisores | Bloque 3: desactivar con bloqueo por proyectos pendientes, reactivar y reasignar proyectos; `proyectos_pendientes` y `supervisores_destino` en `obtenerSupervisor` | `c5d5e0d` |
 
-**Estado de pruebas (2026-11-18, en `2f3a4c9`):** 3.380 pruebas en 134 archivos, todas aprobadas (`npx vitest run`); el módulo 5.2 sumó 104 y
+**Estado de pruebas (2026-11-19, en `c5d5e0d`):** 3.477 pruebas en 141 archivos, todas aprobadas (`npx vitest run --testTimeout=60000`); el
+módulo 5.3 sumó 97 y 7 archivos de prueba (consultas ampliadas, adaptador, filtros, listado, detalle, nuevo supervisor, acciones y ciclo de
+vida, más ajustes en `Insignia`). No se hicieron pruebas de mutación en este módulo. Con el equipo lento, algunas pruebas pesadas de 5.1 a 5.3
+superan el límite de 5 s por defecto y pasan con el límite ampliado; no cambia ninguna lógica. Antes, en `2f3a4c9`: 3.380 pruebas en 134
+archivos; el módulo 5.2 sumó 104 y
 7 archivos de prueba (consultas ampliadas, adaptador, filtros, listado, detalle, asignar, acciones y ciclo de vida, más ajustes en
 `Insignia` y `ModalContrasenaTemporal`). No se hicieron pruebas de mutación en este módulo. Antes, en `b47d571`: 3.276 pruebas en 127 archivos; el bloque 3 del
 módulo 5.1 sumó 62 y 4 archivos de prueba (adaptador del catálogo, editor de bloque, formulario de nombre y página de criterios). No se
@@ -656,7 +676,7 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       fila en la matriz de §4) y §5.8 (proporción de enteros de 0 a 100 que suman 100; `100/0` y `0/100` son válidas).
 - [x] Paso 11 (hecho en 11C, `6d6b79a`; consultas con alcance por rol): las pantallas de supervisores y practicantes (Fases 5.2, 5.3 y 6.3)
       leen con consultas del paso 11; `emitirAvisosFinDePractica` y los demás servicios del paso 8 no son consultas.
-- [ ] Fase 5.3 (Supervisores): «Nuevo supervisor» usa `crearSupervisor` y muestra la contraseña temporal una sola
+- [x] (hecho en `16b67b6` y `c5d5e0d`) Fase 5.3 (Supervisores): «Nuevo supervisor» usa `crearSupervisor` y muestra la contraseña temporal una sola
       vez; desactivar muestra el mensaje con la cantidad de proyectos que trae el servicio; restablecer contraseña
       también se muestra una sola vez. Un supervisor nuevo no tiene proyectos (estado vacío del panel).
 - [x] (hecho en `2f3a4c9`) Fase 5.2 (Practicantes): «Asignar a proyecto» usa `asignarPracticantes` con una lista de pares (atajo de

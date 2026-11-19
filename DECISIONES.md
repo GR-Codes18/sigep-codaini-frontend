@@ -3964,3 +3964,46 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   atajo «Asignar a proyecto» (diálogo con selección múltiple), ni el texto en singular del aviso de tareas, ni la propuesta automática de la
   fecha de fin que no pisa una edición a mano. Conviene pasarlos a §5.2.
 - **Siguiente paso.** Módulo 5.3 (Supervisores).
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.3 (Supervisores), Administrador
+
+- **Commits:** `b0d150f` (bloque 1, lectura), `97fda22` (bloque 2a, `ModalContrasenaTemporal` a `compartido/`), `16b67b6` (bloque 2b, cuenta) y
+  `c5d5e0d` (bloque 3, ciclo de vida); rama `feat/fase5-supervisores`. Mismo patrón del 5.2 (rutas por prefijo, `useConsulta`, filtros puros
+  en memoria, adaptadores en `src/app/adaptadores/`).
+- **URLs.** `/administrador/supervisores` y `/administrador/supervisores/:idSupervisor`.
+- **Indicador de sobrecarga (decisión de los autores, opción A).** §5.3 dice que la sobrecarga «se ve como indicador en el listado» pero no define
+  umbral ni forma. No se inventa ninguno: el listado muestra los números y resalta en ámbar «Tareas por revisar» cuando es mayor que 0.
+  Descartadas: reutilizar un umbral de Configuración (B) y definir uno nuevo, que tocaría Configuración y `domain/` (C).
+- **Bloque 1 (lectura).** Listado con pestañas Activos (abre ahí), Inactivos y Todos con los contadores de la consulta, y búsqueda por nombre o
+  correo sin tildes; columnas de §5.3. Detalle de solo lectura: contacto, proyectos a cargo con la reunión semanal (`textoReunion`, «Sin definir»
+  si falta) y cuántos practicantes tienen, tareas por revisar con los días que llevan esperando, proyectos anteriores y línea de tiempo.
+  `Insignia` gana el tipo `supervisor` (Activo y Inactivo). `eventos.ts` gana las etiquetas de los eventos `SUPERVISOR_*` y de
+  `PROYECTO_SUPERVISOR_CAMBIADO`, y desactivar y reactivar no muestran el resumen «ACTIVO → INACTIVO». Los avisos al Administrador sobre un usuario
+  son siempre de practicantes, así que `RUTA_DE_DETALLE` no cambia.
+- **Bloque 2a (`ModalContrasenaTemporal` a `compartido/`, decisión de los autores).** Pasa a usarse en 5.1, 5.2 y 5.3; se mueve con su prueba y se
+  ajustan los imports de `AccionesDePostulacion` y `AccionesDePracticante`. Cambio mecánico, en su propio commit.
+- **Bloque 2b (cuenta).** «Nuevo supervisor» es un diálogo con nombre, correo y celular; el correo y el celular reutilizan `esquemaCorreo` y
+  `esquemaCelular` del servicio y el servicio vuelve a validar. Muestra la contraseña temporal una sola vez («Cuenta de supervisor creada»); no llega
+  al historial ni a las notificaciones. Editar nombre y correo envía solo lo que cambió; el celular, Discord y GitHub los edita el propio
+  supervisor. Restablecer contraseña: confirmación y modal de una sola vez («Contraseña restablecida»), no se ofrece a una cuenta inactiva.
+  Si el error ya salió junto a un campo (por ejemplo, el correo repetido), la alerta general no lo repite.
+- **Bloque 3 (ciclo de vida).**
+  - **Consulta ampliada, aditiva y sin tocar `domain/`.** `obtenerSupervisor` trae `acciones` (editar, restablecer, reasignar, desactivar y reactivar),
+    `proyectos_pendientes` (la cantidad que da la regla `desactivarSupervisor`) y `supervisores_destino` (filtrados con `puedeCambiarSupervisor`:
+    activos, distintos y con algún proyecto a cargo que no esté finalizado). «Desactivar» se ofrece también con proyectos pendientes para poder
+    explicar el bloqueo; con la cuenta inactiva no.
+  - **Desactivar.** Con proyectos pendientes abre «No se puede desactivar» con «Tiene N proyectos pendientes: reasígnalos primero.» (singular:
+    «Tiene 1 proyecto pendiente: reasígnalo primero.») y ofrece ir a reasignar; el N lo trae la consulta, la pantalla no cuenta. Los proyectos
+    finalizados no cuentan y uno en pausa sí. Sin pendientes, confirmación simple (el servicio no pide motivo). Si cambian los datos con la
+    confirmación abierta, la pantalla se actualiza sola y pasa al aviso de bloqueo.
+  - **Reactivar.** Confirmación simple; no recupera los proyectos que tenía.
+  - **Reasignar proyectos (G4-A y F1-A).** Diálogo con un selector por proyecto activo o en pausa; «Reasignar» solo se habilita cuando todos tienen
+    supervisor elegido (aunque el servicio no lo exija). Se aplica todo o nada con `reasignarProyectosDeSupervisor` y, si el servicio rechaza algún
+    proyecto, el mensaje queda en el diálogo sin escribir nada. Las tareas que esperan supervisión siguen al proyecto (lo hace el servicio).
+- **Pruebas.** 3.380 → 3.477 en 141 archivos (+97 y +7 archivos). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Con el equipo lento algunas pruebas pesadas de 5.1 a 5.3
+  superan el límite de 5 s y pasan con `--testTimeout=60000`; no cambia ninguna lógica.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni «Nuevo supervisor»
+  como diálogo, ni el diálogo de reasignación con un selector por proyecto, ni el texto del bloqueo al desactivar (singular incluido). La
+  sobrecarga queda sin umbral: solo el resalte en ámbar. Conviene pasarlos a §5.3.
+- **Siguiente paso.** Módulo 5.4 (Proyectos).
