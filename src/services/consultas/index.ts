@@ -85,6 +85,7 @@ export type {
 } from './practicantes';
 export { listarSupervisores, obtenerSupervisor } from './supervisores';
 export type {
+  AccionSupervisor,
   EntradaConSupervisor,
   ListadoSupervisores,
   ProyectoACargo,

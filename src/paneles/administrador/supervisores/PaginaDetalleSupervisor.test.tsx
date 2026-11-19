@@ -173,13 +173,6 @@ describe('PaginaDetalleSupervisor', () => {
     expect(screen.getByRole('region', { name: 'Línea de tiempo' })).toBeInTheDocument();
   });
 
-  it('no ofrece acciones de escritura en el bloque de lectura', async () => {
-    await mostrar(SUPERVISOR);
-
-    const cabecera = screen.getByRole('heading', { level: 1 }).closest('header')!;
-    expect(within(cabecera).queryByRole('button')).not.toBeInTheDocument();
-  });
-
   it('un supervisor que no existe dice que no se encontró y vuelve al listado', async () => {
     const user = userEvent.setup();
     await mostrar('no-existe');

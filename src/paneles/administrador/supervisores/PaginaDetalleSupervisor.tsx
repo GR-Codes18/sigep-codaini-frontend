@@ -11,6 +11,7 @@ import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo } from '@/compartido/LineaTiempo';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, obtenerSupervisor, type Entorno } from '@/services';
+import { AccionesDeSupervisor } from './AccionesDeSupervisor';
 import { RUTA_SUPERVISORES } from './rutas';
 
 function VolverAlListado() {
@@ -152,6 +153,12 @@ export function PaginaDetalleSupervisor({ entorno = ENTORNO }: { entorno?: Entor
         <div className="flex flex-wrap items-center gap-2">
           <Insignia tipo="supervisor" estado={detalle.estado} />
         </div>
+        <AccionesDeSupervisor
+          idActor={idUsuario}
+          supervisor={{ id: detalle.id, nombre: detalle.nombre, correo: detalle.correo }}
+          acciones={detalle.acciones}
+          entorno={entorno}
+        />
       </header>
 
       <section aria-label="Datos de contacto" className="space-y-2">

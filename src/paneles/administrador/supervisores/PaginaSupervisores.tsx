@@ -16,6 +16,7 @@ import {
   type FiltrosSupervisores,
   type PestanaSupervisores,
 } from './filtros';
+import { NuevoSupervisor } from './NuevoSupervisor';
 import { rutaDeDetalleDeSupervisor } from './rutas';
 
 /** Mensaje de un listado vacío cuando no hay búsqueda: cada pestaña dice lo suyo. */
@@ -166,7 +167,10 @@ export function PaginaSupervisores({ entorno = ENTORNO }: { entorno?: Entorno } 
 
   return (
     <section className="space-y-4">
-      <h1 className="text-text">Supervisores</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-text">Supervisores</h1>
+        <NuevoSupervisor idActor={idUsuario} entorno={entorno} />
+      </div>
 
       <PestanasConContador
         valor={filtros.pestana}

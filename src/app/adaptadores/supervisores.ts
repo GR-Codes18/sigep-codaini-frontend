@@ -5,6 +5,7 @@ import type { EventoLinea } from '@/compartido/LineaTiempo';
 import type { TareaTablero } from '@/compartido/TableroKanban';
 import {
   textoReunion,
+  type AccionSupervisor,
   type ListadoSupervisores,
   type ProyectoResumen,
   type SupervisorDetalle,
@@ -99,6 +100,8 @@ export interface DetalleSupervisorParaVista {
   tareasPorRevisar: TareaPorRevisarParaVista[];
   proyectosAnteriores: ProyectoAnteriorParaVista[];
   eventos: EventoLinea[];
+  /** Lo que se puede hacer ahora; lo decide `domain/` y llega con la consulta. */
+  acciones: AccionSupervisor[];
 }
 
 /** El detalle de `obtenerSupervisor` al modelo de presentación (fechas con `parseISO`, sin reglas). */
@@ -129,5 +132,6 @@ export function aDetalleSupervisor(detalle: SupervisorDetalle): DetalleSuperviso
       finRealTexto: p.fecha_fin_real === null ? null : diaVisible(p.fecha_fin_real),
     })),
     eventos: aEventosLinea(detalle.eventos),
+    acciones: detalle.acciones,
   };
 }

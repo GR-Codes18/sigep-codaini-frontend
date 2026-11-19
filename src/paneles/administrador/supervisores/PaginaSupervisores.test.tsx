@@ -163,7 +163,7 @@ describe('PaginaSupervisores', () => {
     if (sin) expect(celda(sin.correo).querySelector('.bg-state-warning-bg')).toBeNull();
   });
 
-  it('no ofrece acciones de escritura en el bloque de lectura', async () => {
+  it('la tabla no trae botones: las filas solo abren el detalle', async () => {
     mostrar();
     await listo();
 

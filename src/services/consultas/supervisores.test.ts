@@ -312,3 +312,42 @@ describe('obtenerSupervisor', () => {
     for (const u of prueba.datos().usuarios) expect(texto).not.toContain(u.contrasena);
   });
 });
+
+// ── Acciones disponibles (Fase 5, módulo 5.3) ────────────────────────────────────────────────
+
+describe('obtenerSupervisor: acciones', () => {
+  const ADMIN_ID = 'demo-admin';
+  const ACTIVO_ID = 'demo-supervisor';
+
+  it('una cuenta activa ofrece editar y restablecer la contraseña', async () => {
+    const prueba = prepararPrueba();
+
+    const r = await obtenerSupervisor(
+      { idActor: ADMIN_ID, idSupervisor: ACTIVO_ID },
+      prueba.entorno,
+    );
+
+    expect(valor(r).acciones).toEqual(['EDITAR_DATOS', 'RESTABLECER_CONTRASENA']);
+  });
+
+  it('una cuenta inactiva ofrece editar, pero no restablecer la contraseña', async () => {
+    const prueba = prepararPrueba();
+    desactivar(prueba, ACTIVO_ID);
+
+    const r = await obtenerSupervisor(
+      { idActor: ADMIN_ID, idSupervisor: ACTIVO_ID },
+      prueba.entorno,
+    );
+
+    expect(valor(r).acciones).toEqual(['EDITAR_DATOS']);
+  });
+
+  it('no escribe', async () => {
+    const prueba = prepararPrueba();
+    const comprobar = sinEscritura(prueba);
+
+    await obtenerSupervisor({ idActor: ADMIN_ID, idSupervisor: ACTIVO_ID }, prueba.entorno);
+
+    comprobar();
+  });
+});

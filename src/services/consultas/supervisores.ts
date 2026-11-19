@@ -10,6 +10,7 @@ import type { DatosAlmacen } from '@/data';
 import {
   diasEsperando,
   hoyEn,
+  puede,
   ultimaActividadDeUsuario,
   type EstadoUsuario,
   type Fecha,
@@ -141,7 +142,15 @@ export interface ProyectoAnteriorDeSupervisor {
   fecha_fin_real: Fecha | null;
 }
 
+/** Lo que el Administrador puede hacer ahora con un supervisor (§5.3). */
+export type AccionSupervisor = 'EDITAR_DATOS' | 'RESTABLECER_CONTRASENA';
+
 export interface SupervisorDetalle {
+  /**
+   * Las acciones disponibles, decididas por `puede()` de `domain/`: la pantalla solo las ofrece. «Restablecer la
+   * contraseña» solo con la cuenta activa (el servicio pide reactivarla primero).
+   */
+  acciones: AccionSupervisor[];
   datos: {
     id: Id;
     nombre: string;
@@ -201,9 +210,21 @@ export function obtenerSupervisor(
           a.numero - b.numero,
       );
 
+    const editar = puede(actor.valor, 'EDITAR_CREDENCIAL_SUPERVISOR', {
+      usuario_objetivo: usuario,
+    });
+    const restablecer = puede(actor.valor, 'RESTABLECER_CONTRASENA', { usuario_objetivo: usuario });
+    const acciones: AccionSupervisor[] = [
+      ...(editar.permitido ? (['EDITAR_DATOS'] as const) : []),
+      ...(restablecer.permitido && usuario.estado === 'ACTIVO'
+        ? (['RESTABLECER_CONTRASENA'] as const)
+        : []),
+    ];
+
     return {
       ok: true,
       valor: {
+        acciones,
         datos: {
           id: usuario.id,
           nombre: usuario.nombre,
