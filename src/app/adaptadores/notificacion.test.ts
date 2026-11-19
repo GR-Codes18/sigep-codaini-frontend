@@ -63,9 +63,9 @@ describe('rutaDeNotificacion', () => {
     ['PRACTICANTE', 'PROYECTO', '/practicante/proyectos'],
     ['ADMINISTRADOR', 'USUARIO', '/administrador/practicantes'],
     ['SUPERVISOR', 'USUARIO', '/supervisor/practicantes'],
-    ['ADMINISTRADOR', 'AREA_TECNICA', '/administrador/postulaciones'],
-    ['ADMINISTRADOR', 'ESPECIALIDAD', '/administrador/postulaciones'],
-    ['ADMINISTRADOR', 'CRITERIO_EVALUACION', '/administrador/postulaciones'],
+    ['ADMINISTRADOR', 'AREA_TECNICA', '/administrador/postulaciones/criterios'],
+    ['ADMINISTRADOR', 'ESPECIALIDAD', '/administrador/postulaciones/criterios'],
+    ['ADMINISTRADOR', 'CRITERIO_EVALUACION', '/administrador/postulaciones/criterios'],
     ['ADMINISTRADOR', 'PARAMETRO_CONFIGURACION', '/administrador/configuracion'],
   ] as const)('%s, %s → %s', (rol, tipo, esperada) => {
     const ruta = rutaDeNotificacion(aviso({ elemento: { tipo, id: 'otro-id' } }), contexto(rol));

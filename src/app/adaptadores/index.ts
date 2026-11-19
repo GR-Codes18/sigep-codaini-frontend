@@ -7,6 +7,14 @@ export {
   RUTA_MI_PERFIL,
   type ContextoNotificacion,
 } from './notificacion';
+export {
+  aCatalogo,
+  type AreaParaVista,
+  type BloqueParaVista,
+  type CatalogoParaVista,
+  type CriterioDeBloque,
+  type EspecialidadParaVista,
+} from './catalogo';
 export { aPerfil, type PerfilParaVista } from './perfil';
 export {
   aDetallePostulacion,

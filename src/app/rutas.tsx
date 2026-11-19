@@ -10,9 +10,10 @@ import { PaginaDesarrollo } from '@/app/desarrollo/PaginaDesarrollo';
 import { PaginaNotificaciones } from '@/app/layout/PaginaNotificaciones';
 import { PaginaPerfil } from '@/app/perfil/PaginaPerfil';
 import { AccesoSiNoHaySesion, RaizSegunSesion } from '@/app/RedireccionesSesion';
+import { PaginaCriterios } from '@/paneles/administrador/postulaciones/PaginaCriterios';
 import { PaginaDetallePostulacion } from '@/paneles/administrador/postulaciones/PaginaDetallePostulacion';
 import { PaginaPostulaciones } from '@/paneles/administrador/postulaciones/PaginaPostulaciones';
-import { RUTA_POSTULACIONES } from '@/paneles/administrador/postulaciones/rutas';
+import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/postulaciones/rutas';
 
 /**
  * Los módulos que ya tienen pantalla, por la ruta de su ítem del menú. Los demás siguen con su página vacía hasta que se
@@ -24,6 +25,8 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
 
 /** Las páginas internas de un módulo (detalles), por la ruta que cuelga del módulo. */
 const PAGINAS_INTERNAS: readonly RouteObject[] = [
+  // La ruta fija «criterios» gana a `:idPostulante` (React Router da prioridad a los segmentos estáticos).
+  { path: RUTA_CRITERIOS, element: <PaginaCriterios /> },
   { path: `${RUTA_POSTULACIONES}/:idPostulante`, element: <PaginaDetallePostulacion /> },
 ];
 

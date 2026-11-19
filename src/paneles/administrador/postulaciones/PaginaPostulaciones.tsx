@@ -22,7 +22,7 @@ import {
   type OrdenPostulaciones,
   type PestanaPostulaciones,
 } from './filtros';
-import { rutaDeDetalleDePostulacion } from './rutas';
+import { RUTA_CRITERIOS, rutaDeDetalleDePostulacion } from './rutas';
 
 const CLASE_SELECT =
   'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
@@ -170,7 +170,15 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
 
   return (
     <section className="space-y-4">
-      <h1 className="text-text">Postulaciones</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-text">Postulaciones</h1>
+        <Link
+          to={RUTA_CRITERIOS}
+          className="text-sm font-medium text-link underline underline-offset-2"
+        >
+          Criterios de evaluación
+        </Link>
+      </div>
 
       <PestanasConContador
         valor={filtros.pestana}

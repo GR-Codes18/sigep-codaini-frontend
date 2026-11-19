@@ -52,8 +52,24 @@
   (decisiones y «Analizando…») y 3 (criterios, áreas y especialidades).
 - **Verificación (en `61f368a`):** 3.174 pruebas en 120 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el bloque 1 del módulo 5.1 (`61f368a`).
-- **Siguiente paso:** módulo 5.1, bloque 2 (aprobar, rechazar, reconsiderar y «Analizando…»), y después el bloque 3 (criterios).
+- **Fase 5 — módulo 5.1 (Postulaciones), bloque 2 (decisiones y «Analizando…»): terminado (2026-11-18, `f8baf90`).** Desde el detalle:
+  aprobar (con confirmación; la contraseña temporal se muestra una sola vez), rechazar (motivo obligatorio) y reconsiderar (nota
+  obligatoria), con los botones que decide `domain/` y llegan en `decisiones`. Una postulación sin evaluación se evalúa al abrirla
+  (una sola vez) mostrando «Analizando…»; si no se puede calcular el puntaje dice «No se pudo evaluar: …» y las decisiones siguen
+  disponibles (E3-A y E5-A). La contraseña vive solo en el estado de la pantalla y no se persiste ni llega al historial.
+- **Verificación (en `f8baf90`):** 3.214 pruebas en 123 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+  errores, con el aviso conocido en `button.tsx`. Detalle en «Estado de pruebas».
+- **Fase 5 — módulo 5.1 (Postulaciones), bloque 3 (criterios, áreas y especialidades): construido, a la espera de verificación y commit
+  (2026-11-18, hash: `PENDIENTE`).** Página `/administrador/postulaciones/criterios` (enlace «Criterios de evaluación» desde el
+  listado): crear y renombrar áreas y especialidades, activarlas o desactivarlas, y editar cada bloque de criterios con «Suma actual:
+  N/100» en vivo. El bloque se guarda completo con `guardarCriteriosDeBloque`; los criterios guardados no se borran, se desactivan.
+  Áreas y especialidades nacen inactivas y solo se activan con su bloque válido (la regla es de `domain/` y el servicio la vuelve a
+  comprobar). Cambiar criterios no recalcula las evaluaciones anteriores. Sin cambios en `domain/` ni en `services/`.
+- **Verificación (en el bloque 3): `PENDIENTE`.** Los autores corren `npx vitest run`, `npx tsc -b`, `npx prettier --check`, `npx eslint` y
+  `npm run build`; con sus cifras se completa «Estado de pruebas».
+- **Actualizado:** 2026-11-18, tras construir el bloque 3 del módulo 5.1 (hash y cifras pendientes).
+- **Siguiente paso:** cerrar el módulo 5.1 (verificar y hacer el commit del bloque 3 y registrar su hash aquí) y seguir con el módulo 5.2
+  (Practicantes).
 
 ### Cierres de fase
 
@@ -469,8 +485,12 @@
 | Fecha | Módulo | Paso | Commit / PR |
 |---|---|---|---|
 | 2026-11-18 | 5.1 Postulaciones | Bloque 1 (lectura): listado, detalle, rutas por prefijo, adaptadores y `decisiones` en `obtenerPostulacion` | `61f368a` |
+| 2026-11-18 | 5.1 Postulaciones | Bloque 2 (decisiones): aprobar con la contraseña temporal una sola vez, rechazar, reconsiderar y «Analizando…» / error de evaluación | `f8baf90` |
+| 2026-11-18 | 5.1 Postulaciones | Bloque 3 (criterios, áreas y especialidades): página de criterios, editor de bloque con «Suma actual: N/100», adaptador `catalogo`, activar solo con bloque válido, `Insignia` de catálogo y ruta de sus notificaciones | `PENDIENTE` |
 
-**Estado de pruebas (2026-11-18, en `61f368a`):** 3.174 pruebas en 120 archivos, todas aprobadas (`npx vitest run`); el bloque 1 del
+**Estado de pruebas (2026-11-18, en `f8baf90`; el bloque 3 está pendiente de cifras):** 3.214 pruebas en 123 archivos, todas aprobadas (`npx vitest run`); el bloque 2 del
+módulo 5.1 sumó 40 netas (modal de la contraseña 8, acciones 19, evaluación y decisiones en el detalle 14, menos una prueba del
+bloque 1 que quedó superada). Antes, en `61f368a`: 3.174 pruebas en 120 archivos; el bloque 1 del
 módulo 5.1 sumó 106 (listado 20, detalle 17, filtros 32, adaptador 12, barra de puntaje 4, desglose 4, `decisiones` 5 y las ajustadas de
 eventos, notificaciones, menús y rutas).
 
@@ -551,12 +571,16 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [x] Sub-paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones (`42c0b25` y `debd47e`).
 - [x] Sub-paso 7B: áreas técnicas, especialidades y criterios de evaluación (crear, editar, activar y
       desactivar) (`3368603` y `5eb54a4`). **Paso 7 terminado.**
-- [ ] Fase 5.1 (formularios de criterios): el editor de un bloque llama a `guardarCriteriosDeBloque` con el
+- [x] Fase 5.1 (formularios de criterios): el editor de un bloque llama a `guardarCriteriosDeBloque` con el
       bloque completo (los criterios no se borran: se desactivan), muestra «Suma actual: N/100» con
       `sumaPesosActivos` y `validarBloqueCriterios`, y ofrece activar un área o especialidad solo cuando su
-      bloque es válido. Nacen inactivas.
-- [ ] Fase 5.1: cómo se muestra «Analizando…» (la semilla ya evalúa a todos y `evaluarPostulacion` solo se
-      dispara por código), el mensaje cuando la evaluación falla y la contraseña temporal visible una sola vez.
+      bloque es válido. Nacen inactivas. Construido en el bloque 3 (`EditorBloqueCriterios`, `SeccionDeArea` y `PaginaCriterios`);
+      hash pendiente hasta el commit.
+- [x] Fase 5.1: «Analizando…», el mensaje cuando la evaluación falla y la contraseña temporal visible una sola vez: hecho en el
+      bloque 2 (`f8baf90`). Al abrir una postulación sin evaluación se evalúa una sola vez y se ve «Analizando…»; si falla, «No se
+      pudo evaluar: <mensaje>» y las decisiones siguen disponibles (E3-A y E5-A). La contraseña temporal se muestra una sola vez en un
+      modal que solo cierra «Entendido», con «Copiar contraseña». La semilla evalúa a todas, así que «Analizando…» se ve solo al
+      quitar una evaluación (se cubre con pruebas).
 - [x] Ajustar a mano la propuesta §5.1/§5.2 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): la fecha de ingreso de un practicante nuevo es el día de la
       aprobación (hora de Perú) y la de fin se calcula con la duración vigente (supuesto confirmado en 7A).
 - [x] Sub-paso 8A: asignar, quitar, finalizar y reactivar practicantes y editar los datos de su práctica

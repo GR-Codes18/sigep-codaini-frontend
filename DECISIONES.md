@@ -3866,3 +3866,61 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   notificación y `decisiones`), con el script que restaura los archivos, sin Git.
 - **Divergencias con `docs/` (para que los autores las actualicen a mano).** (1) La propuesta no define las URLs del módulo. (2) No fija cómo se ve el
   CV en el prototipo ni el texto del aviso de uso. (3) Los motivos de la marca de revisión no se guardan, así que la pantalla muestra solo la marca.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.1 (Postulaciones), bloque 2: decisiones y «Analizando…»
+
+- **Commit:** `f8baf90` (aprobar, rechazar, reconsiderar y evaluación al abrir).
+- **Botones.** Salen de `decisiones` (la consulta, que usa `decisionesDisponibles` de `domain/`), no del estado: una pendiente ofrece Aprobar y
+  Rechazar, una rechazada Reconsiderar y una aprobada nada (no se revierte aquí). Quien no es Administrador no recibe las decisiones porque
+  la consulta le devuelve el error.
+- **Aprobar.** Con confirmación. Al confirmar, `aprobarPostulacion` crea la cuenta (PRACTICANTE, ACTIVO, con contraseña temporal) y la pantalla
+  muestra esa contraseña **una sola vez** en un modal (`ModalContrasenaTemporal`): usuario (el correo), contraseña, aviso de «una sola vez» y de
+  que se entrega por fuera del sistema (WhatsApp o Discord) y un botón «Copiar contraseña» (si el portapapeles falla, pide copiarla a mano).
+  El modal solo se cierra con «Entendido»: Escape y el clic fuera no cierran (`onOpenChange` ignora todo intento), y no hay «X». La contraseña
+  vive solo en el estado del componente: no se persiste, no va al historial ni a las notificaciones y desaparece del documento al cerrar.
+  `AccionesDePostulacion` sigue montado aunque la página se refresque y los botones desaparezcan, para que la contraseña no se pierda antes
+  de que se vea (una prueba y una mutación lo vigilan).
+- **Rechazar y reconsiderar.** Reusan `ModalConfirmacion`: el motivo (rechazar) y la nota (reconsiderar) son obligatorios; vacío o solo espacios no
+  se puede confirmar, y el servicio vuelve a exigirlo. Un error del servicio llega como excepción: el modal sigue abierto con el mensaje y no se
+  escribe nada. Al reconsiderar, la evaluación se conserva (§5.1).
+- **«Analizando…» (E5-A, decisión 2-A).** Al abrir una postulación sin evaluación, la pantalla llama a `evaluarPostulacion` una sola vez por
+  postulación y muestra «Analizando…» hasta que la consulta trae la evaluación. La semilla evalúa a las 42, así que en la demostración no se
+  ve salvo que se quite una evaluación; se cubre con pruebas. Alternativa descartada: dejar una pendiente sin evaluar en la semilla (cambia la
+  semilla y sus pruebas).
+- **Error de evaluación (E3-A).** Si el catálogo no permite calcular el puntaje, la pantalla dice «No se pudo evaluar: <mensaje> Puedes decidir
+  igualmente.» y las decisiones siguen disponibles («el Administrador decide siempre, con o sin marca»). No se reintenta en ciclo. Si otra
+  pestaña ya la había evaluado (`POSTULACION_YA_EVALUADA`), no se dice nada: la consulta traerá la evaluación.
+- **Código redundante retirado.** Se quitaron `onInteractOutside` y `onEscapeKeyDown` del modal de la contraseña: dos mutaciones sobrevivían
+  porque `onOpenChange` vacío ya impide cualquier cierre. La protección real se vigila con una mutación sobre `onOpenChange` y otra sobre la «X».
+- **Pruebas y mutaciones.** 3.174 → 3.214 en 123 archivos (+40 netas): modal de la contraseña (8), acciones (19), evaluación y decisiones en el
+  detalle (14) y una del bloque 1 que quedó superada. 17 mutaciones detectadas de 17, con el script que restaura los archivos, sin Git.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no describe «Analizando…» (evaluar al abrir una
+  postulación sin evaluación) ni el texto «No se pudo evaluar: …»; son las decisiones E5-A y E3-A del paso 7A y conviene pasarlas a §5.1 o §10.1.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.1 (Postulaciones), bloque 3: criterios, áreas y especialidades
+
+- **Commit:** `PENDIENTE` (se registra después del commit de los autores).
+- **Ruta.** `/administrador/postulaciones/criterios` (decisión 1-A del bloque 1), con el enlace «Criterios de evaluación» en el listado y
+  «Volver a postulaciones». La ruta fija gana a `:idPostulante` porque React Router da prioridad a los segmentos estáticos.
+- **Lectura y escritura.** Lee con `listarCatalogoEvaluacion` y escribe con los siete servicios del paso 7B (`crearAreaTecnica`,
+  `editarAreaTecnica`, `cambiarActivoAreaTecnica`, `crearEspecialidad`, `editarEspecialidad`, `cambiarActivoEspecialidad` y
+  `guardarCriteriosDeBloque`). No hay cambios en `domain/` ni en `services/`. El adaptador `src/app/adaptadores/catalogo.ts` solo renombra
+  los campos de la consulta (`suma_actual`, `valido`, `mensaje_invalido`) al modelo de la pantalla.
+- **Editor de bloque.** Crea, edita y activa o desactiva criterios (nombre, tipo, peso entero, obligatorio, activo) y guarda **el bloque completo**
+  en una sola operación, así pasar de 30/70 a 40/60 no pasa por una suma distinta de 100. «Suma actual: N/100» y el mensaje de validez salen de
+  `sumaPesosActivos` y `validarBloqueCriterios` de `domain/`, las mismas funciones que usa el servicio; el servicio decide siempre y su error se
+  muestra en la pantalla (por campo, con `criterios.<posición>.<campo>`). Un peso sin escribir no suma; un criterio **activo** sin peso no se envía.
+- **Los criterios no se borran.** Los guardados solo se desactivan; «Quitar» existe solo para los nuevos que aún no se guardaron.
+- **Activar solo con bloque válido.** Áreas y especialidades nacen inactivas; «Activar» está deshabilitado mientras los criterios activos de su
+  bloque no sumen 100 y se explica por qué. Desactivar no arrastra a las demás. El servicio vuelve a comprobarlo y un error se muestra con un aviso.
+- **Borrador.** Si lo guardado cambia de verdad el borrador se reinicia; si llega lo mismo en un objeto nuevo se conserva lo que se está escribiendo
+  (se compara por una huella, no por identidad). «Descartar cambios» y «Guardar criterios» solo se habilitan con cambios.
+- **Evaluaciones anteriores.** Cambiar criterios no recalcula las evaluaciones guardadas (§5.1); la pantalla lo dice en su texto.
+- **Insignia y notificaciones.** `Insignia` gana el tipo `catalogo` («Activa» en verde, «Inactiva» en gris). Los avisos de área, especialidad y
+  criterio llevan a `/postulaciones/criterios`.
+- **Estructura.** `PaginaCriterios`, `SeccionDeArea` (con sus filas de especialidad y el botón de activar), `EditorBloqueCriterios` y
+  `FormularioNombre` en `src/paneles/administrador/postulaciones/`. `SeccionDeArea` no tiene prueba propia: se cubre desde `PaginaCriterios`.
+- **Pruebas y mutaciones.** `PENDIENTE`: los autores corren `npx vitest run`, `npx tsc -b`, `npx prettier --check`, `npx eslint` y `npm run build`
+  y pasan las cifras (total de pruebas y archivos). No se registran mutaciones de este bloque salvo que se hagan.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define la URL de esta sub-sección ni dice que un bloque
+  se guarda completo de una vez; conviene pasarlas a §5.1.

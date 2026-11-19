@@ -38,7 +38,13 @@ export const RUTA_DE_MODULO: Record<Rol, Partial<Record<TipoElemento, string>>> 
  * Cuando existan los demás detalles (Fases 5 a 7) se suman aquí.
  */
 export const RUTA_DE_DETALLE: Record<Rol, Partial<Record<TipoElemento, (id: Id) => string>>> = {
-  ADMINISTRADOR: { POSTULANTE: (id) => `/postulaciones/${id}` },
+  ADMINISTRADOR: {
+    POSTULANTE: (id) => `/postulaciones/${id}`,
+    // El catálogo de evaluación se gestiona en una sola página: no hay detalle por elemento.
+    AREA_TECNICA: () => '/postulaciones/criterios',
+    ESPECIALIDAD: () => '/postulaciones/criterios',
+    CRITERIO_EVALUACION: () => '/postulaciones/criterios',
+  },
   SUPERVISOR: {},
   PRACTICANTE: {},
 };
