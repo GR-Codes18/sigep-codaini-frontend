@@ -658,6 +658,12 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       mayúsculas y sin espacios **antes** de enviarlo (el servicio no lo normaliza, G1/9A); crear muestra el error del
       código en `campos.codigo`; editar no ofrece el código; la reunión se quita enviando día y hora vacíos; reactivar no
       avisa al equipo (G2-A) y los autores pueden sumar esa fila a §8.1 si lo quieren.
+- [ ] **Pendiente (paso aparte): mover a `domain/` la regla «un proyecto nuevo siempre con un supervisor activo» (§5.4).** Hoy la
+      comprueba `crearProyecto` con código propio en `services/proyectos/datos.ts` (`rol === 'SUPERVISOR'` y `estado === 'ACTIVO'`, error
+      `SUPERVISOR_NO_VALIDO`) y la repite `listarProyectos` en `supervisores_disponibles` (módulo 5.4, bloque 3) para ofrecer solo
+      candidatos válidos. Decisión de los autores: dejarlo así por ahora y hacerlo en un paso aparte, con la regla pura en `domain/`,
+      que el servicio y la consulta la usen, sus pruebas por combinación (rol × estado × existencia) y la mutación que haga fallar
+      cada prueba. `puedeCambiarSupervisor` ya tiene una condición equivalente para otro caso: conviene reutilizar o unificar.
 - [x] Ajustar a mano la propuesta §5.4 con los supuestos del paso 9 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): el repositorio es
       `https://github.com/{organización}/{repositorio}`; la rama base no lleva espacios; la reunión y los enlaces
       también se editan en un proyecto finalizado; quitar la reunión avisa al equipo; reactivar no avisa.

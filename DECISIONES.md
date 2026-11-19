@@ -4010,7 +4010,7 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 
 ## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 1 y 2: lectura y tablero
 
-- **Commits:** `5431b8a` (bloque 1, lectura) y `da41753` (bloque 2, tablero). Rama de trabajo del módulo; quedan los bloques 3 (datos del proyecto:
+- **Commits:** `5431b8a` (bloque 1, lectura) y `da41753` (bloque 2, tablero). Rama `feat/fase5-supervisores` (los bloques 1 y 2 del 5.4 se hicieron ahí, junto al 5.3); quedan los bloques 3 (datos del proyecto:
   crear, editar, reunión y enlaces) y 4 (equipo y ciclo de vida).
 - **Partición (decisión de los autores).** Cuatro bloques: 1) lectura, 2) tablero y detalle de tarea, 3) datos del proyecto y 4) equipo y ciclo de
   vida. Mismo patrón de 5.1 a 5.3: rutas por prefijo, `useConsulta`, filtros puros en memoria y adaptadores en `src/app/adaptadores/`.
