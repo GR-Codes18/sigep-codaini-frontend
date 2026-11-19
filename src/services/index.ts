@@ -270,6 +270,7 @@ export {
   listarPostulaciones,
   listarPracticantes,
   listarPracticantesACargo,
+  listarProyectosAsignables,
   listarSupervisores,
   obtenerConfiguracion,
   obtenerPostulacion,
@@ -291,6 +292,8 @@ export {
   obtenerTarea,
 } from './consultas';
 export type {
+  AccionPracticante,
+  ProyectosAsignables,
   AlertasDeResumen,
   AvanceDeProyecto,
   DashboardAdministrador,

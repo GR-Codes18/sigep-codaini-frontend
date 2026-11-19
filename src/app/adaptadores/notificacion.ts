@@ -40,6 +40,7 @@ export const RUTA_DE_MODULO: Record<Rol, Partial<Record<TipoElemento, string>>> 
 export const RUTA_DE_DETALLE: Record<Rol, Partial<Record<TipoElemento, (id: Id) => string>>> = {
   ADMINISTRADOR: {
     POSTULANTE: (id) => `/postulaciones/${id}`,
+    USUARIO: (id) => `/practicantes/${id}`,
     // El catálogo de evaluación se gestiona en una sola página: no hay detalle por elemento.
     AREA_TECNICA: () => '/postulaciones/criterios',
     ESPECIALIDAD: () => '/postulaciones/criterios',

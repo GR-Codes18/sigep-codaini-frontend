@@ -47,4 +47,17 @@ describe('Insignia', () => {
     expect(screen.getByText('Activa').className).toContain('state-success');
     expect(screen.getByText('Inactiva').className).toContain('state-neutral');
   });
+
+  it('el practicante es «Activo» (verde) o «Finalizado» (gris), y «Sin proyecto» es una marca ámbar', () => {
+    render(
+      <>
+        <Insignia tipo="practicante" estado="ACTIVO" />
+        <Insignia tipo="practicante" estado="FINALIZADO" />
+        <Insignia tipo="practicante" estado="SIN_PROYECTO" />
+      </>,
+    );
+    expect(screen.getByText('Activo').className).toContain('state-success');
+    expect(screen.getByText('Finalizado').className).toContain('state-neutral');
+    expect(screen.getByText('Sin proyecto').className).toContain('state-warning');
+  });
 });

@@ -25,6 +25,12 @@ const ACCION_POR_TIPO: Partial<Record<TipoAccionHistorial, string>> = {
   POSTULACION_APROBADA: 'Aprobada',
   POSTULACION_RECHAZADA: 'Rechazada',
   POSTULACION_RECONSIDERADA: 'Reconsiderada',
+  PRACTICANTE_ASIGNADO_A_PROYECTO: 'Asignado a un proyecto',
+  PRACTICANTE_QUITADO_DE_PROYECTO: 'Quitado de un proyecto',
+  PRACTICANTE_DATOS_PRACTICA_EDITADOS: 'Datos de la práctica actualizados',
+  PRACTICANTE_CONTRASENA_RESTABLECIDA: 'Contraseña restablecida',
+  PRACTICANTE_FINALIZADO: 'Práctica finalizada',
+  PRACTICANTE_REACTIVADO: 'Práctica reactivada',
 };
 
 /** Estados que aparecen en el resumen de un cambio: los de una tarea y los de una postulación. */
@@ -43,6 +49,11 @@ const ETIQUETA_ROL: Record<Rol, string> = {
   SUPERVISOR: 'Supervisor',
   PRACTICANTE: 'Practicante',
 };
+
+const SIN_RESUMEN_DE_ESTADO: ReadonlySet<TipoAccionHistorial> = new Set([
+  'PRACTICANTE_FINALIZADO',
+  'PRACTICANTE_REACTIVADO',
+]);
 
 export const AUTOR_DESCONOCIDO = 'Usuario desconocido';
 
@@ -68,7 +79,10 @@ function etiquetaAutor({ evento, autor_nombre, autor_rol }: EventoConAutor): str
 export function aEventosLinea(eventos: readonly EventoConAutor[]): EventoLinea[] {
   return eventos.map((item) => {
     const { evento } = item;
-    const cambioEstado = evento.cambios.find((cambio) => cambio.campo === 'estado');
+    // Finalizar o reactivar la práctica ya lo dice la acción: «Activo → Inactivo» no es un estado que se muestre.
+    const cambioEstado = SIN_RESUMEN_DE_ESTADO.has(evento.tipo_accion)
+      ? undefined
+      : evento.cambios.find((cambio) => cambio.campo === 'estado');
     return {
       id: evento.id,
       fecha: parseISO(evento.fecha),

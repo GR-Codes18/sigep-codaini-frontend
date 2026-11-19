@@ -61,7 +61,7 @@ describe('rutaDeNotificacion', () => {
     ['ADMINISTRADOR', 'PROYECTO', '/administrador/proyectos'],
     ['SUPERVISOR', 'PROYECTO', '/supervisor/proyectos'],
     ['PRACTICANTE', 'PROYECTO', '/practicante/proyectos'],
-    ['ADMINISTRADOR', 'USUARIO', '/administrador/practicantes'],
+    ['ADMINISTRADOR', 'USUARIO', '/administrador/practicantes/otro-id'],
     ['SUPERVISOR', 'USUARIO', '/supervisor/practicantes'],
     ['ADMINISTRADOR', 'AREA_TECNICA', '/administrador/postulaciones/criterios'],
     ['ADMINISTRADOR', 'ESPECIALIDAD', '/administrador/postulaciones/criterios'],
