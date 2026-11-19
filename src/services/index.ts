@@ -383,6 +383,7 @@ export type {
   ProyectoListado,
   PullRequestDeTarea,
   PullRequestsPorAtender,
+  AccionProyecto,
   ReunionDeProyecto,
   ResumenProyecto,
   ResumenProyectoAnterior,

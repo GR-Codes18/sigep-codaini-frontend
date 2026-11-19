@@ -194,6 +194,42 @@ describe.each(CONSULTAS.filter((c) => c.exito.idProyecto !== undefined))(
 describe('listarProyectos', () => {
   const listar = (p: PruebaPreparada, idActor: Id) => listarProyectos({ idActor }, p.entorno);
 
+  describe('puede_crear y supervisores_disponibles', () => {
+    it('el Administrador puede crear y recibe a los supervisores activos, por nombre', async () => {
+      const prueba = prepararPrueba();
+      const esperados = prueba
+        .datos()
+        .usuarios.filter((u) => u.rol === 'SUPERVISOR' && u.estado === 'ACTIVO')
+        .map((u) => u.nombre)
+        .sort((a, b) => a.localeCompare(b, 'es'));
+
+      const r = valor(await listar(prueba, ADMIN));
+
+      expect(r.puede_crear).toBe(true);
+      expect(r.supervisores_disponibles.map((s) => s.nombre)).toEqual(esperados);
+      expect(esperados.length).toBeGreaterThan(1);
+    });
+
+    it('un supervisor inactivo no se ofrece', async () => {
+      const prueba = prepararPrueba();
+      desactivar(prueba, SUPERVISOR_3);
+
+      const r = valor(await listar(prueba, ADMIN));
+
+      expect(ids(r.supervisores_disponibles)).not.toContain(SUPERVISOR_3);
+      expect(ids(r.supervisores_disponibles)).toContain(SUPERVISOR_2);
+    });
+
+    it('el Supervisor no puede crear proyectos y no recibe candidatos', async () => {
+      const prueba = prepararPrueba();
+
+      const r = valor(await listar(prueba, SUPERVISOR));
+
+      expect(r.puede_crear).toBe(false);
+      expect(r.supervisores_disponibles).toEqual([]);
+    });
+  });
+
   it('el Administrador ve los 5 proyectos, con los contadores de las pestañas', async () => {
     const prueba = prepararPrueba();
 
@@ -229,6 +265,8 @@ describe('listarProyectos', () => {
     expect(valor(await listar(prueba, idNuevo))).toEqual({
       proyectos: [],
       contadores: { TODOS: 0, ACTIVO: 0, EN_PAUSA: 0, FINALIZADO: 0 },
+      puede_crear: false,
+      supervisores_disponibles: [],
     });
   });
 
@@ -452,6 +490,63 @@ describe('listarMisProyectos', () => {
 describe('obtenerProyecto', () => {
   const obtener = (p: PruebaPreparada, idActor: Id, idProyecto: Id) =>
     obtenerProyecto({ idActor, idProyecto }, p.entorno);
+
+  describe('acciones', () => {
+    const gestion = async (p: PruebaPreparada, idActor: Id, idProyecto: Id) => {
+      const r = valor(await obtener(p, idActor, idProyecto));
+      if (r.vista !== 'GESTION') throw new Error('Se esperaba la vista de gestión.');
+      return r;
+    };
+
+    it('el Administrador puede cambiar los datos, la rama base, la reunión y los enlaces', async () => {
+      const prueba = prepararPrueba();
+
+      expect((await gestion(prueba, ADMIN, PL2D)).acciones).toEqual([
+        'EDITAR_DATOS',
+        'CAMBIAR_RAMA_BASE',
+        'DEFINIR_REUNION',
+        'GESTIONAR_ENLACES',
+      ]);
+    });
+
+    it('también en un proyecto finalizado (los datos siguen editables)', async () => {
+      const prueba = prepararPrueba();
+
+      expect((await gestion(prueba, ADMIN, TIE)).acciones).toEqual([
+        'EDITAR_DATOS',
+        'CAMBIAR_RAMA_BASE',
+        'DEFINIR_REUNION',
+        'GESTIONAR_ENLACES',
+      ]);
+    });
+
+    it('el Supervisor del proyecto no edita los datos: solo la rama base, la reunión y los enlaces', async () => {
+      const prueba = prepararPrueba();
+
+      expect((await gestion(prueba, SUPERVISOR, PL2D)).acciones).toEqual([
+        'CAMBIAR_RAMA_BASE',
+        'DEFINIR_REUNION',
+        'GESTIONAR_ENLACES',
+      ]);
+    });
+
+    it('el código nunca figura entre las acciones: no se edita', async () => {
+      const prueba = prepararPrueba();
+
+      const { acciones } = await gestion(prueba, ADMIN, PL2D);
+
+      expect(acciones.join(' ')).not.toMatch(/CODIGO/);
+    });
+
+    it('la vista del Practicante no trae acciones de gestión', async () => {
+      const prueba = prepararPrueba();
+
+      const r = valor(await obtener(prueba, PRACTICANTE, PL2D));
+
+      expect(r.vista).toBe('PRACTICANTE');
+      expect(r).not.toHaveProperty('acciones');
+    });
+  });
 
   it('el Administrador recibe la vista de gestión de cualquier proyecto, también el finalizado', async () => {
     const prueba = prepararPrueba();

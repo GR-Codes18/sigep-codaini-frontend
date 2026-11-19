@@ -173,11 +173,11 @@ describe('PaginaProyectos', () => {
     if (sin) expect(celda(sin.codigo).querySelector('.bg-state-warning-bg')).toBeNull();
   });
 
-  it('en el bloque de lectura no hay botón «Nuevo proyecto»', async () => {
+  it('el Administrador ve «Nuevo proyecto»', async () => {
     mostrar();
     await listo();
 
-    expect(screen.queryByRole('button', { name: /nuevo proyecto/i })).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Nuevo proyecto' })).toBeVisible();
   });
 
   it('busca por nombre, sin distinguir mayúsculas ni tildes', async () => {
@@ -271,7 +271,7 @@ describe('PaginaProyectos', () => {
     expect(screen.getByTestId('ubicacion')).toHaveTextContent(`/administrador/proyectos/${id}`);
   });
 
-  it('un Supervisor usa su propio listado: este módulo es del Administrador', async () => {
+  it('un Supervisor usa su propio listado y no ve «Nuevo proyecto»: lo decide la consulta', async () => {
     useAlmacenSesion.getState().cerrarSesion();
     iniciarSesion(SUPERVISOR);
     mostrar();
@@ -280,5 +280,6 @@ describe('PaginaProyectos', () => {
     // La consulta le devuelve solo sus proyectos: la ruta del Administrador la protege `GuardaRuta`.
     const filas = await screen.findAllByRole('row');
     expect(filas.length).toBeGreaterThan(1);
+    expect(screen.queryByRole('button', { name: 'Nuevo proyecto' })).not.toBeInTheDocument();
   });
 });

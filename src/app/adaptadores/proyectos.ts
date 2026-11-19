@@ -1,9 +1,17 @@
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { hoyEn, type EstadoProyecto, type EstadoTarea, type Fecha } from '@/domain';
+import {
+  hoyEn,
+  type DiaSemana,
+  type EstadoProyecto,
+  type EstadoTarea,
+  type Fecha,
+  type Hora,
+} from '@/domain';
 import type { EventoLinea } from '@/compartido/LineaTiempo';
 import {
   textoReunion,
+  type AccionProyecto,
   type EquipoProyectoGestion,
   type ListadoProyectos,
   type PersonaResumen,
@@ -61,6 +69,10 @@ export interface ProyectosParaVista {
   /** Como las entrega la consulta. */
   filas: FilaProyecto[];
   contadores: ListadoProyectos['contadores'];
+  /** Lo decide `domain/` y llega con la consulta: la pantalla solo ofrece o no «Nuevo proyecto». */
+  puedeCrear: boolean;
+  /** A quién se puede asignar un proyecto nuevo (supervisores activos); lo decide la consulta. */
+  supervisoresDisponibles: PersonaResumen[];
 }
 
 /**
@@ -81,6 +93,8 @@ export function aProyectos(listado: ListadoProyectos): ProyectosParaVista {
       proximaReunionTexto: proximaReunionTexto(p.reunion),
     })),
     contadores: listado.contadores,
+    puedeCrear: listado.puede_crear,
+    supervisoresDisponibles: listado.supervisores_disponibles,
   };
 }
 
@@ -100,6 +114,9 @@ export interface DatosProyectoParaVista {
   /** «lunes a las 10:00» o «Sin definir». */
   reunionTexto: string;
   proximaReunionTexto: string;
+  /** Para precargar el formulario de edición; ambos son `null` si no hay reunión. */
+  diaReunion: DiaSemana | null;
+  horaReunion: Hora | null;
   repositorioUrl: string;
   ramaBase: string;
 }
@@ -123,6 +140,8 @@ export interface ResumenParaVista {
   tareasPorEstado: TareasDeEstadoParaVista[];
   tareasVencidas: number;
   actividadReciente: EventoLinea[];
+  /** Lo que se puede cambiar de los datos del proyecto; lo decide `puede()` y llega con la consulta. */
+  acciones: AccionProyecto[];
 }
 
 const ORDEN_ESTADOS_TAREA: readonly EstadoTarea[] = [
@@ -152,6 +171,8 @@ export function aDatosProyecto(
     reunionTexto:
       textoReunion(proyecto.reunion.dia_reunion, proyecto.reunion.hora_reunion) ?? 'Sin definir',
     proximaReunionTexto: proximaReunionTexto(proyecto.reunion),
+    diaReunion: proyecto.reunion.dia_reunion,
+    horaReunion: proyecto.reunion.hora_reunion,
     repositorioUrl: proyecto.repositorio_url,
     ramaBase: proyecto.rama_base,
   };
@@ -169,6 +190,7 @@ export function aResumenProyecto(resumen: ResumenProyectoGestion): ResumenParaVi
     })),
     tareasVencidas: resumen.tareas_vencidas,
     actividadReciente: aEventosLinea(resumen.actividad_reciente),
+    acciones: resumen.acciones,
   };
 }
 

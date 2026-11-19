@@ -7,6 +7,7 @@ import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { Insignia } from '@/compartido/Insignia';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
+import { Button } from '@/compartido/ui/button';
 import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, listarProyectos, type Entorno } from '@/services';
@@ -18,6 +19,7 @@ import {
   type FiltrosProyectos,
   type PestanaProyectos,
 } from './filtros';
+import { FormularioProyecto } from './FormularioProyecto';
 import { rutaDeDetalleDeProyecto } from './rutas';
 
 const CLASE_SELECT =
@@ -108,6 +110,7 @@ export function PaginaProyectos({ entorno = ENTORNO }: { entorno?: Entorno } = {
   const idUsuario = sesion?.id ?? null;
   const navegar = useNavigate();
   const [filtros, setFiltros] = useState<FiltrosProyectos>(FILTROS_INICIALES);
+  const [creando, setCreando] = useState(false);
 
   const cargar = useCallback(
     () => listarProyectos({ idActor: idUsuario ?? '' }, entorno),
@@ -173,7 +176,14 @@ export function PaginaProyectos({ entorno = ENTORNO }: { entorno?: Entorno } = {
 
   return (
     <section className="space-y-4">
-      <h1 className="text-text">Proyectos</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-text">Proyectos</h1>
+        {datos?.puedeCrear && (
+          <Button type="button" onClick={() => setCreando(true)}>
+            Nuevo proyecto
+          </Button>
+        )}
+      </div>
 
       <PestanasConContador
         valor={filtros.pestana}
@@ -211,6 +221,17 @@ export function PaginaProyectos({ entorno = ENTORNO }: { entorno?: Entorno } = {
       </div>
 
       {contenido()}
+
+      {creando && datos !== null && (
+        <FormularioProyecto
+          modo="crear"
+          idActor={idUsuario}
+          supervisores={datos.supervisoresDisponibles}
+          onCreado={(id) => navegar(rutaDeDetalleDeProyecto(id))}
+          onCerrar={() => setCreando(false)}
+          entorno={entorno}
+        />
+      )}
     </section>
   );
 }

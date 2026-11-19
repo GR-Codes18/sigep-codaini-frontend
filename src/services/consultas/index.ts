@@ -31,6 +31,7 @@ export type {
   ProyectoAnterior,
   ProyectoDePracticante,
   ProyectoListado,
+  AccionProyecto,
   ReunionDeProyecto,
   ResumenProyecto,
   ResumenProyectoAnterior,

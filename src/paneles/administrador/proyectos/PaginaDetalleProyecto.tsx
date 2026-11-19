@@ -19,6 +19,8 @@ import {
   RUTA_PROYECTOS,
   type PestanaDelProyecto,
 } from './rutas';
+import { AccionesDeProyecto } from './AccionesDeProyecto';
+import { SeccionEnlaces } from './SeccionEnlaces';
 import { TableroDelProyecto } from './TableroDelProyecto';
 
 function VolverAlListado() {
@@ -44,7 +46,15 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactN
 const plural = (n: number, singular: string, plurales: string) =>
   `${n} ${n === 1 ? singular : plurales}`;
 
-function Resumen({ resumen }: { resumen: ResumenParaVista }) {
+function Resumen({
+  resumen,
+  idActor,
+  entorno,
+}: {
+  resumen: ResumenParaVista;
+  idActor: string;
+  entorno: Entorno;
+}) {
   const { proyecto } = resumen;
   return (
     <div className="space-y-6">
@@ -107,33 +117,13 @@ function Resumen({ resumen }: { resumen: ResumenParaVista }) {
         </div>
       </section>
 
-      <section aria-label="Enlaces útiles" className="space-y-2">
-        <h2 className="text-text">Enlaces útiles</h2>
-        {resumen.enlaces.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-            Aún no hay enlaces útiles.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-            {resumen.enlaces.map((e) => (
-              <li
-                key={e.id}
-                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-              >
-                <span className="font-medium text-text">{e.nombre}</span>
-                <a
-                  href={e.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-link underline underline-offset-2"
-                >
-                  {e.url}
-                </a>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      <SeccionEnlaces
+        idActor={idActor}
+        idProyecto={proyecto.id}
+        enlaces={resumen.enlaces}
+        puedeGestionar={resumen.acciones.includes('GESTIONAR_ENLACES')}
+        entorno={entorno}
+      />
 
       <section aria-label="Actividad reciente" className="space-y-3">
         <h2 className="text-text">Actividad reciente</h2>
@@ -260,7 +250,8 @@ export function PaginaDetalleProyecto({ entorno = ENTORNO }: { entorno?: Entorno
   const vista = aResumenProyecto(resumen.valor);
 
   function contenido() {
-    if (pestana === 'resumen') return <Resumen resumen={vista} />;
+    if (pestana === 'resumen')
+      return <Resumen resumen={vista} idActor={idUsuario!} entorno={entorno} />;
     if (pestana === 'tablero') {
       return (
         <TableroDelProyecto
@@ -296,6 +287,12 @@ export function PaginaDetalleProyecto({ entorno = ENTORNO }: { entorno?: Entorno
           <Insignia tipo="proyecto" estado={vista.proyecto.estado} />
           <span className="text-sm text-text-2">{vista.proyecto.codigo}</span>
         </div>
+        <AccionesDeProyecto
+          idActor={idUsuario}
+          proyecto={vista.proyecto}
+          acciones={vista.acciones}
+          entorno={entorno}
+        />
       </header>
 
       <PestanasConContador

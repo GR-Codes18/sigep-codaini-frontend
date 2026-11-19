@@ -122,6 +122,13 @@ export interface ListadoProyectos {
   proyectos: ProyectoListado[];
   /** Para las pestañas: Activos, En pausa, Finalizados y Todos. */
   contadores: Record<EstadoProyecto | 'TODOS', number>;
+  /** ¿Quien consulta puede crear proyectos? Lo decide `puede('CREAR_PROYECTO')` (solo el Administrador). */
+  puede_crear: boolean;
+  /**
+   * Los supervisores a quienes se puede asignar un proyecto nuevo («siempre con un supervisor activo», §5.4), por
+   * nombre. Vacío si quien consulta no puede crear proyectos.
+   */
+  supervisores_disponibles: PersonaResumen[];
 }
 
 /**
@@ -159,7 +166,22 @@ export function listarProyectos(
     for (const estado of ESTADOS_PROYECTO) {
       contadores[estado] = proyectos.filter((p) => p.estado === estado).length;
     }
-    return { ok: true, valor: { proyectos, contadores } };
+    const puedeCrear = puede(actor.valor, 'CREAR_PROYECTO', {}).permitido;
+    const supervisoresDisponibles = puedeCrear
+      ? datos.usuarios
+          .filter((u) => u.rol === 'SUPERVISOR' && u.estado === 'ACTIVO')
+          .map((u): PersonaResumen => ({ id: u.id, nombre: u.nombre }))
+          .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+      : [];
+    return {
+      ok: true,
+      valor: {
+        proyectos,
+        contadores,
+        puede_crear: puedeCrear,
+        supervisores_disponibles: supervisoresDisponibles,
+      },
+    };
   });
 }
 
@@ -311,9 +333,21 @@ function datosDeProyecto(
   };
 }
 
+/**
+ * Lo que quien consulta puede cambiar de los datos de un proyecto (§5.4). Cada una la decide `puede()` de `domain/`: todas
+ * valen también con el proyecto FINALIZADO, y el código **no** está entre ellas porque nunca se edita.
+ */
+export type AccionProyecto =
+  'EDITAR_DATOS' | 'CAMBIAR_RAMA_BASE' | 'DEFINIR_REUNION' | 'GESTIONAR_ENLACES';
+
 /** Resumen para el Administrador y el Supervisor (§5.4, §9.1.1). */
 export interface ResumenProyectoGestion {
   vista: 'GESTION';
+  /**
+   * `EDITAR_DATOS` (nombre, descripción, fechas y repositorio: solo el Administrador), `CAMBIAR_RAMA_BASE`, `DEFINIR_REUNION`
+   * y `GESTIONAR_ENLACES` (el Administrador y el Supervisor del proyecto). La pantalla solo ofrece lo que llega aquí.
+   */
+  acciones: AccionProyecto[];
   proyecto: DatosDeProyecto;
   enlaces: EnlaceDeProyecto[];
   avance: Proporcion | null;
@@ -394,10 +428,25 @@ export function obtenerProyecto(
     const tareas_por_estado = Object.fromEntries(
       ESTADOS_TAREA.map((estado) => [estado, tareas.filter((t) => t.estado === estado).length]),
     ) as Record<EstadoTarea, number>;
+    const acciones: AccionProyecto[] = [
+      ...(puede(yo, 'EDITAR_DATOS_PROYECTO', { proyecto }).permitido
+        ? (['EDITAR_DATOS'] as const)
+        : []),
+      ...(puede(yo, 'CAMBIAR_RAMA_BASE', { proyecto }).permitido
+        ? (['CAMBIAR_RAMA_BASE'] as const)
+        : []),
+      ...(puede(yo, 'DEFINIR_REUNION', { proyecto }).permitido
+        ? (['DEFINIR_REUNION'] as const)
+        : []),
+      ...(puede(yo, 'GESTIONAR_ENLACES', { proyecto }).permitido
+        ? (['GESTIONAR_ENLACES'] as const)
+        : []),
+    ];
     return {
       ok: true,
       valor: {
         vista: 'GESTION',
+        acciones,
         ...base,
         tareas_por_estado,
         tareas_vencidas: tareas.filter((t) => aTareaDeTablero(datos, yo, proyecto, t, hoy).vencida)

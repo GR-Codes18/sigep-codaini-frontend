@@ -239,11 +239,15 @@ describe('PaginaDetalleProyecto', () => {
       expect(screen.getByRole('region', { name: 'Actividad reciente' })).toBeInTheDocument();
     });
 
-    it('en el bloque de lectura no hay botones de escritura', async () => {
+    it('la cabecera ofrece «Editar proyecto» y nada más: el ciclo de vida llega con el bloque 4', async () => {
       await mostrar(ACTIVO);
 
       const cabecera = screen.getByRole('heading', { level: 1 }).closest('header')!;
-      expect(within(cabecera).queryByRole('button')).not.toBeInTheDocument();
+      expect(
+        within(cabecera)
+          .getAllByRole('button')
+          .map((b) => b.textContent),
+      ).toEqual(['Editar proyecto']);
     });
   });
 
