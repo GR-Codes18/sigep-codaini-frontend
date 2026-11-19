@@ -6,6 +6,7 @@ import type { Resultado } from '../resultado';
 import {
   listarPracticantes,
   listarPracticantesACargo,
+  listarProyectosAsignables,
   obtenerPracticante,
   obtenerPracticanteACargo,
 } from './practicantes';
@@ -682,5 +683,141 @@ describe('obtenerPracticanteACargo', () => {
     expect(r.situacion).toBe('ANTERIOR');
     expect(r.proyectos).toMatchObject([{ fecha_baja: '2026-11-14' }]);
     expect(ids(r.tareas_completadas)).toEqual(['tar-tie-006']);
+  });
+});
+
+// ── Acciones disponibles y proyectos asignables (Fase 5, módulo 5.2) ─────────────────────────
+
+describe('obtenerPracticante: acciones y tareas a liberar', () => {
+  const detalle = async (p: PruebaPreparada, id: Id) =>
+    valor(await obtenerPracticante({ idActor: ADMIN, idPracticante: id }, p.entorno));
+
+  it('una práctica activa ofrece editar, restablecer la contraseña y finalizar, pero no reactivar', async () => {
+    const prueba = prepararPrueba();
+
+    const { acciones } = await detalle(prueba, PRA_CON_BAJA);
+
+    expect(acciones).toEqual(['EDITAR_DATOS', 'RESTABLECER_CONTRASENA', 'FINALIZAR']);
+  });
+
+  it('una práctica finalizada ofrece editar y reactivar, pero no restablecer ni finalizar', async () => {
+    const prueba = prepararPrueba();
+
+    const { acciones, tareas_a_liberar } = await detalle(prueba, PRA_PRACTICA_FINALIZADA);
+
+    expect(acciones).toEqual(['EDITAR_DATOS', 'REACTIVAR']);
+    expect(tareas_a_liberar).toBe(0);
+  });
+
+  it('las tareas a liberar son las EN_PROGRESO del practicante, no las que esperan supervisión', async () => {
+    const prueba = prepararPrueba();
+    const tareas = prueba.datos().tareas.filter((t) => t.id_practicante === PRA_DOS_PROYECTOS);
+    const enProgreso = tareas.filter((t) => t.estado === 'EN_PROGRESO').length;
+    expect(enProgreso).toBeGreaterThan(0);
+
+    const { tareas_a_liberar } = await detalle(prueba, PRA_DOS_PROYECTOS);
+
+    expect(tareas_a_liberar).toBe(enProgreso);
+  });
+
+  it('un practicante sin tareas en progreso tiene 0 por liberar', async () => {
+    const prueba = prepararPrueba();
+    prueba.modificar((d) => ({
+      tareas: d.tareas.map((t) =>
+        t.id_practicante === PRA_CON_BAJA && t.estado === 'EN_PROGRESO'
+          ? { ...t, estado: 'ESPERANDO_SUPERVISION' as const }
+          : t,
+      ),
+    }));
+
+    expect((await detalle(prueba, PRA_CON_BAJA)).tareas_a_liberar).toBe(0);
+  });
+
+  it('no escribe', async () => {
+    const prueba = prepararPrueba();
+    const comprobar = sinEscritura(prueba);
+
+    await detalle(prueba, PRA_CON_BAJA);
+
+    comprobar();
+  });
+});
+
+describe('listarProyectosAsignables', () => {
+  const listar = async (p: PruebaPreparada, id: Id, idActor: Id = ADMIN) =>
+    await listarProyectosAsignables({ idActor, idPracticante: id }, p.entorno);
+
+  it('excluye los proyectos finalizados y aquellos donde ya tiene una asignación vigente', async () => {
+    const prueba = prepararPrueba();
+
+    const { proyectos } = valor(await listar(prueba, PRA_DOS_PROYECTOS));
+    const idsAsignables = ids(proyectos);
+
+    expect(idsAsignables).not.toContain(PL2D);
+    expect(idsAsignables).not.toContain(RSV);
+    expect(idsAsignables).not.toContain(TIE);
+    expect(idsAsignables.length).toBeGreaterThan(0);
+  });
+
+  it('un proyecto donde tuvo baja vuelve a ser asignable (se crea otra asignación)', async () => {
+    const prueba = prepararPrueba();
+    expect(ids(valor(await listar(prueba, PRA_CON_BAJA)).proyectos)).not.toContain(PL2D);
+
+    prueba.modificar((d) => ({
+      asignaciones: d.asignaciones.map((a) =>
+        a.id_practicante === PRA_CON_BAJA && a.id_proyecto === PL2D && a.fecha_baja === null
+          ? { ...a, fecha_baja: '2026-11-01' }
+          : a,
+      ),
+    }));
+
+    expect(ids(valor(await listar(prueba, PRA_CON_BAJA)).proyectos)).toContain(PL2D);
+  });
+
+  it('un practicante con la práctica finalizada no puede asignarse a ninguno', async () => {
+    const prueba = prepararPrueba();
+
+    expect(valor(await listar(prueba, PRA_PRACTICA_FINALIZADA)).proyectos).toEqual([]);
+  });
+
+  it('viene por nombre y solo con el resumen del proyecto', async () => {
+    const prueba = prepararPrueba();
+
+    const { proyectos } = valor(await listar(prueba, PRA_CON_BAJA));
+    const nombres = proyectos.map((p) => p.nombre);
+
+    expect([...nombres].sort((a, b) => a.localeCompare(b, 'es'))).toEqual(nombres);
+    for (const p of proyectos) expect(Object.keys(p).sort()).toEqual(['codigo', 'id', 'nombre']);
+  });
+
+  it('un practicante inexistente da NO_ENCONTRADO', async () => {
+    const prueba = prepararPrueba();
+
+    expect(codigo(await listar(prueba, 'no-existe'))).toBe('NO_ENCONTRADO');
+  });
+
+  it('el Supervisor y el Practicante reciben ROL_NO_PERMITIDO', async () => {
+    const prueba = prepararPrueba();
+
+    for (const idActor of [SUPERVISOR, PRACTICANTE]) {
+      expect(codigo(await listar(prueba, PRA_CON_BAJA, idActor)), idActor).toBe('ROL_NO_PERMITIDO');
+    }
+  });
+
+  it('un actor INACTIVO da USUARIO_INACTIVO y un identificador vacío, DATOS_INVALIDOS', async () => {
+    const prueba = prepararPrueba();
+    desactivar(prueba, ADMIN);
+
+    expect(codigo(await listar(prueba, PRA_CON_BAJA))).toBe('USUARIO_INACTIVO');
+    expect(codigo(await listar(prepararPrueba(), ''))).toBe('DATOS_INVALIDOS');
+  });
+
+  it('no escribe', async () => {
+    const prueba = prepararPrueba();
+    const comprobar = sinEscritura(prueba);
+
+    await listar(prueba, PRA_CON_BAJA);
+
+    comprobar();
   });
 });

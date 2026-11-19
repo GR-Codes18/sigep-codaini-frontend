@@ -63,11 +63,14 @@ export type { ProyectoResumen, TareaConProyecto } from './comun';
 export {
   listarPracticantes,
   listarPracticantesACargo,
+  listarProyectosAsignables,
   obtenerPracticante,
   obtenerPracticanteACargo,
 } from './practicantes';
 export type {
+  AccionPracticante,
   CatalogoNombre,
+  ProyectosAsignables,
   EntradaConPracticante,
   FinDePractica,
   ListadoPracticantes,

@@ -37,6 +37,18 @@ describe('ModalContrasenaTemporal', () => {
     expect(screen.getByLabelText('Contraseña temporal')).toHaveTextContent('Kp7mQx2NvB');
   });
 
+  it('con un título propio (al restablecer una contraseña) lo usa en lugar del de la cuenta creada', () => {
+    render(
+      <ModalContrasenaTemporal
+        datos={{ ...DATOS, titulo: 'Contraseña restablecida' }}
+        onCerrar={() => {}}
+      />,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Contraseña restablecida' })).toBeInTheDocument();
+    expect(screen.queryByText('Cuenta de practicante creada')).not.toBeInTheDocument();
+  });
+
   it('avisa que se muestra una sola vez y que se entrega por fuera del sistema', () => {
     render(<ModalContrasenaTemporal datos={DATOS} onCerrar={() => {}} />);
 

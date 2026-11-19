@@ -15,6 +15,8 @@ export interface ContrasenaTemporal {
   /** El correo es su usuario de acceso. */
   correo: string;
   contrasena: string;
+  /** Título del modal; por defecto, el de una cuenta recién creada. Restablecer una contraseña pone el suyo. */
+  titulo?: string;
 }
 
 interface Props {
@@ -38,7 +40,7 @@ function Contenido({ datos, onCerrar }: { datos: ContrasenaTemporal; onCerrar: (
   return (
     <DialogContent showCloseButton={false}>
       <DialogHeader>
-        <DialogTitle>Cuenta de practicante creada</DialogTitle>
+        <DialogTitle>{datos.titulo ?? 'Cuenta de practicante creada'}</DialogTitle>
         <DialogDescription>
           Entrégale a {datos.nombre} su acceso por fuera del sistema (WhatsApp o Discord). El
           sistema no envía correos.

@@ -67,8 +67,19 @@
   comprobar). Cambiar criterios no recalcula las evaluaciones anteriores. Sin cambios en `domain/` ni en `services/`.
 - **Verificación (en `b47d571`):** 3.276 pruebas en 127 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el bloque 3 del módulo 5.1 (`b47d571`), con el que termina el módulo 5.1.
-- **Siguiente paso:** módulo 5.2 (Practicantes).
+- **Fase 5 — módulo 5.2 (Practicantes): terminado (2026-11-18, `2f3a4c9`).** Rama `feat/fase5-practicantes`, en tres bloques dentro de un
+  solo commit. Lectura: listado en `/administrador/practicantes` con pestañas Activos (abre ahí, incluye a «Sin proyecto»), Sin proyecto,
+  Finalizados y Todos con contadores, filtros por área y proyecto y búsqueda; detalle en `/administrador/practicantes/:idPracticante` con
+  datos personales de solo lectura, datos de la práctica, proyectos actuales y anteriores con alta y baja, tareas, línea de tiempo y enlace
+  a la postulación de origen. Sin «Nuevo practicante». Acciones: «Asignar a proyecto» (atajo en «Sin proyecto», uno o varios proyectos),
+  editar los datos de la práctica (propone el fin y envía las dos fechas, F5-A) y restablecer la contraseña (visible una sola vez).
+  Ciclo de vida: finalizar (motivo obligatorio y aviso «Tiene N tareas en progreso que serán liberadas») y reactivar (nota obligatoria; no
+  cambia la fecha de fin, F4-A). Cambios aditivos en la Fase 2: `obtenerPracticante` trae `acciones` y `tareas_a_liberar`, y la consulta
+  nueva `listarProyectosAsignables`. Sin cambios en `domain/`.
+- **Verificación (en `2f3a4c9`):** 3.380 pruebas en 134 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con
+  el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-18, tras el módulo 5.2 (`2f3a4c9`).
+- **Siguiente paso:** módulo 5.3 (Supervisores).
 
 ### Cierres de fase
 
@@ -486,8 +497,11 @@
 | 2026-11-18 | 5.1 Postulaciones | Bloque 1 (lectura): listado, detalle, rutas por prefijo, adaptadores y `decisiones` en `obtenerPostulacion` | `61f368a` |
 | 2026-11-18 | 5.1 Postulaciones | Bloque 2 (decisiones): aprobar con la contraseña temporal una sola vez, rechazar, reconsiderar y «Analizando…» / error de evaluación | `f8baf90` |
 | 2026-11-18 | 5.1 Postulaciones | Bloque 3 (criterios, áreas y especialidades): página de criterios, editor de bloque con «Suma actual: N/100», adaptador `catalogo`, activar solo con bloque válido, `Insignia` de catálogo y ruta de sus notificaciones | `b47d571` |
+| 2026-11-18 | 5.2 Practicantes | Bloques 1 a 3: listado y detalle, «Asignar a proyecto», editar datos de la práctica, restablecer contraseña, finalizar y reactivar; `acciones`, `tareas_a_liberar` y `listarProyectosAsignables` en las consultas; `Insignia` de practicante; aviso que lleva al detalle | `2f3a4c9` |
 
-**Estado de pruebas (2026-11-18, en `b47d571`):** 3.276 pruebas en 127 archivos, todas aprobadas (`npx vitest run`); el bloque 3 del
+**Estado de pruebas (2026-11-18, en `2f3a4c9`):** 3.380 pruebas en 134 archivos, todas aprobadas (`npx vitest run`); el módulo 5.2 sumó 104 y
+7 archivos de prueba (consultas ampliadas, adaptador, filtros, listado, detalle, asignar, acciones y ciclo de vida, más ajustes en
+`Insignia` y `ModalContrasenaTemporal`). No se hicieron pruebas de mutación en este módulo. Antes, en `b47d571`: 3.276 pruebas en 127 archivos; el bloque 3 del
 módulo 5.1 sumó 62 y 4 archivos de prueba (adaptador del catálogo, editor de bloque, formulario de nombre y página de criterios). No se
 hicieron pruebas de mutación en este bloque. Antes, en `f8baf90`: 3.214 pruebas en 123 archivos; el bloque 2 del
 módulo 5.1 sumó 40 netas (modal de la contraseña 8, acciones 19, evaluación y decisiones en el detalle 14, menos una prueba del
@@ -645,7 +659,7 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [ ] Fase 5.3 (Supervisores): «Nuevo supervisor» usa `crearSupervisor` y muestra la contraseña temporal una sola
       vez; desactivar muestra el mensaje con la cantidad de proyectos que trae el servicio; restablecer contraseña
       también se muestra una sola vez. Un supervisor nuevo no tiene proyectos (estado vacío del panel).
-- [ ] Fase 5.2 (Practicantes): «Asignar a proyecto» usa `asignarPracticantes` con una lista de pares (atajo de
+- [x] (hecho en `2f3a4c9`) Fase 5.2 (Practicantes): «Asignar a proyecto» usa `asignarPracticantes` con una lista de pares (atajo de
       «Sin proyecto», varios proyectos o varios practicantes); finalizar avisa «Tiene N tareas en progreso que serán
       liberadas» (el servicio las calcula con `finalizarPractica` de `domain/`); la contraseña temporal de
       restablecer se muestra una sola vez; editar datos propone la nueva fecha de fin con `fechaFinPrevista` y envía

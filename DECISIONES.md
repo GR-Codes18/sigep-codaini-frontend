@@ -3924,3 +3924,43 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   con el aviso conocido en `button.tsx`. No se hicieron pruebas de mutación en este bloque.
 - **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define la URL de esta sub-sección ni dice que un bloque
   se guarda completo de una vez; conviene pasarlas a §5.1.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.2 (Practicantes), Administrador
+
+- **Commit:** `2f3a4c9` (módulo completo en un solo commit: lectura, acciones y ciclo de vida; rama `feat/fase5-practicantes`).
+- **URLs.** `/administrador/practicantes` y `/administrador/practicantes/:idPracticante`, con el mismo patrón del 5.1 (rutas por prefijo,
+  `useConsulta`, filtros puros en memoria, adaptadores en `src/app/adaptadores/`).
+- **Cambios aditivos a la Fase 2 (consultas), sin tocar `domain/`.** `obtenerPracticante` trae `acciones` (editar datos, restablecer
+  contraseña, finalizar, reactivar) y `tareas_a_liberar`. Salen de `puede()` y de las reglas de ciclo de vida de `domain/`
+  (`finalizarPractica` y `reactivarPractica` llamadas sin texto: solo dicen si es posible y qué efectos tendría). La pantalla no deduce
+  botones ni cuenta tareas. Consulta nueva `listarProyectosAsignables` (Administrador), que usa `puedeAsignarPracticante`: excluye los
+  proyectos finalizados y aquellos donde ya hay una asignación vigente; con la práctica finalizada, la lista viene vacía.
+- **Listado.** Abre en «Activos» (incluye a «Sin proyecto»; un finalizado nunca está en «Sin proyecto»). Columnas de §5.2: practicante, área y
+  especialidad, proyectos activos, carga, última actividad, fin previsto (con «Vencida hace N días» o «Termina hoy» según la situación que
+  calcula la consulta), estado (con la marca «Sin proyecto») y detalle. Filtros por área y proyecto; búsqueda por nombre o correo sin tildes.
+  `Insignia` gana el tipo `practicante` (Activo, Finalizado y la marca ámbar «Sin proyecto»).
+- **«Asignar a proyecto».** Atajo solo en la pestaña «Sin proyecto» (no en las demás ni en el detalle). Es un diálogo con casillas, uno o
+  varios proyectos, y el propio diálogo es la confirmación; aplica `asignarPracticantes` con una lista de pares, todo o nada. El estado vive
+  en la página y no en la fila, porque al asignar la persona sale de «Sin proyecto» y su fila desaparece. El error del servicio se muestra sin
+  cerrar el diálogo.
+- **Editar datos de la práctica (F5-A).** Especialidad (solo activas, más la actual aunque esté inactiva; el área sigue a la especialidad),
+  ingreso y fin. Al cambiar el ingreso se propone el fin con `fechaFinPrevista` de `domain/` y la duración de `PRACTICA_DURACION_MESES`
+  (leída con `obtenerConfiguracion`), y se envían las dos fechas. Si el fin se escribió a mano, no se pisa. Que el fin no sea anterior al
+  ingreso lo comprueba el servicio y su mensaje sale en el campo.
+- **Restablecer contraseña.** Confirmación y modal de una sola vez. Se reutiliza `ModalContrasenaTemporal` (de `postulaciones/`, sin moverlo
+  a `compartido/` para no tocar el 5.1) con un título opcional («Contraseña restablecida»). No llega al historial ni a las notificaciones.
+  No se ofrece a un practicante con la práctica finalizada (el servicio ya lo exige).
+- **Finalizar.** Motivo obligatorio y el aviso «Tiene N tareas en progreso que serán liberadas» (singular y «No tiene tareas en progreso»)
+  antes de confirmar, con N de `tareas_a_liberar`. Dice que las tareas que esperan supervisión no se liberan.
+- **Reactivar.** Nota obligatoria; explica que las asignaciones antiguas no se reactivan (queda en «Sin proyecto») y que la fecha de fin
+  prevista no cambia (F4-A), por lo que puede quedar vencida.
+- **Línea de tiempo y avisos.** `eventos.ts` gana las etiquetas de los seis eventos de practicante y no muestra el resumen
+  «ACTIVO → INACTIVO» en finalizar y reactivar (la acción ya lo dice). El aviso de un usuario para el Administrador lleva al detalle del
+  practicante (`RUTA_DE_DETALLE.ADMINISTRADOR.USUARIO`, afina D4-A); por eso `notificacion.test.ts` cambió su expectativa a
+  `/administrador/practicantes/<id>`. El Supervisor sigue yendo a la página del módulo.
+- **Pruebas.** 3.276 → 3.380 en 134 archivos (+104 y +7 archivos). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con
+  el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación en este módulo.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni cómo es el
+  atajo «Asignar a proyecto» (diálogo con selección múltiple), ni el texto en singular del aviso de tareas, ni la propuesta automática de la
+  fecha de fin que no pisa una edición a mano. Conviene pasarlos a §5.2.
+- **Siguiente paso.** Módulo 5.3 (Supervisores).

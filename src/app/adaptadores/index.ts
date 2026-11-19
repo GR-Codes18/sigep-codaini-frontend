@@ -26,5 +26,17 @@ export {
   type FilaPostulacion,
   type PostulacionesParaVista,
 } from './postulaciones';
+export {
+  aDetallePracticante,
+  aPracticantes,
+  duracionDePracticaMeses,
+  type ContadoresPracticantes,
+  type DetallePracticanteParaVista,
+  type FilaPracticante,
+  type FinParaVista,
+  type ParticipacionParaVista,
+  type PracticantesParaVista,
+  type TareaDePracticanteParaVista,
+} from './practicantes';
 export { aTareaDetalle } from './tarea';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';

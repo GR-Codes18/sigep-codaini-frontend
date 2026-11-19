@@ -10,7 +10,8 @@ const FAMILIA: Record<Familia, { caja: string; punto: string }> = {
   danger: { caja: 'bg-state-danger-bg text-state-danger-text', punto: 'bg-state-danger' },
 };
 
-export type TipoEstado = 'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca' | 'catalogo';
+export type TipoEstado =
+  'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca' | 'catalogo' | 'practicante';
 
 const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Familia }>> = {
   tarea: {
@@ -40,6 +41,12 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
   catalogo: {
     ACTIVO: { etiqueta: 'Activa', familia: 'success' },
     INACTIVO: { etiqueta: 'Inactiva', familia: 'neutral' },
+  },
+  // Los dos estados de un practicante (§5.2); «Sin proyecto» es una marca de un practicante activo.
+  practicante: {
+    ACTIVO: { etiqueta: 'Activo', familia: 'success' },
+    FINALIZADO: { etiqueta: 'Finalizado', familia: 'neutral' },
+    SIN_PROYECTO: { etiqueta: 'Sin proyecto', familia: 'warning' },
   },
   marca: {
     DEVUELTA: { etiqueta: 'Devuelta con observaciones', familia: 'danger' },

@@ -14,6 +14,9 @@ import { PaginaCriterios } from '@/paneles/administrador/postulaciones/PaginaCri
 import { PaginaDetallePostulacion } from '@/paneles/administrador/postulaciones/PaginaDetallePostulacion';
 import { PaginaPostulaciones } from '@/paneles/administrador/postulaciones/PaginaPostulaciones';
 import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/postulaciones/rutas';
+import { PaginaDetallePracticante } from '@/paneles/administrador/practicantes/PaginaDetallePracticante';
+import { PaginaPracticantes } from '@/paneles/administrador/practicantes/PaginaPracticantes';
+import { RUTA_PRACTICANTES } from '@/paneles/administrador/practicantes/rutas';
 
 /**
  * Los módulos que ya tienen pantalla, por la ruta de su ítem del menú. Los demás siguen con su página vacía hasta que se
@@ -21,6 +24,7 @@ import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/post
  */
 const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_POSTULACIONES]: <PaginaPostulaciones />,
+  [RUTA_PRACTICANTES]: <PaginaPracticantes />,
 };
 
 /** Las páginas internas de un módulo (detalles), por la ruta que cuelga del módulo. */
@@ -28,6 +32,7 @@ const PAGINAS_INTERNAS: readonly RouteObject[] = [
   // La ruta fija «criterios» gana a `:idPostulante` (React Router da prioridad a los segmentos estáticos).
   { path: RUTA_CRITERIOS, element: <PaginaCriterios /> },
   { path: `${RUTA_POSTULACIONES}/:idPostulante`, element: <PaginaDetallePostulacion /> },
+  { path: `${RUTA_PRACTICANTES}/:idPracticante`, element: <PaginaDetallePracticante /> },
 ];
 
 function rutasDeRol(rol: Rol): RouteObject[] {
