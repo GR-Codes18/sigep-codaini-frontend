@@ -3899,7 +3899,7 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 
 ## 2026-11-18 — [A+B] Fase 5, módulo 5.1 (Postulaciones), bloque 3: criterios, áreas y especialidades
 
-- **Commit:** `PENDIENTE` (se registra después del commit de los autores).
+- **Commit:** `b47d571` (página de criterios, áreas y especialidades del Administrador).
 - **Ruta.** `/administrador/postulaciones/criterios` (decisión 1-A del bloque 1), con el enlace «Criterios de evaluación» en el listado y
   «Volver a postulaciones». La ruta fija gana a `:idPostulante` porque React Router da prioridad a los segmentos estáticos.
 - **Lectura y escritura.** Lee con `listarCatalogoEvaluacion` y escribe con los siete servicios del paso 7B (`crearAreaTecnica`,
@@ -3920,7 +3920,7 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   criterio llevan a `/postulaciones/criterios`.
 - **Estructura.** `PaginaCriterios`, `SeccionDeArea` (con sus filas de especialidad y el botón de activar), `EditorBloqueCriterios` y
   `FormularioNombre` en `src/paneles/administrador/postulaciones/`. `SeccionDeArea` no tiene prueba propia: se cubre desde `PaginaCriterios`.
-- **Pruebas y mutaciones.** `PENDIENTE`: los autores corren `npx vitest run`, `npx tsc -b`, `npx prettier --check`, `npx eslint` y `npm run build`
-  y pasan las cifras (total de pruebas y archivos). No se registran mutaciones de este bloque salvo que se hagan.
+- **Pruebas y mutaciones.** 3.214 → 3.276 en 127 archivos (+62 y +4 archivos). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
+  con el aviso conocido en `button.tsx`. No se hicieron pruebas de mutación en este bloque.
 - **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define la URL de esta sub-sección ni dice que un bloque
   se guarda completo de una vez; conviene pasarlas a §5.1.

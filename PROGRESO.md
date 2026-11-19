@@ -59,17 +59,16 @@
   disponibles (E3-A y E5-A). La contraseña vive solo en el estado de la pantalla y no se persiste ni llega al historial.
 - **Verificación (en `f8baf90`):** 3.214 pruebas en 123 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`. Detalle en «Estado de pruebas».
-- **Fase 5 — módulo 5.1 (Postulaciones), bloque 3 (criterios, áreas y especialidades): construido, a la espera de verificación y commit
-  (2026-11-18, hash: `PENDIENTE`).** Página `/administrador/postulaciones/criterios` (enlace «Criterios de evaluación» desde el
+- **Fase 5 — módulo 5.1 (Postulaciones), bloque 3 (criterios, áreas y especialidades): terminado
+  (2026-11-18, `b47d571`).** Página `/administrador/postulaciones/criterios` (enlace «Criterios de evaluación» desde el
   listado): crear y renombrar áreas y especialidades, activarlas o desactivarlas, y editar cada bloque de criterios con «Suma actual:
   N/100» en vivo. El bloque se guarda completo con `guardarCriteriosDeBloque`; los criterios guardados no se borran, se desactivan.
   Áreas y especialidades nacen inactivas y solo se activan con su bloque válido (la regla es de `domain/` y el servicio la vuelve a
   comprobar). Cambiar criterios no recalcula las evaluaciones anteriores. Sin cambios en `domain/` ni en `services/`.
-- **Verificación (en el bloque 3): `PENDIENTE`.** Los autores corren `npx vitest run`, `npx tsc -b`, `npx prettier --check`, `npx eslint` y
-  `npm run build`; con sus cifras se completa «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras construir el bloque 3 del módulo 5.1 (hash y cifras pendientes).
-- **Siguiente paso:** cerrar el módulo 5.1 (verificar y hacer el commit del bloque 3 y registrar su hash aquí) y seguir con el módulo 5.2
-  (Practicantes).
+- **Verificación (en `b47d571`):** 3.276 pruebas en 127 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+  errores, con el aviso conocido en `button.tsx`. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-18, tras el bloque 3 del módulo 5.1 (`b47d571`), con el que termina el módulo 5.1.
+- **Siguiente paso:** módulo 5.2 (Practicantes).
 
 ### Cierres de fase
 
@@ -486,9 +485,11 @@
 |---|---|---|---|
 | 2026-11-18 | 5.1 Postulaciones | Bloque 1 (lectura): listado, detalle, rutas por prefijo, adaptadores y `decisiones` en `obtenerPostulacion` | `61f368a` |
 | 2026-11-18 | 5.1 Postulaciones | Bloque 2 (decisiones): aprobar con la contraseña temporal una sola vez, rechazar, reconsiderar y «Analizando…» / error de evaluación | `f8baf90` |
-| 2026-11-18 | 5.1 Postulaciones | Bloque 3 (criterios, áreas y especialidades): página de criterios, editor de bloque con «Suma actual: N/100», adaptador `catalogo`, activar solo con bloque válido, `Insignia` de catálogo y ruta de sus notificaciones | `PENDIENTE` |
+| 2026-11-18 | 5.1 Postulaciones | Bloque 3 (criterios, áreas y especialidades): página de criterios, editor de bloque con «Suma actual: N/100», adaptador `catalogo`, activar solo con bloque válido, `Insignia` de catálogo y ruta de sus notificaciones | `b47d571` |
 
-**Estado de pruebas (2026-11-18, en `f8baf90`; el bloque 3 está pendiente de cifras):** 3.214 pruebas en 123 archivos, todas aprobadas (`npx vitest run`); el bloque 2 del
+**Estado de pruebas (2026-11-18, en `b47d571`):** 3.276 pruebas en 127 archivos, todas aprobadas (`npx vitest run`); el bloque 3 del
+módulo 5.1 sumó 62 y 4 archivos de prueba (adaptador del catálogo, editor de bloque, formulario de nombre y página de criterios). No se
+hicieron pruebas de mutación en este bloque. Antes, en `f8baf90`: 3.214 pruebas en 123 archivos; el bloque 2 del
 módulo 5.1 sumó 40 netas (modal de la contraseña 8, acciones 19, evaluación y decisiones en el detalle 14, menos una prueba del
 bloque 1 que quedó superada). Antes, en `61f368a`: 3.174 pruebas en 120 archivos; el bloque 1 del
 módulo 5.1 sumó 106 (listado 20, detalle 17, filtros 32, adaptador 12, barra de puntaje 4, desglose 4, `decisiones` 5 y las ajustadas de
@@ -575,7 +576,7 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       bloque completo (los criterios no se borran: se desactivan), muestra «Suma actual: N/100» con
       `sumaPesosActivos` y `validarBloqueCriterios`, y ofrece activar un área o especialidad solo cuando su
       bloque es válido. Nacen inactivas. Construido en el bloque 3 (`EditorBloqueCriterios`, `SeccionDeArea` y `PaginaCriterios`);
-      hash pendiente hasta el commit.
+      hecho en `b47d571`.
 - [x] Fase 5.1: «Analizando…», el mensaje cuando la evaluación falla y la contraseña temporal visible una sola vez: hecho en el
       bloque 2 (`f8baf90`). Al abrir una postulación sin evaluación se evalúa una sola vez y se ve «Analizando…»; si falla, «No se
       pudo evaluar: <mensaje>» y las decisiones siguen disponibles (E3-A y E5-A). La contraseña temporal se muestra una sola vez en un
