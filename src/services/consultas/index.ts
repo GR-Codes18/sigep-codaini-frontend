@@ -8,6 +8,7 @@ export type {
 export {
   ACTIVIDAD_RECIENTE_MAXIMA,
   listarMisProyectos,
+  listarPracticantesAsignables,
   listarProyectos,
   listarTerminadasDeProyecto,
   obtenerEquipoProyecto,
@@ -32,6 +33,9 @@ export type {
   ProyectoDePracticante,
   ProyectoListado,
   AccionProyecto,
+  CicloDeVidaProyecto,
+  PracticanteAsignable,
+  PracticantesAsignables,
   ReunionDeProyecto,
   ResumenProyecto,
   ResumenProyectoAnterior,

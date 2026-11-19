@@ -140,8 +140,21 @@ export interface ResumenParaVista {
   tareasPorEstado: TareasDeEstadoParaVista[];
   tareasVencidas: number;
   actividadReciente: EventoLinea[];
-  /** Lo que se puede cambiar de los datos del proyecto; lo decide `puede()` y llega con la consulta. */
+  /** Lo que se puede hacer con el proyecto; lo decide `puede()` y las reglas de `domain/`, y llega con la consulta. */
   acciones: AccionProyecto[];
+  /** Lo que explica finalizar y reactivar; lo calcula `domain/` y llega con la consulta. */
+  cicloDeVida: CicloDeVidaParaVista;
+  /** A quién se puede cambiar el supervisor; lo decide `domain/` y llega con la consulta. */
+  supervisoresDestino: PersonaResumen[];
+}
+
+export interface CicloDeVidaParaVista {
+  /** Si es mayor que 0, finalizar está bloqueado. */
+  tareasEsperandoSupervision: number;
+  /** Las «En progreso» que se liberarían al finalizar. */
+  tareasALiberar: number;
+  /** Reactivar pide reactivar antes al supervisor del proyecto. */
+  supervisorInactivo: boolean;
 }
 
 const ORDEN_ESTADOS_TAREA: readonly EstadoTarea[] = [
@@ -191,6 +204,12 @@ export function aResumenProyecto(resumen: ResumenProyectoGestion): ResumenParaVi
     tareasVencidas: resumen.tareas_vencidas,
     actividadReciente: aEventosLinea(resumen.actividad_reciente),
     acciones: resumen.acciones,
+    cicloDeVida: {
+      tareasEsperandoSupervision: resumen.ciclo_de_vida.tareas_esperando_supervision,
+      tareasALiberar: resumen.ciclo_de_vida.tareas_a_liberar,
+      supervisorInactivo: resumen.ciclo_de_vida.supervisor_inactivo,
+    },
+    supervisoresDestino: resumen.supervisores_destino,
   };
 }
 
@@ -203,6 +222,10 @@ export interface MiembroParaVista {
   /** Tareas en progreso en este proyecto. */
   carga: number;
   altaTexto: string;
+  /** Las «En progreso» que se liberarían al quitarlo; lo calcula `domain/`. */
+  tareasALiberar: number;
+  /** Lo decide `domain/` (no se puede quitar en un proyecto finalizado). */
+  puedeQuitar: boolean;
 }
 
 export interface ExMiembroParaVista {
@@ -213,6 +236,10 @@ export interface ExMiembroParaVista {
 }
 
 export interface EquipoParaVista {
+  /** Para explicar que un proyecto finalizado no admite asignar ni quitar. */
+  estadoProyecto: EstadoProyecto;
+  /** Lo decide `domain/` y llega con la consulta. */
+  puedeAsignar: boolean;
   activos: MiembroParaVista[];
   anteriores: ExMiembroParaVista[];
 }
@@ -220,6 +247,8 @@ export interface EquipoParaVista {
 /** El Equipo de `obtenerEquipoProyecto` (vista de gestión) al modelo de presentación. Solo presenta. */
 export function aEquipoProyecto(equipo: EquipoProyectoGestion): EquipoParaVista {
   return {
+    estadoProyecto: equipo.estado_proyecto,
+    puedeAsignar: equipo.puede_asignar,
     activos: equipo.activos.map((m) => ({
       id: m.id,
       nombre: m.nombre,
@@ -227,6 +256,8 @@ export function aEquipoProyecto(equipo: EquipoProyectoGestion): EquipoParaVista 
       especialidad: m.especialidad ?? 'Sin especialidad',
       carga: m.carga,
       altaTexto: diaVisible(m.fecha_alta),
+      tareasALiberar: m.tareas_a_liberar,
+      puedeQuitar: m.puede_quitar,
     })),
     anteriores: equipo.anteriores.map((m) => ({
       id: m.id,

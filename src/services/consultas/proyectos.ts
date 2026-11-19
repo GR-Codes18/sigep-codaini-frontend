@@ -17,10 +17,18 @@ import {
   ESTADOS_TAREA,
   avanceProyecto,
   cargaDePracticante,
+  finalizarProyecto as reglaFinalizarProyecto,
   hoyEn,
   ordenarTerminadas,
   proximaReunion,
+  proyectosDeCarga,
   puede,
+  puedeAsignarPracticante,
+  puedeCambiarSupervisor,
+  puedePausarProyecto,
+  puedeQuitarPracticante,
+  puedeReactivarProyecto,
+  puedeReanudarProyecto,
   terminadasRecientes,
   ultimaActividadDeProyecto,
   type Asignacion,
@@ -38,6 +46,7 @@ import {
 import { ENTORNO, type Entorno } from '../entorno';
 import { validarEntrada, type Resultado } from '../resultado';
 import { ejecutarConsulta } from '../transaccional';
+import { practicantesConCuenta } from './practicantes';
 import {
   aTareaDeTablero,
   cargarActorActivo,
@@ -334,11 +343,30 @@ function datosDeProyecto(
 }
 
 /**
- * Lo que quien consulta puede cambiar de los datos de un proyecto (§5.4). Cada una la decide `puede()` de `domain/`: todas
- * valen también con el proyecto FINALIZADO, y el código **no** está entre ellas porque nunca se edita.
+ * Lo que quien consulta puede hacer con un proyecto (§5.4). Cada una la decide `puede()` de `domain/` y, las de estado y
+ * «cambiar supervisor», además las reglas de ciclo de vida. Los datos, la rama base, la reunión y los enlaces valen también
+ * con el proyecto FINALIZADO, y el código **no** está entre ellas porque nunca se edita.
  */
 export type AccionProyecto =
-  'EDITAR_DATOS' | 'CAMBIAR_RAMA_BASE' | 'DEFINIR_REUNION' | 'GESTIONAR_ENLACES';
+  | 'EDITAR_DATOS'
+  | 'CAMBIAR_RAMA_BASE'
+  | 'DEFINIR_REUNION'
+  | 'GESTIONAR_ENLACES'
+  | 'CAMBIAR_SUPERVISOR'
+  | 'PAUSAR'
+  | 'REANUDAR'
+  | 'FINALIZAR'
+  | 'REACTIVAR';
+
+/** Lo que explica los botones de estado (§5.4); todo lo calcula `domain/`, la pantalla no cuenta tareas. */
+export interface CicloDeVidaProyecto {
+  /** Tareas «Esperando supervisión»: si hay alguna, finalizar está bloqueado. */
+  tareas_esperando_supervision: number;
+  /** Tareas «En progreso» que se liberarían al finalizar; 0 si finalizar está bloqueado. */
+  tareas_a_liberar: number;
+  /** El supervisor del proyecto está inactivo: reactivar pide reactivarlo antes. */
+  supervisor_inactivo: boolean;
+}
 
 /** Resumen para el Administrador y el Supervisor (§5.4, §9.1.1). */
 export interface ResumenProyectoGestion {
@@ -348,6 +376,9 @@ export interface ResumenProyectoGestion {
    * y `GESTIONAR_ENLACES` (el Administrador y el Supervisor del proyecto). La pantalla solo ofrece lo que llega aquí.
    */
   acciones: AccionProyecto[];
+  ciclo_de_vida: CicloDeVidaProyecto;
+  /** A quién se puede cambiar el supervisor (activos y distintos del actual); vacío en un proyecto finalizado. */
+  supervisores_destino: PersonaResumen[];
   proyecto: DatosDeProyecto;
   enlaces: EnlaceDeProyecto[];
   avance: Proporcion | null;
@@ -428,6 +459,21 @@ export function obtenerProyecto(
     const tareas_por_estado = Object.fromEntries(
       ESTADOS_TAREA.map((estado) => [estado, tareas.filter((t) => t.estado === estado).length]),
     ) as Record<EstadoTarea, number>;
+    // Las reglas de ciclo de vida dicen si se puede y, si no, por qué: finalizar con tareas esperando supervisión y
+    // reactivar con el supervisor inactivo se ofrecen igual, para que la pantalla explique el bloqueo.
+    const finalizar = reglaFinalizarProyecto(yo, proyecto, datos.tareas, marca.ahora);
+    const bloqueoFinalizar = !finalizar.ok && finalizar.codigo === 'TAREAS_ESPERANDO_SUPERVISION';
+    const reactivar = puedeReactivarProyecto(
+      yo,
+      proyecto,
+      datos.usuarios.find((u) => u.id === proyecto.id_supervisor),
+    );
+    const bloqueoReactivar =
+      !reactivar.ok && reactivar.codigo === 'SUPERVISOR_DEL_PROYECTO_INACTIVO';
+    const destinos = datos.usuarios
+      .filter((u) => u.rol === 'SUPERVISOR' && puedeCambiarSupervisor(yo, proyecto, u).ok)
+      .map((u): PersonaResumen => ({ id: u.id, nombre: u.nombre }))
+      .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'));
     const acciones: AccionProyecto[] = [
       ...(puede(yo, 'EDITAR_DATOS_PROYECTO', { proyecto }).permitido
         ? (['EDITAR_DATOS'] as const)
@@ -441,12 +487,26 @@ export function obtenerProyecto(
       ...(puede(yo, 'GESTIONAR_ENLACES', { proyecto }).permitido
         ? (['GESTIONAR_ENLACES'] as const)
         : []),
+      ...(destinos.length > 0 ? (['CAMBIAR_SUPERVISOR'] as const) : []),
+      ...(puedePausarProyecto(yo, proyecto).ok ? (['PAUSAR'] as const) : []),
+      ...(puedeReanudarProyecto(yo, proyecto).ok ? (['REANUDAR'] as const) : []),
+      ...(finalizar.ok || bloqueoFinalizar ? (['FINALIZAR'] as const) : []),
+      ...(reactivar.ok || bloqueoReactivar ? (['REACTIVAR'] as const) : []),
     ];
     return {
       ok: true,
       valor: {
         vista: 'GESTION',
         acciones,
+        ciclo_de_vida: {
+          tareas_esperando_supervision:
+            !finalizar.ok && finalizar.codigo === 'TAREAS_ESPERANDO_SUPERVISION'
+              ? (finalizar.cantidad ?? 0)
+              : 0,
+          tareas_a_liberar: finalizar.ok ? finalizar.efectos.tareas_a_liberar.length : 0,
+          supervisor_inactivo: bloqueoReactivar,
+        },
+        supervisores_destino: destinos,
         ...base,
         tareas_por_estado,
         tareas_vencidas: tareas.filter((t) => aTareaDeTablero(datos, yo, proyecto, t, hoy).vencida)
@@ -467,6 +527,10 @@ export interface MiembroDelEquipo {
   /** Tareas en progreso **en este proyecto**. */
   carga: number;
   fecha_alta: Fecha;
+  /** Tareas en progreso que se liberarían al quitarlo; lo calcula `puedeQuitarPracticante`. */
+  tareas_a_liberar: number;
+  /** ¿Se lo puede quitar ahora? Lo decide `puedeQuitarPracticante` (no, si el proyecto está finalizado). */
+  puede_quitar: boolean;
 }
 
 export interface ExMiembroDelEquipo {
@@ -480,6 +544,10 @@ export interface ExMiembroDelEquipo {
 export interface EquipoProyectoGestion {
   vista: 'GESTION';
   id_proyecto: Id;
+  /** Para explicar por qué no se puede asignar ni quitar en un proyecto finalizado. */
+  estado_proyecto: EstadoProyecto;
+  /** ¿Hay alguien a quien se pueda asignar ahora? Lo decide `puedeAsignarPracticante` por cada practicante. */
+  puede_asignar: boolean;
   activos: MiembroDelEquipo[];
   anteriores: ExMiembroDelEquipo[];
 }
@@ -566,14 +634,25 @@ export function obtenerEquipoProyecto(
     }
 
     const activos = activas
-      .map((a): MiembroDelEquipo => ({
-        id: a.id_practicante,
-        nombre: nombreDe(datos.usuarios, a.id_practicante),
-        correo: usuario(a.id_practicante)?.correo ?? '',
-        especialidad: especialidadDe(datos, a.id_practicante),
-        carga: cargaEnProyecto(a.id_practicante),
-        fecha_alta: a.fecha_alta,
-      }))
+      .map((a): MiembroDelEquipo => {
+        const quitar = puedeQuitarPracticante(
+          yo,
+          proyecto,
+          a.id_practicante,
+          datos.asignaciones,
+          datos.tareas,
+        );
+        return {
+          id: a.id_practicante,
+          nombre: nombreDe(datos.usuarios, a.id_practicante),
+          correo: usuario(a.id_practicante)?.correo ?? '',
+          especialidad: especialidadDe(datos, a.id_practicante),
+          carga: cargaEnProyecto(a.id_practicante),
+          fecha_alta: a.fecha_alta,
+          tareas_a_liberar: quitar.ok ? quitar.efectos.tareas_a_liberar.length : 0,
+          puede_quitar: quitar.ok,
+        };
+      })
       .sort(porNombre);
     const anteriores = datos.asignaciones
       .filter((a) => a.id_proyecto === proyecto.id && a.fecha_baja !== null)
@@ -584,7 +663,88 @@ export function obtenerEquipoProyecto(
         fecha_baja: a.fecha_baja as Fecha,
       }))
       .sort((a, b) => b.fecha_baja.localeCompare(a.fecha_baja) || porNombre(a, b));
-    return { ok: true, valor: { vista: 'GESTION', id_proyecto: proyecto.id, activos, anteriores } };
+    return {
+      ok: true,
+      valor: {
+        vista: 'GESTION',
+        id_proyecto: proyecto.id,
+        estado_proyecto: proyecto.estado,
+        puede_asignar: practicantesAsignables(datos, yo, proyecto).length > 0,
+        activos,
+        anteriores,
+      },
+    };
+  });
+}
+
+// ── Practicantes asignables ──────────────────────────────────────────────────────────────────
+
+export interface PracticanteAsignable {
+  id: Id;
+  nombre: string;
+  correo: string;
+  especialidad: string | null;
+  /** Tareas en progreso **en todos sus proyectos**: ayuda a elegir a quién asignar (§5.4). */
+  carga: number;
+}
+
+export interface PracticantesAsignables {
+  id_proyecto: Id;
+  practicantes: PracticanteAsignable[];
+}
+
+/** Los practicantes a quienes `puedeAsignarPracticante` deja asignar a este proyecto, por nombre. */
+function practicantesAsignables(
+  datos: DatosAlmacen,
+  actor: Usuario,
+  proyecto: Proyecto,
+): PracticanteAsignable[] {
+  return practicantesConCuenta(datos)
+    .filter(
+      ({ usuario }) => puedeAsignarPracticante(actor, proyecto, usuario, datos.asignaciones).ok,
+    )
+    .map(({ usuario }): PracticanteAsignable => ({
+      id: usuario.id,
+      nombre: usuario.nombre,
+      correo: usuario.correo,
+      especialidad: especialidadDe(datos, usuario.id),
+      carga: cargaDePracticante(
+        usuario.id,
+        datos.tareas,
+        proyectosDeCarga(usuario.id, datos.asignaciones, datos.proyectos),
+      ),
+    }))
+    .sort(porNombre);
+}
+
+/**
+ * «Asignar practicantes» (§5.4): la lista de practicantes activos con su carga actual, para elegir uno o varios. Solo
+ * entran los que la regla de `domain/` deja asignar (activos, sin una asignación vigente en este proyecto); con el
+ * proyecto finalizado la lista viene vacía. Solo el Administrador asigna (`ASIGNAR_PRACTICANTE`).
+ */
+export function listarPracticantesAsignables(
+  entrada: EntradaConProyecto,
+  entorno: Entorno = ENTORNO,
+): Promise<Resultado<PracticantesAsignables>> {
+  return ejecutarConsulta(entorno, ({ datos }) => {
+    const valida = validarEntrada(esquemaEntradaProyecto, entrada);
+    if (!valida.ok) return valida;
+    const actor = cargarActorActivo(datos, valida.valor.idActor);
+    if (!actor.ok) return actor;
+    const encontrado = cargarProyectoConPermiso(
+      datos,
+      actor.valor,
+      valida.valor.idProyecto,
+      'VER_PRACTICANTES',
+    );
+    if (!encontrado.ok) return encontrado;
+    return {
+      ok: true,
+      valor: {
+        id_proyecto: encontrado.valor.id,
+        practicantes: practicantesAsignables(datos, actor.valor, encontrado.valor),
+      },
+    };
   });
 }
 

@@ -1,11 +1,6 @@
 import { useCallback } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router';
-import {
-  aEquipoProyecto,
-  aResumenProyecto,
-  type EquipoParaVista,
-  type ResumenParaVista,
-} from '@/app/adaptadores';
+import { aEquipoProyecto, aResumenProyecto, type ResumenParaVista } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { Insignia } from '@/compartido/Insignia';
@@ -20,6 +15,7 @@ import {
   type PestanaDelProyecto,
 } from './rutas';
 import { AccionesDeProyecto } from './AccionesDeProyecto';
+import { EquipoDelProyecto } from './EquipoDelProyecto';
 import { SeccionEnlaces } from './SeccionEnlaces';
 import { TableroDelProyecto } from './TableroDelProyecto';
 
@@ -42,9 +38,6 @@ function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactN
     </div>
   );
 }
-
-const plural = (n: number, singular: string, plurales: string) =>
-  `${n} ${n === 1 ? singular : plurales}`;
 
 function Resumen({
   resumen,
@@ -128,63 +121,6 @@ function Resumen({
       <section aria-label="Actividad reciente" className="space-y-3">
         <h2 className="text-text">Actividad reciente</h2>
         <LineaTiempo eventos={resumen.actividadReciente} />
-      </section>
-    </div>
-  );
-}
-
-function Equipo({ equipo }: { equipo: EquipoParaVista }) {
-  return (
-    <div className="space-y-6">
-      <section aria-label="Practicantes activos" className="space-y-2">
-        <h2 className="text-text">Practicantes activos</h2>
-        {equipo.activos.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-            Este proyecto aún no tiene practicantes.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-            {equipo.activos.map((m) => (
-              <li
-                key={m.id}
-                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-              >
-                <div>
-                  <p className="font-medium text-text">{m.nombre}</p>
-                  <p className="text-xs text-text-2">
-                    {m.correo} · {m.especialidad}
-                  </p>
-                </div>
-                <p className="text-text-2 tabular-nums">
-                  {plural(m.carga, 'tarea en progreso', 'tareas en progreso')} · Desde {m.altaTexto}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-label="Practicantes anteriores" className="space-y-2">
-        <h2 className="text-text">Practicantes anteriores</h2>
-        {equipo.anteriores.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-            Aún no hay practicantes anteriores.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-            {equipo.anteriores.map((m, i) => (
-              <li
-                key={`${m.id}-${i}`}
-                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-              >
-                <span className="font-medium text-text">{m.nombre}</span>
-                <p className="text-text-2 tabular-nums">
-                  Alta: {m.altaTexto} · Baja: {m.bajaTexto}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
       </section>
     </div>
   );
@@ -275,7 +211,14 @@ export function PaginaDetalleProyecto({ entorno = ENTORNO }: { entorno?: Entorno
         </div>
       );
     }
-    return <Equipo equipo={aEquipoProyecto(equipo.valor)} />;
+    return (
+      <EquipoDelProyecto
+        idActor={idUsuario!}
+        proyecto={{ id: vista.proyecto.id, nombre: vista.proyecto.nombre }}
+        equipo={aEquipoProyecto(equipo.valor)}
+        entorno={entorno}
+      />
+    );
   }
 
   return (
@@ -291,6 +234,8 @@ export function PaginaDetalleProyecto({ entorno = ENTORNO }: { entorno?: Entorno
           idActor={idUsuario}
           proyecto={vista.proyecto}
           acciones={vista.acciones}
+          cicloDeVida={vista.cicloDeVida}
+          supervisoresDestino={vista.supervisoresDestino}
           entorno={entorno}
         />
       </header>

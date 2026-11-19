@@ -32,6 +32,7 @@ export {
   aProyectos,
   aResumenProyecto,
   type AvanceParaVista,
+  type CicloDeVidaParaVista,
   type DatosProyectoParaVista,
   type EnlaceParaVista,
   type EquipoParaVista,

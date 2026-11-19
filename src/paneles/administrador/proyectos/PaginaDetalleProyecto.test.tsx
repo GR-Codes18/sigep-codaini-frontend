@@ -239,7 +239,7 @@ describe('PaginaDetalleProyecto', () => {
       expect(screen.getByRole('region', { name: 'Actividad reciente' })).toBeInTheDocument();
     });
 
-    it('la cabecera ofrece «Editar proyecto» y nada más: el ciclo de vida llega con el bloque 4', async () => {
+    it('la cabecera ofrece «Editar proyecto» y las acciones de ciclo de vida que decide la consulta', async () => {
       await mostrar(ACTIVO);
 
       const cabecera = screen.getByRole('heading', { level: 1 }).closest('header')!;
@@ -247,7 +247,7 @@ describe('PaginaDetalleProyecto', () => {
         within(cabecera)
           .getAllByRole('button')
           .map((b) => b.textContent),
-      ).toEqual(['Editar proyecto']);
+      ).toEqual(['Editar proyecto', 'Cambiar supervisor', 'Pausar proyecto', 'Finalizar proyecto']);
     });
   });
 

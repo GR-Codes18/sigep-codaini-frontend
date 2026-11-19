@@ -169,6 +169,21 @@ describe('adaptadores de proyectos', () => {
       expect(sin.proyecto.reunionTexto).toBe('Sin definir');
     });
 
+    it('lleva las acciones, el ciclo de vida y los supervisores destino tal como llegan de la consulta', async () => {
+      const origen = await resumen('pry-pl2d');
+
+      const vista = aResumenProyecto(origen);
+
+      expect(vista.acciones).toEqual(origen.acciones);
+      expect(vista.cicloDeVida).toEqual({
+        tareasEsperandoSupervision: origen.ciclo_de_vida.tareas_esperando_supervision,
+        tareasALiberar: origen.ciclo_de_vida.tareas_a_liberar,
+        supervisorInactivo: origen.ciclo_de_vida.supervisor_inactivo,
+      });
+      expect(vista.supervisoresDestino).toEqual(origen.supervisores_destino);
+      expect(vista.cicloDeVida.tareasEsperandoSupervision).toBeGreaterThan(0);
+    });
+
     it('lleva los enlaces y la actividad reciente', async () => {
       const origen = await resumen('pry-pl2d');
 
@@ -190,6 +205,29 @@ describe('adaptadores de proyectos', () => {
       expect(vista.activos.map((m) => m.id)).toEqual(origen.activos.map((m) => m.id));
       expect(vista.activos.map((m) => m.carga)).toEqual(origen.activos.map((m) => m.carga));
       expect(vista.anteriores.map((m) => m.id)).toEqual(origen.anteriores.map((m) => m.id));
+    });
+
+    it('lleva el estado del proyecto, si se puede asignar y, por miembro, si se puede quitar', async () => {
+      const origen = await equipo('pry-pl2d');
+
+      const vista = aEquipoProyecto(origen);
+
+      expect(vista.estadoProyecto).toBe('ACTIVO');
+      expect(vista.puedeAsignar).toBe(origen.puede_asignar);
+      expect(vista.activos.map((m) => m.puedeQuitar)).toEqual(
+        origen.activos.map((m) => m.puede_quitar),
+      );
+      expect(vista.activos.map((m) => m.tareasALiberar)).toEqual(
+        origen.activos.map((m) => m.tareas_a_liberar),
+      );
+    });
+
+    it('un proyecto finalizado no deja quitar a nadie ni asignar', async () => {
+      const vista = aEquipoProyecto(await equipo('pry-tie'));
+
+      expect(vista.estadoProyecto).toBe('FINALIZADO');
+      expect(vista.puedeAsignar).toBe(false);
+      expect(vista.activos.every((m) => !m.puedeQuitar)).toBe(true);
     });
 
     it('«Sin especialidad» si el catálogo ya no la tiene', async () => {
