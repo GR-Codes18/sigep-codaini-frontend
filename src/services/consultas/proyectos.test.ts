@@ -825,6 +825,44 @@ describe('obtenerTableroProyecto', () => {
     ]);
   });
 
+  describe('puede_crear_tarea', () => {
+    it('el Administrador y el Supervisor del proyecto pueden crear en un proyecto activo', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, ADMIN, PL2D)).puede_crear_tarea).toBe(true);
+      expect(valor(await tablero(prueba, SUPERVISOR, PL2D)).puede_crear_tarea).toBe(true);
+    });
+
+    it('un proyecto en pausa también permite crear (solo se bloquea tomar tareas)', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, ADMIN, INV)).puede_crear_tarea).toBe(true);
+    });
+
+    it('un proyecto finalizado no permite crear, ni siquiera al Administrador', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, ADMIN, TIE)).puede_crear_tarea).toBe(false);
+    });
+
+    it('el Practicante nunca puede crear tareas', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, PRACTICANTE, PL2D)).puede_crear_tarea).toBe(false);
+    });
+
+    it('un proyecto que se finaliza pasa de permitir a no permitir', async () => {
+      const prueba = prepararPrueba();
+      prueba.modificar((d) => ({
+        proyectos: d.proyectos.map((p) =>
+          p.id === PL2D ? { ...p, estado: 'FINALIZADO' as const } : p,
+        ),
+      }));
+
+      expect(valor(await tablero(prueba, ADMIN, PL2D)).puede_crear_tarea).toBe(false);
+    });
+  });
+
   it('cada tarjeta trae su ID legible, responsable, vencida y la etiqueta del PR ya filtrada', async () => {
     const prueba = prepararPrueba();
 
@@ -921,6 +959,7 @@ describe('obtenerTableroProyecto', () => {
     expect(valor(await tablero(prueba, ADMIN, DAT))).toEqual({
       id_proyecto: DAT,
       estado_proyecto: 'ACTIVO',
+      puede_crear_tarea: true,
       disponibles: [],
       en_progreso: [],
       esperando_supervision: [],

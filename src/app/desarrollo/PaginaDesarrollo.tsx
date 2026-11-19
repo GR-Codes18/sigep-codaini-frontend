@@ -1,30 +1,21 @@
 import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
-import { aEventosLinea, aTablero, aTareaDetalle, aTareasTerminadas } from '@/app/adaptadores';
-import { aAccionesTarea } from '@/app/tareas/accionesDelDetalle';
+import { aTablero, aTareasTerminadas } from '@/app/adaptadores';
+import { DetalleDeTarea } from '@/app/tareas/DetalleDeTarea';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
-import { DetalleTarea } from '@/compartido/DetalleTarea';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
-import { FormularioTarea } from '@/compartido/FormularioTarea';
 import { ListadoTerminadas } from '@/compartido/ListadoTerminadas';
-import { ModalCrearPR, type DatosPR } from '@/compartido/ModalCrearPR';
 import { TableroKanban } from '@/compartido/TableroKanban';
-import { Button } from '@/compartido/ui/button';
 import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import {
-  crearPullRequest,
   ENTORNO,
   exito,
   fallo,
   listarMisProyectos,
   listarProyectos,
-  listarRamasParaPullRequest,
   listarTerminadasDeProyecto,
-  NOTA_PR_VINCULADO,
   obtenerTableroProyecto,
-  obtenerTarea,
   type Entorno,
   type Resultado,
 } from '@/services';
@@ -55,7 +46,8 @@ function AvisoDeError({ mensaje }: { mensaje: string }) {
 /**
  * Contenedor temporal de integración: el tablero de un proyecto, su detalle de tarea y «Ver todas las terminadas», todo
  * leído con `services/consultas/` y con las acciones por `services/`. No filtra ni decide nada: el alcance por rol, los
- * botones del detalle y las etiquetas salen de las consultas. `entorno` solo lo cambian las pruebas.
+ * botones del detalle y las etiquetas salen de las consultas. El detalle de tarea es `DetalleDeTarea`, el mismo que usa
+ * el módulo Proyectos. `entorno` solo lo cambian las pruebas.
  */
 export function PaginaDesarrollo({ entorno = ENTORNO }: { entorno?: Entorno } = {}) {
   const { sesion } = useSesionActiva();
@@ -64,9 +56,7 @@ export function PaginaDesarrollo({ entorno = ENTORNO }: { entorno?: Entorno } = 
 
   const [eleccion, setEleccion] = useState<string | null>(null);
   const [abierta, setAbierta] = useState<string | null>(null);
-  const [editando, setEditando] = useState(false);
   const [verTerminadas, setVerTerminadas] = useState(false);
-  const [crearPr, setCrearPr] = useState(false);
 
   // Los proyectos que cada rol puede abrir los decide la consulta de su rol.
   const cargarProyectos = useCallback(async (): Promise<Resultado<OpcionProyecto[]>> => {
@@ -105,50 +95,10 @@ export function PaginaDesarrollo({ entorno = ENTORNO }: { entorno?: Entorno } = 
     idUsuario === null || idProyecto === null || !verTerminadas ? null : cargarTerminadas,
   );
 
-  const cargarTarea = useCallback(
-    () => obtenerTarea({ idActor: idUsuario ?? '', idTarea: abierta ?? '' }, entorno),
-    [entorno, idUsuario, abierta],
-  );
-  const tarea = useConsulta(idUsuario === null || abierta === null ? null : cargarTarea);
-
-  const idTareaAbierta = abierta;
-  const listarRamas = useCallback(() => {
-    if (idUsuario === null || idTareaAbierta === null)
-      return Promise.resolve(fallo('NO_ENCONTRADO'));
-    return listarRamasParaPullRequest({ idActor: idUsuario, idTarea: idTareaAbierta }, entorno);
-  }, [entorno, idTareaAbierta, idUsuario]);
-  const crearPRDesdeModal = useCallback(
-    async (datos: DatosPR) => {
-      if (idUsuario === null || idTareaAbierta === null) return fallo('NO_ENCONTRADO');
-      const resultado = await crearPullRequest(
-        {
-          idActor: idUsuario,
-          idTarea: idTareaAbierta,
-          rama_origen: datos.ramaOrigen,
-          titulo: datos.titulo,
-          descripcion: datos.descripcion,
-        },
-        entorno,
-      );
-      if (resultado.ok) {
-        if (resultado.valor.vinculado) toast.info(NOTA_PR_VINCULADO);
-        else toast.success('Pull Request creado');
-      }
-      return resultado;
-    },
-    [entorno, idTareaAbierta, idUsuario],
-  );
-
   if (idUsuario === null || rol === null) return null;
-
-  function abrir(id: string) {
-    setAbierta(id);
-    setEditando(false);
-  }
 
   function volverAlTablero() {
     setAbierta(null);
-    setEditando(false);
     setVerTerminadas(false);
   }
 
@@ -160,67 +110,13 @@ export function PaginaDesarrollo({ entorno = ENTORNO }: { entorno?: Entorno } = 
     }
 
     if (abierta !== null) {
-      if (tarea.error) {
-        return (
-          <div className="space-y-4">
-            <Button variant="outline" onClick={volverAlTablero}>
-              Volver al tablero
-            </Button>
-            <AvisoDeError mensaje={tarea.error} />
-          </div>
-        );
-      }
-      if (tarea.valor === null) return CARGANDO;
-      const vista = tarea.valor;
-      const detalle = aTareaDetalle(vista);
-
-      if (editando) {
-        return (
-          <div className="space-y-4">
-            <h2 className="text-text">Editar {detalle.idLegible}</h2>
-            <FormularioTarea
-              modo="editar"
-              idActor={idUsuario ?? ''}
-              idTarea={detalle.id}
-              proyectos={[{ id: detalle.idProyecto, nombre: detalle.proyecto }]}
-              valoresIniciales={{
-                idProyecto: detalle.idProyecto,
-                titulo: detalle.titulo,
-                descripcion: detalle.descripcion,
-                fechaLimite: detalle.fechaLimite,
-              }}
-              onCancelar={() => setEditando(false)}
-            />
-          </div>
-        );
-      }
-
       return (
-        <div className="space-y-4">
-          <Button variant="outline" onClick={() => setAbierta(null)}>
-            {verTerminadas ? 'Volver al listado' : 'Volver al tablero'}
-          </Button>
-          <DetalleTarea
-            key={detalle.id}
-            tarea={detalle}
-            acciones={aAccionesTarea(vista.acciones, detalle, idUsuario ?? '', entorno)}
-            eventos={aEventosLinea(vista.eventos)}
-            onEjecutar={async (clave) => {
-              if (clave === 'crear_pr') setCrearPr(true);
-              else if (clave === 'editar') setEditando(true);
-              else throw new Error('La acción de tarea no está disponible.');
-            }}
-          />
-          <ModalCrearPR
-            abierto={crearPr}
-            onCerrar={() => setCrearPr(false)}
-            tituloPropuesto={`${detalle.idLegible} ${detalle.titulo}`}
-            plantillaDescripcion="Qué se hizo:"
-            onListarRamas={listarRamas}
-            ramaBase={vista.proyecto.rama_base}
-            onCrear={crearPRDesdeModal}
-          />
-        </div>
+        <DetalleDeTarea
+          idTarea={abierta}
+          etiquetaVolver={verTerminadas ? 'Volver al listado' : 'Volver al tablero'}
+          onVolver={() => setAbierta(null)}
+          entorno={entorno}
+        />
       );
     }
 
@@ -230,7 +126,7 @@ export function PaginaDesarrollo({ entorno = ENTORNO }: { entorno?: Entorno } = 
       return (
         <ListadoTerminadas
           tareas={aTareasTerminadas(terminadas.valor)}
-          onAbrir={abrir}
+          onAbrir={setAbierta}
           onVolver={volverAlTablero}
         />
       );
@@ -243,7 +139,7 @@ export function PaginaDesarrollo({ entorno = ENTORNO }: { entorno?: Entorno } = 
       <TableroKanban
         tareas={tareas}
         totalTerminadas={totalTerminadas}
-        onAbrir={abrir}
+        onAbrir={setAbierta}
         permitirSoloMias={rol === 'PRACTICANTE'}
         onVerTerminadas={() => setVerTerminadas(true)}
       />

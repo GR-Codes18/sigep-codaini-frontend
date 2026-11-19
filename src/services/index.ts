@@ -293,6 +293,7 @@ export {
 } from './consultas';
 export type {
   AccionPracticante,
+  AccionSupervisor,
   ProyectosAsignables,
   AlertasDeResumen,
   AvanceDeProyecto,

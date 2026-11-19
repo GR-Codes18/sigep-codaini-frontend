@@ -19,6 +19,7 @@ import {
   RUTA_PROYECTOS,
   type PestanaDelProyecto,
 } from './rutas';
+import { TableroDelProyecto } from './TableroDelProyecto';
 
 function VolverAlListado() {
   return (
@@ -201,6 +202,7 @@ function Equipo({ equipo }: { equipo: EquipoParaVista }) {
 
 const ETIQUETA_PESTANA: Record<PestanaDelProyecto, string> = {
   resumen: 'Resumen',
+  tablero: 'Tablero',
   equipo: 'Equipo',
 };
 
@@ -259,6 +261,15 @@ export function PaginaDetalleProyecto({ entorno = ENTORNO }: { entorno?: Entorno
 
   function contenido() {
     if (pestana === 'resumen') return <Resumen resumen={vista} />;
+    if (pestana === 'tablero') {
+      return (
+        <TableroDelProyecto
+          idActor={idUsuario!}
+          proyecto={{ id: vista.proyecto.id, nombre: vista.proyecto.nombre }}
+          entorno={entorno}
+        />
+      );
+    }
     if (equipo.error) {
       return (
         <p role="alert" className="text-sm text-danger-text">

@@ -77,15 +77,18 @@ describe('FormularioTarea', () => {
     await user.click(screen.getByRole('button', { name: 'Crear tarea' }));
 
     await waitFor(() =>
-      expect(crearTarea).toHaveBeenCalledWith({
-        idActor: 'supervisor-1',
-        idProyecto: 'p1',
-        titulo: 'Pantalla de login',
-        descripcion: 'Debe validar el correo',
-        fecha_limite: '2026-11-30',
-        requiere_supervision: true,
-        requiere_pr: false,
-      }),
+      expect(crearTarea).toHaveBeenCalledWith(
+        {
+          idActor: 'supervisor-1',
+          idProyecto: 'p1',
+          titulo: 'Pantalla de login',
+          descripcion: 'Debe validar el correo',
+          fecha_limite: '2026-11-30',
+          requiere_supervision: true,
+          requiere_pr: false,
+        },
+        undefined,
+      ),
     );
     expect(onGuardada).toHaveBeenCalledWith(tarea);
     expect(onCancelar).toHaveBeenCalled();
@@ -168,13 +171,16 @@ describe('FormularioTarea', () => {
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
     await waitFor(() =>
-      expect(editarTarea).toHaveBeenCalledWith({
-        idActor: 'supervisor-1',
-        idTarea: 'tarea-1',
-        titulo: 'Título actualizado',
-        descripcion: 'Descripción actualizada',
-        fecha_limite: '2026-12-15',
-      }),
+      expect(editarTarea).toHaveBeenCalledWith(
+        {
+          idActor: 'supervisor-1',
+          idTarea: 'tarea-1',
+          titulo: 'Título actualizado',
+          descripcion: 'Descripción actualizada',
+          fecha_limite: '2026-12-15',
+        },
+        undefined,
+      ),
     );
     const entrada = vi.mocked(editarTarea).mock.calls[0][0];
     expect(entrada).not.toHaveProperty('idProyecto');

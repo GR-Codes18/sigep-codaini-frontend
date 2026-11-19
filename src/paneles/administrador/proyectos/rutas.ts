@@ -4,10 +4,14 @@ import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 export const RUTA_PROYECTOS = `${PREFIJO_POR_ROL.ADMINISTRADOR}/proyectos`;
 
 /** Las pestañas del detalle de un proyecto, en el parámetro `?pestana=` (permite enlazarlas). */
-export const PESTANAS_DEL_PROYECTO = ['resumen', 'equipo'] as const;
+export const PESTANAS_DEL_PROYECTO = ['resumen', 'tablero', 'equipo'] as const;
 export type PestanaDelProyecto = (typeof PESTANAS_DEL_PROYECTO)[number];
 
 export const PESTANA_INICIAL: PestanaDelProyecto = 'resumen';
+
+/** El detalle de una tarea dentro de su proyecto (§6.7): clic en una tarjeta del tablero. */
+export const rutaDeDetalleDeTarea = (idProyecto: string, idTarea: string) =>
+  `${RUTA_PROYECTOS}/${idProyecto}/tareas/${idTarea}`;
 
 export function rutaDeDetalleDeProyecto(idProyecto: string, pestana?: PestanaDelProyecto): string {
   const base = `${RUTA_PROYECTOS}/${idProyecto}`;

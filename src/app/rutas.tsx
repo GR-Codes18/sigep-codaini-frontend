@@ -15,6 +15,7 @@ import { PaginaDetallePostulacion } from '@/paneles/administrador/postulaciones/
 import { PaginaPostulaciones } from '@/paneles/administrador/postulaciones/PaginaPostulaciones';
 import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/postulaciones/rutas';
 import { PaginaDetalleProyecto } from '@/paneles/administrador/proyectos/PaginaDetalleProyecto';
+import { PaginaDetalleTareaDeProyecto } from '@/paneles/administrador/proyectos/PaginaDetalleTareaDeProyecto';
 import { PaginaProyectos } from '@/paneles/administrador/proyectos/PaginaProyectos';
 import { RUTA_PROYECTOS } from '@/paneles/administrador/proyectos/rutas';
 import { PaginaDetallePracticante } from '@/paneles/administrador/practicantes/PaginaDetallePracticante';
@@ -43,6 +44,10 @@ const PAGINAS_INTERNAS: readonly RouteObject[] = [
   { path: `${RUTA_PRACTICANTES}/:idPracticante`, element: <PaginaDetallePracticante /> },
   { path: `${RUTA_SUPERVISORES}/:idSupervisor`, element: <PaginaDetalleSupervisor /> },
   { path: `${RUTA_PROYECTOS}/:idProyecto`, element: <PaginaDetalleProyecto /> },
+  {
+    path: `${RUTA_PROYECTOS}/:idProyecto/tareas/:idTarea`,
+    element: <PaginaDetalleTareaDeProyecto />,
+  },
 ];
 
 function rutasDeRol(rol: Rol): RouteObject[] {

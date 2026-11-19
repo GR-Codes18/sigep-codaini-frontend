@@ -20,6 +20,7 @@ import {
   hoyEn,
   ordenarTerminadas,
   proximaReunion,
+  puede,
   terminadasRecientes,
   ultimaActividadDeProyecto,
   type Asignacion,
@@ -543,6 +544,11 @@ export function obtenerEquipoProyecto(
 export interface TableroProyecto {
   id_proyecto: Id;
   estado_proyecto: EstadoProyecto;
+  /**
+   * ¿Quien consulta puede crear una tarea en este proyecto? Lo decide `puede('CREAR_TAREA')` de `domain/` (Administrador
+   * o Supervisor del proyecto, y el proyecto no finalizado): la pantalla solo ofrece o no «Nueva tarea».
+   */
+  puede_crear_tarea: boolean;
   disponibles: TareaDeTablero[];
   en_progreso: TareaDeTablero[];
   esperando_supervision: TareaDeTablero[];
@@ -587,6 +593,7 @@ export function obtenerTableroProyecto(
       valor: {
         id_proyecto: proyecto.id,
         estado_proyecto: proyecto.estado,
+        puede_crear_tarea: puede(actor.valor, 'CREAR_TAREA', { proyecto }).permitido,
         disponibles: columna('DISPONIBLE'),
         en_progreso: columna('EN_PROGRESO'),
         esperando_supervision: columna('ESPERANDO_SUPERVISION'),

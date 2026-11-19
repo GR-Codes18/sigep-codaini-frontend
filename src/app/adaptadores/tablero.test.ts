@@ -76,6 +76,7 @@ describe('aTablero', () => {
     const tablero: TableroProyecto = {
       id_proyecto: 'pry-1',
       estado_proyecto: 'ACTIVO',
+      puede_crear_tarea: true,
       disponibles: [tarea({ id: 'a', estado: 'DISPONIBLE' })],
       en_progreso: [tarea({ id: 'b' }), tarea({ id: 'c' })],
       esperando_supervision: [tarea({ id: 'd', estado: 'ESPERANDO_SUPERVISION' })],
@@ -92,13 +93,37 @@ describe('aTablero', () => {
       aTablero({
         id_proyecto: 'pry-1',
         estado_proyecto: 'EN_PAUSA',
+        puede_crear_tarea: true,
         disponibles: [],
         en_progreso: [],
         esperando_supervision: [],
         terminadas: [],
         total_terminadas: 0,
       }),
-    ).toEqual({ tareas: [], totalTerminadas: 0 });
+    ).toEqual({
+      tareas: [],
+      totalTerminadas: 0,
+      estadoProyecto: 'EN_PAUSA',
+      puedeCrearTarea: true,
+    });
+  });
+
+  it('lleva el estado del proyecto y si se puede crear una tarea tal como llegan de la consulta', () => {
+    const base: TableroProyecto = {
+      id_proyecto: 'pry-1',
+      estado_proyecto: 'FINALIZADO',
+      puede_crear_tarea: false,
+      disponibles: [],
+      en_progreso: [],
+      esperando_supervision: [],
+      terminadas: [],
+      total_terminadas: 0,
+    };
+
+    const resultado = aTablero(base);
+
+    expect(resultado.estadoProyecto).toBe('FINALIZADO');
+    expect(resultado.puedeCrearTarea).toBe(false);
   });
 });
 
