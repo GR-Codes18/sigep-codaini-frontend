@@ -27,6 +27,22 @@ export {
   type PostulacionesParaVista,
 } from './postulaciones';
 export {
+  aDatosProyecto,
+  aEquipoProyecto,
+  aProyectos,
+  aResumenProyecto,
+  type AvanceParaVista,
+  type DatosProyectoParaVista,
+  type EnlaceParaVista,
+  type EquipoParaVista,
+  type ExMiembroParaVista,
+  type FilaProyecto,
+  type MiembroParaVista,
+  type ProyectosParaVista,
+  type ResumenParaVista,
+  type TareasDeEstadoParaVista,
+} from './proyectos';
+export {
   aDetallePracticante,
   aPracticantes,
   duracionDePracticaMeses,

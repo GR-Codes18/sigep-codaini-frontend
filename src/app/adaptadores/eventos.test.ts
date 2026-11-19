@@ -92,8 +92,8 @@ describe('aEventosLinea', () => {
   });
 
   it('un tipo de acción sin etiqueta muestra su código', () => {
-    const [linea] = aEventosLinea([item({ tipo_accion: 'PROYECTO_PAUSADO' })]);
-    expect(linea.accion).toBe('PROYECTO_PAUSADO');
+    const [linea] = aEventosLinea([item({ tipo_accion: 'AREA_TECNICA_CREADA' })]);
+    expect(linea.accion).toBe('AREA_TECNICA_CREADA');
   });
 
   it('conserva el orden recibido y una lista vacía da una lista vacía', () => {

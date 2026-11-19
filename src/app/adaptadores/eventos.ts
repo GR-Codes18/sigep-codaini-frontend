@@ -37,7 +37,19 @@ const ACCION_POR_TIPO: Partial<Record<TipoAccionHistorial, string>> = {
   SUPERVISOR_PROYECTOS_REASIGNADOS: 'Proyectos reasignados',
   SUPERVISOR_DESACTIVADO: 'Cuenta desactivada',
   SUPERVISOR_REACTIVADO: 'Cuenta reactivada',
+  PROYECTO_CREADO: 'Proyecto creado',
+  PROYECTO_EDITADO: 'Datos del proyecto actualizados',
   PROYECTO_SUPERVISOR_CAMBIADO: 'Supervisor del proyecto cambiado',
+  PROYECTO_REUNION_CAMBIADA: 'Reunión semanal cambiada',
+  PROYECTO_REPOSITORIO_CAMBIADO: 'Repositorio cambiado',
+  PROYECTO_RAMA_BASE_CAMBIADA: 'Rama base cambiada',
+  PROYECTO_ENLACE_AGREGADO: 'Enlace agregado',
+  PROYECTO_ENLACE_EDITADO: 'Enlace editado',
+  PROYECTO_ENLACE_QUITADO: 'Enlace quitado',
+  PROYECTO_PAUSADO: 'Proyecto pausado',
+  PROYECTO_REANUDADO: 'Proyecto reanudado',
+  PROYECTO_FINALIZADO: 'Proyecto finalizado',
+  PROYECTO_REACTIVADO: 'Proyecto reactivado',
 };
 
 /** Estados que aparecen en el resumen de un cambio: los de una tarea y los de una postulación. */
@@ -62,6 +74,10 @@ const SIN_RESUMEN_DE_ESTADO: ReadonlySet<TipoAccionHistorial> = new Set([
   'PRACTICANTE_REACTIVADO',
   'SUPERVISOR_DESACTIVADO',
   'SUPERVISOR_REACTIVADO',
+  'PROYECTO_PAUSADO',
+  'PROYECTO_REANUDADO',
+  'PROYECTO_FINALIZADO',
+  'PROYECTO_REACTIVADO',
 ]);
 
 export const AUTOR_DESCONOCIDO = 'Usuario desconocido';
