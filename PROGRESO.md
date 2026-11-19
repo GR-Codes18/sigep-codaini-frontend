@@ -44,8 +44,16 @@
   `src/app/ejemplos/`. Se retiró además el código de resultado `ACCESO_RAPIDO_NO_DISPONIBLE`, que quedó sin uso desde el sub-paso 0.
 - **Verificación (en `9ea9835`):** 3.068 pruebas en 114 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
   errores, con el aviso conocido en `button.tsx`; Vite conserva el aviso de chunk mayor a 500 kB. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-18, tras el sub-paso e) (`9ea9835`), con el cierre de la Fase 4.
-- **Siguiente paso:** Fase 5 — panel del Administrador, módulo 5.1 (Postulaciones).
+- **Fase 5 — módulo 5.1 (Postulaciones), bloque 1 (lectura): terminado (2026-11-18, `61f368a`).** Listado con pestañas y
+  contadores (abre en «Pendientes», por puntaje), filtros por área, especialidad y fechas, búsqueda y orden; detalle con la evaluación
+  de la IA en dos bloques, el CV (sin documento en el prototipo, con su aviso de uso) y el historial. Rutas
+  `/administrador/postulaciones` y `/administrador/postulaciones/:idPostulante`, título de la barra superior por prefijo y aviso de
+  postulación que lleva a su detalle. `obtenerPostulacion` trae `decisiones` (`decisionesDisponibles`). Quedan los bloques 2
+  (decisiones y «Analizando…») y 3 (criterios, áreas y especialidades).
+- **Verificación (en `61f368a`):** 3.174 pruebas en 120 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+  errores, con el aviso conocido en `button.tsx`. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-18, tras el bloque 1 del módulo 5.1 (`61f368a`).
+- **Siguiente paso:** módulo 5.1, bloque 2 (aprobar, rechazar, reconsiderar y «Analizando…»), y después el bloque 3 (criterios).
 
 ### Cierres de fase
 
@@ -374,8 +382,8 @@
   `PaginaDesarrollo` y retirar `ejemplos/` (hecho, `9ea9835`).
 - **Fase 1, «Listo cuando»:** cumplido y cerrado (2026-11-18). Los autores revisaron los tipos de `domain/` y ajustaron la línea del
   plan; `fase-1-completa` y `fase-2-completa` están publicadas en `origin` (ver «Cierres de fase»).
-- **Rama:** `feat/fase4-conectar-pantallas` (sale de `development`, que ya contiene el merge `48abbbc`: Bloque 3 de la Fase 2
-  integrado con las Fases 3 y 4). Antes: `feat/fase4-vistas-lectura`.
+- **Rama:** `feat/fase5-postulaciones` (módulo 5.1). Antes: `feat/fase4-conectar-pantallas` y `feat/fase4-vistas-lectura`; `development`
+  ya contiene el merge `48abbbc` (Bloque 3 de la Fase 2 integrado con las Fases 3 y 4).
 - **Integración (2026-11-18):** Integración del Bloque 3 de la Fase 2 en las ramas de interfaz — `48abbbc`.
 
 ## Pasos terminados
@@ -456,7 +464,17 @@
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso d). Mi perfil con `obtenerMiPerfil` y la regla `camposDelPerfil` de `domain/` (campos por rol y cuáles se editan); `PaginaPerfil` pasa a `src/app/perfil/`; el formulario reutiliza `esquemaCorreo` y `esquemaCelular` (H3); se retiran `responsabilidadesPerfil.ts` y el bloque de responsabilidades | `f2bb209` |
 | 2026-11-18 | 4 | Conexión de pantallas, sub-paso e). `PaginaDesarrollo` pasa a `src/app/desarrollo/`, se elimina `src/app/ejemplos/` y se retira `ACCESO_RAPIDO_NO_DISPONIBLE`. **Cierre de la Fase 4** | `9ea9835` |
 
-**Estado de pruebas (2026-11-18, en `9ea9835`):** 3.068 pruebas en 114 archivos, todas aprobadas (`npx vitest run`); el sub-paso e)
+### Fase 5 — panel del Administrador
+
+| Fecha | Módulo | Paso | Commit / PR |
+|---|---|---|---|
+| 2026-11-18 | 5.1 Postulaciones | Bloque 1 (lectura): listado, detalle, rutas por prefijo, adaptadores y `decisiones` en `obtenerPostulacion` | `61f368a` |
+
+**Estado de pruebas (2026-11-18, en `61f368a`):** 3.174 pruebas en 120 archivos, todas aprobadas (`npx vitest run`); el bloque 1 del
+módulo 5.1 sumó 106 (listado 20, detalle 17, filtros 32, adaptador 12, barra de puntaje 4, desglose 4, `decisiones` 5 y las ajustadas de
+eventos, notificaciones, menús y rutas).
+
+**Estado de pruebas anterior (2026-11-18, en `9ea9835`):** 3.068 pruebas en 114 archivos, todas aprobadas (`npx vitest run`); el sub-paso e)
 no cambió el total (mover archivos y quitar un código sin uso). Antes eran 3.068 en 114 (`f2bb209`), y antes
 3.017 en 112 (`7354f39`): el sub-paso d) sumó 51 netas (regla de `domain/`, consulta, adaptador, formulario y página de Mi
 perfil, y se retiraron las de `PaginaPerfil` y `responsabilidadesPerfil` de `ejemplos/`). Antes, 2.937 en 109 (`7269ba6`): el

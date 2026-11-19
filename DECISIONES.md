@@ -3831,3 +3831,38 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   3. §6.8: «Ver todas las terminadas» es una vista dentro de `PaginaDesarrollo` mientras no existan los módulos.
   4. §9.2.1: «Solo mis tareas» actúa sobre las 5 terminadas visibles del tablero; decidir si debe actuar sobre todas.
   5. §8.2: aclarar que el Supervisor ve su nombre y correo en el formulario como campos de solo lectura.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.1 (Postulaciones), bloque 1: lectura
+
+- **Commit:** `61f368a` (listado y detalle de postulaciones del Administrador).
+- **Partición (decisión 5-A).** El módulo se hace en tres commits: 1) lectura (este), 2) decisiones y «Analizando…», 3) criterios, áreas y especialidades.
+- **URLs (decisión 1-A; la propuesta no las define).** `/administrador/postulaciones`, `/administrador/postulaciones/:idPostulante` y, en el
+  bloque 3, `/administrador/postulaciones/criterios`. Permiten enlaces directos, como el de una notificación. Alternativa descartada: el detalle
+  como panel lateral sin ruta propia. Las rutas cuelgan del módulo, así que `puedeVerRuta` ya las limita al Administrador, y la barra superior
+  resuelve el título por prefijo (`etiquetaDeRuta` respeta el límite del segmento: `postulacionesX` no es «Postulaciones»).
+- **Cambio aditivo a la Fase 2.** `obtenerPostulacion` trae `decisiones: AccionDecisionPostulacion[]` calculado con `decisionesDisponibles(estado)`
+  de `domain/`, igual que el detalle de tarea trae `acciones`: la pantalla no deduce qué se puede decidir a partir del estado. No hay regla nueva
+  en `domain/`.
+- **Listado.** Abre en «Pendientes» y por puntaje (el ranking de la consulta). Pestañas con los contadores de la consulta («Requieren revisión»
+  son las pendientes con la marca, resaltada en ámbar si hay), filtros por área, especialidad y rango de fechas, búsqueda por nombre o correo sin
+  distinguir mayúsculas ni tildes, y orden por puntaje o por fecha (más reciente primero, desempate por ID). Todo se aplica en memoria sobre lo que
+  entrega la consulta (Q5) con funciones puras (`filtros.ts`). El rango de fechas usa el día de Perú de la postulación (`hoyEn`), con los dos
+  extremos incluidos. Sin acciones en las filas: un clic abre el detalle. Estados vacíos distintos para «sin postulaciones», «sin coincidencias
+  con los filtros» y cada pestaña vacía.
+- **Detalle.** Datos del postulante, evaluación de la IA (puntaje final, justificación, marca de revisión, nota fija «El puntaje es una ayuda…» y
+  el desglose en los dos bloques, el guardado: un cambio posterior de criterios no lo altera), CV e historial. Una aprobada dice qué cuenta de
+  practicante nació de ella. Sin evaluación dice que todavía no la tiene (el flujo «Analizando…» llega en el bloque 2).
+- **CV (decisión 3-A).** La semilla apunta a `/cv-ejemplo/<slug>.pdf` y esos archivos no existen: el detalle muestra el nombre del archivo, dice que el
+  prototipo no incluye el documento y deja «Descargar» desactivado. No se inventa contenido de CV. Alternativa descartada: generar un archivo al vuelo.
+- **Aviso sobre el uso del CV (decisión 4).** Texto de los autores: «El CV se usa únicamente para evaluar esta postulación y no para otros fines.»
+  (plan §9, módulo 5.1; propuesta §10.1).
+- **Notificaciones.** El aviso de una postulación lleva a su detalle: nueva tabla `RUTA_DE_DETALLE` (afina D4-A). Los demás elementos siguen yendo a
+  la página de su módulo hasta que tengan detalle.
+- **Motivos de la marca de revisión.** Se muestra solo la marca: los motivos (criterio obligatorio o banda ambigua) no se guardan (P7 del paso 7).
+- **Estructura.** `src/paneles/administrador/postulaciones/` (empieza dentro del panel, §14.2); la barra de puntaje subirá a `compartido/` cuando
+  el Dashboard (5.9) la use. `rutas.tsx` tiene ahora un mapa de módulos con pantalla (los demás siguen con su página vacía) y otro de páginas internas.
+- **Pruebas y mutaciones.** 3.068 → 3.174 en 120 archivos (+106). 17 mutaciones detectadas de 17 (pestañas, extremos del rango de fechas, tildes y
+  mayúsculas de la búsqueda, orden por fecha y su desempate, filtros de área y especialidad, opciones por área, prefijo del título, enlace de la
+  notificación y `decisiones`), con el script que restaura los archivos, sin Git.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** (1) La propuesta no define las URLs del módulo. (2) No fija cómo se ve el
+  CV en el prototipo ni el texto del aviso de uso. (3) Los motivos de la marca de revisión no se guardan, así que la pantalla muestra solo la marca.

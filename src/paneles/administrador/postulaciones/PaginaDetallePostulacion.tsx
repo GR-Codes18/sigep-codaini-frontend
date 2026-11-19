@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileText } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { aDetallePostulacion } from '@/app/adaptadores';
@@ -8,7 +8,9 @@ import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo } from '@/compartido/LineaTiempo';
 import { Button } from '@/compartido/ui/button';
 import { Skeleton } from '@/compartido/ui/skeleton';
-import { ENTORNO, obtenerPostulacion, type Entorno } from '@/services';
+import type { Id } from '@/domain';
+import { ENTORNO, evaluarPostulacion, obtenerPostulacion, type Entorno } from '@/services';
+import { AccionesDePostulacion } from './AccionesDePostulacion';
 import { BarraPuntaje } from './BarraPuntaje';
 import { DesgloseEvaluacion } from './DesgloseEvaluacion';
 import { RUTA_POSTULACIONES } from './rutas';
@@ -20,6 +22,9 @@ export const AVISO_USO_DEL_CV =
 /** Nota fija de la evaluación (§5.1). */
 export const NOTA_PUNTAJE_ES_AYUDA =
   'El puntaje es una ayuda para decidir: la decisión es siempre del Administrador.';
+
+/** El estado del análisis de la IA de una postulación que no tenía evaluación. */
+type EstadoAnalisis = { id: Id; fase: 'ANALIZANDO' } | { id: Id; fase: 'ERROR'; mensaje: string };
 
 function VolverAlListado() {
   return (
@@ -47,6 +52,26 @@ export function PaginaDetallePostulacion({ entorno = ENTORNO }: { entorno?: Ento
     [entorno, idUsuario, idPostulante],
   );
   const consulta = useConsulta(idUsuario === null ? null : cargar);
+
+  // «Analizando…» (E5-A): una postulación sin evaluación se evalúa al abrirla, una sola vez por postulación. Si el
+  // catálogo está mal configurado y no se puede calcular el puntaje, se dice y las decisiones siguen disponibles (E3-A).
+  const intentadas = useRef(new Set<Id>());
+  const [analisis, setAnalisis] = useState<EstadoAnalisis | null>(null);
+  const idSinEvaluar =
+    consulta.valor !== null && consulta.valor.evaluacion === null
+      ? consulta.valor.postulante.id
+      : null;
+  useEffect(() => {
+    if (idSinEvaluar === null || intentadas.current.has(idSinEvaluar)) return;
+    intentadas.current.add(idSinEvaluar);
+    setAnalisis({ id: idSinEvaluar, fase: 'ANALIZANDO' });
+    void evaluarPostulacion({ idPostulante: idSinEvaluar }, entorno).then((resultado) => {
+      // Si ya la había evaluado otra pestaña, la consulta traerá la evaluación y no hay nada que decir.
+      if (!resultado.ok && resultado.codigo !== 'POSTULACION_YA_EVALUADA') {
+        setAnalisis({ id: idSinEvaluar, fase: 'ERROR', mensaje: resultado.mensaje });
+      }
+    });
+  }, [idSinEvaluar, entorno]);
 
   if (idUsuario === null) return null;
 
@@ -86,6 +111,12 @@ export function PaginaDetallePostulacion({ entorno = ENTORNO }: { entorno?: Ento
             Se creó la cuenta de practicante de <strong>{detalle.practicante.nombre}</strong>.
           </p>
         )}
+        <AccionesDePostulacion
+          idActor={idUsuario}
+          postulacion={{ id: detalle.id, nombre: detalle.nombre, correo: detalle.correo }}
+          decisiones={detalle.decisiones}
+          entorno={entorno}
+        />
       </header>
 
       <section aria-label="Datos del postulante" className="space-y-2">
@@ -136,9 +167,25 @@ export function PaginaDetallePostulacion({ entorno = ENTORNO }: { entorno?: Ento
       <section aria-label="Evaluación de la IA" className="space-y-3">
         <h2 className="text-text">Evaluación de la IA</h2>
         {evaluacion === null ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-            Esta postulación todavía no tiene evaluación.
-          </p>
+          analisis?.id === detalle.id && analisis.fase === 'ERROR' ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-border bg-surface p-4 text-sm text-danger-text"
+            >
+              No se pudo evaluar: {analisis.mensaje} Puedes decidir igualmente.
+            </p>
+          ) : analisis?.id === detalle.id ? (
+            <p
+              role="status"
+              className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2"
+            >
+              Analizando…
+            </p>
+          ) : (
+            <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
+              Esta postulación todavía no tiene evaluación.
+            </p>
+          )
         ) : (
           <>
             <div className="space-y-3 rounded-xl border border-border bg-surface p-4">

@@ -179,18 +179,6 @@ describe('PaginaDetallePostulacion', () => {
     expect(screen.queryByText(/Se creó la cuenta de practicante/)).not.toBeInTheDocument();
   });
 
-  it('sin evaluación lo dice, sin inventar un puntaje', async () => {
-    useAlmacen.getState().transaccion((d) => ({
-      evaluaciones: d.evaluaciones.filter((e) => e.id_postulante !== PENDIENTE),
-    }));
-
-    await mostrar(PENDIENTE);
-
-    expect(screen.getByText('Esta postulación todavía no tiene evaluación.')).toBeInTheDocument();
-    expect(screen.queryByText('Puntaje final')).not.toBeInTheDocument();
-    expect(screen.queryByRole('region', { name: 'Criterios del área' })).not.toBeInTheDocument();
-  });
-
   it('un cambio posterior en los criterios no cambia el desglose con el que se evaluó', async () => {
     const antes = datos().detalles_evaluacion.find(
       (d) =>
