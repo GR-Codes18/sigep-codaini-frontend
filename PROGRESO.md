@@ -90,8 +90,20 @@
   `domain/`.
 - **Verificación (en `c5d5e0d`):** 3.477 pruebas en 141 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
   con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-19, tras el módulo 5.3 (`c5d5e0d`).
-- **Siguiente paso:** módulo 5.4 (Proyectos).
+- **Fase 5 — módulo 5.4 (Proyectos), bloques 1 y 2: terminados (2026-11-19, `5431b8a` y `da41753`).** El módulo se hace en cuatro
+  bloques: 1) lectura, 2) tablero y detalle de tarea, 3) datos del proyecto (crear, editar, reunión y enlaces) y 4) equipo y ciclo de
+  vida. Lectura (`5431b8a`): listado en `/administrador/proyectos` con pestañas Activos (abre ahí), En pausa, Finalizados y Todos con
+  contadores, filtro por supervisor y búsqueda por nombre; detalle en `/administrador/proyectos/:idProyecto` con las pestañas en
+  `?pestana=` (Resumen y Equipo). Resumen: datos del proyecto, avance, tareas por estado, vencidas, enlaces y actividad reciente.
+  Tablero (`da41753`): pestaña `?pestana=tablero` con el Kanban, «Ver todas las terminadas» y avisos de proyecto finalizado (solo
+  lectura) y en pausa; el clic en una tarjeta abre el detalle de la tarea en `/administrador/proyectos/:idProyecto/tareas/:idTarea`
+  (contenedor `DetalleDeTarea`, extraído a `src/app/tareas/` y reutilizable en el módulo 5.5; `PaginaDesarrollo` lo usa también); y
+  «Nueva tarea» con el proyecto fijado. Cambios aditivos en la Fase 2: `obtenerTableroProyecto` trae `puede_crear_tarea`. Sin cambios
+  en `domain/`.
+- **Verificación (en `da41753`):** 3.571 pruebas en 147 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
+  con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-19, tras el bloque 2 del módulo 5.4 (`da41753`).
+- **Siguiente paso:** módulo 5.4, bloque 3 (crear y editar proyecto, reunión y enlaces).
 
 ### Cierres de fase
 
@@ -514,8 +526,13 @@
 | 2026-11-19 | 5.3 Supervisores | Bloque 2a: `ModalContrasenaTemporal` pasa de `postulaciones/` a `compartido/` | `97fda22` |
 | 2026-11-19 | 5.3 Supervisores | Bloque 2b: «Nuevo supervisor», editar nombre y correo y restablecer contraseña; `acciones` en `obtenerSupervisor` | `16b67b6` |
 | 2026-11-19 | 5.3 Supervisores | Bloque 3: desactivar con bloqueo por proyectos pendientes, reactivar y reasignar proyectos; `proyectos_pendientes` y `supervisores_destino` en `obtenerSupervisor` | `c5d5e0d` |
+| 2026-11-19 | 5.4 Proyectos | Bloque 1 (lectura): listado con pestañas, filtro por supervisor y búsqueda; detalle con Resumen y Equipo en `?pestana=`; adaptador `proyectos`; eventos de proyecto en la línea de tiempo; el aviso de un proyecto lleva a su detalle | `5431b8a` |
+| 2026-11-19 | 5.4 Proyectos | Bloque 2 (tablero): pestaña «Tablero», detalle de tarea dentro del proyecto (`DetalleDeTarea` en `app/tareas/`), «Nueva tarea» y `puede_crear_tarea` en `obtenerTableroProyecto` | `da41753` |
 
-**Estado de pruebas (2026-11-19, en `c5d5e0d`):** 3.477 pruebas en 141 archivos, todas aprobadas (`npx vitest run --testTimeout=60000`); el
+**Estado de pruebas (2026-11-19, en `da41753`):** 3.571 pruebas en 147 archivos, todas aprobadas (`npx vitest run --testTimeout=60000`); los
+bloques 1 y 2 del módulo 5.4 sumaron 94 y 6 archivos de prueba (filtros, adaptador, listado y detalle de proyectos; tablero con «Nueva
+tarea» y detalle de tarea; más ajustes en `tablero`, `FormularioTarea`, `eventos`, `notificacion` y las consultas). No se hicieron
+pruebas de mutación. Antes, en `c5d5e0d`: 3.477 pruebas en 141 archivos; el
 módulo 5.3 sumó 97 y 7 archivos de prueba (consultas ampliadas, adaptador, filtros, listado, detalle, nuevo supervisor, acciones y ciclo de
 vida, más ajustes en `Insignia`). No se hicieron pruebas de mutación en este módulo. Con el equipo lento, algunas pruebas pesadas de 5.1 a 5.3
 superan el límite de 5 s por defecto y pasan con el límite ampliado; no cambia ninguna lógica. Antes, en `2f3a4c9`: 3.380 pruebas en 134

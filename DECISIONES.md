@@ -4007,3 +4007,41 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   como diálogo, ni el diálogo de reasignación con un selector por proyecto, ni el texto del bloqueo al desactivar (singular incluido). La
   sobrecarga queda sin umbral: solo el resalte en ámbar. Conviene pasarlos a §5.3.
 - **Siguiente paso.** Módulo 5.4 (Proyectos).
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 1 y 2: lectura y tablero
+
+- **Commits:** `5431b8a` (bloque 1, lectura) y `da41753` (bloque 2, tablero). Rama de trabajo del módulo; quedan los bloques 3 (datos del proyecto:
+  crear, editar, reunión y enlaces) y 4 (equipo y ciclo de vida).
+- **Partición (decisión de los autores).** Cuatro bloques: 1) lectura, 2) tablero y detalle de tarea, 3) datos del proyecto y 4) equipo y ciclo de
+  vida. Mismo patrón de 5.1 a 5.3: rutas por prefijo, `useConsulta`, filtros puros en memoria y adaptadores en `src/app/adaptadores/`.
+- **URLs.** `/administrador/proyectos`, `/administrador/proyectos/:idProyecto` y `/administrador/proyectos/:idProyecto/tareas/:idTarea`. Las pestañas
+  del detalle van en `?pestana=resumen|tablero|equipo` (decisión de los autores: un solo componente de detalle, y la pestaña se puede enlazar);
+  una pestaña desconocida abre «Resumen», y «Equipo» y «Tablero» solo piden sus datos cuando se abren.
+- **Bloque 1 (lectura).** Listado con pestañas Activos (abre ahí), En pausa, Finalizados y Todos con los contadores de la consulta, filtro por
+  supervisor y búsqueda **por nombre** (no por código, como dice §5.4). Columnas de §5.4: avance como «N de M · P %» o «Sin tareas», tareas esperando
+  supervisión resaltadas en ámbar cuando hay alguna, y próxima reunión como fecha y hora en Perú o «Sin definir». Resumen: datos del proyecto, avance,
+  tareas por estado en el orden del flujo, vencidas, enlaces (solo lectura) y actividad reciente; el repositorio es un enlace que abre en otra
+  pestaña. Equipo: activos con su carga en el proyecto y anteriores con alta y baja. `eventos.ts` gana las etiquetas de los 12 eventos de proyecto y
+  pausar, reanudar, finalizar y reactivar no muestran el resumen de estado crudo. El aviso de un proyecto lleva al Administrador a su detalle
+  (`RUTA_DE_DETALLE.ADMINISTRADOR.PROYECTO`, afina D4-A). Sin ampliar consultas.
+- **Bloque 2 (tablero).**
+  - **Detalle de tarea (decisión de los autores, opción A).** Se extrae el contenedor del detalle de tarea de `PaginaDesarrollo` a
+    `src/app/tareas/DetalleDeTarea.tsx`, con el mapeador de acciones, el formulario de edición y `ModalCrearPR`; lo reutilizará el módulo 5.5 en
+    `/administrador/tareas/:idTarea`. `PaginaDesarrollo` pasa a usar el mismo componente. Una tarea de otro proyecto no se muestra por la dirección de
+    un proyecto («No se encontró la tarea en este proyecto.»). «Volver al tablero» regresa a `?pestana=tablero`.
+  - **«Nueva tarea» en el Tablero del 5.4 (decisión de los autores).** Diálogo con `FormularioTarea` en modo «crear» y el proyecto ya fijado; el 5.5
+    lo reutilizará. Se ofrece en un proyecto activo o en pausa (§5.4: en pausa solo se bloquea tomar tareas) y no en uno finalizado.
+  - **Ampliación aditiva de la Fase 2.** `obtenerTableroProyecto` trae `puede_crear_tarea`, calculado con `puede('CREAR_TAREA')` de `domain/`: la
+    pantalla no decide cuándo ofrecer «Nueva tarea». `FormularioTarea` recibe un `entorno` opcional, como los demás formularios (sin él las pruebas
+    esperaban la demora simulada).
+  - **Avisos del tablero.** Finalizado: «el tablero es de solo lectura»; en pausa: «nadie puede tomar tareas nuevas». Los servicios son los que lo
+    hacen cumplir; la pantalla solo lo dice. Ninguna acción se ejecuta desde una tarjeta (§6.7).
+  - **Avisos de tarea.** Un aviso de `TAREA` sigue yendo a la página del módulo: sin el ID del proyecto no se puede armar la dirección del detalle
+    dentro del proyecto. Se afina en el 5.5.
+- **Pruebas.** 3.477 → 3.571 en 147 archivos (+94 y +6 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el
+  aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se ajustaron pruebas existentes por los campos nuevos
+  (`tablero`, `FormularioTarea`, una consulta de `proyectos` y `notificacion`) y el ejemplo de «evento sin etiqueta» de `eventos.test.ts` pasó de
+  `PROYECTO_PAUSADO` a `AREA_TECNICA_CREADA`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni que las pestañas vayan en
+  `?pestana=`, ni la dirección del detalle de tarea dentro del proyecto, ni dónde vive «Nueva tarea» entre 5.4 y 5.5, ni los textos de los avisos
+  del tablero. Conviene pasarlos a §5.4.
