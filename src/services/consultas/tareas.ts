@@ -70,6 +70,12 @@ export interface ListadoTareas {
   tareas: TareaListado[];
   /** Para las pestañas: Todas, Disponibles, En progreso, Esperando supervisión y Terminadas. */
   contadores: Record<EstadoTarea | 'TODAS', number>;
+  /**
+   * Los proyectos donde quien consulta puede crear una tarea (§5.5, «eligiendo el proyecto»): los decide
+   * `puede('CREAR_TAREA')` con cada proyecto (el Administrador, los no finalizados; el Supervisor, los suyos no
+   * finalizados; el Practicante, ninguno). Por código de proyecto.
+   */
+  proyectos_para_crear: ProyectoResumen[];
 }
 
 /** Una fila del listado de tareas: la tarjeta con su proyecto y los días que lleva esperando supervisión. */
@@ -118,7 +124,11 @@ export function listarTareas(
     for (const estado of ESTADOS_TAREA) {
       contadores[estado] = tareas.filter((t) => t.estado === estado).length;
     }
-    return { ok: true, valor: { tareas, contadores } };
+    const proyectos_para_crear = datos.proyectos
+      .filter((proyecto) => puede(actor.valor, 'CREAR_TAREA', { proyecto }).permitido)
+      .map(resumenDeProyecto)
+      .sort((a, b) => a.codigo.localeCompare(b.codigo));
+    return { ok: true, valor: { tareas, contadores, proyectos_para_crear } };
   });
 }
 

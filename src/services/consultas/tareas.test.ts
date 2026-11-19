@@ -174,6 +174,73 @@ describe.each(
 describe('listarTareas', () => {
   const listar = (p: PruebaPreparada, idActor: Id) => listarTareas({ idActor }, p.entorno);
 
+  describe('proyectos_para_crear', () => {
+    const codigos = (p: PruebaPreparada, ids: Id[]) =>
+      ids.map((id) => p.datos().proyectos.find((x) => x.id === id)!.codigo);
+
+    it('el Administrador puede crear en todos los proyectos que no están finalizados, por código', async () => {
+      const prueba = prepararPrueba();
+      const esperados = prueba
+        .datos()
+        .proyectos.filter((x) => x.estado !== 'FINALIZADO')
+        .map((x) => x.id);
+
+      const { proyectos_para_crear } = valor(await listar(prueba, ADMIN));
+
+      expect([...proyectos_para_crear.map((x) => x.id)].sort()).toEqual([...esperados].sort());
+      expect(proyectos_para_crear.map((x) => x.codigo)).toEqual(
+        [...codigos(prueba, esperados)].sort((a, b) => a.localeCompare(b)),
+      );
+      expect(proyectos_para_crear.map((x) => x.id)).not.toContain(TIE);
+    });
+
+    it('un proyecto en pausa también admite crear (solo se bloquea tomar tareas)', async () => {
+      const prueba = prepararPrueba();
+      const enPausa = prueba.datos().proyectos.find((x) => x.estado === 'EN_PAUSA')!;
+
+      const { proyectos_para_crear } = valor(await listar(prueba, ADMIN));
+
+      expect(proyectos_para_crear.map((x) => x.id)).toContain(enPausa.id);
+    });
+
+    it('el Supervisor puede crear solo en sus proyectos no finalizados', async () => {
+      const prueba = prepararPrueba();
+
+      const { proyectos_para_crear } = valor(await listar(prueba, SUPERVISOR));
+
+      expect(proyectos_para_crear.map((x) => x.id).sort()).toEqual([PL2D, RSV].sort());
+    });
+
+    it('el Practicante no puede crear tareas: la lista viene vacía', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await listar(prueba, PRACTICANTE)).proyectos_para_crear).toEqual([]);
+    });
+
+    it('un proyecto que se finaliza deja de ofrecerse', async () => {
+      const prueba = prepararPrueba();
+      prueba.modificar((d) => ({
+        proyectos: d.proyectos.map((x) =>
+          x.id === PL2D ? { ...x, estado: 'FINALIZADO' as const } : x,
+        ),
+      }));
+
+      const { proyectos_para_crear } = valor(await listar(prueba, ADMIN));
+
+      expect(proyectos_para_crear.map((x) => x.id)).not.toContain(PL2D);
+    });
+
+    it('solo trae el resumen del proyecto', async () => {
+      const prueba = prepararPrueba();
+
+      const { proyectos_para_crear } = valor(await listar(prueba, ADMIN));
+
+      for (const x of proyectos_para_crear) {
+        expect(Object.keys(x).sort()).toEqual(['codigo', 'id', 'nombre']);
+      }
+    });
+  });
+
   it('el Administrador ve las 43 tareas, con los contadores de las pestañas', async () => {
     const prueba = prepararPrueba();
 
@@ -237,6 +304,7 @@ describe('listarTareas', () => {
         ESPERANDO_SUPERVISION: 0,
         TERMINADA: 0,
       },
+      proyectos_para_crear: [],
     });
   });
 

@@ -55,7 +55,7 @@ describe('aNotificacionItem', () => {
 
 describe('rutaDeNotificacion', () => {
   it.each([
-    ['ADMINISTRADOR', 'TAREA', '/administrador/tareas'],
+    ['ADMINISTRADOR', 'TAREA', '/administrador/tareas/otro-id'],
     ['SUPERVISOR', 'TAREA', '/supervisor/tareas'],
     ['PRACTICANTE', 'TAREA', '/practicante/proyectos'],
     ['ADMINISTRADOR', 'PROYECTO', '/administrador/proyectos/otro-id'],

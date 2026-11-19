@@ -1,19 +1,11 @@
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { toast } from 'sonner';
 import { aTablero, aTareasTerminadas } from '@/app/adaptadores';
+import { DialogoNuevaTarea } from '@/app/tareas/DialogoNuevaTarea';
 import { useConsulta } from '@/app/useConsulta';
-import { FormularioTarea } from '@/compartido/FormularioTarea';
 import { ListadoTerminadas } from '@/compartido/ListadoTerminadas';
 import { TableroKanban } from '@/compartido/TableroKanban';
 import { Button } from '@/compartido/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/compartido/ui/dialog';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import type { Id } from '@/domain';
 import {
@@ -125,29 +117,16 @@ export function TableroDelProyecto({ idActor, proyecto, entorno = ENTORNO }: Pro
         onVerTerminadas={() => setVerTerminadas(true)}
       />
 
-      <Dialog open={creando} onOpenChange={(abierto) => !abierto && setCreando(false)}>
-        {/* El contenido se desmonta al cerrar: los campos y los errores se reinician solos. */}
-        {creando && (
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Nueva tarea</DialogTitle>
-              <DialogDescription>
-                La tarea se crea en {proyecto.nombre}. El título, la descripción y la fecha límite
-                se pueden editar mientras esté disponible o en progreso.
-              </DialogDescription>
-            </DialogHeader>
-            <FormularioTarea
-              modo="crear"
-              idActor={idActor}
-              proyectos={[{ id: proyecto.id, nombre: proyecto.nombre }]}
-              valoresIniciales={{ idProyecto: proyecto.id }}
-              onGuardada={() => toast.success('Tarea creada')}
-              onCancelar={() => setCreando(false)}
-              entorno={entorno}
-            />
-          </DialogContent>
-        )}
-      </Dialog>
+      {creando && (
+        <DialogoNuevaTarea
+          idActor={idActor}
+          proyectos={[{ id: proyecto.id, nombre: proyecto.nombre }]}
+          idProyectoInicial={proyecto.id}
+          descripcion={`La tarea se crea en ${proyecto.nombre}. El título, la descripción y la fecha límite se pueden editar mientras esté disponible o en progreso.`}
+          onCerrar={() => setCreando(false)}
+          entorno={entorno}
+        />
+      )}
     </div>
   );
 }

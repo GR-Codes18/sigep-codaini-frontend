@@ -14,6 +14,9 @@ import { PaginaCriterios } from '@/paneles/administrador/postulaciones/PaginaCri
 import { PaginaDetallePostulacion } from '@/paneles/administrador/postulaciones/PaginaDetallePostulacion';
 import { PaginaPostulaciones } from '@/paneles/administrador/postulaciones/PaginaPostulaciones';
 import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/postulaciones/rutas';
+import { PaginaDetalleTarea } from '@/paneles/administrador/tareas/PaginaDetalleTarea';
+import { PaginaTareas } from '@/paneles/administrador/tareas/PaginaTareas';
+import { RUTA_TAREAS } from '@/paneles/administrador/tareas/rutas';
 import { PaginaDetalleProyecto } from '@/paneles/administrador/proyectos/PaginaDetalleProyecto';
 import { PaginaDetalleTareaDeProyecto } from '@/paneles/administrador/proyectos/PaginaDetalleTareaDeProyecto';
 import { PaginaProyectos } from '@/paneles/administrador/proyectos/PaginaProyectos';
@@ -34,6 +37,7 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_PRACTICANTES]: <PaginaPracticantes />,
   [RUTA_SUPERVISORES]: <PaginaSupervisores />,
   [RUTA_PROYECTOS]: <PaginaProyectos />,
+  [RUTA_TAREAS]: <PaginaTareas />,
 };
 
 /** Las páginas internas de un módulo (detalles), por la ruta que cuelga del módulo. */
@@ -44,6 +48,7 @@ const PAGINAS_INTERNAS: readonly RouteObject[] = [
   { path: `${RUTA_PRACTICANTES}/:idPracticante`, element: <PaginaDetallePracticante /> },
   { path: `${RUTA_SUPERVISORES}/:idSupervisor`, element: <PaginaDetalleSupervisor /> },
   { path: `${RUTA_PROYECTOS}/:idProyecto`, element: <PaginaDetalleProyecto /> },
+  { path: `${RUTA_TAREAS}/:idTarea`, element: <PaginaDetalleTarea /> },
   {
     path: `${RUTA_PROYECTOS}/:idProyecto/tareas/:idTarea`,
     element: <PaginaDetalleTareaDeProyecto />,

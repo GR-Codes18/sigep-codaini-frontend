@@ -67,4 +67,5 @@ export {
   type TareaPorRevisarParaVista,
 } from './supervisores';
 export { aTareaDetalle } from './tarea';
+export { aTareas, type FilaTarea, type TareasParaVista } from './tareas';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';
