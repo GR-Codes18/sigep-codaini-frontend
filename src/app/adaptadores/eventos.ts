@@ -1,9 +1,9 @@
 import { parseISO } from 'date-fns';
-import type { EstadoTarea, Rol, TipoAccionHistorial } from '@/domain';
+import type { EstadoPostulacion, EstadoTarea, Rol, TipoAccionHistorial } from '@/domain';
 import type { EventoLinea } from '@/compartido/LineaTiempo';
 import type { EventoConAutor } from '@/services';
 
-/** Texto de la línea de tiempo de una tarea: sus eventos y los de Pull Request. */
+/** Texto de la línea de tiempo de una tarea (sus eventos y los de Pull Request) y de una postulación. */
 const ACCION_POR_TIPO: Partial<Record<TipoAccionHistorial, string>> = {
   TAREA_CREADA: 'Tarea creada',
   TAREA_EDITADA: 'Datos de la tarea actualizados',
@@ -20,13 +20,22 @@ const ACCION_POR_TIPO: Partial<Record<TipoAccionHistorial, string>> = {
   PULL_REQUEST_ESTADO_ACTUALIZADO: 'Estado del Pull Request actualizado',
   PULL_REQUEST_CERRADO_DESDE_EL_SISTEMA: 'Pull Request cerrado desde el sistema',
   PULL_REQUEST_NO_REQUERIDO: 'Pull Request marcado como no requerido',
+  POSTULACION_RECIBIDA: 'Postulación recibida',
+  POSTULACION_EVALUADA: 'Evaluada por la IA',
+  POSTULACION_APROBADA: 'Aprobada',
+  POSTULACION_RECHAZADA: 'Rechazada',
+  POSTULACION_RECONSIDERADA: 'Reconsiderada',
 };
 
-const ETIQUETA_ESTADO: Record<EstadoTarea, string> = {
+/** Estados que aparecen en el resumen de un cambio: los de una tarea y los de una postulación. */
+const ETIQUETA_ESTADO: Record<EstadoTarea | EstadoPostulacion, string> = {
   DISPONIBLE: 'Disponible',
   EN_PROGRESO: 'En progreso',
   ESPERANDO_SUPERVISION: 'Esperando supervisión',
   TERMINADA: 'Terminada',
+  PENDIENTE: 'Pendiente',
+  APROBADA: 'Aprobada',
+  RECHAZADA: 'Rechazada',
 };
 
 const ETIQUETA_ROL: Record<Rol, string> = {
@@ -39,7 +48,7 @@ export const AUTOR_DESCONOCIDO = 'Usuario desconocido';
 
 function etiquetaEstado(estado: string | null): string {
   if (estado === null) return '—';
-  return ETIQUETA_ESTADO[estado as EstadoTarea] ?? estado;
+  return ETIQUETA_ESTADO[estado as EstadoTarea | EstadoPostulacion] ?? estado;
 }
 
 /**

@@ -23,4 +23,21 @@ describe('menús por rol', () => {
     expect(etiquetaDeRuta('ADMINISTRADOR', '/administrador/postulaciones')).toBe('Postulaciones');
     expect(etiquetaDeRuta('PRACTICANTE', '/practicante/perfil')).toBe('Mi perfil');
   });
+
+  it('las páginas internas de un módulo llevan el título de su módulo (por prefijo)', () => {
+    expect(etiquetaDeRuta('ADMINISTRADOR', '/administrador/postulaciones/pos-25')).toBe(
+      'Postulaciones',
+    );
+    expect(etiquetaDeRuta('ADMINISTRADOR', '/administrador/postulaciones/criterios')).toBe(
+      'Postulaciones',
+    );
+  });
+
+  it('el prefijo respeta el límite del segmento: «postulacionesX» no es «Postulaciones»', () => {
+    expect(etiquetaDeRuta('ADMINISTRADOR', '/administrador/postulacionesX')).toBe('');
+  });
+
+  it('una ruta de otro panel no resuelve el título de este rol', () => {
+    expect(etiquetaDeRuta('SUPERVISOR', '/administrador/postulaciones/pos-25')).toBe('');
+  });
 });

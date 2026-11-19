@@ -33,6 +33,22 @@ export const RUTA_DE_MODULO: Record<Rol, Partial<Record<TipoElemento, string>>> 
   },
 };
 
+/**
+ * Los elementos que ya tienen página de detalle, por rol: el enlace del aviso lleva a ella y no a la página del módulo.
+ * Cuando existan los demás detalles (Fases 5 a 7) se suman aquí.
+ */
+export const RUTA_DE_DETALLE: Record<Rol, Partial<Record<TipoElemento, (id: Id) => string>>> = {
+  ADMINISTRADOR: {
+    POSTULANTE: (id) => `/postulaciones/${id}`,
+    // El catálogo de evaluación se gestiona en una sola página: no hay detalle por elemento.
+    AREA_TECNICA: () => '/postulaciones/criterios',
+    ESPECIALIDAD: () => '/postulaciones/criterios',
+    CRITERIO_EVALUACION: () => '/postulaciones/criterios',
+  },
+  SUPERVISOR: {},
+  PRACTICANTE: {},
+};
+
 /** El aviso trata de la propia cuenta: lleva a Mi perfil, igual para los tres roles. */
 export const RUTA_MI_PERFIL = '/perfil';
 
@@ -50,6 +66,8 @@ export function rutaDeNotificacion(
   const { tipo, id } = notificacion.elemento;
   const prefijo = PREFIJO_POR_ROL[rol];
   if (tipo === 'USUARIO' && id === idUsuario) return `${prefijo}${RUTA_MI_PERFIL}`;
+  const detalle = RUTA_DE_DETALLE[rol][tipo];
+  if (detalle !== undefined) return `${prefijo}${detalle(id)}`;
   const modulo = RUTA_DE_MODULO[rol][tipo];
   return modulo === undefined ? INICIO_POR_ROL[rol] : `${prefijo}${modulo}`;
 }

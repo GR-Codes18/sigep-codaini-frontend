@@ -10,7 +10,7 @@ const FAMILIA: Record<Familia, { caja: string; punto: string }> = {
   danger: { caja: 'bg-state-danger-bg text-state-danger-text', punto: 'bg-state-danger' },
 };
 
-export type TipoEstado = 'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca';
+export type TipoEstado = 'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca' | 'catalogo';
 
 const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Familia }>> = {
   tarea: {
@@ -35,6 +35,11 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
     CON_CONFLICTOS: { etiqueta: 'Con conflictos', familia: 'danger' },
     FUSIONADO: { etiqueta: 'Fusionado', familia: 'success' },
     CERRADO: { etiqueta: 'Cerrado', familia: 'neutral' },
+  },
+  // Áreas técnicas y especialidades del catálogo de evaluación: activas (verde) o inactivas (gris).
+  catalogo: {
+    ACTIVO: { etiqueta: 'Activa', familia: 'success' },
+    INACTIVO: { etiqueta: 'Inactiva', familia: 'neutral' },
   },
   marca: {
     DEVUELTA: { etiqueta: 'Devuelta con observaciones', familia: 'danger' },

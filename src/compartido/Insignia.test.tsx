@@ -36,4 +36,15 @@ describe('Insignia', () => {
     const { container } = render(<Insignia tipo="tarea" estado="INVENTADO" />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('el catálogo de evaluación muestra «Activa» en verde e «Inactiva» en gris', () => {
+    render(
+      <>
+        <Insignia tipo="catalogo" estado="ACTIVO" />
+        <Insignia tipo="catalogo" estado="INACTIVO" />
+      </>,
+    );
+    expect(screen.getByText('Activa').className).toContain('state-success');
+    expect(screen.getByText('Inactiva').className).toContain('state-neutral');
+  });
 });

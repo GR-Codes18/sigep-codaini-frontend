@@ -12,8 +12,10 @@ import type { DatosAlmacen } from '@/data';
 import {
   SECCIONES_CONFIGURACION,
   clavesDeSeccion,
+  decisionesDisponibles,
   validarBloqueCriterios,
   sumaPesosActivos,
+  type AccionDecisionPostulacion,
   type BloqueCriterio,
   type ClaveParametro,
   type CodigoBloqueCriterios,
@@ -179,6 +181,11 @@ export interface PostulacionDetalle {
   eventos: EventoConAutor[];
   /** La cuenta de practicante que nació de esta postulación (si fue aprobada). */
   practicante: Nombre | null;
+  /**
+   * Las decisiones que se pueden tomar ahora, según su estado (`decisionesDisponibles` de `domain/`): pendiente →
+   * aprobar y rechazar; rechazada → reconsiderar; aprobada → ninguna. La pantalla no lo deduce del estado.
+   */
+  decisiones: AccionDecisionPostulacion[];
 }
 
 const esquemaEntradaPostulacion = z.object({ idActor: esquemaId, idPostulante: esquemaId });
@@ -251,6 +258,7 @@ export function obtenerPostulacion(
                 id: practicante.id_usuario,
                 nombre: nombreDeUsuario(datos, practicante.id_usuario),
               },
+        decisiones: decisionesDisponibles(p.estado),
       },
     };
   });

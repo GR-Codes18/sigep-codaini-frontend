@@ -2,10 +2,29 @@ export { aEventosLinea, AUTOR_DESCONOCIDO } from './eventos';
 export {
   aNotificacionItem,
   rutaDeNotificacion,
+  RUTA_DE_DETALLE,
   RUTA_DE_MODULO,
   RUTA_MI_PERFIL,
   type ContextoNotificacion,
 } from './notificacion';
+export {
+  aCatalogo,
+  type AreaParaVista,
+  type BloqueParaVista,
+  type CatalogoParaVista,
+  type CriterioDeBloque,
+  type EspecialidadParaVista,
+} from './catalogo';
 export { aPerfil, type PerfilParaVista } from './perfil';
+export {
+  aDetallePostulacion,
+  aPostulaciones,
+  type ContadoresPostulaciones,
+  type CriterioParaVista,
+  type DetalleParaVista,
+  type EvaluacionParaVista,
+  type FilaPostulacion,
+  type PostulacionesParaVista,
+} from './postulaciones';
 export { aTareaDetalle } from './tarea';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';

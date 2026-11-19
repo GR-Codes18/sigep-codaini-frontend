@@ -101,4 +101,27 @@ describe('aEventosLinea', () => {
     expect(lineas.map((l) => l.id)).toEqual(['b', 'a']);
     expect(aEventosLinea([])).toEqual([]);
   });
+
+  it.each([
+    ['POSTULACION_RECIBIDA', 'Postulación recibida'],
+    ['POSTULACION_EVALUADA', 'Evaluada por la IA'],
+    ['POSTULACION_APROBADA', 'Aprobada'],
+    ['POSTULACION_RECHAZADA', 'Rechazada'],
+    ['POSTULACION_RECONSIDERADA', 'Reconsiderada'],
+  ] as const)('el evento %s de una postulación se llama «%s»', (tipo, texto) => {
+    const [linea] = aEventosLinea([item({ tipo_accion: tipo })]);
+    expect(linea.accion).toBe(texto);
+  });
+
+  it('el cambio de estado de una postulación se resume con etiquetas en español', () => {
+    const [linea] = aEventosLinea([
+      item({
+        tipo_accion: 'POSTULACION_RECHAZADA',
+        cambios: [{ campo: 'estado', valor_anterior: 'PENDIENTE', valor_nuevo: 'RECHAZADA' }],
+        nota: 'No cumple el perfil',
+      }),
+    ]);
+    expect(linea.resumen).toBe('Pendiente → Rechazada');
+    expect(linea.nota).toBe('No cumple el perfil');
+  });
 });

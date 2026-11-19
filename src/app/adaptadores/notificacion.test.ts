@@ -3,7 +3,12 @@ import { ROLES, TIPOS_ELEMENTO, type Rol } from '@/domain';
 import { INICIO_POR_ROL, PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 import { MENU_POR_ROL } from '@/app/menus';
 import type { NotificacionVista } from '@/services';
-import { aNotificacionItem, RUTA_DE_MODULO, rutaDeNotificacion } from './notificacion';
+import {
+  aNotificacionItem,
+  RUTA_DE_DETALLE,
+  RUTA_DE_MODULO,
+  rutaDeNotificacion,
+} from './notificacion';
 
 function aviso(cambios: Partial<NotificacionVista> = {}): NotificacionVista {
   return {
@@ -58,14 +63,43 @@ describe('rutaDeNotificacion', () => {
     ['PRACTICANTE', 'PROYECTO', '/practicante/proyectos'],
     ['ADMINISTRADOR', 'USUARIO', '/administrador/practicantes'],
     ['SUPERVISOR', 'USUARIO', '/supervisor/practicantes'],
-    ['ADMINISTRADOR', 'POSTULANTE', '/administrador/postulaciones'],
-    ['ADMINISTRADOR', 'AREA_TECNICA', '/administrador/postulaciones'],
-    ['ADMINISTRADOR', 'ESPECIALIDAD', '/administrador/postulaciones'],
-    ['ADMINISTRADOR', 'CRITERIO_EVALUACION', '/administrador/postulaciones'],
+    ['ADMINISTRADOR', 'AREA_TECNICA', '/administrador/postulaciones/criterios'],
+    ['ADMINISTRADOR', 'ESPECIALIDAD', '/administrador/postulaciones/criterios'],
+    ['ADMINISTRADOR', 'CRITERIO_EVALUACION', '/administrador/postulaciones/criterios'],
     ['ADMINISTRADOR', 'PARAMETRO_CONFIGURACION', '/administrador/configuracion'],
   ] as const)('%s, %s → %s', (rol, tipo, esperada) => {
     const ruta = rutaDeNotificacion(aviso({ elemento: { tipo, id: 'otro-id' } }), contexto(rol));
     expect(ruta).toBe(esperada);
+  });
+
+  it('el aviso de una postulación lleva al detalle de esa postulación', () => {
+    const ruta = rutaDeNotificacion(
+      aviso({ elemento: { tipo: 'POSTULANTE', id: 'pos-25' } }),
+      contexto('ADMINISTRADOR'),
+    );
+    expect(ruta).toBe('/administrador/postulaciones/pos-25');
+  });
+
+  it('con el enlace desactivado un aviso de postulación no lleva a ningún lado', () => {
+    const ruta = rutaDeNotificacion(
+      aviso({
+        elemento: { tipo: 'POSTULANTE', id: 'pos-25' },
+        destino: null,
+        enlace_activo: false,
+      }),
+      contexto('ADMINISTRADOR'),
+    );
+    expect(ruta).toBeUndefined();
+  });
+
+  it('los detalles de la tabla cuelgan de una página del menú del propio rol', () => {
+    for (const rol of ROLES) {
+      const rutasDelMenu = MENU_POR_ROL[rol].flatMap((g) => g.items.map((i) => i.ruta));
+      for (const detalle of Object.values(RUTA_DE_DETALLE[rol])) {
+        const ruta = `${PREFIJO_POR_ROL[rol]}${detalle?.('x')}`;
+        expect(rutasDelMenu.some((m) => ruta.startsWith(`${m}/`))).toBe(true);
+      }
+    }
   });
 
   it.each(ROLES)('el aviso de la propia cuenta lleva a Mi perfil (%s)', (rol) => {
