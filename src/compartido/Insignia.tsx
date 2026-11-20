@@ -11,7 +11,15 @@ const FAMILIA: Record<Familia, { caja: string; punto: string }> = {
 };
 
 export type TipoEstado =
-  'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca' | 'catalogo' | 'practicante' | 'supervisor';
+  | 'tarea'
+  | 'postulacion'
+  | 'proyecto'
+  | 'pr'
+  | 'marca'
+  | 'catalogo'
+  | 'practicante'
+  | 'supervisor'
+  | 'severidad';
 
 const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Familia }>> = {
   tarea: {
@@ -52,6 +60,12 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
   supervisor: {
     ACTIVO: { etiqueta: 'Activo', familia: 'success' },
     INACTIVO: { etiqueta: 'Inactivo', familia: 'neutral' },
+  },
+  // La severidad de un insight de Reportes (§5.6).
+  severidad: {
+    CRITICO: { etiqueta: 'Crítico', familia: 'danger' },
+    ATENCION: { etiqueta: 'Atención', familia: 'warning' },
+    INFORMATIVO: { etiqueta: 'Informativo', familia: 'info' },
   },
   marca: {
     DEVUELTA: { etiqueta: 'Devuelta con observaciones', familia: 'danger' },

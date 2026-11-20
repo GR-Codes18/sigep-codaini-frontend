@@ -61,6 +61,19 @@ describe('Insignia', () => {
     expect(screen.getByText('Sin proyecto').className).toContain('state-warning');
   });
 
+  it('la severidad de un insight es «Crítico» (rojo), «Atención» (ámbar) o «Informativo» (azul)', () => {
+    render(
+      <>
+        <Insignia tipo="severidad" estado="CRITICO" />
+        <Insignia tipo="severidad" estado="ATENCION" />
+        <Insignia tipo="severidad" estado="INFORMATIVO" />
+      </>,
+    );
+    expect(screen.getByText('Crítico').className).toContain('state-danger');
+    expect(screen.getByText('Atención').className).toContain('state-warning');
+    expect(screen.getByText('Informativo').className).toContain('state-info');
+  });
+
   it('el supervisor es «Activo» (verde) o «Inactivo» (gris)', () => {
     render(
       <>
