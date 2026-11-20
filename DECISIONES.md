@@ -4048,8 +4048,7 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 
 ## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 3 y 4: datos, equipo y ciclo de vida
 
-- **Commits:** `9b2b378` (bloque 3, datos del proyecto) y el bloque 4 (equipo y ciclo de vida), cuyo hash se registra en el siguiente cierre porque
-  un commit no puede llevar su propio hash. Rama `feat/fase5-supervisores`. Con ellos termina el módulo 5.4.
+- **Commits:** `9b2b378` (bloque 3, datos del proyecto) y `eeb4d50` (bloque 4, equipo y ciclo de vida). Rama `feat/fase5-supervisores`. Con ellos termina el módulo 5.4.
 - **Bloque 3 — formulario de proyecto (decisión de los autores: diálogo).**
   - **Crear.** Nombre, código, descripción, fechas, supervisor, repositorio, rama base y reunión opcional. El código se pone en mayúsculas y sin
     espacios **antes** de enviarlo (`normalizarCodigoDeProyecto`, en `codigo.ts`) porque el servicio no lo normaliza (G1/9A); que sea de 3 a 5
@@ -4107,3 +4106,43 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   aunque estén bloqueados para explicarlo; ni cómo se ve el diálogo de asignar (casillas con la carga) ni el motivo opcional al quitar. Conviene pasarlos a
   §5.4.
 - **Siguiente paso.** Módulo 5.5 (Tareas): reutiliza `DetalleDeTarea`, el formulario de «Nueva tarea» y el detalle en `/administrador/tareas/:idTarea`.
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.5 (Tareas), Administrador
+
+- **Commit:** `c8d82e1` (el módulo completo, en un solo commit con dos partes: lectura y «Nueva tarea»). Rama `feat/fase5-supervisores`. Mismo patrón de 5.1
+  a 5.4: rutas por prefijo, `useConsulta`, filtros puros en memoria y adaptadores en `src/app/adaptadores/`.
+- **Qué es el módulo.** Una vista transversal (§5.5): las tareas de todos los proyectos juntas. No repite el tablero, que vive en cada proyecto (5.4).
+- **URLs.** `/administrador/tareas` y `/administrador/tareas/:idTarea`. El detalle es el mismo `DetalleDeTarea` del 5.4 (opción A del 5.4, decisión de los
+  autores), alojado por una página delgada cuyo «Volver al listado» regresa a `/administrador/tareas`. El detalle dentro de un proyecto
+  (`/administrador/proyectos/:idProyecto/tareas/:idTarea`) sigue existiendo, con su propio «Volver al tablero».
+- **Avisos de tipo `TAREA` (decisión de los autores).** Para el Administrador llevan a `/administrador/tareas/:idTarea` (`RUTA_DE_DETALLE`, afina D4-A);
+  no hacía falta el proyecto en la dirección, que fue lo que impedía afinarlo en el 5.4. El Supervisor y el Practicante siguen yendo a la página de su
+  módulo hasta que tengan detalle (Fases 6 y 7); `notificacion.test.ts` cambió su expectativa del Administrador a `/administrador/tareas/<id>`.
+- **Listado.** Abre en «Todas»; pestañas Todas, Disponibles, En progreso, Esperando supervisión (con el contador resaltado en ámbar cuando hay alguna) y
+  Terminadas, con los contadores de la consulta. Filtros: proyecto, responsable, vencidas, sin asignar, «Requiere supervisión», estado del Pull Request y
+  búsqueda por título o ID (sin distinguir tildes ni mayúsculas); todo se aplica en memoria sobre lo que entrega `listarTareas` (Q5). Columnas de §5.5: ID
+  legible, título, proyecto, responsable o «Sin asignar», estado, ícono de «Requiere supervisión», etiqueta del Pull Request, fecha límite (en rojo si está
+  vencida, según la regla de `domain/` que ya trae la consulta) y «Ver detalle».
+- **«Requiere supervisión» (comprobado en §5.5, línea 350).** Es una columna de **ícono**, no de texto, y además un filtro; así está construido. No hay
+  orden por esa columna porque la propuesta no lo pide. No hay divergencia con `docs/` en este punto.
+- **Etiqueta del Pull Request.** La del listado es la que la consulta ya filtró con la regla de visibilidad (§7.3), no la que guarda la tarea; el filtro por
+  estado del Pull Request solo alcanza a las tareas cuya etiqueta se muestra.
+- **Sin acciones en las filas (§6.7).** La tabla no tiene botones: un clic en la fila o en «Ver detalle» abre el detalle, donde se ejecutan todas las
+  acciones con los botones que decide `domain/`. Una prueba lo vigila.
+- **«Nueva tarea» desde el módulo («eligiendo el proyecto», §5.5).** Diálogo con `FormularioTarea` en modo «crear» y el selector de proyecto sin valor por
+  defecto. Qué proyectos se ofrecen lo decide la consulta.
+  - **Ampliación aditiva de la Fase 2.** `listarTareas` trae `proyectos_para_crear`: los proyectos donde `puede('CREAR_TAREA')` lo permite (el Administrador,
+    los no finalizados, también en pausa; el Supervisor, los suyos no finalizados; el Practicante, ninguno), por código. La pantalla no lo decide. Sin
+    cambios en `domain/`.
+  - **Refactor.** El diálogo del tablero del 5.4 se extrae a `src/app/tareas/DialogoNuevaTarea.tsx` y lo usan los dos sitios (el tablero con el proyecto ya
+    elegido). Las pruebas de «Nueva tarea» del 5.4 siguen pasando sin cambios.
+  - **Qué pasa al crear.** La tarea nace «Disponible» y sin responsable, el diálogo se cierra y la fila aparece en el listado; no se abre su detalle.
+- **Pruebas.** 3.686 → 3.748 en 157 archivos (+62 y +5 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo ni el detalle en
+  `/administrador/tareas/:idTarea`; no dice que la etiqueta del Pull Request del listado sea la ya filtrada por la regla de visibilidad ni que el filtro por
+  estado del Pull Request solo alcance a las tareas que la muestran; ni cómo es el selector de proyecto de «Nueva tarea» (sin valor por defecto y solo con
+  los proyectos donde se puede crear); ni que, al crear, el listado se actualice sin abrir el detalle. Conviene pasarlos a §5.5.
+- **Pendiente anotado.** En el panel del Supervisor (Fase 6, §9.1.3) la pestaña «Esperando supervisión» agrega «Días esperando»; `listarTareas` ya entrega
+  el dato y el adaptador lo lleva (`diasEsperando`). Queda en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.6 (Reportes).

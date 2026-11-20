@@ -90,24 +90,33 @@
   `domain/`.
 - **Verificación (en `c5d5e0d`):** 3.477 pruebas en 141 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
   con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Fase 5 — módulo 5.4 (Proyectos): terminado (2026-11-19, `5431b8a`, `da41753`, `9b2b378` y el bloque 4, cuyo hash se registra en el
-  siguiente cierre).** Rama `feat/fase5-supervisores`, en cuatro bloques. Lectura (`5431b8a`): listado en `/administrador/proyectos` con
+- **Fase 5 — módulo 5.4 (Proyectos): terminado (2026-11-19, `5431b8a`, `da41753`, `9b2b378` y `eeb4d50`).** Rama `feat/fase5-supervisores`, en cuatro bloques. Lectura (`5431b8a`): listado en `/administrador/proyectos` con
   pestañas Activos (abre ahí), En pausa, Finalizados y Todos con contadores, filtro por supervisor y búsqueda por nombre; detalle en
   `/administrador/proyectos/:idProyecto` con las pestañas en `?pestana=` (Resumen, Tablero y Equipo). Tablero (`da41753`): el Kanban con
   «Ver todas las terminadas», avisos de proyecto finalizado y en pausa, detalle de tarea en
   `/administrador/proyectos/:idProyecto/tareas/:idTarea` (`DetalleDeTarea`, en `src/app/tareas/`, reutilizable en el módulo 5.5) y «Nueva tarea».
   Datos (`9b2b378`): «Nuevo proyecto» y «Editar proyecto» como diálogo (el código no se edita; cada grupo de campos lo decide `puede()`), la
-  reunión semanal, la rama base y los enlaces útiles. Equipo y ciclo de vida (bloque 4): pausar, reanudar, finalizar (bloqueado con tareas
+  reunión semanal, la rama base y los enlaces útiles. Equipo y ciclo de vida (`eeb4d50`): pausar, reanudar, finalizar (bloqueado con tareas
   esperando supervisión, con la cantidad) y reactivar, cada uno con nota obligatoria; cambiar de supervisor; y en «Equipo», asignar y quitar
   practicantes (bloqueados en un proyecto finalizado). Cambios aditivos en la Fase 2: `obtenerTableroProyecto` (`puede_crear_tarea`),
   `listarProyectos` (`puede_crear`, `supervisores_disponibles`), `obtenerProyecto` (`acciones`, `ciclo_de_vida`, `supervisores_destino`),
   `obtenerEquipoProyecto` (`estado_proyecto`, `puede_asignar`, y por miembro `tareas_a_liberar` y `puede_quitar`) y la consulta nueva
   `listarPracticantesAsignables`. Sin cambios en `domain/`.
-- **Verificación (bloque 3 en `9b2b378`; bloque 4, en el árbol de trabajo):** 3.686 pruebas en 152 archivos (3.622 en 150 tras el bloque 3);
+- **Verificación (bloque 4 en `eeb4d50`):** 3.686 pruebas en 152 archivos (3.622 en 150 tras el bloque 3);
   `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. Detalle
   en «Estado de pruebas».
-- **Actualizado:** 2026-11-19, tras el módulo 5.4.
-- **Siguiente paso:** módulo 5.5 (Tareas).
+- **Fase 5 — módulo 5.5 (Tareas): terminado (2026-11-19, `c8d82e1`).** Rama `feat/fase5-supervisores`, en un solo commit con dos partes. Lectura:
+  vista transversal en `/administrador/tareas` con pestañas por estado y contadores (abre en «Todas»), filtros por proyecto, responsable, vencidas,
+  sin asignar, «Requiere supervisión» y estado del Pull Request, y búsqueda por título o ID; columnas de §5.5 (ID legible, título, proyecto,
+  responsable o «Sin asignar», estado, ícono de «Requiere supervisión», etiqueta del Pull Request, fecha límite en rojo si está vencida y detalle),
+  sin botones de acción en las filas. El clic abre el detalle en `/administrador/tareas/:idTarea` (`DetalleDeTarea`, el mismo del 5.4), y los avisos
+  de tipo `TAREA` del Administrador llevan a esa ruta. «Nueva tarea» desde el módulo, eligiendo el proyecto: `DialogoNuevaTarea` (en
+  `src/app/tareas/`) lo comparten este módulo y el tablero del 5.4. Cambio aditivo en la Fase 2: `listarTareas` trae `proyectos_para_crear`. Sin
+  cambios en `domain/`.
+- **Verificación (en `c8d82e1`):** 3.748 pruebas en 157 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-19, tras el módulo 5.5.
+- **Siguiente paso:** módulo 5.6 (Reportes).
 
 ### Cierres de fase
 
@@ -533,10 +542,12 @@
 | 2026-11-19 | 5.4 Proyectos | Bloque 1 (lectura): listado con pestañas, filtro por supervisor y búsqueda; detalle con Resumen y Equipo en `?pestana=`; adaptador `proyectos`; eventos de proyecto en la línea de tiempo; el aviso de un proyecto lleva a su detalle | `5431b8a` |
 | 2026-11-19 | 5.4 Proyectos | Bloque 2 (tablero): pestaña «Tablero», detalle de tarea dentro del proyecto (`DetalleDeTarea` en `app/tareas/`), «Nueva tarea» y `puede_crear_tarea` en `obtenerTableroProyecto` | `da41753` |
 | 2026-11-19 | 5.4 Proyectos | Bloque 3 (datos): «Nuevo proyecto» y «Editar proyecto» como diálogo, reunión, rama base y enlaces; `puede_crear` y `supervisores_disponibles` en `listarProyectos`, `acciones` en `obtenerProyecto` | `9b2b378` |
-| 2026-11-19 | 5.4 Proyectos | Bloque 4 (equipo y ciclo de vida): pausar, reanudar, finalizar y reactivar con nota, cambiar supervisor, asignar y quitar practicantes; `ciclo_de_vida`, `supervisores_destino`, `puede_asignar`, `puede_quitar` y `listarPracticantesAsignables` | hash pendiente (se registra en el siguiente cierre) |
+| 2026-11-19 | 5.4 Proyectos | Bloque 4 (equipo y ciclo de vida): pausar, reanudar, finalizar y reactivar con nota, cambiar supervisor, asignar y quitar practicantes; `ciclo_de_vida`, `supervisores_destino`, `puede_asignar`, `puede_quitar` y `listarPracticantesAsignables` | `eeb4d50` |
+| 2026-11-19 | 5.5 Tareas | Listado transversal con pestañas y filtros, detalle en `/administrador/tareas/:idTarea`, avisos de tarea al detalle, «Nueva tarea» eligiendo el proyecto (`DialogoNuevaTarea` compartido con el tablero del 5.4) y `proyectos_para_crear` en `listarTareas` | `c8d82e1` |
 
-**Estado de pruebas (2026-11-19, bloque 4 en el árbol de trabajo):** 3.686 pruebas en 152 archivos, todas aprobadas (`npx vitest run --testTimeout=60000
---maxWorkers=3`); el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
+**Estado de pruebas (2026-11-19, en `c8d82e1`):** 3.748 pruebas en 157 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 5.5 sumó 62 y 5 archivos de prueba (filtros, adaptador, listado, detalle y «Nueva tarea», más consultas y ajustes). No se hicieron
+pruebas de mutación. Antes, en `eeb4d50`: 3.686 pruebas en 152 archivos; el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
 3.622 pruebas en 150 archivos; el bloque 3 sumó 51 y 3 archivos de prueba (nuevo proyecto, editar proyecto y enlaces, más consultas). Antes, en
 `da41753`: 3.571 pruebas en 147 archivos; los bloques 1 y 2 del módulo 5.4 sumaron 94 y 6 archivos de prueba (filtros, adaptador, listado y detalle de proyectos; tablero con «Nueva
 tarea» y detalle de tarea; más ajustes en `tablero`, `FormularioTarea`, `eventos`, `notificacion` y las consultas). No se hicieron
@@ -672,6 +683,10 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       candidatos válidos. Decisión de los autores: dejarlo así por ahora y hacerlo en un paso aparte, con la regla pura en `domain/`,
       que el servicio y la consulta la usen, sus pruebas por combinación (rol × estado × existencia) y la mutación que haga fallar
       cada prueba. `puedeCambiarSupervisor` ya tiene una condición equivalente para otro caso: conviene reutilizar o unificar.
+- [ ] Fase 6 (Supervisor, Tareas, §9.1.3): en la pestaña «Esperando supervisión» se agrega la columna «Días esperando» (regla de supervisión demorada
+      de 3 días). `listarTareas` ya entrega `dias_esperando` y el adaptador `aTareas` lo lleva como `diasEsperando`; en el módulo 5.5 del
+      Administrador no se muestra porque §5.5 no lo pide. Los avisos de tipo `TAREA` del Supervisor y del Practicante siguen yendo a la página
+      del módulo hasta que tengan su detalle (Fases 6 y 7).
 - [x] Ajustar a mano la propuesta §5.4 con los supuestos del paso 9 (hecho por los autores en `3d6f019` (PR #27, fusionado en `6cdd2fb`)): el repositorio es
       `https://github.com/{organización}/{repositorio}`; la rama base no lleva espacios; la reunión y los enlaces
       también se editan en un proyecto finalizado; quitar la reunión avisa al equipo; reactivar no avisa.
