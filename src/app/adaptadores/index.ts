@@ -88,7 +88,7 @@ export {
   type InsightsParaVista,
 } from './reportes';
 export { aTareaDetalle } from './tarea';
-export { aTareas, type FilaTarea, type TareasParaVista } from './tareas';
+export { aTareas, textoDiasEsperando, type FilaTarea, type TareasParaVista } from './tareas';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';
 export {
   aHistorial,
