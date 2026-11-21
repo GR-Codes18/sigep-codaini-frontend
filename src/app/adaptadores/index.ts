@@ -116,8 +116,14 @@ export {
   type SeccionParaVista,
 } from './configuracion';
 export {
+  aAvances,
   aDashboard,
+  aDashboardSupervisor,
+  aPorRevisar,
+  aReuniones,
   type DashboardParaVista,
+  type DashboardSupervisorParaVista,
+  type DashboardSupervisorVacioParaVista,
   type FilaAvance,
   type FilaPorRevisar,
   type FilaPostulacionDashboard,

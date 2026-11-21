@@ -69,6 +69,20 @@ export function pestanaInicialDeTareas(
     : 'TODAS';
 }
 
+/**
+ * Los filtros que pide la dirección: `?vencidas=1` y `?sin_asignar=1` (los enlaces del Dashboard, §9.1.5). Solo vale el
+ * valor `1`; cualquier otra cosa se ignora y la vista abre como siempre, sin error. El filtro que llega queda activo en
+ * pantalla (la casilla marcada) y se puede quitar.
+ */
+export function filtrosDeLaDireccion(
+  parametros: Pick<URLSearchParams, 'get'>,
+): Partial<Pick<FiltrosTareas, 'soloVencidas' | 'soloSinAsignar'>> {
+  return {
+    ...(parametros.get('vencidas') === '1' ? { soloVencidas: true } : {}),
+    ...(parametros.get('sin_asignar') === '1' ? { soloSinAsignar: true } : {}),
+  };
+}
+
 /** Minúsculas y sin tildes: «Pantalla» se encuentra buscando «pantalla». */
 function normalizar(texto: string): string {
   return texto

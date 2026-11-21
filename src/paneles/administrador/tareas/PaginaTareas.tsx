@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate, useSearchParams } from 'react-router';
 import { aTareas, textoDiasEsperando, type FilaTarea } from '@/app/adaptadores';
 import { DialogoNuevaTarea } from '@/app/tareas/DialogoNuevaTarea';
 import { useConsulta } from '@/app/useConsulta';
@@ -22,6 +22,7 @@ import {
   PESTANAS_DE_TAREAS,
   OPCIONES_ESTADO_PR,
   filtrarTareas,
+  filtrosDeLaDireccion,
   pestanaInicialDeTareas,
   hayFiltros,
   opcionesDeProyecto,
@@ -157,7 +158,12 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
   // `null`: nadie eligió pestaña; abre la que corresponde al rol (§5.5, §9.1.3) en cuanto llegan los contadores.
   const pestanaPedida = usePestanaInicial(PESTANAS_DE_TAREAS, null);
   const [pestanaElegida, setPestanaElegida] = useState<PestanaTareas | null>(pestanaPedida);
-  const [filtros, setFiltros] = useState<FiltrosTareas>(FILTROS_INICIALES);
+  // Un enlace (el Dashboard, §9.1.5) puede abrir la vista con «Vencidas» o «Sin asignar» ya marcadas.
+  const [parametros] = useSearchParams();
+  const [filtros, setFiltros] = useState<FiltrosTareas>(() => ({
+    ...FILTROS_INICIALES,
+    ...filtrosDeLaDireccion(parametros),
+  }));
   const [creando, setCreando] = useState(false);
 
   const cargar = useCallback(

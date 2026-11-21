@@ -1,10 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router';
+import { aDashboard, type FilaPostulacionDashboard } from '@/app/adaptadores';
 import {
-  aDashboard,
-  type DashboardParaVista,
-  type FilaPostulacionDashboard,
-} from '@/app/adaptadores';
+  Avance,
+  EnlaceDeTarjeta,
+  PorRevisar,
+  Reuniones,
+  Seccion,
+  Tarjeta,
+} from '@/app/dashboard/BloquesDeDashboard';
 import {
   ModalesDeInsight,
   TarjetaDeInsight,
@@ -65,163 +69,6 @@ const COLUMNAS_POSTULACION: Columna<FilaPostulacionDashboard>[] = [
       ),
   },
 ];
-
-function EnlaceDeTarjeta({ a, children }: { a: string; children: React.ReactNode }) {
-  return (
-    <Link to={a} className="font-medium text-link underline underline-offset-2">
-      {children}
-    </Link>
-  );
-}
-
-/** Una tarjeta de métrica (§5.9): la cifra principal enlaza a su módulo con el filtro ya aplicado. */
-function Tarjeta({
-  titulo,
-  valor,
-  enlace,
-  secundario,
-}: {
-  titulo: string;
-  valor: number;
-  enlace: string;
-  secundario: React.ReactNode;
-}) {
-  return (
-    <article
-      aria-label={titulo}
-      className="space-y-1 rounded-xl border border-border bg-surface p-4"
-    >
-      <h2 className="text-sm font-medium text-text-2">{titulo}</h2>
-      <p className="text-3xl font-semibold text-text tabular-nums">
-        <Link
-          to={enlace}
-          aria-label={`${titulo}: ${valor}`}
-          className="underline-offset-4 hover:underline"
-        >
-          {valor}
-        </Link>
-      </p>
-      <p className="text-sm text-text-2">{secundario}</p>
-    </article>
-  );
-}
-
-function Seccion({ titulo, children }: { titulo: string; children: React.ReactNode }) {
-  return (
-    <section aria-label={titulo} className="space-y-2">
-      <h2 className="text-text">{titulo}</h2>
-      {children}
-    </section>
-  );
-}
-
-function PorRevisar({ datos }: { datos: DashboardParaVista }) {
-  return (
-    <Seccion titulo="Por revisar">
-      {datos.porRevisar.length === 0 ? (
-        <EstadoVacio titulo="No hay tareas esperando supervisión" />
-      ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-          {datos.porRevisar.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
-              <div>
-                {t.rutaDetalle === null ? (
-                  <span className="font-medium text-text">{t.titulo}</span>
-                ) : (
-                  <Link
-                    to={t.rutaDetalle}
-                    className="font-medium text-link underline underline-offset-2"
-                  >
-                    {t.titulo}
-                  </Link>
-                )}
-                <p className="text-xs text-text-2">
-                  {t.idLegible} · {t.proyecto.nombre}
-                  {t.responsable !== null && <> · {t.responsable}</>}
-                </p>
-              </div>
-              <span className="text-xs text-text-2">{t.esperaTexto}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Seccion>
-  );
-}
-
-function Reuniones({ datos }: { datos: DashboardParaVista }) {
-  return (
-    <Seccion titulo="Próximas reuniones">
-      {datos.reuniones.length === 0 ? (
-        <EstadoVacio titulo="No hay proyectos sin finalizar" />
-      ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-          {datos.reuniones.map((r) => (
-            <li
-              key={r.proyecto.id}
-              className="flex flex-wrap items-center justify-between gap-2 px-4 py-2"
-            >
-              <div>
-                {r.rutaProyecto === null ? (
-                  <span className="font-medium text-text">{r.proyecto.nombre}</span>
-                ) : (
-                  <Link
-                    to={r.rutaProyecto}
-                    className="font-medium text-link underline underline-offset-2"
-                  >
-                    {r.proyecto.nombre}
-                  </Link>
-                )}
-                <p className="text-xs text-text-2">Reunión semanal: {r.reunionTexto}</p>
-              </div>
-              <span className="text-xs text-text tabular-nums">{r.proximaTexto}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Seccion>
-  );
-}
-
-function Avance({ datos }: { datos: DashboardParaVista }) {
-  return (
-    <Seccion titulo="Avance de los proyectos">
-      {datos.avances.length === 0 ? (
-        <EstadoVacio titulo="No hay proyectos sin finalizar" />
-      ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-          {datos.avances.map((a) => (
-            <li key={a.proyecto.id} className="space-y-1 px-4 py-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                {a.rutaProyecto === null ? (
-                  <span className="font-medium text-text">{a.proyecto.nombre}</span>
-                ) : (
-                  <Link
-                    to={a.rutaProyecto}
-                    className="font-medium text-link underline underline-offset-2"
-                  >
-                    {a.proyecto.nombre}
-                  </Link>
-                )}
-                <span className="text-xs text-text-2 tabular-nums">{a.avanceTexto}</span>
-              </div>
-              <div
-                role="progressbar"
-                aria-label={`Avance de ${a.proyecto.nombre}`}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={a.porcentaje}
-                className="h-1.5 overflow-hidden rounded-full bg-surface-2"
-              >
-                <div className="h-full bg-primary" style={{ width: `${a.porcentaje}%` }} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Seccion>
-  );
-}
 
 /**
  * Dashboard del Administrador (§5.9): la primera pantalla. **No calcula nada propio**: resume lo que entrega
@@ -354,10 +201,10 @@ export function PaginaDashboard({ entorno = ENTORNO }: { entorno?: Entorno } = {
         </div>
 
         <div className="xl:col-start-1">
-          <PorRevisar datos={datos} />
+          <PorRevisar filas={datos.porRevisar} vacio="No hay tareas esperando supervisión" />
         </div>
         <div className="xl:col-start-1">
-          <Reuniones datos={datos} />
+          <Reuniones filas={datos.reuniones} />
         </div>
       </div>
 
@@ -381,7 +228,7 @@ export function PaginaDashboard({ entorno = ENTORNO }: { entorno?: Entorno } = {
             />
           </div>
         </Seccion>
-        <Avance datos={datos} />
+        <Avance filas={datos.avances} />
       </div>
 
       <ModalesDeInsight

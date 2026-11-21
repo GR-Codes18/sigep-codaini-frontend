@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { aProyectos, aTarjetaDeProyecto } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
+import { usePestanaInicial } from '@/app/usePestanaInicial';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
@@ -11,6 +12,7 @@ import { ENTORNO, listarProyectos, type Entorno } from '@/services';
 import { rutaDeDetalleDeProyecto } from '@/paneles/administrador/proyectos/rutas';
 import {
   FILTROS_INICIALES,
+  PESTANAS_DE_PROYECTOS,
   filtrarProyectos,
   type FiltrosProyectos,
   type PestanaProyectos,
@@ -33,7 +35,12 @@ const VACIO_POR_PESTANA: Record<PestanaProyectos, string> = {
 export function PaginaMisProyectos({ entorno = ENTORNO }: { entorno?: Entorno } = {}) {
   const { sesion } = useSesionActiva();
   const idUsuario = sesion?.id ?? null;
-  const [filtros, setFiltros] = useState<FiltrosProyectos>(FILTROS_INICIALES);
+  // `?pestana=` (los enlaces del Dashboard, §9.1.5): una pestaña desconocida abre «Activos», como siempre.
+  const pestanaInicial = usePestanaInicial(PESTANAS_DE_PROYECTOS, FILTROS_INICIALES.pestana);
+  const [filtros, setFiltros] = useState<FiltrosProyectos>(() => ({
+    ...FILTROS_INICIALES,
+    pestana: pestanaInicial,
+  }));
 
   const cargar = useCallback(
     () => listarProyectos({ idActor: idUsuario ?? '' }, entorno),
