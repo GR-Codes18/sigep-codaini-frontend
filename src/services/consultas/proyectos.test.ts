@@ -5,6 +5,7 @@ import type { Resultado } from '../resultado';
 import {
   ACTIVIDAD_RECIENTE_MAXIMA,
   listarMisProyectos,
+  listarPracticantesAsignables,
   listarProyectos,
   listarTerminadasDeProyecto,
   obtenerEquipoProyecto,
@@ -194,6 +195,42 @@ describe.each(CONSULTAS.filter((c) => c.exito.idProyecto !== undefined))(
 describe('listarProyectos', () => {
   const listar = (p: PruebaPreparada, idActor: Id) => listarProyectos({ idActor }, p.entorno);
 
+  describe('puede_crear y supervisores_disponibles', () => {
+    it('el Administrador puede crear y recibe a los supervisores activos, por nombre', async () => {
+      const prueba = prepararPrueba();
+      const esperados = prueba
+        .datos()
+        .usuarios.filter((u) => u.rol === 'SUPERVISOR' && u.estado === 'ACTIVO')
+        .map((u) => u.nombre)
+        .sort((a, b) => a.localeCompare(b, 'es'));
+
+      const r = valor(await listar(prueba, ADMIN));
+
+      expect(r.puede_crear).toBe(true);
+      expect(r.supervisores_disponibles.map((s) => s.nombre)).toEqual(esperados);
+      expect(esperados.length).toBeGreaterThan(1);
+    });
+
+    it('un supervisor inactivo no se ofrece', async () => {
+      const prueba = prepararPrueba();
+      desactivar(prueba, SUPERVISOR_3);
+
+      const r = valor(await listar(prueba, ADMIN));
+
+      expect(ids(r.supervisores_disponibles)).not.toContain(SUPERVISOR_3);
+      expect(ids(r.supervisores_disponibles)).toContain(SUPERVISOR_2);
+    });
+
+    it('el Supervisor no puede crear proyectos y no recibe candidatos', async () => {
+      const prueba = prepararPrueba();
+
+      const r = valor(await listar(prueba, SUPERVISOR));
+
+      expect(r.puede_crear).toBe(false);
+      expect(r.supervisores_disponibles).toEqual([]);
+    });
+  });
+
   it('el Administrador ve los 5 proyectos, con los contadores de las pestañas', async () => {
     const prueba = prepararPrueba();
 
@@ -229,6 +266,8 @@ describe('listarProyectos', () => {
     expect(valor(await listar(prueba, idNuevo))).toEqual({
       proyectos: [],
       contadores: { TODOS: 0, ACTIVO: 0, EN_PAUSA: 0, FINALIZADO: 0 },
+      puede_crear: false,
+      supervisores_disponibles: [],
     });
   });
 
@@ -452,6 +491,178 @@ describe('listarMisProyectos', () => {
 describe('obtenerProyecto', () => {
   const obtener = (p: PruebaPreparada, idActor: Id, idProyecto: Id) =>
     obtenerProyecto({ idActor, idProyecto }, p.entorno);
+
+  describe('acciones', () => {
+    const gestion = async (p: PruebaPreparada, idActor: Id, idProyecto: Id) => {
+      const r = valor(await obtener(p, idActor, idProyecto));
+      if (r.vista !== 'GESTION') throw new Error('Se esperaba la vista de gestión.');
+      return r;
+    };
+
+    it('el Administrador puede cambiar los datos, la rama base, la reunión y los enlaces, y llevar el ciclo de vida', async () => {
+      const prueba = prepararPrueba();
+
+      expect((await gestion(prueba, ADMIN, PL2D)).acciones).toEqual([
+        'EDITAR_DATOS',
+        'CAMBIAR_RAMA_BASE',
+        'DEFINIR_REUNION',
+        'GESTIONAR_ENLACES',
+        'CAMBIAR_SUPERVISOR',
+        'PAUSAR',
+        'FINALIZAR',
+      ]);
+    });
+
+    it('también en un proyecto finalizado (los datos siguen editables) y solo se puede reactivar', async () => {
+      const prueba = prepararPrueba();
+
+      expect((await gestion(prueba, ADMIN, TIE)).acciones).toEqual([
+        'EDITAR_DATOS',
+        'CAMBIAR_RAMA_BASE',
+        'DEFINIR_REUNION',
+        'GESTIONAR_ENLACES',
+        'REACTIVAR',
+      ]);
+    });
+
+    it('el Supervisor del proyecto no edita los datos: solo la rama base, la reunión y los enlaces', async () => {
+      const prueba = prepararPrueba();
+
+      expect((await gestion(prueba, SUPERVISOR, PL2D)).acciones).toEqual([
+        'CAMBIAR_RAMA_BASE',
+        'DEFINIR_REUNION',
+        'GESTIONAR_ENLACES',
+      ]);
+    });
+
+    it('el código nunca figura entre las acciones: no se edita', async () => {
+      const prueba = prepararPrueba();
+
+      const { acciones } = await gestion(prueba, ADMIN, PL2D);
+
+      expect(acciones.join(' ')).not.toMatch(/CODIGO/);
+    });
+
+    describe('ciclo de vida', () => {
+      it('un proyecto en pausa ofrece reanudar y finalizar, pero no pausar', async () => {
+        const prueba = prepararPrueba();
+
+        const { acciones } = await gestion(prueba, ADMIN, INV);
+
+        expect(acciones).toContain('REANUDAR');
+        expect(acciones).toContain('FINALIZAR');
+        expect(acciones).not.toContain('PAUSAR');
+        expect(acciones).not.toContain('REACTIVAR');
+      });
+
+      it('con tareas esperando supervisión finalizar se ofrece, con la cantidad que bloquea', async () => {
+        const prueba = prepararPrueba();
+
+        const r = await gestion(prueba, ADMIN, PL2D);
+
+        expect(r.acciones).toContain('FINALIZAR');
+        expect(r.ciclo_de_vida.tareas_esperando_supervision).toBe(2);
+        expect(r.ciclo_de_vida.tareas_a_liberar).toBe(0);
+      });
+
+      it('sin tareas esperando, informa cuántas «En progreso» se liberarían', async () => {
+        const prueba = prepararPrueba();
+        prueba.modificar((d) => ({
+          tareas: d.tareas.map((t) =>
+            t.id_proyecto === PL2D && t.estado === 'ESPERANDO_SUPERVISION'
+              ? { ...t, estado: 'TERMINADA' as const }
+              : t,
+          ),
+        }));
+        const enProgreso = prueba
+          .datos()
+          .tareas.filter((t) => t.id_proyecto === PL2D && t.estado === 'EN_PROGRESO').length;
+
+        const r = await gestion(prueba, ADMIN, PL2D);
+
+        expect(r.ciclo_de_vida.tareas_esperando_supervision).toBe(0);
+        expect(r.ciclo_de_vida.tareas_a_liberar).toBe(enProgreso);
+        expect(enProgreso).toBeGreaterThan(0);
+      });
+
+      it('reactivar se ofrece también con el supervisor inactivo, y lo marca', async () => {
+        const prueba = prepararPrueba();
+        desactivar(prueba, SUPERVISOR_2);
+
+        const r = await gestion(prueba, ADMIN, TIE);
+
+        expect(r.acciones).toContain('REACTIVAR');
+        expect(r.ciclo_de_vida.supervisor_inactivo).toBe(true);
+      });
+
+      it('con el supervisor activo, reactivar no está bloqueado', async () => {
+        const prueba = prepararPrueba();
+
+        expect((await gestion(prueba, ADMIN, TIE)).ciclo_de_vida.supervisor_inactivo).toBe(false);
+      });
+
+      it('el Supervisor del proyecto no controla el ciclo de vida: eso es del Administrador', async () => {
+        const prueba = prepararPrueba();
+
+        const { acciones } = await gestion(prueba, SUPERVISOR, PL2D);
+
+        for (const a of [
+          'PAUSAR',
+          'REANUDAR',
+          'FINALIZAR',
+          'REACTIVAR',
+          'CAMBIAR_SUPERVISOR',
+        ] as const) {
+          expect(acciones).not.toContain(a);
+        }
+      });
+    });
+
+    describe('supervisores_destino', () => {
+      it('son los demás supervisores activos, por nombre, sin el actual', async () => {
+        const prueba = prepararPrueba();
+        const esperados = prueba
+          .datos()
+          .usuarios.filter(
+            (u) => u.rol === 'SUPERVISOR' && u.estado === 'ACTIVO' && u.id !== SUPERVISOR,
+          )
+          .map((u) => u.nombre)
+          .sort((a, b) => a.localeCompare(b, 'es'));
+
+        const { supervisores_destino } = await gestion(prueba, ADMIN, PL2D);
+
+        expect(supervisores_destino.map((s) => s.nombre)).toEqual(esperados);
+        expect(ids(supervisores_destino)).not.toContain(SUPERVISOR);
+      });
+
+      it('un supervisor inactivo no es destino', async () => {
+        const prueba = prepararPrueba();
+        desactivar(prueba, SUPERVISOR_3);
+
+        const { supervisores_destino } = await gestion(prueba, ADMIN, PL2D);
+
+        expect(ids(supervisores_destino)).not.toContain(SUPERVISOR_3);
+      });
+
+      it('un proyecto finalizado no admite cambiar de supervisor: la lista viene vacía', async () => {
+        const prueba = prepararPrueba();
+
+        const r = await gestion(prueba, ADMIN, TIE);
+
+        expect(r.supervisores_destino).toEqual([]);
+        expect(r.acciones).not.toContain('CAMBIAR_SUPERVISOR');
+      });
+    });
+
+    it('la vista del Practicante no trae acciones de gestión', async () => {
+      const prueba = prepararPrueba();
+
+      const r = valor(await obtener(prueba, PRACTICANTE, PL2D));
+
+      expect(r.vista).toBe('PRACTICANTE');
+      expect(r).not.toHaveProperty('acciones');
+    });
+  });
 
   it('el Administrador recibe la vista de gestión de cualquier proyecto, también el finalizado', async () => {
     const prueba = prepararPrueba();
@@ -825,6 +1036,44 @@ describe('obtenerTableroProyecto', () => {
     ]);
   });
 
+  describe('puede_crear_tarea', () => {
+    it('el Administrador y el Supervisor del proyecto pueden crear en un proyecto activo', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, ADMIN, PL2D)).puede_crear_tarea).toBe(true);
+      expect(valor(await tablero(prueba, SUPERVISOR, PL2D)).puede_crear_tarea).toBe(true);
+    });
+
+    it('un proyecto en pausa también permite crear (solo se bloquea tomar tareas)', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, ADMIN, INV)).puede_crear_tarea).toBe(true);
+    });
+
+    it('un proyecto finalizado no permite crear, ni siquiera al Administrador', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, ADMIN, TIE)).puede_crear_tarea).toBe(false);
+    });
+
+    it('el Practicante nunca puede crear tareas', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await tablero(prueba, PRACTICANTE, PL2D)).puede_crear_tarea).toBe(false);
+    });
+
+    it('un proyecto que se finaliza pasa de permitir a no permitir', async () => {
+      const prueba = prepararPrueba();
+      prueba.modificar((d) => ({
+        proyectos: d.proyectos.map((p) =>
+          p.id === PL2D ? { ...p, estado: 'FINALIZADO' as const } : p,
+        ),
+      }));
+
+      expect(valor(await tablero(prueba, ADMIN, PL2D)).puede_crear_tarea).toBe(false);
+    });
+  });
+
   it('cada tarjeta trae su ID legible, responsable, vencida y la etiqueta del PR ya filtrada', async () => {
     const prueba = prepararPrueba();
 
@@ -921,6 +1170,7 @@ describe('obtenerTableroProyecto', () => {
     expect(valor(await tablero(prueba, ADMIN, DAT))).toEqual({
       id_proyecto: DAT,
       estado_proyecto: 'ACTIVO',
+      puede_crear_tarea: true,
       disponibles: [],
       en_progreso: [],
       esperando_supervision: [],
@@ -1071,5 +1321,168 @@ describe('obtenerResumenProyectoAnterior', () => {
     const prueba = prepararPrueba();
 
     expect(codigo(await resumen(prueba, SUPERVISOR, TIE))).toBe('FUERA_DE_ALCANCE');
+  });
+});
+
+// ── Equipo: asignar y quitar (Fase 5, módulo 5.4, bloque 4) ──────────────────────────────────
+
+describe('obtenerEquipoProyecto: asignar y quitar', () => {
+  const equipo = async (p: PruebaPreparada, idActor: Id, idProyecto: Id) => {
+    const r = valor(await obtenerEquipoProyecto({ idActor, idProyecto }, p.entorno));
+    if (r.vista !== 'GESTION') throw new Error('Se esperaba la vista de gestión.');
+    return r;
+  };
+
+  it('en un proyecto activo se puede asignar y quitar a cada miembro', async () => {
+    const prueba = prepararPrueba();
+
+    const r = await equipo(prueba, ADMIN, PL2D);
+
+    expect(r.estado_proyecto).toBe('ACTIVO');
+    expect(r.puede_asignar).toBe(true);
+    expect(r.activos.length).toBeGreaterThan(0);
+    for (const m of r.activos) expect(m.puede_quitar).toBe(true);
+  });
+
+  it('las tareas a liberar son las «En progreso» de cada miembro en ese proyecto', async () => {
+    const prueba = prepararPrueba();
+
+    const r = await equipo(prueba, ADMIN, PL2D);
+
+    for (const m of r.activos) {
+      const esperadas = prueba
+        .datos()
+        .tareas.filter(
+          (t) => t.id_proyecto === PL2D && t.id_practicante === m.id && t.estado === 'EN_PROGRESO',
+        ).length;
+      expect(m.tareas_a_liberar, m.id).toBe(esperadas);
+    }
+  });
+
+  it('un proyecto finalizado no admite asignar ni quitar', async () => {
+    const prueba = prepararPrueba();
+
+    const r = await equipo(prueba, ADMIN, TIE);
+
+    expect(r.estado_proyecto).toBe('FINALIZADO');
+    expect(r.puede_asignar).toBe(false);
+    expect(r.activos.length).toBeGreaterThan(0);
+    for (const m of r.activos) {
+      expect(m.puede_quitar).toBe(false);
+      expect(m.tareas_a_liberar).toBe(0);
+    }
+  });
+
+  it('el Supervisor del proyecto no asigna ni quita: eso es del Administrador', async () => {
+    const prueba = prepararPrueba();
+
+    const r = await equipo(prueba, SUPERVISOR, PL2D);
+
+    expect(r.puede_asignar).toBe(false);
+    for (const m of r.activos) expect(m.puede_quitar).toBe(false);
+  });
+
+  it('si no queda a quién asignar, puede_asignar es falso', async () => {
+    const prueba = prepararPrueba();
+    prueba.modificar((d) => ({
+      usuarios: d.usuarios.map((u) =>
+        u.rol === 'PRACTICANTE' ? { ...u, estado: 'INACTIVO' as const } : u,
+      ),
+    }));
+
+    expect((await equipo(prueba, ADMIN, PL2D)).puede_asignar).toBe(false);
+  });
+});
+
+describe('listarPracticantesAsignables', () => {
+  const asignables = (p: PruebaPreparada, idActor: Id, idProyecto: Id) =>
+    listarPracticantesAsignables({ idActor, idProyecto }, p.entorno);
+
+  it('trae a los practicantes activos que aún no están en el proyecto, por nombre', async () => {
+    const prueba = prepararPrueba();
+    const miembros = new Set(
+      prueba
+        .datos()
+        .asignaciones.filter((a) => a.id_proyecto === PL2D && a.fecha_baja === null)
+        .map((a) => a.id_practicante),
+    );
+
+    const { practicantes } = valor(await asignables(prueba, ADMIN, PL2D));
+
+    expect(practicantes.length).toBeGreaterThan(0);
+    for (const p of practicantes) expect(miembros.has(p.id), p.id).toBe(false);
+    const nombres = practicantes.map((p) => p.nombre);
+    expect([...nombres].sort((a, b) => a.localeCompare(b, 'es'))).toEqual(nombres);
+  });
+
+  it('no ofrece a un practicante con la práctica finalizada', async () => {
+    const prueba = prepararPrueba();
+
+    const { practicantes } = valor(await asignables(prueba, ADMIN, PL2D));
+
+    expect(ids(practicantes)).not.toContain(PRA_PRACTICA_FINALIZADA);
+  });
+
+  it('ofrece a quien salió del proyecto (se crearía otra asignación) y a quien está sin proyecto', async () => {
+    const prueba = prepararPrueba();
+    prueba.modificar((d) => ({
+      asignaciones: d.asignaciones.map((a) =>
+        a.id_practicante === PRA_PL2D_RSV && a.id_proyecto === PL2D && a.fecha_baja === null
+          ? { ...a, fecha_baja: '2026-11-01' }
+          : a,
+      ),
+    }));
+
+    const { practicantes } = valor(await asignables(prueba, ADMIN, PL2D));
+
+    expect(ids(practicantes)).toContain(PRA_PL2D_RSV);
+    expect(ids(practicantes)).toContain(PRA_SIN_PROYECTO);
+  });
+
+  it('la carga de cada uno es la que da el dominio para sus proyectos vigentes', async () => {
+    const prueba = prepararPrueba();
+
+    const { practicantes } = valor(await asignables(prueba, ADMIN, PL2D));
+
+    const conCarga = practicantes.find((p) => p.carga > 0);
+    expect(conCarga).toBeDefined();
+    const sinProyecto = practicantes.find((p) => p.id === PRA_SIN_PROYECTO)!;
+    expect(sinProyecto.carga).toBe(0);
+  });
+
+  it('con el proyecto finalizado la lista viene vacía', async () => {
+    const prueba = prepararPrueba();
+
+    expect(valor(await asignables(prueba, ADMIN, TIE)).practicantes).toEqual([]);
+  });
+
+  it('solo el Administrador recibe candidatos: el Supervisor y el Practicante, una lista vacía', async () => {
+    const prueba = prepararPrueba();
+
+    expect(valor(await asignables(prueba, SUPERVISOR, PL2D)).practicantes).toEqual([]);
+    expect(valor(await asignables(prueba, PRACTICANTE, PL2D)).practicantes).toEqual([]);
+  });
+
+  it('un proyecto que no existe da NO_ENCONTRADO y un identificador vacío, DATOS_INVALIDOS', async () => {
+    const prueba = prepararPrueba();
+
+    expect(codigo(await asignables(prueba, ADMIN, 'no-existe'))).toBe('NO_ENCONTRADO');
+    expect(codigo(await asignables(prueba, ADMIN, ''))).toBe('DATOS_INVALIDOS');
+  });
+
+  it('un actor inactivo da USUARIO_INACTIVO', async () => {
+    const prueba = prepararPrueba();
+    desactivar(prueba, ADMIN);
+
+    expect(codigo(await asignables(prueba, ADMIN, PL2D))).toBe('USUARIO_INACTIVO');
+  });
+
+  it('no escribe', async () => {
+    const prueba = prepararPrueba();
+    const comprobar = sinEscritura(prueba);
+
+    await asignables(prueba, ADMIN, PL2D);
+
+    comprobar();
   });
 });

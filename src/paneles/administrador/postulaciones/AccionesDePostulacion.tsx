@@ -11,7 +11,10 @@ import {
   type Entorno,
   type Resultado,
 } from '@/services';
-import { ModalContrasenaTemporal, type ContrasenaTemporal } from './ModalContrasenaTemporal';
+import {
+  ModalContrasenaTemporal,
+  type ContrasenaTemporal,
+} from '@/compartido/ModalContrasenaTemporal';
 
 interface Props {
   idActor: Id;

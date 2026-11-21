@@ -55,10 +55,10 @@ describe('aNotificacionItem', () => {
 
 describe('rutaDeNotificacion', () => {
   it.each([
-    ['ADMINISTRADOR', 'TAREA', '/administrador/tareas'],
+    ['ADMINISTRADOR', 'TAREA', '/administrador/tareas/otro-id'],
     ['SUPERVISOR', 'TAREA', '/supervisor/tareas'],
     ['PRACTICANTE', 'TAREA', '/practicante/proyectos'],
-    ['ADMINISTRADOR', 'PROYECTO', '/administrador/proyectos'],
+    ['ADMINISTRADOR', 'PROYECTO', '/administrador/proyectos/otro-id'],
     ['SUPERVISOR', 'PROYECTO', '/supervisor/proyectos'],
     ['PRACTICANTE', 'PROYECTO', '/practicante/proyectos'],
     ['ADMINISTRADOR', 'USUARIO', '/administrador/practicantes/otro-id'],

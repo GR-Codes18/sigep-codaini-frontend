@@ -5,7 +5,7 @@ import { Input } from '@/compartido/ui/input';
 import { Label } from '@/compartido/ui/label';
 import { Textarea } from '@/compartido/ui/textarea';
 import type { Tarea } from '@/domain';
-import { crearTarea, editarTarea, type Fallo, type Resultado } from '@/services';
+import { crearTarea, editarTarea, type Entorno, type Fallo, type Resultado } from '@/services';
 import { esquemaEdicionTarea, esquemaTarea, type DatosTarea } from './esquemaTarea';
 
 interface PropsComunes {
@@ -14,6 +14,8 @@ interface PropsComunes {
   valoresIniciales?: Partial<DatosTarea>;
   onGuardada?: (tarea: Tarea) => void;
   onCancelar: () => void;
+  /** Solo lo cambian las pruebas (para no esperar la demora simulada de los servicios). */
+  entorno?: Entorno;
 }
 
 type Props = PropsComunes &
@@ -68,6 +70,7 @@ export function FormularioTarea({
   valoresIniciales,
   onGuardada,
   onCancelar,
+  entorno,
 }: Props) {
   const [datos, setDatos] = useState<DatosTarea>({
     idProyecto: valoresIniciales?.idProyecto ?? (proyectos.length === 1 ? proyectos[0].id : ''),
@@ -97,15 +100,18 @@ export function FormularioTarea({
         }
         setErrores({});
         setGuardando(true);
-        resultado = await crearTarea({
-          idActor,
-          idProyecto: validacion.data.idProyecto,
-          titulo: validacion.data.titulo,
-          descripcion: validacion.data.descripcion,
-          fecha_limite: validacion.data.fechaLimite,
-          requiere_supervision: validacion.data.requiereSupervision,
-          requiere_pr: validacion.data.requierePr,
-        });
+        resultado = await crearTarea(
+          {
+            idActor,
+            idProyecto: validacion.data.idProyecto,
+            titulo: validacion.data.titulo,
+            descripcion: validacion.data.descripcion,
+            fecha_limite: validacion.data.fechaLimite,
+            requiere_supervision: validacion.data.requiereSupervision,
+            requiere_pr: validacion.data.requierePr,
+          },
+          entorno,
+        );
       } else {
         const validacion = esquemaEdicionTarea.safeParse(datos);
         if (!validacion.success) {
@@ -114,13 +120,16 @@ export function FormularioTarea({
         }
         setErrores({});
         setGuardando(true);
-        resultado = await editarTarea({
-          idActor,
-          idTarea,
-          titulo: validacion.data.titulo,
-          descripcion: validacion.data.descripcion,
-          fecha_limite: validacion.data.fechaLimite,
-        });
+        resultado = await editarTarea(
+          {
+            idActor,
+            idTarea,
+            titulo: validacion.data.titulo,
+            descripcion: validacion.data.descripcion,
+            fecha_limite: validacion.data.fechaLimite,
+          },
+          entorno,
+        );
       }
       if (!resultado.ok) {
         const erroresCampos = erroresDesdeServicio(resultado);

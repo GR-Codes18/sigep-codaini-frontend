@@ -15,7 +15,7 @@ import {
 import {
   ModalContrasenaTemporal,
   type ContrasenaTemporal,
-} from '../postulaciones/ModalContrasenaTemporal';
+} from '@/compartido/ModalContrasenaTemporal';
 import { FormularioDatosPractica } from './FormularioDatosPractica';
 
 interface Props {

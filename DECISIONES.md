@@ -3964,3 +3964,224 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   atajo «Asignar a proyecto» (diálogo con selección múltiple), ni el texto en singular del aviso de tareas, ni la propuesta automática de la
   fecha de fin que no pisa una edición a mano. Conviene pasarlos a §5.2.
 - **Siguiente paso.** Módulo 5.3 (Supervisores).
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.3 (Supervisores), Administrador
+
+- **Commits:** `b0d150f` (bloque 1, lectura), `97fda22` (bloque 2a, `ModalContrasenaTemporal` a `compartido/`), `16b67b6` (bloque 2b, cuenta) y
+  `c5d5e0d` (bloque 3, ciclo de vida); rama `feat/fase5-supervisores`. Mismo patrón del 5.2 (rutas por prefijo, `useConsulta`, filtros puros
+  en memoria, adaptadores en `src/app/adaptadores/`).
+- **URLs.** `/administrador/supervisores` y `/administrador/supervisores/:idSupervisor`.
+- **Indicador de sobrecarga (decisión de los autores, opción A).** §5.3 dice que la sobrecarga «se ve como indicador en el listado» pero no define
+  umbral ni forma. No se inventa ninguno: el listado muestra los números y resalta en ámbar «Tareas por revisar» cuando es mayor que 0.
+  Descartadas: reutilizar un umbral de Configuración (B) y definir uno nuevo, que tocaría Configuración y `domain/` (C).
+- **Bloque 1 (lectura).** Listado con pestañas Activos (abre ahí), Inactivos y Todos con los contadores de la consulta, y búsqueda por nombre o
+  correo sin tildes; columnas de §5.3. Detalle de solo lectura: contacto, proyectos a cargo con la reunión semanal (`textoReunion`, «Sin definir»
+  si falta) y cuántos practicantes tienen, tareas por revisar con los días que llevan esperando, proyectos anteriores y línea de tiempo.
+  `Insignia` gana el tipo `supervisor` (Activo y Inactivo). `eventos.ts` gana las etiquetas de los eventos `SUPERVISOR_*` y de
+  `PROYECTO_SUPERVISOR_CAMBIADO`, y desactivar y reactivar no muestran el resumen «ACTIVO → INACTIVO». Los avisos al Administrador sobre un usuario
+  son siempre de practicantes, así que `RUTA_DE_DETALLE` no cambia.
+- **Bloque 2a (`ModalContrasenaTemporal` a `compartido/`, decisión de los autores).** Pasa a usarse en 5.1, 5.2 y 5.3; se mueve con su prueba y se
+  ajustan los imports de `AccionesDePostulacion` y `AccionesDePracticante`. Cambio mecánico, en su propio commit.
+- **Bloque 2b (cuenta).** «Nuevo supervisor» es un diálogo con nombre, correo y celular; el correo y el celular reutilizan `esquemaCorreo` y
+  `esquemaCelular` del servicio y el servicio vuelve a validar. Muestra la contraseña temporal una sola vez («Cuenta de supervisor creada»); no llega
+  al historial ni a las notificaciones. Editar nombre y correo envía solo lo que cambió; el celular, Discord y GitHub los edita el propio
+  supervisor. Restablecer contraseña: confirmación y modal de una sola vez («Contraseña restablecida»), no se ofrece a una cuenta inactiva.
+  Si el error ya salió junto a un campo (por ejemplo, el correo repetido), la alerta general no lo repite.
+- **Bloque 3 (ciclo de vida).**
+  - **Consulta ampliada, aditiva y sin tocar `domain/`.** `obtenerSupervisor` trae `acciones` (editar, restablecer, reasignar, desactivar y reactivar),
+    `proyectos_pendientes` (la cantidad que da la regla `desactivarSupervisor`) y `supervisores_destino` (filtrados con `puedeCambiarSupervisor`:
+    activos, distintos y con algún proyecto a cargo que no esté finalizado). «Desactivar» se ofrece también con proyectos pendientes para poder
+    explicar el bloqueo; con la cuenta inactiva no.
+  - **Desactivar.** Con proyectos pendientes abre «No se puede desactivar» con «Tiene N proyectos pendientes: reasígnalos primero.» (singular:
+    «Tiene 1 proyecto pendiente: reasígnalo primero.») y ofrece ir a reasignar; el N lo trae la consulta, la pantalla no cuenta. Los proyectos
+    finalizados no cuentan y uno en pausa sí. Sin pendientes, confirmación simple (el servicio no pide motivo). Si cambian los datos con la
+    confirmación abierta, la pantalla se actualiza sola y pasa al aviso de bloqueo.
+  - **Reactivar.** Confirmación simple; no recupera los proyectos que tenía.
+  - **Reasignar proyectos (G4-A y F1-A).** Diálogo con un selector por proyecto activo o en pausa; «Reasignar» solo se habilita cuando todos tienen
+    supervisor elegido (aunque el servicio no lo exija). Se aplica todo o nada con `reasignarProyectosDeSupervisor` y, si el servicio rechaza algún
+    proyecto, el mensaje queda en el diálogo sin escribir nada. Las tareas que esperan supervisión siguen al proyecto (lo hace el servicio).
+- **Pruebas.** 3.380 → 3.477 en 141 archivos (+97 y +7 archivos). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Con el equipo lento algunas pruebas pesadas de 5.1 a 5.3
+  superan el límite de 5 s y pasan con `--testTimeout=60000`; no cambia ninguna lógica.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni «Nuevo supervisor»
+  como diálogo, ni el diálogo de reasignación con un selector por proyecto, ni el texto del bloqueo al desactivar (singular incluido). La
+  sobrecarga queda sin umbral: solo el resalte en ámbar. Conviene pasarlos a §5.3.
+- **Siguiente paso.** Módulo 5.4 (Proyectos).
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 1 y 2: lectura y tablero
+
+- **Commits:** `5431b8a` (bloque 1, lectura) y `da41753` (bloque 2, tablero). Rama `feat/fase5-supervisores` (los bloques 1 y 2 del 5.4 se hicieron ahí, junto al 5.3); quedan los bloques 3 (datos del proyecto:
+  crear, editar, reunión y enlaces) y 4 (equipo y ciclo de vida).
+- **Partición (decisión de los autores).** Cuatro bloques: 1) lectura, 2) tablero y detalle de tarea, 3) datos del proyecto y 4) equipo y ciclo de
+  vida. Mismo patrón de 5.1 a 5.3: rutas por prefijo, `useConsulta`, filtros puros en memoria y adaptadores en `src/app/adaptadores/`.
+- **URLs.** `/administrador/proyectos`, `/administrador/proyectos/:idProyecto` y `/administrador/proyectos/:idProyecto/tareas/:idTarea`. Las pestañas
+  del detalle van en `?pestana=resumen|tablero|equipo` (decisión de los autores: un solo componente de detalle, y la pestaña se puede enlazar);
+  una pestaña desconocida abre «Resumen», y «Equipo» y «Tablero» solo piden sus datos cuando se abren.
+- **Bloque 1 (lectura).** Listado con pestañas Activos (abre ahí), En pausa, Finalizados y Todos con los contadores de la consulta, filtro por
+  supervisor y búsqueda **por nombre** (no por código, como dice §5.4). Columnas de §5.4: avance como «N de M · P %» o «Sin tareas», tareas esperando
+  supervisión resaltadas en ámbar cuando hay alguna, y próxima reunión como fecha y hora en Perú o «Sin definir». Resumen: datos del proyecto, avance,
+  tareas por estado en el orden del flujo, vencidas, enlaces (solo lectura) y actividad reciente; el repositorio es un enlace que abre en otra
+  pestaña. Equipo: activos con su carga en el proyecto y anteriores con alta y baja. `eventos.ts` gana las etiquetas de los 12 eventos de proyecto y
+  pausar, reanudar, finalizar y reactivar no muestran el resumen de estado crudo. El aviso de un proyecto lleva al Administrador a su detalle
+  (`RUTA_DE_DETALLE.ADMINISTRADOR.PROYECTO`, afina D4-A). Sin ampliar consultas.
+- **Bloque 2 (tablero).**
+  - **Detalle de tarea (decisión de los autores, opción A).** Se extrae el contenedor del detalle de tarea de `PaginaDesarrollo` a
+    `src/app/tareas/DetalleDeTarea.tsx`, con el mapeador de acciones, el formulario de edición y `ModalCrearPR`; lo reutilizará el módulo 5.5 en
+    `/administrador/tareas/:idTarea`. `PaginaDesarrollo` pasa a usar el mismo componente. Una tarea de otro proyecto no se muestra por la dirección de
+    un proyecto («No se encontró la tarea en este proyecto.»). «Volver al tablero» regresa a `?pestana=tablero`.
+  - **«Nueva tarea» en el Tablero del 5.4 (decisión de los autores).** Diálogo con `FormularioTarea` en modo «crear» y el proyecto ya fijado; el 5.5
+    lo reutilizará. Se ofrece en un proyecto activo o en pausa (§5.4: en pausa solo se bloquea tomar tareas) y no en uno finalizado.
+  - **Ampliación aditiva de la Fase 2.** `obtenerTableroProyecto` trae `puede_crear_tarea`, calculado con `puede('CREAR_TAREA')` de `domain/`: la
+    pantalla no decide cuándo ofrecer «Nueva tarea». `FormularioTarea` recibe un `entorno` opcional, como los demás formularios (sin él las pruebas
+    esperaban la demora simulada).
+  - **Avisos del tablero.** Finalizado: «el tablero es de solo lectura»; en pausa: «nadie puede tomar tareas nuevas». Los servicios son los que lo
+    hacen cumplir; la pantalla solo lo dice. Ninguna acción se ejecuta desde una tarjeta (§6.7).
+  - **Avisos de tarea.** Un aviso de `TAREA` sigue yendo a la página del módulo: sin el ID del proyecto no se puede armar la dirección del detalle
+    dentro del proyecto. Se afina en el 5.5.
+- **Pruebas.** 3.477 → 3.571 en 147 archivos (+94 y +6 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el
+  aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se ajustaron pruebas existentes por los campos nuevos
+  (`tablero`, `FormularioTarea`, una consulta de `proyectos` y `notificacion`) y el ejemplo de «evento sin etiqueta» de `eventos.test.ts` pasó de
+  `PROYECTO_PAUSADO` a `AREA_TECNICA_CREADA`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni que las pestañas vayan en
+  `?pestana=`, ni la dirección del detalle de tarea dentro del proyecto, ni dónde vive «Nueva tarea» entre 5.4 y 5.5, ni los textos de los avisos
+  del tablero. Conviene pasarlos a §5.4.
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 3 y 4: datos, equipo y ciclo de vida
+
+- **Commits:** `9b2b378` (bloque 3, datos del proyecto) y `eeb4d50` (bloque 4, equipo y ciclo de vida). Rama `feat/fase5-supervisores`. Con ellos termina el módulo 5.4.
+- **Bloque 3 — formulario de proyecto (decisión de los autores: diálogo).**
+  - **Crear.** Nombre, código, descripción, fechas, supervisor, repositorio, rama base y reunión opcional. El código se pone en mayúsculas y sin
+    espacios **antes** de enviarlo (`normalizarCodigoDeProyecto`, en `codigo.ts`) porque el servicio no lo normaliza (G1/9A); que sea de 3 a 5
+    caracteres y único entre todos los proyectos, también los finalizados, lo decide el servicio y su mensaje sale en el campo del código. El
+    repositorio, la rama base, el nombre, la descripción y las fechas se validan con los esquemas de `services/proyectos/esquemas.ts` (una sola
+    regla). Al crear se abre el detalle del proyecto nuevo.
+  - **Editar.** El código se muestra y **no es editable**. Cada grupo de campos (datos, rama base y reunión) solo se ofrece si `puede()` lo permite y
+    llega en `acciones`: el Supervisor del proyecto ve solo la rama base y la reunión. Se envía solo lo que cambió, cada grupo con su servicio
+    (`editarDatosProyecto`, `cambiarRamaBase` y `definirReunion`); si uno falla se muestra su mensaje y lo ya guardado no se reenvía (el guardado
+    no es atómico entre grupos). Un proyecto finalizado también se edita (§5.4). La reunión se quita dejando el día en «Sin definir» y la hora
+    vacía, y se avisa al equipo (lo hace el servicio).
+  - **Enlaces útiles.** Agregar, editar (solo lo que cambió) y quitar con confirmación; quien no puede gestionarlos (`GESTIONAR_ENLACES`) ve la lista
+    de solo lectura.
+  - **Ampliaciones aditivas de la Fase 2.** `listarProyectos` trae `puede_crear` (`puede('CREAR_PROYECTO')`) y `supervisores_disponibles` (los
+    supervisores activos, por nombre; vacío para quien no puede crear). `obtenerProyecto` (vista de gestión) trae `acciones`: `EDITAR_DATOS`,
+    `CAMBIAR_RAMA_BASE`, `DEFINIR_REUNION` y `GESTIONAR_ENLACES`, cada una decidida por `puede()`; el código nunca figura entre ellas.
+  - **Pendiente anotado (decisión de los autores).** La regla «un proyecto nuevo siempre con un supervisor activo» la comprueba `crearProyecto` con
+    código propio y la repite `listarProyectos` en `supervisores_disponibles`. Se deja así y pasa a un paso aparte, con la regla pura en `domain/`,
+    pruebas por combinación y mutación (anotado en `PROGRESO.md`).
+- **Bloque 4 — ciclo de vida del proyecto.**
+  - **Acciones desde la consulta.** `obtenerProyecto` suma a `acciones`: `PAUSAR`, `REANUDAR`, `FINALIZAR`, `REACTIVAR` y `CAMBIAR_SUPERVISOR`, que salen de
+    `puede()` y de las reglas de `domain/` (`puedePausarProyecto`, `puedeReanudarProyecto`, `finalizarProyecto`, `puedeReactivarProyecto` y
+    `puedeCambiarSupervisor`), no del estado en la pantalla. Finalizar con tareas «Esperando supervisión» y reactivar con el supervisor inactivo se
+    **ofrecen igual** (como desactivar a un supervisor con proyectos en el 5.3) para poder explicar el bloqueo.
+  - **`ciclo_de_vida`** (aditivo): `tareas_esperando_supervision` (la cantidad que bloquea finalizar, de la regla de `domain/`), `tareas_a_liberar`
+    (las «En progreso» que se liberarían; 0 si está bloqueado) y `supervisor_inactivo`. La pantalla no cuenta tareas. **`supervisores_destino`**:
+    supervisores activos y distintos del actual, con `puedeCambiarSupervisor`; vacío en un proyecto finalizado.
+  - **Pausar, reanudar, finalizar y reactivar** piden una **nota obligatoria**. Finalizar bloqueado dice «Tiene N tareas esperando supervisión» (singular
+    incluido); sin bloqueo avisa «Tiene N tareas en progreso que serán liberadas.» o «No tiene tareas en progreso.», guarda la fecha real, deja el
+    tablero en solo lectura y no cierra las asignaciones. Reactivar con el supervisor inactivo no se puede: lo explica y enlaza al supervisor para
+    reactivarlo primero; reactivar no avisa al equipo (G2-A). Si los datos cambian con el diálogo abierto (por ejemplo, llega una tarea a supervisión), la
+    pantalla pasa sola al aviso de bloqueo; si el servicio rechaza la acción, el mensaje queda en el diálogo y no se escribe nada.
+  - **Cambiar supervisor.** Diálogo con un selector (el mismo cuadro que la reasignación del módulo Supervisores, para un solo proyecto). Las tareas que
+    esperan supervisión siguen al proyecto y se avisa a quien entra y a quien sale (lo hace el servicio).
+- **Bloque 4 — pestaña «Equipo».**
+  - **Ampliaciones aditivas.** `obtenerEquipoProyecto` (gestión) trae `estado_proyecto`, `puede_asignar` (hay algún practicante a quien la regla
+    `puedeAsignarPracticante` deja asignar) y, por miembro activo, `tareas_a_liberar` y `puede_quitar` (con `puedeQuitarPracticante`). Consulta nueva
+    `listarPracticantesAsignables`: practicantes activos sin asignación vigente en el proyecto, por nombre, con su carga total de tareas en progreso;
+    vacía en un proyecto finalizado y para quien no es Administrador.
+  - **Asignar.** Diálogo con casillas (uno o varios) y la carga de cada uno; aplica `asignarPracticantes` con una lista de pares, todo o nada, y cada
+    practicante recibe un aviso. **Quitar.** Confirmación que avisa cuántas tareas «En progreso» de ese proyecto se liberarán (número de `domain/`), con
+    motivo opcional; la asignación recibe fecha de baja y el practicante pasa a «anteriores».
+  - **Proyecto finalizado.** No admite asignar ni quitar: la pantalla lo dice («si hace falta, se reactiva primero») y no ofrece los botones; lo hace
+    cumplir `domain/`, no la pantalla.
+- **Estructura.** En `src/paneles/administrador/proyectos/`: `FormularioProyecto`, `codigo.ts`, `SeccionEnlaces`, `AccionesDeProyecto`,
+  `CambiarSupervisorDelProyecto`, `EquipoDelProyecto` y `AsignarPracticantes`. El componente `Equipo` en línea del detalle se reemplaza por
+  `EquipoDelProyecto`.
+- **Pruebas.** Bloque 3: 3.571 → 3.622 en 150 archivos (+51 y +3 archivos). Bloque 4: 3.622 → 3.686 en 152 archivos (+64 y +2 archivos). `tsc -b`,
+  Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de
+  mutación. Con el equipo lento, `vitest` pierde workers al arrancar y algunas pruebas pesadas superan los 5 s: se verificó con
+  `--testTimeout=60000 --maxWorkers=3`, sin cambios de lógica.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define que «Editar proyecto» agrupe datos, rama base y
+  reunión en un solo diálogo ni que un guardado parcial conserve lo ya guardado; ni cómo se quita la reunión en pantalla; ni que «Nuevo proyecto» abra
+  el detalle del proyecto creado; ni los textos de los bloqueos de finalizar y reactivar (singular incluido); ni que finalizar y reactivar se ofrezcan
+  aunque estén bloqueados para explicarlo; ni cómo se ve el diálogo de asignar (casillas con la carga) ni el motivo opcional al quitar. Conviene pasarlos a
+  §5.4.
+- **Siguiente paso.** Módulo 5.5 (Tareas): reutiliza `DetalleDeTarea`, el formulario de «Nueva tarea» y el detalle en `/administrador/tareas/:idTarea`.
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.5 (Tareas), Administrador
+
+- **Commit:** `c8d82e1` (el módulo completo, en un solo commit con dos partes: lectura y «Nueva tarea»). Rama `feat/fase5-supervisores`. Mismo patrón de 5.1
+  a 5.4: rutas por prefijo, `useConsulta`, filtros puros en memoria y adaptadores en `src/app/adaptadores/`.
+- **Qué es el módulo.** Una vista transversal (§5.5): las tareas de todos los proyectos juntas. No repite el tablero, que vive en cada proyecto (5.4).
+- **URLs.** `/administrador/tareas` y `/administrador/tareas/:idTarea`. El detalle es el mismo `DetalleDeTarea` del 5.4 (opción A del 5.4, decisión de los
+  autores), alojado por una página delgada cuyo «Volver al listado» regresa a `/administrador/tareas`. El detalle dentro de un proyecto
+  (`/administrador/proyectos/:idProyecto/tareas/:idTarea`) sigue existiendo, con su propio «Volver al tablero».
+- **Avisos de tipo `TAREA` (decisión de los autores).** Para el Administrador llevan a `/administrador/tareas/:idTarea` (`RUTA_DE_DETALLE`, afina D4-A);
+  no hacía falta el proyecto en la dirección, que fue lo que impedía afinarlo en el 5.4. El Supervisor y el Practicante siguen yendo a la página de su
+  módulo hasta que tengan detalle (Fases 6 y 7); `notificacion.test.ts` cambió su expectativa del Administrador a `/administrador/tareas/<id>`.
+- **Listado.** Abre en «Todas»; pestañas Todas, Disponibles, En progreso, Esperando supervisión (con el contador resaltado en ámbar cuando hay alguna) y
+  Terminadas, con los contadores de la consulta. Filtros: proyecto, responsable, vencidas, sin asignar, «Requiere supervisión», estado del Pull Request y
+  búsqueda por título o ID (sin distinguir tildes ni mayúsculas); todo se aplica en memoria sobre lo que entrega `listarTareas` (Q5). Columnas de §5.5: ID
+  legible, título, proyecto, responsable o «Sin asignar», estado, ícono de «Requiere supervisión», etiqueta del Pull Request, fecha límite (en rojo si está
+  vencida, según la regla de `domain/` que ya trae la consulta) y «Ver detalle».
+- **«Requiere supervisión» (comprobado en §5.5, línea 350).** Es una columna de **ícono**, no de texto, y además un filtro; así está construido. No hay
+  orden por esa columna porque la propuesta no lo pide. No hay divergencia con `docs/` en este punto.
+- **Etiqueta del Pull Request.** La del listado es la que la consulta ya filtró con la regla de visibilidad (§7.3), no la que guarda la tarea; el filtro por
+  estado del Pull Request solo alcanza a las tareas cuya etiqueta se muestra.
+- **Sin acciones en las filas (§6.7).** La tabla no tiene botones: un clic en la fila o en «Ver detalle» abre el detalle, donde se ejecutan todas las
+  acciones con los botones que decide `domain/`. Una prueba lo vigila.
+- **«Nueva tarea» desde el módulo («eligiendo el proyecto», §5.5).** Diálogo con `FormularioTarea` en modo «crear» y el selector de proyecto sin valor por
+  defecto. Qué proyectos se ofrecen lo decide la consulta.
+  - **Ampliación aditiva de la Fase 2.** `listarTareas` trae `proyectos_para_crear`: los proyectos donde `puede('CREAR_TAREA')` lo permite (el Administrador,
+    los no finalizados, también en pausa; el Supervisor, los suyos no finalizados; el Practicante, ninguno), por código. La pantalla no lo decide. Sin
+    cambios en `domain/`.
+  - **Refactor.** El diálogo del tablero del 5.4 se extrae a `src/app/tareas/DialogoNuevaTarea.tsx` y lo usan los dos sitios (el tablero con el proyecto ya
+    elegido). Las pruebas de «Nueva tarea» del 5.4 siguen pasando sin cambios.
+  - **Qué pasa al crear.** La tarea nace «Disponible» y sin responsable, el diálogo se cierra y la fila aparece en el listado; no se abre su detalle.
+- **Pruebas.** 3.686 → 3.748 en 157 archivos (+62 y +5 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo ni el detalle en
+  `/administrador/tareas/:idTarea`; no dice que la etiqueta del Pull Request del listado sea la ya filtrada por la regla de visibilidad ni que el filtro por
+  estado del Pull Request solo alcance a las tareas que la muestran; ni cómo es el selector de proyecto de «Nueva tarea» (sin valor por defecto y solo con
+  los proyectos donde se puede crear); ni que, al crear, el listado se actualice sin abrir el detalle. Conviene pasarlos a §5.5.
+- **Pendiente anotado.** En el panel del Supervisor (Fase 6, §9.1.3) la pestaña «Esperando supervisión» agrega «Días esperando»; `listarTareas` ya entrega
+  el dato y el adaptador lo lleva (`diasEsperando`). Queda en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.6 (Reportes).
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.6 (Reportes), Administrador
+
+- **Commits:** `77ecb38` (insights e indicadores, en un solo commit), `301442a` (instalación de `recharts` 3.11.0) y `864777f` (gráfico por área; ese commit quitó por error el
+  filtro por proyecto de Indicadores, restaurado después, ver abajo). Rama `feat/fase5-reportes`. Mismo patrón de 5.1 a 5.5: `useConsulta`, filtros puros, adaptador en
+  `src/app/adaptadores/reportes.ts` y pestañas en `?pestana=`.
+- **URL.** `/administrador/reportes`, con las pestañas «Insights» (abre ahí) e «Indicadores».
+- **Insights.** No se guardan: `listarInsights` los calcula con las 7 reglas y se identifican por regla y elemento. Filtros por severidad, tipo, proyecto
+  (los que aparecen en los insights) y estado («Activos» por defecto, «Revisados», «Todos»). Cada tarjeta ofrece «Ver detalle» (la misma tabla
+  `RUTA_DE_DETALLE` de los avisos, una sola fuente de enlaces), «Marcar como revisado» (con nota opcional; independiente por persona, y reaparece si
+  empeora o a los 7 días) y «Notificar». Los botones los deciden `puede_marcar_revisado` y `puede_notificar`, que traen las consultas; la pantalla no
+  decide. `Insignia` suma el tipo `severidad` (Crítico, Atención, Informativo).
+- **Indicadores.** Periodo de 1 a 365 días de calendario en hora de Perú (30 por defecto); un periodo inválido lo rechaza el servicio
+  (`PERIODO_INVALIDO`) y se muestra su mensaje. Tarjetas de tareas terminadas, tiempo de ciclo, espera de supervisión, tasa de devolución, postulaciones
+  decididas y puntaje promedio por área; tablas por proyecto y por practicante con enlaces al detalle. Donde no hay muestras dice «Sin datos», nunca
+  cero; los días llevan un decimal con coma y las proporciones, el entero con la muestra («40 % (12 de 30)»).
+- **Filtro por proyecto (restaurado).** §5.6 dice «con selector de periodo ... y filtro por proyecto», así que no era un extra. Se había quitado en
+  `864777f` por una indicación equivocada y se restauró: selector «Proyecto» (por defecto «Todos los proyectos») que pasa `id_proyecto` a
+  `obtenerIndicadores`; las tarjetas, las tablas y el gráfico lo respetan (`practicantes_por_area` ya cuenta solo a los asignados al proyecto). Los
+  proyectos del selector son los que entrega `listarProyectos`: la pantalla no decide el alcance. Hash de la restauración por registrar.
+- **Gráfico por área.** `GraficoPracticantesPorArea`: barras horizontales con Recharts, con colores solo en variables CSS de los tokens (`--link`,
+  `--text-2`, `--border`, `--surface`, `--surface-2`, `--text`), por lo que valen en tema claro y oscuro. Va con `aria-hidden`; la alternativa accesible es la tabla
+  «Practicantes por área» justo debajo. Sin datos no se dibuja y aparece «No hay practicantes por área para graficar».
+- **Excepción a la regla del PR aparte para instalar.** `CLAUDE.md` pide que quien instala una dependencia haga un PR pequeño solo para eso. Aquí la
+  instalación (`npm install --save-exact recharts@3.11.0`) fue un commit aparte (`301442a`) pero dentro de la rama del módulo, no un PR separado. Se
+  comprobó antes con `grep -i "chart" package.json` que no había otra librería de gráficos y que `package.json` solo cambió con la línea de
+  `recharts` (más `package-lock.json`).
+- **Sin cambios en `domain/` ni ampliaciones de consultas.**
+- **Pruebas.** 3.748 → 3.803 en 162 archivos (+55 y +5 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.6 no menciona los **atajos de periodo** de 7, 30, 90 y 365 días junto al campo de 1 a 365 días; se añadieron como extra.
+  2. **Recharts 3.11.0** es una dependencia nueva, con versión exacta; conviene anotarla donde la propuesta liste la pila tecnológica.
+  3. **Tipo de gráfico:** barras horizontales, oculto a los lectores de pantalla y con la tabla como alternativa. Si la propuesta fija otro tipo, hay que
+     alinearlos.
+  4. **Excepción a la regla del PR aparte** para la instalación (ver arriba).
+- **Pendientes anotados para la Fase 8.** El aviso del build por chunks de más de 500 kB, que `recharts` agranda, y la comprobación visual del gráfico en
+  tema claro y oscuro (en jsdom Recharts no dibuja las barras). Quedan en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.7 (Historial).

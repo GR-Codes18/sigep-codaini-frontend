@@ -27,6 +27,23 @@ export {
   type PostulacionesParaVista,
 } from './postulaciones';
 export {
+  aDatosProyecto,
+  aEquipoProyecto,
+  aProyectos,
+  aResumenProyecto,
+  type AvanceParaVista,
+  type CicloDeVidaParaVista,
+  type DatosProyectoParaVista,
+  type EnlaceParaVista,
+  type EquipoParaVista,
+  type ExMiembroParaVista,
+  type FilaProyecto,
+  type MiembroParaVista,
+  type ProyectosParaVista,
+  type ResumenParaVista,
+  type TareasDeEstadoParaVista,
+} from './proyectos';
+export {
   aDetallePracticante,
   aPracticantes,
   duracionDePracticaMeses,
@@ -38,5 +55,36 @@ export {
   type PracticantesParaVista,
   type TareaDePracticanteParaVista,
 } from './practicantes';
+export {
+  aDetalleSupervisor,
+  aSupervisores,
+  type ContadoresSupervisores,
+  type DetalleSupervisorParaVista,
+  type FilaSupervisor,
+  type ProyectoACargoParaVista,
+  type ProyectoAnteriorParaVista,
+  type SupervisoresParaVista,
+  type TareaPorRevisarParaVista,
+} from './supervisores';
+export {
+  aIndicadores,
+  aInsights,
+  diaVisiblePeru,
+  SIN_DATOS,
+  textoDias,
+  textoProporcion,
+  textoUltimaActividad,
+  type FilaIndicadorPracticante,
+  type FilaIndicadorProyecto,
+  type IndicadoresParaVista,
+  type PracticantesPorAreaParaVista,
+  type PuntajePorAreaParaVista,
+  ETIQUETA_REGLA,
+  ETIQUETA_SEVERIDAD,
+  rutaDelElemento,
+  type FilaInsight,
+  type InsightsParaVista,
+} from './reportes';
 export { aTareaDetalle } from './tarea';
+export { aTareas, type FilaTarea, type TareasParaVista } from './tareas';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';

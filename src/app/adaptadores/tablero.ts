@@ -30,6 +30,10 @@ export interface TableroParaVista {
   tareas: TareaTablero[];
   /** Cuántas terminadas tiene el proyecto en total (contador de la columna y «Ver todas las terminadas»). */
   totalTerminadas: number;
+  /** El estado del proyecto: finalizado deja el tablero en solo lectura y en pausa nadie toma tareas nuevas (§6.8). */
+  estadoProyecto: TableroProyecto['estado_proyecto'];
+  /** Lo decide `domain/` y llega con la consulta: la pantalla solo ofrece o no «Nueva tarea». */
+  puedeCrearTarea: boolean;
 }
 
 /** El tablero de un proyecto en el orden de las columnas. El componente las reparte por estado. */
@@ -42,6 +46,8 @@ export function aTablero(tablero: TableroProyecto): TableroParaVista {
       ...tablero.terminadas,
     ].map(aTareaTablero),
     totalTerminadas: tablero.total_terminadas,
+    estadoProyecto: tablero.estado_proyecto,
+    puedeCrearTarea: tablero.puede_crear_tarea,
   };
 }
 

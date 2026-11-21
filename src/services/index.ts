@@ -280,6 +280,7 @@ export {
   ACTIVIDAD_RECIENTE_MAXIMA,
   listarMiHistorial,
   listarMisProyectos,
+  listarPracticantesAsignables,
   listarMisTareasEnCurso,
   listarProyectos,
   listarPullRequestsPorAtender,
@@ -293,6 +294,7 @@ export {
 } from './consultas';
 export type {
   AccionPracticante,
+  AccionSupervisor,
   ProyectosAsignables,
   AlertasDeResumen,
   AvanceDeProyecto,
@@ -382,6 +384,10 @@ export type {
   ProyectoListado,
   PullRequestDeTarea,
   PullRequestsPorAtender,
+  AccionProyecto,
+  CicloDeVidaProyecto,
+  PracticanteAsignable,
+  PracticantesAsignables,
   ReunionDeProyecto,
   ResumenProyecto,
   ResumenProyectoAnterior,
