@@ -84,4 +84,17 @@ describe('Insignia', () => {
     expect(screen.getByText('Activo').className).toContain('state-success');
     expect(screen.getByText('Inactivo').className).toContain('state-neutral');
   });
+
+  it('la integración está «Conectado» (verde) o «Sin conexión» (rojo) y lo que solo existe en el prototipo se marca', () => {
+    render(
+      <>
+        <Insignia tipo="integracion" estado="CONECTADO" />
+        <Insignia tipo="integracion" estado="NO_CONECTADO" />
+        <Insignia tipo="marca" estado="SOLO_PROTOTIPO" />
+      </>,
+    );
+    expect(screen.getByText('Conectado').className).toContain('state-success');
+    expect(screen.getByText('Sin conexión').className).toContain('state-danger');
+    expect(screen.getByText('Solo prototipo').className).toContain('state-warning');
+  });
 });

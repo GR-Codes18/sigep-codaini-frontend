@@ -19,7 +19,8 @@ export type TipoEstado =
   | 'catalogo'
   | 'practicante'
   | 'supervisor'
-  | 'severidad';
+  | 'severidad'
+  | 'integracion';
 
 const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Familia }>> = {
   tarea: {
@@ -67,7 +68,13 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
     ATENCION: { etiqueta: 'Atención', familia: 'warning' },
     INFORMATIVO: { etiqueta: 'Informativo', familia: 'info' },
   },
+  // La conexión con una integración (§5.8): conectada, o sin conexión.
+  integracion: {
+    CONECTADO: { etiqueta: 'Conectado', familia: 'success' },
+    NO_CONECTADO: { etiqueta: 'Sin conexión', familia: 'danger' },
+  },
   marca: {
+    SOLO_PROTOTIPO: { etiqueta: 'Solo prototipo', familia: 'warning' },
     DEVUELTA: { etiqueta: 'Devuelta con observaciones', familia: 'danger' },
     REVISION_MANUAL: { etiqueta: 'Requiere revisión manual', familia: 'warning' },
   },
