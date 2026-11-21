@@ -11,7 +11,7 @@ import { ENTORNO, obtenerEquipoProyecto, obtenerProyecto, type Entorno } from '@
 import {
   PESTANA_INICIAL,
   PESTANAS_DEL_PROYECTO,
-  RUTA_PROYECTOS,
+  rutaDeProyectos,
   type PestanaDelProyecto,
 } from './rutas';
 import { AccionesDeProyecto } from './AccionesDeProyecto';
@@ -20,9 +20,10 @@ import { SeccionEnlaces } from './SeccionEnlaces';
 import { TableroDelProyecto } from './TableroDelProyecto';
 
 function VolverAlListado() {
+  const { sesion } = useSesionActiva();
   return (
     <Link
-      to={RUTA_PROYECTOS}
+      to={rutaDeProyectos(sesion?.rol)}
       className="text-sm font-medium text-link underline underline-offset-2"
     >
       Volver a proyectos

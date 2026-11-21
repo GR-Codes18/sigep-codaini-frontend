@@ -269,3 +269,45 @@ export function aEquipoProyecto(equipo: EquipoProyectoGestion): EquipoParaVista 
     })),
   };
 }
+
+/** Lo que muestra la tarjeta de «Mis proyectos» del Supervisor (§9.1.1), sin el enlace (lo pone la pantalla). */
+export interface TarjetaDeProyecto {
+  id: string;
+  nombre: string;
+  codigo: string;
+  estado: EstadoProyecto;
+  /** Avance de 0 a 100 para la barra; `undefined` si el proyecto no tiene tareas (no se dibuja una barra en cero). */
+  avance: number | undefined;
+  detalles: { etiqueta: string; valor: string; resaltar?: boolean }[];
+}
+
+/**
+ * Una fila del listado a la tarjeta del Supervisor: nombre, código y estado; la barra de avance; los practicantes activos
+ * (o «Sin practicantes asignados»); las tareas esperando **su** supervisión, resaltadas solo si hay alguna; y la próxima
+ * reunión (o «Sin definir»). Las tareas vencidas no van en la tarjeta (§9.1.1): ni siquiera llegan a este modelo.
+ */
+export function aTarjetaDeProyecto(fila: FilaProyecto): TarjetaDeProyecto {
+  return {
+    id: fila.id,
+    nombre: fila.nombre,
+    codigo: fila.codigo,
+    estado: fila.estado,
+    avance: fila.avance === null ? undefined : fila.avance.porcentaje,
+    detalles: [
+      ...(fila.avance === null ? [{ etiqueta: 'Avance', valor: 'Sin tareas' }] : []),
+      {
+        etiqueta: 'Practicantes activos',
+        valor:
+          fila.practicantesActivos === 0
+            ? 'Sin practicantes asignados'
+            : String(fila.practicantesActivos),
+      },
+      {
+        etiqueta: 'Esperando tu supervisión',
+        valor: String(fila.tareasEsperandoSupervision),
+        resaltar: fila.tareasEsperandoSupervision > 0,
+      },
+      { etiqueta: 'Próxima reunión', valor: fila.proximaReunionTexto },
+    ],
+  };
+}

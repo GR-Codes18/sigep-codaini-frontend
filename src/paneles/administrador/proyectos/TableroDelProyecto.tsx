@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { aTablero, aTareasTerminadas } from '@/app/adaptadores';
 import { DialogoNuevaTarea } from '@/app/tareas/DialogoNuevaTarea';
 import { useConsulta } from '@/app/useConsulta';
+import { useSesionActiva } from '@/auth/useSesionActiva';
 import { ListadoTerminadas } from '@/compartido/ListadoTerminadas';
 import { TableroKanban } from '@/compartido/TableroKanban';
 import { Button } from '@/compartido/ui/button';
@@ -38,6 +39,7 @@ const CARGANDO = (
  */
 export function TableroDelProyecto({ idActor, proyecto, entorno = ENTORNO }: Props) {
   const navegar = useNavigate();
+  const { sesion } = useSesionActiva();
   const [verTerminadas, setVerTerminadas] = useState(false);
   const [creando, setCreando] = useState(false);
 
@@ -53,7 +55,8 @@ export function TableroDelProyecto({ idActor, proyecto, entorno = ENTORNO }: Pro
   );
   const terminadas = useConsulta(verTerminadas ? cargarTerminadas : null);
 
-  const abrir = (idTarea: string) => navegar(rutaDeDetalleDeTarea(proyecto.id, idTarea));
+  const abrir = (idTarea: string) =>
+    navegar(rutaDeDetalleDeTarea(proyecto.id, idTarea, sesion?.rol));
 
   if (tablero.error) {
     return (
