@@ -124,3 +124,11 @@ export {
   type FilaReunion,
   type TarjetasDashboard,
 } from './dashboard';
+export {
+  aDetallePracticanteACargo,
+  aPracticantesACargo,
+  type DetallePracticanteACargoParaVista,
+  type FilaPracticanteACargo,
+  type ParticipacionACargoParaVista,
+  type PracticantesACargoParaVista,
+} from './practicantesACargo';

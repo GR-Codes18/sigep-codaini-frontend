@@ -97,4 +97,10 @@ describe('Insignia', () => {
     expect(screen.getByText('Sin conexión').className).toContain('state-danger');
     expect(screen.getByText('Solo prototipo').className).toContain('state-warning');
   });
+
+  it('un practicante que ya salió de los proyectos del Supervisor es «Anterior» (gris)', () => {
+    render(<Insignia tipo="practicante" estado="ANTERIOR" />);
+
+    expect(screen.getByText('Anterior').className).toContain('state-neutral');
+  });
 });
