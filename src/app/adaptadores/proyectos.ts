@@ -47,7 +47,9 @@ function aAvance(
 }
 
 /** La próxima reunión como «23 nov 2026, 10:00» (día de Perú), o «Sin definir». */
-function proximaReunionTexto(reunion: ReunionDeProyecto): string {
+export function proximaReunionTexto(
+  reunion: Pick<ReunionDeProyecto, 'proxima' | 'hora_reunion'>,
+): string {
   if (reunion.proxima === null || reunion.hora_reunion === null) return 'Sin definir';
   return `${diaVisible(hoyEn(reunion.proxima))}, ${reunion.hora_reunion}`;
 }
