@@ -26,6 +26,15 @@ export interface FiltrosTareas {
 }
 
 /** Abre en «Todas» (§5.5). */
+/** Las pestañas que un enlace puede pedir con `?pestana=` (el Dashboard, §5.9). */
+export const PESTANAS_DE_TAREAS = [
+  'TODAS',
+  'DISPONIBLE',
+  'EN_PROGRESO',
+  'ESPERANDO_SUPERVISION',
+  'TERMINADA',
+] as const satisfies readonly PestanaTareas[];
+
 export const FILTROS_INICIALES: FiltrosTareas = {
   pestana: 'TODAS',
   idProyecto: '',

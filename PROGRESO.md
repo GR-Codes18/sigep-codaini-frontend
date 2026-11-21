@@ -147,8 +147,25 @@
   `Insignia` suma los tipos `integracion` y «Solo prototipo».
 - **Verificación (en `59d3f76`):** 3.844 pruebas en 166 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-20, tras el módulo 5.8.
-- **Siguiente paso:** módulo 5.9 (Dashboard), que va al final de la Fase 5.
+- **Fase 5 — módulo 5.9 (Dashboard): terminado (2026-11-20, `f3f787c` y `0f2db6f`).** Rama `feat/fase5-dashboard`, en dos commits. `f3f787c`: los
+  listados de los módulos 5.1 a 5.5 (Postulaciones, Practicantes, Proyectos y Tareas) abren en la pestaña que pide `?pestana=` (hook
+  `usePestanaInicial`, que solo lee al abrir; un valor desconocido abre la pestaña de siempre), sin cambiar sus pruebas existentes. `0f2db6f`: el
+  Dashboard del Administrador en `/administrador/dashboard`, con `obtenerDashboardAdministrador` sin ampliarlo: cuatro tarjetas cuya cifra
+  principal y secundaria enlazan al módulo con el filtro ya aplicado (las «demoradas» de supervisión son texto, sin enlace propio), las cinco
+  postulaciones pendientes de mayor puntaje, hasta cinco alertas con sus acciones (la tarjeta de insight de Reportes pasó a
+  `src/app/insights/` y se comparte, con una variante compacta), practicantes por área (gráfico y tabla alternativa), tareas por revisar, próximas
+  reuniones y avance de los proyectos, con mensajes cuando no hay alertas o postulaciones y sin feed de actividad. Distribución en dos columnas. Sin
+  cambios en `domain/`.
+- **Verificación (en `0f2db6f`):** 3.868 pruebas en 169 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Fase 5 — panel del Administrador: terminada (2026-11-20).** Los nueve módulos (5.1 a 5.9) están construidos, probados y conectados a
+  `services/`; ninguna pantalla decide reglas. **Salvedades:** (1) los pendientes de la Fase 8 anotados en «Pendientes» (pulidos, rango permitido en
+  Configuración, chunks de más de 500 kB, comprobación visual de gráficos y detalles); (2) la **comprobación manual en un navegador real** de los
+  módulos 5.1 a 5.9, en tema claro y oscuro, que aún no se hizo: las pruebas son de jsdom y no cubren el aspecto. Pendiente de los autores: el cierre
+  de la fase (PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-5-completa`).
+- **Actualizado:** 2026-11-20, tras el módulo 5.9 y el cierre de la Fase 5.
+- **Siguiente paso:** cierre de la Fase 5 (PR a `development`; luego `development` a `main` con la etiqueta `fase-5-completa`, y registrar la
+  fila en «Cierres de fase») y, después, la Fase 6, módulo 6.1.
 
 ### Cierres de fase
 
@@ -583,10 +600,12 @@
 | 2026-11-20 | 5.7 Historial | Historial de actividad de solo lectura: listado, filtros, búsqueda y panel de detalle con valor anterior y nuevo; adaptador `historial` | `18b381b` |
 | 2026-11-20 | 5.8 Configuración | Configuración por secciones con guardar y restaurar, validación del servicio junto a cada casilla, tarjeta de GitHub de ejemplo y «Restablecer datos» (solo prototipo); adaptador `configuracion` | `c814dca` |
 | 2026-11-20 | 5.8 Configuración | La fecha de la última verificación de la tarjeta de GitHub es relativa a hoy | `59d3f76` |
+| 2026-11-20 | 5.9 Dashboard | Los listados de 5.1 a 5.5 abren en la pestaña de `?pestana=` (`usePestanaInicial` y lista de pestañas válidas por módulo) | `f3f787c` |
+| 2026-11-20 | 5.9 Dashboard | Dashboard del Administrador: tarjetas con enlace y filtro, postulaciones, alertas, practicantes por área, por revisar, reuniones y avance; tarjeta de insight compartida con Reportes | `0f2db6f` |
 
-**Estado de pruebas (2026-11-20, en `59d3f76`):** 3.844 pruebas en 166 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
-el módulo 5.8 sumó 21 y 2 archivos de prueba (adaptador y página de Configuración, más el tipo nuevo de `Insignia`). No se hicieron pruebas de mutación. Antes, en
-`18b381b`: 3.823 pruebas en 164 archivos; el módulo 5.7 sumó 20 y 2 archivos de prueba (adaptador y página del historial). No se hicieron pruebas de mutación. Antes, en `5a81b38`: 3.803 pruebas en
+**Estado de pruebas (2026-11-20, en `0f2db6f`):** 3.868 pruebas en 169 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 5.9 sumó 24 y 3 archivos de prueba (9 de la pestaña por la dirección en `f3f787c`; adaptador y página del Dashboard en `0f2db6f`). No se hicieron
+pruebas de mutación. Antes, en `59d3f76`: 3.844 pruebas en 166 archivos; el módulo 5.8 sumó 21 y 2 archivos de prueba. Antes, en `18b381b`: 3.823 pruebas en 164 archivos; el módulo 5.7 sumó 20 y 2 archivos de prueba (adaptador y página del historial). No se hicieron pruebas de mutación. Antes, en `5a81b38`: 3.803 pruebas en
 162 archivos; el módulo 5.6 sumó 55 y 5 archivos de prueba (filtros de insights, adaptador de reportes, pestañas de Insights e Indicadores y gráfico). No se hicieron
 pruebas de mutación. Antes, en `c8d82e1`: 3.748 pruebas en 157 archivos; el módulo 5.5 sumó 62 y 5 archivos de prueba (filtros, adaptador, listado, detalle y «Nueva tarea», más consultas y ajustes). No se hicieron
 pruebas de mutación. Antes, en `eeb4d50`: 3.686 pruebas en 152 archivos; el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
@@ -978,6 +997,10 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       ingresados.»; hay que darle un mensaje propio, lo que exige ampliar la consulta `listarHistorial`.
 - [ ] Fase 8 (pulido de Configuración, módulo 5.8): mostrar el rango permitido junto a cada casilla (por ejemplo «de 1 a 24 meses»). Hoy solo aparece
       como mensaje del servicio al fallar, porque los límites de los umbrales de Seguimiento no se exportan desde `domain/`.
+- [ ] Fase 8 (comprobación manual de la Fase 5): recorrer en un navegador real, en tema claro y oscuro, los módulos 5.1 a 5.9 del Administrador (listados,
+      detalles, formularios, gráficos del 5.6 y del Dashboard, detalle del evento del Historial y distribución en dos columnas del Dashboard). Las pruebas
+      son de jsdom y no cubren el aspecto.
+- [ ] Fase 8 (Dashboard, módulo 5.9): las alertas no muestran cuántas quedaron fuera de las cinco (el adaptador lleva `totalAlertas`); decidir si se muestra.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
 - [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta

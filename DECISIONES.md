@@ -4254,3 +4254,44 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Pendiente anotado para la Fase 8.** Mostrar el rango permitido junto a cada casilla (por ejemplo «de 1 a 24 meses»); exige exportar los límites de los
   umbrales de Seguimiento desde `domain/`. Queda en `PROGRESO.md`.
 - **Siguiente paso.** Módulo 5.9 (Dashboard), que va al final de la Fase 5.
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.9 (Dashboard), Administrador
+
+- **Commits:** `f3f787c` (la pestaña inicial por la dirección en los módulos 5.1 a 5.5) y `0f2db6f` (el Dashboard). Rama `feat/fase5-dashboard`. El 5.9 es el
+  último módulo de la Fase 5 y cierra el panel del Administrador.
+- **Qué es el módulo.** La primera pantalla del Administrador (§5.9): no calcula nada propio, resume lo que ya existe. Lee `obtenerDashboardAdministrador`
+  (Fase 2, paso 11E) tal como estaba: no se amplió ninguna consulta ni se tocó `domain/`. Un adaptador `dashboard.ts` solo presenta.
+- **URL.** `/administrador/dashboard` (la que ya tenía el menú).
+- **Decisión 1 — la pestaña se fija por `?pestana=` (aprobada por los autores).** §5.9 pide que cada tarjeta enlace «al módulo con el filtro ya aplicado»,
+  y los listados de 5.1 a 5.5 guardaban su filtro en un `useState` local sin leer la dirección. Se tocó solo eso: el hook `usePestanaInicial` (en
+  `src/app/`) **lee** `?pestana=` al abrir la página; un valor ausente o desconocido abre la pestaña de siempre; después la página sigue guardando su filtro
+  en su estado (no escribe la dirección, a diferencia de Reportes). Cada `filtros.ts` exporta la lista de pestañas válidas (`PESTANAS_DE_*`). Las pruebas
+  existentes no cambiaron y hay una prueba por página (la pedida y el valor desconocido) en `pestanaEnLaDireccion.test.tsx`.
+- **Decisión 2 — las «demoradas» de supervisión quedan como texto, sin enlace propio (aprobada por los autores).** Tareas no tiene ningún filtro que
+  corresponda al plazo de «Supervisión demorada», y no se creó uno. La tarjeta «Esperando supervisión» enlaza a la pestaña «Esperando supervisión» y dice, en
+  texto, cuántas llevan el plazo de Configuración o más.
+- **Tarjetas.** La cifra principal enlaza a la pestaña principal (Pendientes, Activos, Activos, Esperando supervisión) y la secundaria, a la suya
+  (Requieren revisión, En pausa, Sin proyecto). Los enlaces se arman en `dashboard/enlaces.ts` con el tipo de pestañas de cada módulo, así que el
+  compilador rechaza una pestaña que no exista.
+- **Bloques.** Las cinco postulaciones pendientes de mayor puntaje (nombre con la marca de revisión manual, área y especialidad, puntaje y «Ver detalle»);
+  hasta cinco alertas no revisadas con sus acciones; practicantes por área (el gráfico del 5.6 más la tabla alternativa); las cinco tareas por revisar; las
+  próximas reuniones y el avance de los proyectos sin finalizar. Sin alertas o sin postulaciones pendientes, un mensaje lo dice; no hay feed de actividad.
+- **Reutilización.** La tarjeta de un insight y los diálogos de «Marcar como revisado» y «Notificar» salen de `TabInsights` a `src/app/insights/AccionesDeInsight.tsx`
+  y los comparten Reportes y el Dashboard (una sola fuente, y las pruebas de Reportes siguen pasando). El Dashboard usa una variante `compacta`. `proximaReunionTexto`
+  del adaptador de proyectos se exporta.
+- **Distribución.** A la izquierda, postulaciones, tareas por revisar y reuniones; a la derecha, las alertas; debajo, practicantes por área y avance. En
+  pantallas angostas, una columna. Se ajustó por indicación de los autores tras verlo en el navegador (los bloques ocupaban demasiado y quedaba un hueco).
+- **Pruebas.** 3.844 → 3.868 en 169 archivos (+24 y +3 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.9 dice «enlace al módulo con el filtro ya aplicado» sin decir cómo: se fija con `?pestana=` en los listados de Postulaciones, Practicantes,
+     Proyectos y Tareas, que antes no lo leían (decisión 1).
+  2. Las «demoradas» de la tarjeta de tareas no tienen enlace propio (decisión 2).
+  3. La cifra secundaria de las tarjetas de postulaciones, proyectos y practicantes también es un enlace; §5.9 habla de «un enlace» por tarjeta.
+  4. Las alertas no muestran cuántas quedaron fuera de las cinco, porque §5.9 no lo pide.
+  5. La ruta `/administrador/dashboard` y la distribución en dos columnas no están definidas en §5.9.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`). La comprobación manual en un navegador real de los módulos 5.1 a 5.9, y decidir si se
+  muestra cuántas alertas quedan fuera de las cinco.
+- **Cierre de la Fase 5.** Con el 5.9 el panel del Administrador queda terminado, con la salvedad de los pendientes de la Fase 8 y de la comprobación manual
+  de 5.1 a 5.9. Falta el cierre de la fase: el PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-5-completa`.
+- **Siguiente paso.** Cierre de la Fase 5 y, después, la Fase 6, módulo 6.1.

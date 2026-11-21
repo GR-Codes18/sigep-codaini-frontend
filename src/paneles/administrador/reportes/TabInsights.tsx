@@ -1,23 +1,16 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
-import { aInsights, ETIQUETA_REGLA, ETIQUETA_SEVERIDAD, type FilaInsight } from '@/app/adaptadores';
+import { aInsights, ETIQUETA_REGLA, ETIQUETA_SEVERIDAD } from '@/app/adaptadores';
+import {
+  ModalesDeInsight,
+  TarjetaDeInsight,
+  type AccionDeInsight,
+} from '@/app/insights/AccionesDeInsight';
 import { useConsulta } from '@/app/useConsulta';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
-import { Insignia } from '@/compartido/Insignia';
-import { ModalConfirmacion } from '@/compartido/ModalConfirmacion';
-import { Button } from '@/compartido/ui/button';
 import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { SEVERIDADES, TIPOS_REGLA_INSIGHT, type Id } from '@/domain';
-import {
-  ENTORNO,
-  listarInsights,
-  marcarInsightRevisado,
-  notificarDesdeInsight,
-  type Entorno,
-  type Resultado,
-} from '@/services';
+import { ENTORNO, listarInsights, type Entorno } from '@/services';
 import {
   FILTROS_INICIALES,
   filtrarInsights,
@@ -30,74 +23,6 @@ import {
 const CLASE_SELECT =
   'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
-/** Un error de servicio llega al modal como excepción: el modal se queda abierto y muestra el mensaje. */
-function exigirExito<T>(resultado: Resultado<T>): T {
-  if (!resultado.ok) throw new Error(resultado.mensaje);
-  return resultado.valor;
-}
-
-type Accion = { tipo: 'REVISAR' | 'NOTIFICAR'; insight: FilaInsight };
-
-function TarjetaDeInsight({
-  insight,
-  onAccion,
-}: {
-  insight: FilaInsight;
-  onAccion: (accion: Accion) => void;
-}) {
-  return (
-    <article
-      aria-label={insight.titulo}
-      className="space-y-2 rounded-xl border border-border bg-surface p-4"
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <Insignia tipo="severidad" estado={insight.severidad} />
-        <span className="text-xs text-text-2">{ETIQUETA_REGLA[insight.tipoRegla]}</span>
-        {insight.revisado && <span className="text-xs font-medium text-text-2">Revisado</span>}
-      </div>
-      <h3 className="text-text">{insight.titulo}</h3>
-      <p className="text-sm text-text">{insight.motivo}</p>
-      <p className="text-xs text-text-2">
-        Detectado el {insight.fechaDeteccionTexto}
-        {insight.proyectos.length > 0 && (
-          <> · {insight.proyectos.map((p) => p.nombre).join(', ')}</>
-        )}
-      </p>
-      <div className="flex flex-wrap items-center gap-2">
-        {insight.rutaElemento !== null && (
-          <Button asChild variant="outline" size="sm">
-            <Link to={insight.rutaElemento} aria-label={`Ver detalle: ${insight.titulo}`}>
-              Ver detalle
-            </Link>
-          </Button>
-        )}
-        {insight.puedeMarcarRevisado && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-label={`Marcar como revisado: ${insight.titulo}`}
-            onClick={() => onAccion({ tipo: 'REVISAR', insight })}
-          >
-            Marcar como revisado
-          </Button>
-        )}
-        {insight.puedeNotificar && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-label={`Notificar: ${insight.titulo}`}
-            onClick={() => onAccion({ tipo: 'NOTIFICAR', insight })}
-          >
-            Notificar
-          </Button>
-        )}
-      </div>
-    </article>
-  );
-}
-
 /**
  * La pestaña «Insights» (§5.6): las alertas automáticas como tarjetas, por severidad y antigüedad, con filtros por
  * severidad, tipo, proyecto y estado. Los insights no se guardan: se calculan al consultar (`listarInsights`). Las
@@ -107,7 +32,7 @@ function TarjetaDeInsight({
  */
 export function TabInsights({ idActor, entorno = ENTORNO }: { idActor: Id; entorno?: Entorno }) {
   const [filtros, setFiltros] = useState<FiltrosInsights>(FILTROS_INICIALES);
-  const [accion, setAccion] = useState<Accion | null>(null);
+  const [accion, setAccion] = useState<AccionDeInsight | null>(null);
 
   const cargar = useCallback(() => listarInsights({ idActor }, entorno), [entorno, idActor]);
   const consulta = useConsulta(cargar);
@@ -162,12 +87,6 @@ export function TabInsights({ idActor, entorno = ENTORNO }: { idActor: Id; entor
       </div>
     );
   }
-
-  const entrada = (i: FilaInsight) => ({
-    idActor,
-    tipo_regla: i.tipoRegla,
-    elemento: i.elemento,
-  });
 
   return (
     <section className="space-y-4">
@@ -239,39 +158,12 @@ export function TabInsights({ idActor, entorno = ENTORNO }: { idActor: Id; entor
 
       {lista()}
 
-      {accion?.tipo === 'REVISAR' && (
-        <ModalConfirmacion
-          abierto
-          onCerrar={() => setAccion(null)}
-          titulo="Marcar como revisado"
-          descripcion={`«${accion.insight.titulo}» sale de tu lista activa. Reaparece si la situación empeora o a los 7 días si sigue igual. Es solo para ti: las demás personas lo siguen viendo.`}
-          etiquetaConfirmar="Marcar como revisado"
-          pedirMotivo={{ etiqueta: 'Nota', obligatorio: false }}
-          onConfirmar={async (nota) => {
-            exigirExito(
-              await marcarInsightRevisado(
-                { ...entrada(accion.insight), nota: nota === '' ? null : nota },
-                entorno,
-              ),
-            );
-            toast.success('Alerta marcada como revisada');
-          }}
-        />
-      )}
-
-      {accion?.tipo === 'NOTIFICAR' && (
-        <ModalConfirmacion
-          abierto
-          onCerrar={() => setAccion(null)}
-          titulo="Notificar"
-          descripcion={`Se enviará un aviso a la persona afectada con el título y el motivo de la alerta: «${accion.insight.titulo}».`}
-          etiquetaConfirmar="Notificar"
-          onConfirmar={async () => {
-            exigirExito(await notificarDesdeInsight(entrada(accion.insight), entorno));
-            toast.success('Aviso enviado');
-          }}
-        />
-      )}
+      <ModalesDeInsight
+        accion={accion}
+        onCerrar={() => setAccion(null)}
+        idActor={idActor}
+        entorno={entorno}
+      />
     </section>
   );
 }

@@ -113,3 +113,12 @@ export {
   type ParametroParaVista,
   type SeccionParaVista,
 } from './configuracion';
+export {
+  aDashboard,
+  type DashboardParaVista,
+  type FilaAvance,
+  type FilaPorRevisar,
+  type FilaPostulacionDashboard,
+  type FilaReunion,
+  type TarjetasDashboard,
+} from './dashboard';

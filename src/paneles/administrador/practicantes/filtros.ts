@@ -20,6 +20,14 @@ export interface FiltrosPracticantes {
 }
 
 /** Abre en «Activos» (§5.2). */
+/** Las pestañas que un enlace puede pedir con `?pestana=` (el Dashboard, §5.9). */
+export const PESTANAS_DE_PRACTICANTES = [
+  'ACTIVOS',
+  'SIN_PROYECTO',
+  'FINALIZADOS',
+  'TODOS',
+] as const satisfies readonly PestanaPracticantes[];
+
 export const FILTROS_INICIALES: FiltrosPracticantes = {
   pestana: 'ACTIVOS',
   idArea: '',

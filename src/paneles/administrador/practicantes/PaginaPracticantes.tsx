@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { aPracticantes, type FilaPracticante } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
+import { usePestanaInicial } from '@/app/usePestanaInicial';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { Insignia } from '@/compartido/Insignia';
@@ -13,6 +14,7 @@ import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, listarPracticantes, type Entorno } from '@/services';
 import {
   FILTROS_INICIALES,
+  PESTANAS_DE_PRACTICANTES,
   filtrarPracticantes,
   hayFiltros,
   opcionesDeArea,
@@ -123,7 +125,11 @@ export function PaginaPracticantes({ entorno = ENTORNO }: { entorno?: Entorno } 
   const { sesion } = useSesionActiva();
   const idUsuario = sesion?.id ?? null;
   const navegar = useNavigate();
-  const [filtros, setFiltros] = useState<FiltrosPracticantes>(FILTROS_INICIALES);
+  const pestanaInicial = usePestanaInicial(PESTANAS_DE_PRACTICANTES, FILTROS_INICIALES.pestana);
+  const [filtros, setFiltros] = useState<FiltrosPracticantes>(() => ({
+    ...FILTROS_INICIALES,
+    pestana: pestanaInicial,
+  }));
   // El diálogo vive aquí y no en la fila: al asignar, la persona sale de «Sin proyecto» y su fila desaparece.
   const [asignando, setAsignando] = useState<FilaPracticante | null>(null);
 
