@@ -115,8 +115,19 @@
   cambios en `domain/`.
 - **Verificación (en `c8d82e1`):** 3.748 pruebas en 157 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-19, tras el módulo 5.5.
-- **Siguiente paso:** módulo 5.6 (Reportes).
+- **Fase 5 — módulo 5.6 (Reportes): terminado (2026-11-20, `77ecb38`, `301442a` y `864777f`).** Rama `feat/fase5-reportes`, en tres commits. Ruta
+  `/administrador/reportes` con pestañas «Insights» e «Indicadores» en `?pestana=`. **Insights** (`77ecb38`): las 7 reglas, calculadas y no guardadas;
+  filtros por severidad, tipo, proyecto y estado (abre en «Activos»); tarjetas con «Ver detalle», «Marcar como revisado» (independiente por persona,
+  con nota opcional) y «Notificar», cada botón solo si la consulta lo permite. **Indicadores** (`77ecb38`): periodo de 1 a 365 días en hora de Perú
+  (30 por defecto) con atajos de 7, 30, 90 y 365 días y filtro por proyecto (todos por defecto); tarjetas generales, puntaje promedio por área y tablas por proyecto y por practicante, con
+  «Sin datos» donde no hay muestras. **Dependencia** (`301442a`): `recharts` 3.11.0, versión exacta. **Gráfico** (`864777f`): practicantes por
+  área en barras horizontales con variables CSS de los tokens, válido en ambos temas, oculto a los lectores de pantalla y con la tabla «Practicantes
+  por área» como alternativa accesible y estado vacío. Sin cambios en `domain/` ni ampliaciones de consultas. `Insignia` suma el tipo
+  `severidad`.
+- **Verificación (en `864777f` más la restauración del filtro):** 3.803 pruebas en 162 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-20, tras el módulo 5.6.
+- **Siguiente paso:** módulo 5.7 (Historial).
 
 ### Cierres de fase
 
@@ -544,9 +555,14 @@
 | 2026-11-19 | 5.4 Proyectos | Bloque 3 (datos): «Nuevo proyecto» y «Editar proyecto» como diálogo, reunión, rama base y enlaces; `puede_crear` y `supervisores_disponibles` en `listarProyectos`, `acciones` en `obtenerProyecto` | `9b2b378` |
 | 2026-11-19 | 5.4 Proyectos | Bloque 4 (equipo y ciclo de vida): pausar, reanudar, finalizar y reactivar con nota, cambiar supervisor, asignar y quitar practicantes; `ciclo_de_vida`, `supervisores_destino`, `puede_asignar`, `puede_quitar` y `listarPracticantesAsignables` | `eeb4d50` |
 | 2026-11-19 | 5.5 Tareas | Listado transversal con pestañas y filtros, detalle en `/administrador/tareas/:idTarea`, avisos de tarea al detalle, «Nueva tarea» eligiendo el proyecto (`DialogoNuevaTarea` compartido con el tablero del 5.4) y `proyectos_para_crear` en `listarTareas` | `c8d82e1` |
+| 2026-11-20 | 5.6 Reportes | Insights (7 reglas, filtros, revisado por persona y notificar) e Indicadores (periodo de 1 a 365 días con atajos, tarjetas y tablas por proyecto y por practicante); `Insignia` de severidad | `77ecb38` |
+| 2026-11-20 | 5.6 Reportes | Instalación de `recharts` 3.11.0 (versión exacta) | `301442a` |
+| 2026-11-20 | 5.6 Reportes | Gráfico de practicantes por área con alternativa en tabla | `864777f` |
+| 2026-11-20 | 5.6 Reportes | Se restaura el filtro por proyecto de Indicadores, que §5.6 pide y se había quitado por error | (por registrar) |
 
-**Estado de pruebas (2026-11-19, en `c8d82e1`):** 3.748 pruebas en 157 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
-el módulo 5.5 sumó 62 y 5 archivos de prueba (filtros, adaptador, listado, detalle y «Nueva tarea», más consultas y ajustes). No se hicieron
+**Estado de pruebas (2026-11-20, en `864777f` más la restauración del filtro):** 3.803 pruebas en 162 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 5.6 sumó 55 y 5 archivos de prueba (filtros de insights, adaptador de reportes, pestañas de Insights e Indicadores y gráfico). No se hicieron
+pruebas de mutación. Antes, en `c8d82e1`: 3.748 pruebas en 157 archivos; el módulo 5.5 sumó 62 y 5 archivos de prueba (filtros, adaptador, listado, detalle y «Nueva tarea», más consultas y ajustes). No se hicieron
 pruebas de mutación. Antes, en `eeb4d50`: 3.686 pruebas en 152 archivos; el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
 3.622 pruebas en 150 archivos; el bloque 3 sumó 51 y 3 archivos de prueba (nuevo proyecto, editar proyecto y enlaces, más consultas). Antes, en
 `da41753`: 3.571 pruebas en 147 archivos; los bloques 1 y 2 del módulo 5.4 sumaron 94 y 6 archivos de prueba (filtros, adaptador, listado y detalle de proyectos; tablero con «Nueva
@@ -854,10 +870,13 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 - [ ] Indicadores: el servicio pasa `ahora` en ISO UTC con `Z` y `dias` entero de 1 a 365
       (`DIAS_PERIODO_MAXIMO`); entrega `tareas` sin las eliminadas (el historial sí conserva sus eventos);
       el selector de periodo de Reportes (Fase 5.6) solo ofrece valores dentro de ese rango.
-- [ ] Indicadores (Fase 5.6): las tarjetas «postulaciones decididas», «puntaje promedio por área» y el
-      gráfico de practicantes por área quedaron fuera del paso 9; hay que definir qué cuenta como «decidida
-      en el periodo» y qué evaluación entra en el promedio. Tampoco están decididas las opciones del selector
-      de periodo ni las columnas de cada tabla.
+- [x] Indicadores (Fase 5.6): las tarjetas «postulaciones decididas» y «puntaje promedio por área», el gráfico
+      de practicantes por área, las opciones del selector de periodo (atajos de 7, 30, 90 y 365 días) y las
+      columnas de cada tabla quedaron resueltos en el módulo 5.6 (`77ecb38` y `864777f`); las definiciones de
+      «decidida en el periodo» y del promedio ya constan en la propuesta §5.6.
+- [x] Indicadores (Fase 5.6): el **filtro por proyecto** que pide §5.6 se quitó por error en `864777f` y se restauró
+      (todos los proyectos por defecto, con los proyectos que ofrece la consulta; pasa `id_proyecto` a `obtenerIndicadores`
+      y las tablas y el gráfico lo respetan). Hash del commit de la restauración por registrar.
 - [ ] Indicadores: la «última actividad» de las tablas de Reportes solo cuenta eventos con proyecto del
       alcance; los eventos de cuenta (`CUENTA_*`) no entran, tampoco para el Administrador. Confirmarlo al
       construir las tablas (la función `ultimaActividadDeUsuario` sí es global para las Fases 5.2 y 5.3).
@@ -920,6 +939,10 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       `react-router`, `date-fns`, `sonner`) está fusionado en `development` (por confirmar).
 - [ ] Confirmar que Roxana revisó el cambio de contrato de `ContextoInsight` (`proyectos`) (por confirmar).
 - [ ] Confirmar que la entrada de DECISIONES sobre la auditoría de dependencias llegó a `development`.
+- [ ] Fase 8: el build avisa de chunks de más de 500 kB y `recharts` (módulo 5.6) los agranda; evaluar `import()` dinámico de las pestañas o de los
+      gráficos, o `build.rolldownOptions.output.codeSplitting`.
+- [ ] Fase 8: comprobación visual del gráfico de practicantes por área (módulo 5.6) en tema claro y oscuro, en un navegador real: en jsdom Recharts no
+      mide nada y las pruebas no dibujan las barras.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
 - [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta

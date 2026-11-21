@@ -4146,3 +4146,42 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Pendiente anotado.** En el panel del Supervisor (Fase 6, §9.1.3) la pestaña «Esperando supervisión» agrega «Días esperando»; `listarTareas` ya entrega
   el dato y el adaptador lo lleva (`diasEsperando`). Queda en `PROGRESO.md`.
 - **Siguiente paso.** Módulo 5.6 (Reportes).
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.6 (Reportes), Administrador
+
+- **Commits:** `77ecb38` (insights e indicadores, en un solo commit), `301442a` (instalación de `recharts` 3.11.0) y `864777f` (gráfico por área; ese commit quitó por error el
+  filtro por proyecto de Indicadores, restaurado después, ver abajo). Rama `feat/fase5-reportes`. Mismo patrón de 5.1 a 5.5: `useConsulta`, filtros puros, adaptador en
+  `src/app/adaptadores/reportes.ts` y pestañas en `?pestana=`.
+- **URL.** `/administrador/reportes`, con las pestañas «Insights» (abre ahí) e «Indicadores».
+- **Insights.** No se guardan: `listarInsights` los calcula con las 7 reglas y se identifican por regla y elemento. Filtros por severidad, tipo, proyecto
+  (los que aparecen en los insights) y estado («Activos» por defecto, «Revisados», «Todos»). Cada tarjeta ofrece «Ver detalle» (la misma tabla
+  `RUTA_DE_DETALLE` de los avisos, una sola fuente de enlaces), «Marcar como revisado» (con nota opcional; independiente por persona, y reaparece si
+  empeora o a los 7 días) y «Notificar». Los botones los deciden `puede_marcar_revisado` y `puede_notificar`, que traen las consultas; la pantalla no
+  decide. `Insignia` suma el tipo `severidad` (Crítico, Atención, Informativo).
+- **Indicadores.** Periodo de 1 a 365 días de calendario en hora de Perú (30 por defecto); un periodo inválido lo rechaza el servicio
+  (`PERIODO_INVALIDO`) y se muestra su mensaje. Tarjetas de tareas terminadas, tiempo de ciclo, espera de supervisión, tasa de devolución, postulaciones
+  decididas y puntaje promedio por área; tablas por proyecto y por practicante con enlaces al detalle. Donde no hay muestras dice «Sin datos», nunca
+  cero; los días llevan un decimal con coma y las proporciones, el entero con la muestra («40 % (12 de 30)»).
+- **Filtro por proyecto (restaurado).** §5.6 dice «con selector de periodo ... y filtro por proyecto», así que no era un extra. Se había quitado en
+  `864777f` por una indicación equivocada y se restauró: selector «Proyecto» (por defecto «Todos los proyectos») que pasa `id_proyecto` a
+  `obtenerIndicadores`; las tarjetas, las tablas y el gráfico lo respetan (`practicantes_por_area` ya cuenta solo a los asignados al proyecto). Los
+  proyectos del selector son los que entrega `listarProyectos`: la pantalla no decide el alcance. Hash de la restauración por registrar.
+- **Gráfico por área.** `GraficoPracticantesPorArea`: barras horizontales con Recharts, con colores solo en variables CSS de los tokens (`--link`,
+  `--text-2`, `--border`, `--surface`, `--surface-2`, `--text`), por lo que valen en tema claro y oscuro. Va con `aria-hidden`; la alternativa accesible es la tabla
+  «Practicantes por área» justo debajo. Sin datos no se dibuja y aparece «No hay practicantes por área para graficar».
+- **Excepción a la regla del PR aparte para instalar.** `CLAUDE.md` pide que quien instala una dependencia haga un PR pequeño solo para eso. Aquí la
+  instalación (`npm install --save-exact recharts@3.11.0`) fue un commit aparte (`301442a`) pero dentro de la rama del módulo, no un PR separado. Se
+  comprobó antes con `grep -i "chart" package.json` que no había otra librería de gráficos y que `package.json` solo cambió con la línea de
+  `recharts` (más `package-lock.json`).
+- **Sin cambios en `domain/` ni ampliaciones de consultas.**
+- **Pruebas.** 3.748 → 3.803 en 162 archivos (+55 y +5 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.6 no menciona los **atajos de periodo** de 7, 30, 90 y 365 días junto al campo de 1 a 365 días; se añadieron como extra.
+  2. **Recharts 3.11.0** es una dependencia nueva, con versión exacta; conviene anotarla donde la propuesta liste la pila tecnológica.
+  3. **Tipo de gráfico:** barras horizontales, oculto a los lectores de pantalla y con la tabla como alternativa. Si la propuesta fija otro tipo, hay que
+     alinearlos.
+  4. **Excepción a la regla del PR aparte** para la instalación (ver arriba).
+- **Pendientes anotados para la Fase 8.** El aviso del build por chunks de más de 500 kB, que `recharts` agranda, y la comprobación visual del gráfico en
+  tema claro y oscuro (en jsdom Recharts no dibuja las barras). Quedan en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.7 (Historial).
