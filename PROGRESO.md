@@ -124,7 +124,7 @@
   área en barras horizontales con variables CSS de los tokens, válido en ambos temas, oculto a los lectores de pantalla y con la tabla «Practicantes
   por área» como alternativa accesible y estado vacío. Sin cambios en `domain/` ni ampliaciones de consultas. `Insignia` suma el tipo
   `severidad`.
-- **Verificación (en `864777f` más la restauración del filtro):** 3.803 pruebas en 162 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+- **Verificación (en `5a81b38`):** 3.803 pruebas en 162 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
 - **Actualizado:** 2026-11-20, tras el módulo 5.6.
 - **Siguiente paso:** módulo 5.7 (Historial).
@@ -558,9 +558,9 @@
 | 2026-11-20 | 5.6 Reportes | Insights (7 reglas, filtros, revisado por persona y notificar) e Indicadores (periodo de 1 a 365 días con atajos, tarjetas y tablas por proyecto y por practicante); `Insignia` de severidad | `77ecb38` |
 | 2026-11-20 | 5.6 Reportes | Instalación de `recharts` 3.11.0 (versión exacta) | `301442a` |
 | 2026-11-20 | 5.6 Reportes | Gráfico de practicantes por área con alternativa en tabla | `864777f` |
-| 2026-11-20 | 5.6 Reportes | Se restaura el filtro por proyecto de Indicadores, que §5.6 pide y se había quitado por error | (por registrar) |
+| 2026-11-20 | 5.6 Reportes | Se restaura el filtro por proyecto de Indicadores, que §5.6 pide y se había quitado por error | `5a81b38` |
 
-**Estado de pruebas (2026-11-20, en `864777f` más la restauración del filtro):** 3.803 pruebas en 162 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+**Estado de pruebas (2026-11-20, en `5a81b38`):** 3.803 pruebas en 162 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
 el módulo 5.6 sumó 55 y 5 archivos de prueba (filtros de insights, adaptador de reportes, pestañas de Insights e Indicadores y gráfico). No se hicieron
 pruebas de mutación. Antes, en `c8d82e1`: 3.748 pruebas en 157 archivos; el módulo 5.5 sumó 62 y 5 archivos de prueba (filtros, adaptador, listado, detalle y «Nueva tarea», más consultas y ajustes). No se hicieron
 pruebas de mutación. Antes, en `eeb4d50`: 3.686 pruebas en 152 archivos; el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
@@ -876,7 +876,7 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       «decidida en el periodo» y del promedio ya constan en la propuesta §5.6.
 - [x] Indicadores (Fase 5.6): el **filtro por proyecto** que pide §5.6 se quitó por error en `864777f` y se restauró
       (todos los proyectos por defecto, con los proyectos que ofrece la consulta; pasa `id_proyecto` a `obtenerIndicadores`
-      y las tablas y el gráfico lo respetan). Hash del commit de la restauración por registrar.
+      y las tablas y el gráfico lo respetan). Restaurado en `5a81b38`.
 - [ ] Indicadores: la «última actividad» de las tablas de Reportes solo cuenta eventos con proyecto del
       alcance; los eventos de cuenta (`CUENTA_*`) no entran, tampoco para el Administrador. Confirmarlo al
       construir las tablas (la función `ultimaActividadDeUsuario` sí es global para las Fases 5.2 y 5.3).

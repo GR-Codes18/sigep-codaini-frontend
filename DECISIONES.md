@@ -4165,7 +4165,7 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Filtro por proyecto (restaurado).** §5.6 dice «con selector de periodo ... y filtro por proyecto», así que no era un extra. Se había quitado en
   `864777f` por una indicación equivocada y se restauró: selector «Proyecto» (por defecto «Todos los proyectos») que pasa `id_proyecto` a
   `obtenerIndicadores`; las tarjetas, las tablas y el gráfico lo respetan (`practicantes_por_area` ya cuenta solo a los asignados al proyecto). Los
-  proyectos del selector son los que entrega `listarProyectos`: la pantalla no decide el alcance. Hash de la restauración por registrar.
+  proyectos del selector son los que entrega `listarProyectos`: la pantalla no decide el alcance. Restaurado en `5a81b38`.
 - **Gráfico por área.** `GraficoPracticantesPorArea`: barras horizontales con Recharts, con colores solo en variables CSS de los tokens (`--link`,
   `--text-2`, `--border`, `--surface`, `--surface-2`, `--text`), por lo que valen en tema claro y oscuro. Va con `aria-hidden`; la alternativa accesible es la tabla
   «Practicantes por área» justo debajo. Sin datos no se dibuja y aparece «No hay practicantes por área para graficar».
