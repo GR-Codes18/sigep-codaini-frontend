@@ -82,7 +82,7 @@ const SIN_RESUMEN_DE_ESTADO: ReadonlySet<TipoAccionHistorial> = new Set([
 
 export const AUTOR_DESCONOCIDO = 'Usuario desconocido';
 
-function etiquetaEstado(estado: string | null): string {
+export function etiquetaEstado(estado: string | null): string {
   if (estado === null) return '—';
   return ETIQUETA_ESTADO[estado as EstadoTarea | EstadoPostulacion] ?? estado;
 }
@@ -91,7 +91,7 @@ function etiquetaEstado(estado: string | null): string {
  * «Nombre (Rol)», «Sistema» para lo automático, y «Usuario desconocido» si la cuenta ya no se encuentra: la
  * consulta devuelve entonces el ID como nombre y nunca se muestra.
  */
-function etiquetaAutor({ evento, autor_nombre, autor_rol }: EventoConAutor): string {
+export function etiquetaAutor({ evento, autor_nombre, autor_rol }: EventoConAutor): string {
   if (evento.autor.tipo === 'SISTEMA') return 'Sistema';
   if (autor_rol === null) return AUTOR_DESCONOCIDO;
   return `${autor_nombre} (${ETIQUETA_ROL[autor_rol]})`;

@@ -17,6 +17,8 @@ import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/post
 import { PaginaDetalleTarea } from '@/paneles/administrador/tareas/PaginaDetalleTarea';
 import { PaginaTareas } from '@/paneles/administrador/tareas/PaginaTareas';
 import { RUTA_TAREAS } from '@/paneles/administrador/tareas/rutas';
+import { PaginaHistorial } from '@/paneles/administrador/historial/PaginaHistorial';
+import { RUTA_HISTORIAL } from '@/paneles/administrador/historial/rutas';
 import { PaginaReportes } from '@/paneles/administrador/reportes/PaginaReportes';
 import { RUTA_REPORTES } from '@/paneles/administrador/reportes/rutas';
 import { PaginaDetalleProyecto } from '@/paneles/administrador/proyectos/PaginaDetalleProyecto';
@@ -41,6 +43,7 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_PROYECTOS]: <PaginaProyectos />,
   [RUTA_TAREAS]: <PaginaTareas />,
   [RUTA_REPORTES]: <PaginaReportes />,
+  [RUTA_HISTORIAL]: <PaginaHistorial />,
 };
 
 /** Las páginas internas de un módulo (detalles), por la ruta que cuelga del módulo. */
