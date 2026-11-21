@@ -4295,3 +4295,38 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Cierre de la Fase 5.** Con el 5.9 el panel del Administrador queda terminado, con la salvedad de los pendientes de la Fase 8 y de la comprobación manual
   de 5.1 a 5.9. Falta el cierre de la fase: el PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-5-completa`.
 - **Siguiente paso.** Cierre de la Fase 5 y, después, la Fase 6, módulo 6.1.
+
+## 2026-11-20 — [A+B] Fase 6, módulo 6.1 (Mis proyectos), Supervisor
+
+- **Commits:** `179e3a6` (el módulo) y `f07aa48` (el destino de los avisos de proyecto del Supervisor). Rama `feat/fase6-supervisor`. Regla de la fase:
+  se reutiliza lo construido para el Administrador con el alcance filtrado; el código nuevo es solo lo que la propuesta marca como pantalla nueva (las
+  tarjetas de proyecto).
+- **Qué es el módulo.** El listado de proyectos del Supervisor (§9.1.1) y su detalle. No se amplió ninguna consulta ni se tocó `domain/`: `listarProyectos`
+  ya entrega solo los proyectos que tiene a cargo (sin ninguno, una lista vacía) y `obtenerProyecto`, `obtenerEquipoProyecto` y `obtenerTableroProyecto` ya
+  decidían por rol qué botones llegan.
+- **Listado.** `PaginaMisProyectos` en `src/paneles/supervisor/proyectos/`, con tarjetas (se reutiliza `TarjetaProyecto` de `compartido/`), pestañas Activos,
+  En pausa, Finalizados y Todos con los contadores de la consulta (abre en «Activos»; usa `filtrarProyectos` del Administrador) y búsqueda por nombre; 2 o 3
+  tarjetas por fila según el ancho. Cada tarjeta, por `aTarjetaDeProyecto`: nombre, código y estado; barra de avance; practicantes activos o «Sin practicantes
+  asignados» (sin botón de acción: el Supervisor no puede resolverlo); «Esperando tu supervisión», resaltada en ámbar solo si hay alguna; y próxima
+  reunión o «Sin definir». Las tareas vencidas no llegan al modelo de la tarjeta. Sin columna ni filtro de supervisor y sin «Nuevo proyecto».
+- **Detalle compartido.** El Supervisor usa `PaginaDetalleProyecto` y `PaginaDetalleTareaDeProyecto` del Administrador bajo su prefijo
+  (`/supervisor/proyectos/:id` y `…/tareas/:idTarea`). Para ello, tres puntos que tenían `/administrador` fijo (volver al listado, abrir una tarea desde el tablero
+  y volver al tablero) leen el rol de la sesión: `rutas.ts` suma `rutaDeProyectos(rol)` y `rutaDeDetalleDeProyecto` y `rutaDeDetalleDeTarea` aceptan el rol, con el
+  Administrador por defecto, de modo que las pruebas del Administrador no cambiaron. Qué botones ve lo deciden las consultas: puede definir o cambiar la
+  reunión, cambiar la rama base y gestionar enlaces; no ve crear, pausar, reanudar, finalizar, reactivar, cambiar de supervisor ni asignar o quitar practicantes.
+- **Proyectos ajenos.** Ningún dato llega a la pantalla: el listado solo trae los suyos y la dirección de uno ajeno responde con un error, sin nombre, código
+  ni pestañas (hay pruebas de ambos casos).
+- **Avisos (`f07aa48`).** `RUTA_DE_DETALLE.SUPERVISOR` suma `PROYECTO`: los avisos de proyecto del Supervisor llevan a `/supervisor/proyectos/:id` y no al listado.
+  Solo cambia el destino del enlace, no ninguna regla; los avisos de tarea y de persona siguen yendo a la página de su módulo. La expectativa de «Supervisor,
+  proyecto» en `notificacion.test.ts` cambió a propósito.
+- **Pruebas.** 3.868 → 3.897 en 172 archivos (+29 y +3 archivos de prueba; 27 en `179e3a6` y 2 en `f07aa48`). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+  errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.1 no define las direcciones del Supervisor: el listado va en `/supervisor/proyectos`, el detalle en `/supervisor/proyectos/:id` y la tarea en
+     `/supervisor/proyectos/:id/tareas/:idTarea`.
+  2. Un proyecto sin tareas muestra «Sin tareas» en la tarjeta, en vez de una barra o un 0 %; §9.1.1 no lo dice.
+  3. El botón del detalle que abre el formulario del Supervisor se llama «Editar proyecto» (es el del Administrador) y solo ofrece reunión y rama base;
+     §9.1.1 habla de definir la reunión y cambiar la rama base como acciones separadas, y de «no editar nombre, código, descripción, fechas ni repositorio».
+  4. Los avisos de proyecto del Supervisor llevan al detalle del proyecto; §9.1.1 no define el destino (decisión de los autores).
+- **Prueba manual pendiente.** El 6.1 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
+- **Siguiente paso.** Módulo 6.2 (Tareas del Supervisor).

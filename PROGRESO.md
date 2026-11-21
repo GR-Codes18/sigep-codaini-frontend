@@ -163,9 +163,20 @@
   Configuración, chunks de más de 500 kB, comprobación visual de gráficos y detalles); (2) la **comprobación manual en un navegador real** de los
   módulos 5.1 a 5.9, en tema claro y oscuro, que aún no se hizo: las pruebas son de jsdom y no cubren el aspecto. Pendiente de los autores: el cierre
   de la fase (PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-5-completa`).
-- **Actualizado:** 2026-11-20, tras el módulo 5.9 y el cierre de la Fase 5.
-- **Siguiente paso:** cierre de la Fase 5 (PR a `development`; luego `development` a `main` con la etiqueta `fase-5-completa`, y registrar la
-  fila en «Cierres de fase») y, después, la Fase 6, módulo 6.1.
+- **Fase 6 — módulo 6.1 (Mis proyectos, Supervisor): terminado (2026-11-20, `179e3a6` y `f07aa48`).** Rama `feat/fase6-supervisor`, en dos commits: el
+  módulo (`179e3a6`) y el destino de los avisos de proyecto (`f07aa48`). Ruta `/supervisor/proyectos`: sus proyectos en **tarjetas** (no tabla; la
+  tarjeta `TarjetaProyecto` ya existía en `compartido/`), con pestañas Activos, En pausa, Finalizados y Todos con contadores (abre en «Activos») y
+  búsqueda por nombre. Cada tarjeta: nombre, código y estado; barra de avance; practicantes activos o «Sin practicantes asignados»; tareas esperando su
+  supervisión, en ámbar solo si hay alguna; y próxima reunión o «Sin definir»; sin tareas vencidas. Sin columna ni filtro de supervisor y sin «Nuevo
+  proyecto». El detalle (`/supervisor/proyectos/:id`, con Resumen, Tablero y Equipo) es el del Administrador: sus tres rutas fijas pasaron a depender
+  del rol de la sesión (`rutaDeProyectos(rol)`, con el Administrador por defecto), y los botones los decide la consulta: el Supervisor puede cambiar la
+  reunión y la rama base y gestionar enlaces, y no ve crear, pausar, finalizar, asignar ni cambiar de supervisor. Un proyecto ajeno, aunque se escriba su
+  dirección, no muestra ningún dato. Los avisos de proyecto del Supervisor llevan a `/supervisor/proyectos/:id` (`RUTA_DE_DETALLE`). Sin cambios en
+  `domain/` ni en las consultas.
+- **Verificación (en `f07aa48`):** 3.897 pruebas en 172 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-20, tras el módulo 6.1.
+- **Siguiente paso:** módulo 6.2 (Tareas del Supervisor).
 
 ### Cierres de fase
 
@@ -648,6 +659,17 @@ del sub-paso 7A —12 en `domain/`—, 142 del sub-paso 7B —32 en `domain/`—
 —9 en `domain/`—, 133 de 11C, 125 de 11D —17 en `domain/`— y 60 de 11E);
 la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 108).
 
+### Fase 6 — panel del Supervisor
+
+| Fecha | Módulo | Qué se hizo | Commit |
+|---|---|---|---|
+| 2026-11-20 | 6.1 Mis proyectos | Listado en tarjetas con pestañas y búsqueda, detalle compartido con el Administrador (rutas según el rol) y `aTarjetaDeProyecto` | `179e3a6` |
+| 2026-11-20 | 6.1 Mis proyectos | Los avisos de proyecto del Supervisor llevan a `/supervisor/proyectos/:id` | `f07aa48` |
+
+**Estado de pruebas (2026-11-20, en `f07aa48`):** 3.897 pruebas en 172 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 6.1 sumó 29 y 3 archivos de prueba (Mis proyectos, detalle del Supervisor y adaptador de la tarjeta; más 2 pruebas de los avisos en
+`notificacion.test.ts`). No se hicieron pruebas de mutación. Antes, en `0f2db6f`: 3.868 pruebas en 169 archivos.
+
 ## Pendientes
 
 ### Fase 1 (`domain/`)
@@ -1001,6 +1023,10 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       detalles, formularios, gráficos del 5.6 y del Dashboard, detalle del evento del Historial y distribución en dos columnas del Dashboard). Las pruebas
       son de jsdom y no cubren el aspecto.
 - [ ] Fase 8 (Dashboard, módulo 5.9): las alertas no muestran cuántas quedaron fuera de las cinco (el adaptador lleva `totalAlertas`); decidir si se muestra.
+- [ ] Prueba manual pendiente del módulo 6.1 (Mis proyectos, Supervisor): en un navegador real, en tema claro y oscuro, entrar como `demo-supervisor`
+      y como `usr-sup-02` y `usr-sup-03`; comprobar las tarjetas en 2 y 3 por fila según el ancho, el ámbar solo con tareas por supervisar, «Sin
+      practicantes asignados», las pestañas y la búsqueda; abrir el detalle y comprobar que «Editar proyecto» solo ofrece reunión y rama base; escribir la
+      dirección de un proyecto ajeno y ver que no muestra datos; y abrir un aviso de proyecto desde la campana. Las pruebas son de jsdom y no cubren el aspecto.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
 - [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta

@@ -17,6 +17,8 @@ import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/post
 import { PaginaDetalleTarea } from '@/paneles/administrador/tareas/PaginaDetalleTarea';
 import { PaginaTareas } from '@/paneles/administrador/tareas/PaginaTareas';
 import { RUTA_TAREAS } from '@/paneles/administrador/tareas/rutas';
+import { PaginaMisProyectos } from '@/paneles/supervisor/proyectos/PaginaMisProyectos';
+import { RUTA_MIS_PROYECTOS } from '@/paneles/supervisor/proyectos/rutas';
 import { PaginaDashboard } from '@/paneles/administrador/dashboard/PaginaDashboard';
 import { RUTA_DASHBOARD } from '@/paneles/administrador/dashboard/rutas';
 import { PaginaConfiguracion } from '@/paneles/administrador/configuracion/PaginaConfiguracion';
@@ -50,6 +52,7 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_HISTORIAL]: <PaginaHistorial />,
   [RUTA_CONFIGURACION]: <PaginaConfiguracion />,
   [RUTA_DASHBOARD]: <PaginaDashboard />,
+  [RUTA_MIS_PROYECTOS]: <PaginaMisProyectos />,
 };
 
 /** Las páginas internas de un módulo (detalles), por la ruta que cuelga del módulo. */
@@ -63,6 +66,12 @@ const PAGINAS_INTERNAS: readonly RouteObject[] = [
   { path: `${RUTA_TAREAS}/:idTarea`, element: <PaginaDetalleTarea /> },
   {
     path: `${RUTA_PROYECTOS}/:idProyecto/tareas/:idTarea`,
+    element: <PaginaDetalleTareaDeProyecto />,
+  },
+  // El Supervisor usa el mismo detalle de proyecto (§9.1.1) bajo su prefijo; qué botones ve lo deciden las consultas.
+  { path: `${RUTA_MIS_PROYECTOS}/:idProyecto`, element: <PaginaDetalleProyecto /> },
+  {
+    path: `${RUTA_MIS_PROYECTOS}/:idProyecto/tareas/:idTarea`,
     element: <PaginaDetalleTareaDeProyecto />,
   },
 ];
