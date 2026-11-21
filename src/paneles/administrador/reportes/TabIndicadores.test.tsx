@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
 import { useAlmacen } from '@/data';
-import { crearEntorno } from '@/services';
+import { crearEntorno, listarProyectos, obtenerIndicadores } from '@/services';
 import { PaginaReportes } from './PaginaReportes';
 
 const ADMIN = 'demo-admin';
@@ -109,6 +109,61 @@ describe('Reportes: pestaña «Indicadores»', () => {
     );
     expect(within(region).getByRole('columnheader', { name: 'Área' })).toBeInTheDocument();
     expect(within(region).getAllByRole('row').length).toBeGreaterThan(1);
+  });
+
+  it('el selector de proyecto abre en «Todos los proyectos» y ofrece los proyectos que entrega la consulta', async () => {
+    await mostrar();
+
+    const select = screen.getByLabelText('Proyecto');
+    expect(select).toHaveValue('');
+    const r = await listarProyectos({ idActor: ADMIN }, entorno);
+    if (!r.ok) throw new Error(r.mensaje);
+    await waitFor(() =>
+      expect(within(select).getAllByRole('option')).toHaveLength(r.valor.proyectos.length + 1),
+    );
+  });
+
+  it('el filtro por proyecto deja solo ese proyecto en la tabla', async () => {
+    const usuario = userEvent.setup();
+    await mostrar();
+
+    const select = screen.getByLabelText('Proyecto');
+    await waitFor(() => expect(within(select).getAllByRole('option').length).toBeGreaterThan(2));
+    const opcion = within(select).getAllByRole('option')[1]!;
+    await usuario.selectOptions(select, opcion);
+
+    await waitFor(() => {
+      const region = screen.getByRole('region', { name: 'Indicadores por proyecto' });
+      expect(within(region).getAllByRole('row')).toHaveLength(2);
+    });
+    const region = screen.getByRole('region', { name: 'Indicadores por proyecto' });
+    expect(within(region).getByText(opcion.textContent!)).toBeInTheDocument();
+  });
+
+  it('el gráfico por área respeta el proyecto elegido: la tabla alternativa cuenta solo a sus practicantes', async () => {
+    const usuario = userEvent.setup();
+    await mostrar();
+
+    const lista = await listarProyectos({ idActor: ADMIN }, entorno);
+    if (!lista.ok) throw new Error(lista.mensaje);
+    // Un proyecto con equipo asignado: así el filtrado no coincide con el total de la organización.
+    const idProyecto = lista.valor.proyectos[0]!.id;
+    const esperado = await obtenerIndicadores({ idActor: ADMIN, id_proyecto: idProyecto }, entorno);
+    if (!esperado.ok || esperado.valor.vista !== 'ADMINISTRADOR') throw new Error('sin datos');
+    const areas = esperado.valor.practicantes_por_area;
+
+    const select = screen.getByLabelText('Proyecto');
+    await waitFor(() => expect(within(select).getAllByRole('option').length).toBeGreaterThan(1));
+    await usuario.selectOptions(select, idProyecto);
+
+    const region = screen.getByRole('region', { name: 'Practicantes por área' });
+    await waitFor(() => {
+      const filas = within(region).getAllByRole('row').slice(1);
+      expect(filas.map((f) => f.textContent)).toEqual(
+        areas.map((a) => a.area.nombre + a.practicantes),
+      );
+    });
+    expect(within(region).getByTestId('grafico-practicantes-por-area')).toBeInTheDocument();
   });
 
   it('enlaza los proyectos a su detalle y muestra «Sin datos» o porcentajes, nunca vacío', async () => {

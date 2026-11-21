@@ -14,7 +14,10 @@ import { GraficoPracticantesPorArea } from './GraficoPracticantesPorArea';
 import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import type { Id } from '@/domain';
-import { ENTORNO, obtenerIndicadores, type Entorno } from '@/services';
+import { ENTORNO, listarProyectos, obtenerIndicadores, type Entorno } from '@/services';
+
+const CLASE_SELECT =
+  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /** El periodo por defecto (§5.6) y los atajos que se ofrecen; el valor lo valida el servicio (de 1 a 365 días). */
 const DIAS_PREDETERMINADOS = 30;
@@ -127,7 +130,7 @@ function Tarjeta({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode
 }
 
 /**
- * La pestaña «Indicadores» (§5.6): un periodo de 1 a 365 días en hora de Perú (30 por defecto);
+ * La pestaña «Indicadores» (§5.6): un periodo de 1 a 365 días en hora de Perú (30 por defecto) y un filtro por proyecto (todos por defecto);
  * tarjetas generales, una tabla por proyecto y una tabla por practicante. Lee con `obtenerIndicadores`: todos los números
  * (con «Sin datos» donde no hay muestras, nunca cero) los calcula `domain/`; la pantalla solo los presenta. Un periodo
  * inválido lo rechaza el servicio y su mensaje se muestra aquí.
@@ -135,10 +138,22 @@ function Tarjeta({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode
 export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; entorno?: Entorno }) {
   const [dias, setDias] = useState<number>(DIAS_PREDETERMINADOS);
   const [texto, setTexto] = useState(String(DIAS_PREDETERMINADOS));
+  const [idProyecto, setIdProyecto] = useState('');
+
+  // Los proyectos que se ofrecen son los que entrega la consulta (el alcance no lo decide la pantalla).
+  const cargarProyectos = useCallback(
+    () => listarProyectos({ idActor }, entorno),
+    [entorno, idActor],
+  );
+  const proyectos = useConsulta(cargarProyectos);
 
   const cargar = useCallback(
-    () => obtenerIndicadores({ idActor, dias }, entorno),
-    [entorno, idActor, dias],
+    () =>
+      obtenerIndicadores(
+        { idActor, dias, ...(idProyecto === '' ? {} : { id_proyecto: idProyecto }) },
+        entorno,
+      ),
+    [entorno, idActor, dias, idProyecto],
   );
   const consulta = useConsulta(cargar);
   const datos = useMemo(
@@ -274,6 +289,22 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
               {d} días
             </Button>
           ))}
+        </div>
+        <div className="w-52 space-y-1">
+          <Label htmlFor="indicadores-proyecto">Proyecto</Label>
+          <select
+            id="indicadores-proyecto"
+            value={idProyecto}
+            onChange={(e) => setIdProyecto(e.target.value)}
+            className={CLASE_SELECT}
+          >
+            <option value="">Todos los proyectos</option>
+            {(proyectos.valor?.proyectos ?? []).map((pr) => (
+              <option key={pr.id} value={pr.id}>
+                {pr.nombre}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
