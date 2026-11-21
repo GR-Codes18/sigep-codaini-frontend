@@ -29,7 +29,7 @@ import { RUTA_CONFIGURACION } from '@/paneles/administrador/configuracion/rutas'
 import { PaginaHistorial } from '@/paneles/administrador/historial/PaginaHistorial';
 import { RUTA_HISTORIAL } from '@/paneles/administrador/historial/rutas';
 import { PaginaReportes } from '@/paneles/administrador/reportes/PaginaReportes';
-import { RUTA_REPORTES } from '@/paneles/administrador/reportes/rutas';
+import { RUTA_REPORTES, rutaDeReportes } from '@/paneles/administrador/reportes/rutas';
 import { PaginaDetalleProyecto } from '@/paneles/administrador/proyectos/PaginaDetalleProyecto';
 import { PaginaDetalleTareaDeProyecto } from '@/paneles/administrador/proyectos/PaginaDetalleTareaDeProyecto';
 import { PaginaProyectos } from '@/paneles/administrador/proyectos/PaginaProyectos';
@@ -52,6 +52,7 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_PROYECTOS]: <PaginaProyectos />,
   [RUTA_TAREAS]: <PaginaTareas />,
   [RUTA_REPORTES]: <PaginaReportes />,
+  [rutaDeReportes('SUPERVISOR')]: <PaginaReportes />,
   [RUTA_HISTORIAL]: <PaginaHistorial />,
   [RUTA_CONFIGURACION]: <PaginaConfiguracion />,
   [RUTA_DASHBOARD]: <PaginaDashboard />,

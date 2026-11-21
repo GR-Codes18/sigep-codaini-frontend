@@ -157,10 +157,7 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
   );
   const consulta = useConsulta(cargar);
   const datos = useMemo(
-    () =>
-      consulta.valor === null || consulta.valor.vista !== 'ADMINISTRADOR'
-        ? null
-        : aIndicadores(consulta.valor),
+    () => (consulta.valor === null ? null : aIndicadores(consulta.valor)),
     [consulta.valor],
   );
 
@@ -202,38 +199,48 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Tarjeta etiqueta="Tareas terminadas" valor={datos.tareasTerminadas} />
             <Tarjeta etiqueta="Tiempo promedio de ciclo" valor={datos.tiempoCiclo} />
-            <Tarjeta etiqueta="Espera de supervisión" valor={datos.esperaSupervision} />
+            {/* El Supervisor ve tres tarjetas (§9.1.4): sin espera de supervisión, ni lo que viene de postulaciones. */}
+            {datos.rol === 'ADMINISTRADOR' && (
+              <Tarjeta etiqueta="Espera de supervisión" valor={datos.esperaSupervision} />
+            )}
             <Tarjeta etiqueta="Tasa de devolución" valor={datos.tasaDevolucion} />
-            <Tarjeta etiqueta="Postulaciones decididas" valor={datos.postulacionesDecididas} />
-            <div className="rounded-xl border border-border bg-surface p-4">
-              <dt className="text-xs text-text-2">Puntaje promedio por área</dt>
-              <dd>
-                <ul
-                  className="mt-1 space-y-0.5 text-sm text-text"
-                  aria-label="Puntaje promedio por área"
-                >
-                  {datos.puntajePorArea.map((a) => (
-                    <li key={a.area} className="flex justify-between gap-3 tabular-nums">
-                      <span>{a.area}</span>
-                      <span className="font-medium">{a.puntaje}</span>
-                    </li>
-                  ))}
-                </ul>
-              </dd>
-            </div>
+            {datos.postulacionesDecididas !== null && (
+              <Tarjeta etiqueta="Postulaciones decididas" valor={datos.postulacionesDecididas} />
+            )}
+            {datos.puntajePorArea !== null && (
+              <div className="rounded-xl border border-border bg-surface p-4">
+                <dt className="text-xs text-text-2">Puntaje promedio por área</dt>
+                <dd>
+                  <ul
+                    className="mt-1 space-y-0.5 text-sm text-text"
+                    aria-label="Puntaje promedio por área"
+                  >
+                    {datos.puntajePorArea.map((a) => (
+                      <li key={a.area} className="flex justify-between gap-3 tabular-nums">
+                        <span>{a.area}</span>
+                        <span className="font-medium">{a.puntaje}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
           </dl>
         </section>
 
-        <section aria-label="Practicantes por área" className="space-y-2">
-          <h2 className="text-text">Practicantes por área</h2>
-          <GraficoPracticantesPorArea datos={datos.practicantesPorArea} />
-          <TablaCompacta
-            columnas={COLUMNAS_AREA}
-            filas={datos.practicantesPorArea}
-            claveFila={(f) => f.area}
-            vacio={{ titulo: 'No hay practicantes asignados a un área' }}
-          />
-        </section>
+        {/* Sin el área técnica no hay gráfico ni tabla de practicantes por área (§9.1.4). */}
+        {datos.practicantesPorArea !== null && (
+          <section aria-label="Practicantes por área" className="space-y-2">
+            <h2 className="text-text">Practicantes por área</h2>
+            <GraficoPracticantesPorArea datos={datos.practicantesPorArea} />
+            <TablaCompacta
+              columnas={COLUMNAS_AREA}
+              filas={datos.practicantesPorArea}
+              claveFila={(f) => f.area}
+              vacio={{ titulo: 'No hay practicantes asignados a un área' }}
+            />
+          </section>
+        )}
 
         <section aria-label="Indicadores por proyecto" className="space-y-2">
           <h2 className="text-text">Por proyecto</h2>
