@@ -209,10 +209,28 @@
   `/supervisor/tareas`. `aIndicadores` acepta las dos variantes (para el Supervisor deja `null` en postulaciones, puntaje y área).
 - **Verificación (en `8194b00`):** 3.973 pruebas en 179 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Fase 6 — módulo 6.5 (Dashboard del Supervisor): terminado (2026-11-21, `7ece550`).** Rama `feat/fase6-dashboard` (sobre `9951a9a`, con el 6.1 al 6.4), en un solo commit.
+  Ruta `/supervisor/dashboard`, sobre `obtenerDashboardSupervisor` (Fase 2), que ya existía y solo trae lo de sus proyectos: no se amplió ninguna consulta ni se tocó
+  `domain/`. **Cuatro tarjetas compactas** (etiqueta, cifra y cifra secundaria en tres líneas cortas, rejilla de 4, 2 y 1 columnas) con enlace al módulo con el filtro
+  ya aplicado: tareas esperando mi supervisión (ámbar solo si hay alguna), mis proyectos activos y en pausa, practicantes a cargo y tareas vencidas con las sin asignar
+  (rojo solo si hay alguna). **Por revisar** a todo el ancho, en filas de una línea (ID, título como enlace al detalle, proyecto, responsable y días esperando).
+  **Alertas** (hasta cinco, con sus acciones y el enlace «Ver todas en Reportes») a la izquierda; **Próximas reuniones** y **Avance de mis proyectos** apilados a la
+  derecha. Mensajes por bloque y estado vacío total («El Administrador aún no te ha asignado proyectos»). **Cambios aditivos:** Tareas lee `?vencidas=1` y
+  `?sin_asignar=1` y Mis proyectos lee `?pestana=` (un valor inválido se ignora; el filtro que llega se ve activo y se puede quitar). `Seccion`, `Tarjeta`, `PorRevisar`,
+  `Reuniones` y `Avance` pasaron a `src/app/dashboard/BloquesDeDashboard.tsx`, y `aPorRevisar`, `aReuniones` y `aAvances` al adaptador del dashboard; el dashboard del
+  Administrador (5.9) queda igual en comportamiento. La revisión visual del 6.5 la hizo la autora a ojo, porque el agente no puede abrir el navegador.
+- **Verificación (en `7ece550`):** 4.012 pruebas en 183 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Fase 6 — panel del Supervisor: terminada (2026-11-21).** Los cinco módulos (6.1 a 6.5) están construidos, probados y conectados a `services/`, y reutilizan lo del
+  Administrador con el alcance filtrado; ninguna pantalla decide reglas ni muestra datos de proyectos ajenos. **Salvedades:** (1) los pendientes de la Fase 8 anotados
+  en «Pendientes» (entre ellos, el pulido de tarjetas con mucho espacio); (2) las pruebas manuales en un navegador real de los módulos 6.1 a 6.4, anotadas en
+  «Pendientes»; el 6.5 lo revisó la autora a ojo. Pendiente de los autores: el cierre de la fase (PR a `development` y, después, a `main` con la etiqueta
+  `fase-6-completa`).
 - **Pendiente de los autores (cierres de fase):** el cierre en `main` de las **Fases 3, 4 y 5**: PR de `development` a `main`, etiquetas `fase-3-completa`,
-  `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2).
-- **Actualizado:** 2026-11-21, tras el módulo 6.4.
-- **Siguiente paso:** módulo 6.5 (Dashboard del Supervisor), que va al final de la Fase 6.
+  `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2). **La Fase 6 también se cerrará en `main`**
+  con su etiqueta `fase-6-completa`.
+- **Actualizado:** 2026-11-21, tras el módulo 6.5 y el cierre de la Fase 6.
+- **Siguiente paso:** Fase 7, módulo 7.1 (Mis proyectos del Practicante).
 
 ### Cierres de fase
 
@@ -704,10 +722,13 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 | 2026-11-21 | 6.2 Tareas | Tareas del Supervisor sobre el listado y el detalle del 5.5: pestaña inicial por rol, esqueleto de carga, «Días esperando» y avisos de tarea al detalle | `424779a` |
 | 2026-11-21 | 6.3 Practicantes a cargo | Listado en tabla con pestañas, filtro y búsqueda, y detalle de solo lectura del Supervisor; avisos de persona al detalle; `ListaDeTareasDePracticante` compartida | `100efb3` |
 | 2026-11-21 | 6.4 Reportes | Reportes del Supervisor sobre el módulo 5.6: sus 5 reglas, indicadores sin postulaciones ni área y enlaces según el rol (`rutaDelElemento(tipo, id, rol)`, `rutaDeReportes(rol)`) | `8194b00` |
+| 2026-11-21 | 6.5 Dashboard | Dashboard del Supervisor: tarjetas compactas con enlaces con filtro, «Por revisar» a todo el ancho, alertas, reuniones y avance; Tareas lee `?vencidas=1` y `?sin_asignar=1`, Mis proyectos lee `?pestana=`; bloques compartidos en `src/app/dashboard/` | `7ece550` |
+| 2026-11-21 | Cierre de la Fase 6 | Los cinco módulos del panel del Supervisor (6.1 a 6.5) terminados; falta su cierre en `main` con la etiqueta `fase-6-completa` | — |
 
-**Estado de pruebas (2026-11-21, en `8194b00`):** 3.973 pruebas en 179 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
-el módulo 6.4 sumó 18 y 1 archivo de prueba (Reportes del Supervisor, más las del adaptador con rol en `reportes.test.ts`). No se hicieron pruebas de mutación.
-Antes, en `100efb3`: 3.955 pruebas en 178 archivos; el módulo 6.3 sumó 34 y 4 archivos de prueba (listado, detalle, filtros y adaptador de Practicantes a cargo; más las de los avisos en `notificacion.test.ts` y la
+**Estado de pruebas (2026-11-21, en `7ece550`):** 4.012 pruebas en 183 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 6.5 sumó 39 y 4 archivos de prueba (Dashboard del Supervisor, su adaptador, y los filtros por dirección de Tareas y de Mis proyectos). No se hicieron pruebas de
+mutación. Antes, en `8194b00`: 3.973 pruebas en 179 archivos; el módulo 6.4 sumó 18 y 1 archivo de prueba (Reportes del Supervisor, más las del adaptador con rol en
+`reportes.test.ts`). No se hicieron pruebas de mutación. Antes, en `100efb3`: 3.955 pruebas en 178 archivos; el módulo 6.3 sumó 34 y 4 archivos de prueba (listado, detalle, filtros y adaptador de Practicantes a cargo; más las de los avisos en `notificacion.test.ts` y la
 etiqueta «Anterior» de `Insignia`). No se hicieron pruebas de mutación. Antes, en `424779a`: 3.921 pruebas en 174 archivos; el módulo 6.2 sumó 24 y 2 archivos de prueba (Tareas del Supervisor y pestaña inicial, más pruebas de los avisos en `notificacion.test.ts`). No se hicieron
 pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el módulo 6.1 sumó 29 y 3 archivos de prueba (Mis proyectos, detalle del Supervisor y adaptador de la tarjeta; más 2 pruebas de los avisos en
 `notificacion.test.ts`). No se hicieron pruebas de mutación. Antes, en `0f2db6f`: 3.868 pruebas en 169 archivos.
@@ -1082,6 +1103,11 @@ pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el mó
       cubren el aspecto.
 - [ ] Cierre de las Fases 3, 4 y 5 en `main` (autores): PR de `development` a `main` con las etiquetas `fase-3-completa`, `fase-4-completa` y
       `fase-5-completa`, y sus filas en «Cierres de fase».
+- [ ] Cierre de la Fase 6 en `main` (autores): PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-6-completa`, y su fila en
+      «Cierres de fase».
+- [ ] Fase 8 (pulido de tarjetas con mucho espacio, detectado en el 6.5; no se cambiaron): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl); las
+      tarjetas generales de Indicadores de Reportes (Administrador y Supervisor); las tarjetas de insight de Reportes (la variante compacta solo la usan los dashboards);
+      y `TarjetaProyecto` de «Mis proyectos» (espacios `mt-4`). El Dashboard del Supervisor ya usa la variante compacta de `Tarjeta` (`BloquesDeDashboard`) como referencia.
 - [x] Módulo 6.4 (Reportes, Supervisor): el «Ver detalle» de un insight que habla de una persona (practicante inactivo, carga desbalanceada, fin de práctica) debe
       llevar a `/supervisor/practicantes/:idPracticante` (y el de un proyecto o una tarea, a su ruta del Supervisor). `rutaDelElemento` y la tarjeta compartida de
       insights (`src/app/insights/`) usaban solo la ruta del Administrador (`RUTA_DE_DETALLE.ADMINISTRADOR`). **Resuelto en `8194b00`:** `rutaDelElemento(tipo, id, rol)` y
