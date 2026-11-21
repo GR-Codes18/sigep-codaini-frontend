@@ -4368,3 +4368,36 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   pestaña inicial (que en las pruebas no se pudo reproducir), está en `PROGRESO.md` (Pendientes).
 - **Pendiente de los autores.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente (`PROGRESO.md`).
 - **Siguiente paso.** Módulo 6.3 (Practicantes a cargo).
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.3 (Practicantes a cargo), Supervisor
+
+- **Commit:** `100efb3` (el módulo completo, con el destino de los avisos de persona). Rama `feat/fase6-practicantes`. Regla de la fase: se reutiliza lo construido para
+  el Administrador con el alcance filtrado; aquí es pantalla nueva donde la propuesta lo marca (§9.1.2).
+- **Qué es el módulo.** La vista transversal de las personas de los proyectos del Supervisor. No se amplió ninguna consulta ni se tocó `domain/`: `listarPracticantesACargo` y
+  `obtenerPracticanteACargo` (Fase 2, paso 11) ya entregan una fila por persona, solo lo de sus proyectos, la especialidad sin el área técnica, y rechazan a quien no es
+  de sus proyectos (`FUERA_DE_ALCANCE`). No se reutilizó el listado del 5.2 porque sus columnas, pestañas y consulta son otras.
+- **Listado.** `PaginaPracticantesACargo` en `src/paneles/supervisor/practicantes/`: tabla con pestañas Activos y Anteriores con contadores (abre en «Activos»), columnas
+  practicante (nombre y correo), especialidad, proyectos, carga, esperando mi revisión, última actividad y detalle; filtro por proyecto (solo los suyos, salen de las propias
+  filas) y búsqueda por nombre o correo (sin tildes ni mayúsculas), en `filtros.ts`. Una persona en dos proyectos suyos es una sola fila con ambos. Quién es activo y quién
+  anterior lo decide la consulta (`situacion`). Sin ninguno, «Aún no tienes practicantes asignados en tus proyectos».
+- **Detalle.** `PaginaDetallePracticanteACargo`, de solo lectura y sin ningún botón: contacto (celular, Discord y GitHub), especialidad, disponibilidad horaria, fecha de fin de
+  práctica, proyectos con alta y baja, tareas actuales y completadas y línea de tiempo, todo recortado a sus proyectos. No muestra el área técnica ni la postulación de origen.
+- **Componente compartido.** La lista de tareas del detalle del Administrador pasó a `ListaDeTareasDePracticante` (`src/app/practicantes/`) y la usan las dos pantallas;
+  el comportamiento del Administrador no cambió y sus pruebas siguen pasando. `Insignia` suma «Anterior» (tipo `practicante`).
+- **Avisos.** `RUTA_DE_DETALLE.SUPERVISOR` suma `USUARIO`: los avisos de persona del Supervisor llevan a `/supervisor/practicantes/:idPracticante` y no al listado (decisión de los
+  autores; solo cambia el destino del enlace). Los avisos de la propia cuenta siguen yendo a Mi perfil, porque esa regla se evalúa antes. La expectativa de «Supervisor, persona»
+  en `notificacion.test.ts` cambió a propósito.
+- **Datos ajenos.** Ni el listado, ni el filtro, ni las tareas traen datos de personas o proyectos de otros supervisores, y la dirección del detalle de un practicante ajeno
+  responde con un error sin nombre, correo ni datos (hay pruebas de todo ello).
+- **Pruebas.** 3.921 → 3.955 en 178 archivos (+34 y +4 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en
+  `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.2 no define las direcciones del Supervisor: el listado va en `/supervisor/practicantes` y el detalle en `/supervisor/practicantes/:idPracticante`.
+  2. En «Anteriores» se agrega la columna «Fecha de baja»: §9.1.2 dice «con fecha de baja» pero no la lista entre las columnas.
+  3. La columna «Proyectos» muestra aquellos en los que la persona participa ahora y, si ya salió de todos, aquellos en los que estuvo.
+  4. El detalle no muestra «Cuenta creada» ni las fechas de ingreso: la consulta del Supervisor no las entrega y §9.1.2 no las pide.
+  5. La fecha de fin se rotula «Fecha de fin de práctica» y no lleva el «Faltan N días» que sí ve el Administrador, porque la consulta del Supervisor solo trae la fecha.
+- **Prueba manual pendiente.** El 6.3 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
+- **Pendientes que se conservan.** Para el 6.4: el «Ver detalle» de un insight debe usar la ruta del Supervisor según el rol (`rutaDelElemento` y la tarjeta compartida de insights usan hoy
+  solo la del Administrador). Y el cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores. Ambos constan en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 6.4 (Reportes del Supervisor).
