@@ -1,5 +1,5 @@
 import type { FilaTarea } from '@/app/adaptadores';
-import { ESTADOS_PR, type EstadoPR, type EstadoTarea } from '@/domain';
+import { ESTADOS_PR, type EstadoPR, type EstadoTarea, type Rol } from '@/domain';
 
 /**
  * Pestañas, filtros y búsqueda del listado de Tareas (§5.5).
@@ -55,6 +55,19 @@ export const ETIQUETA_ESTADO_PR: Record<EstadoPR, string> = {
 };
 
 export const OPCIONES_ESTADO_PR: readonly EstadoPR[] = ESTADOS_PR;
+
+/**
+ * La pestaña en que abre el listado cuando nadie pidió otra. El Administrador abre en «Todas» (§5.5); el Supervisor, en
+ * «Esperando supervisión» si tiene tareas ahí y, si no, en «Todas», para que su cola de revisión sea lo primero que ve (§9.1.3).
+ */
+export function pestanaInicialDeTareas(
+  rol: Rol,
+  contadores: Pick<Record<EstadoTarea, number>, 'ESPERANDO_SUPERVISION'>,
+): PestanaTareas {
+  return rol === 'SUPERVISOR' && contadores.ESPERANDO_SUPERVISION > 0
+    ? 'ESPERANDO_SUPERVISION'
+    : 'TODAS';
+}
 
 /** Minúsculas y sin tildes: «Pantalla» se encuentra buscando «pantalla». */
 function normalizar(texto: string): string {

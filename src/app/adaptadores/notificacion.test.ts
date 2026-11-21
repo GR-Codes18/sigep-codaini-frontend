@@ -56,7 +56,7 @@ describe('aNotificacionItem', () => {
 describe('rutaDeNotificacion', () => {
   it.each([
     ['ADMINISTRADOR', 'TAREA', '/administrador/tareas/otro-id'],
-    ['SUPERVISOR', 'TAREA', '/supervisor/tareas'],
+    ['SUPERVISOR', 'TAREA', '/supervisor/tareas/otro-id'],
     ['PRACTICANTE', 'TAREA', '/practicante/proyectos'],
     ['ADMINISTRADOR', 'PROYECTO', '/administrador/proyectos/otro-id'],
     ['SUPERVISOR', 'PROYECTO', '/supervisor/proyectos/otro-id'],
@@ -101,11 +101,17 @@ describe('rutaDeNotificacion', () => {
     expect(ruta).toBe('/supervisor/proyectos/pry-pl2d');
   });
 
+  it('el aviso de una tarea del Supervisor lleva al detalle de esa tarea, no solo al listado', () => {
+    const ruta = rutaDeNotificacion(
+      aviso({ elemento: { tipo: 'TAREA', id: 'tar-1' } }),
+      contexto('SUPERVISOR'),
+    );
+
+    expect(ruta).toBe('/supervisor/tareas/tar-1');
+  });
+
   it('los demás avisos del Supervisor siguen yendo a la página de su módulo', () => {
-    for (const [tipo, modulo] of [
-      ['TAREA', '/supervisor/tareas'],
-      ['USUARIO', '/supervisor/practicantes'],
-    ] as const) {
+    for (const [tipo, modulo] of [['USUARIO', '/supervisor/practicantes']] as const) {
       expect(
         rutaDeNotificacion(aviso({ elemento: { tipo, id: 'x' } }), contexto('SUPERVISOR')),
       ).toBe(modulo);

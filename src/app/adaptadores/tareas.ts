@@ -57,3 +57,9 @@ export function aTareas(listado: ListadoTareas): TareasParaVista {
     proyectosParaCrear: listado.proyectos_para_crear,
   };
 }
+
+/** «3 días» o «1 día»; «—» si la tarea no está esperando supervisión. */
+export function textoDiasEsperando(dias: number | null): string {
+  if (dias === null) return '—';
+  return dias === 1 ? '1 día' : `${dias} días`;
+}

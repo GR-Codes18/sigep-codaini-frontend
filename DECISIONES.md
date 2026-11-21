@@ -4330,3 +4330,41 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   4. Los avisos de proyecto del Supervisor llevan al detalle del proyecto; §9.1.1 no define el destino (decisión de los autores).
 - **Prueba manual pendiente.** El 6.1 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
 - **Siguiente paso.** Módulo 6.2 (Tareas del Supervisor).
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.2 (Tareas), Supervisor
+
+- **Commit:** `424779a` (el módulo completo, con los dos ajustes que pidieron los autores antes del commit). Rama `feat/fase6-tareas`. Regla de la fase: se reutiliza
+  lo construido para el Administrador con el alcance filtrado.
+- **Qué es el módulo.** La misma vista transversal del 5.5, filtrada a los proyectos del Supervisor (§9.1.3); su cola de revisión es la pestaña «Esperando
+  supervisión». No se amplió ninguna consulta ni se tocó `domain/`: `listarTareas` y `obtenerTarea` ya entregan solo las tareas de sus proyectos, y
+  `proyectos_para_crear` lo decide `puede('CREAR_TAREA')`.
+- **Reutilización.** `PaginaTareas` y `PaginaDetalleTarea` del Administrador sirven también al Supervisor bajo `/supervisor/tareas` y `/supervisor/tareas/:idTarea`: las
+  direcciones (enlace «Ver detalle», clic de la fila y «Volver al listado») leen el rol de la sesión (`rutaDeTareas(rol)`, `rutaDeDetalleDeTareaGlobal(id, rol)`),
+  con el Administrador por defecto, así que las pruebas del Administrador no cambiaron.
+- **Pestaña inicial.** `pestanaInicialDeTareas(rol, contadores)` (pura, en `filtros.ts`): el Administrador abre en «Todas»; el Supervisor, en «Esperando
+  supervisión» si tiene tareas ahí y, si no, en «Todas». Una pestaña pedida en `?pestana=` gana. Para ello `usePestanaInicial` y `pestanaDeLaDireccion` admiten
+  `null` como predeterminada («la decide la página»).
+- **Esqueleto de carga (ajuste de los autores).** Mientras llegan los contadores y nadie eligió pestaña, la página no dibuja las pestañas ni los filtros: solo el
+  esqueleto de carga; las pestañas aparecen ya con la inicial elegida y nunca se ve «Todas» de paso. Vale para todos los roles. Si la consulta falla, se
+  muestra el error (la condición excluye el caso de error) y no un esqueleto eterno.
+- **«Días esperando».** En la pestaña «Esperando supervisión» y solo para el Supervisor, se agrega la columna, con `textoDiasEsperando` («1 día», «N días»). El dato ya
+  llegaba en cada fila (`dias_esperando`). El Administrador no la ve, porque §5.5 no la pide.
+- **Pestaña vacía y ámbar.** «No tienes tareas esperando tu supervisión» para el Supervisor; el contador de la pestaña se resalta en ámbar solo si tiene tareas.
+- **Aprobar y devolver (§6.7).** Solo desde el detalle; las filas no tienen botones. Con el proyecto en pausa siguen disponibles (lo dicta la regla de `domain/`;
+  hay una prueba).
+- **Ninguna tarea ajena.** Ni el listado ni los filtros de proyecto y responsable traen datos de otros proyectos, y la dirección del detalle de una tarea ajena
+  responde con un error sin título ni botones. «Nueva tarea» solo ofrece sus proyectos.
+- **Avisos (ajuste de los autores).** `RUTA_DE_DETALLE.SUPERVISOR` suma `TAREA`: los avisos de tarea del Supervisor llevan a `/supervisor/tareas/:idTarea`, igual que los de
+  proyecto del 6.1. Solo cambia el destino del enlace. La expectativa de «Supervisor, tarea» en `notificacion.test.ts` cambió a propósito.
+- **Pruebas.** 3.897 → 3.921 en 174 archivos (+24 y +2 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en
+  `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.3 no define las direcciones del Supervisor: el listado va en `/supervisor/tareas` y el detalle en `/supervisor/tareas/:idTarea`.
+  2. La columna «Días esperando» se escribe «N días» («1 día» en singular); §9.1.3 solo nombra la columna.
+  3. El Administrador no ve «Días esperando»: §5.5 no la pide y §9.1.3 la agrega solo para el Supervisor.
+  4. Los avisos de tarea del Supervisor llevan al detalle de la tarea; §9.1.3 no define el destino (decisión de los autores).
+  Queda resuelta la que decía que la pestaña «Todas» se veía un instante antes de «Esperando supervisión»: con el esqueleto de carga ya no ocurre.
+- **Prueba manual pendiente.** El 6.2 no se ha recorrido en un navegador real; la lista de comprobaciones, incluido provocar un error de la consulta de la
+  pestaña inicial (que en las pruebas no se pudo reproducir), está en `PROGRESO.md` (Pendientes).
+- **Pendiente de los autores.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente (`PROGRESO.md`).
+- **Siguiente paso.** Módulo 6.3 (Practicantes a cargo).
