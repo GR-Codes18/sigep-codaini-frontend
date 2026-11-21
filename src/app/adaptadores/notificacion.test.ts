@@ -59,7 +59,7 @@ describe('rutaDeNotificacion', () => {
     ['SUPERVISOR', 'TAREA', '/supervisor/tareas'],
     ['PRACTICANTE', 'TAREA', '/practicante/proyectos'],
     ['ADMINISTRADOR', 'PROYECTO', '/administrador/proyectos/otro-id'],
-    ['SUPERVISOR', 'PROYECTO', '/supervisor/proyectos'],
+    ['SUPERVISOR', 'PROYECTO', '/supervisor/proyectos/otro-id'],
     ['PRACTICANTE', 'PROYECTO', '/practicante/proyectos'],
     ['ADMINISTRADOR', 'USUARIO', '/administrador/practicantes/otro-id'],
     ['SUPERVISOR', 'USUARIO', '/supervisor/practicantes'],
@@ -90,6 +90,26 @@ describe('rutaDeNotificacion', () => {
       contexto('ADMINISTRADOR'),
     );
     expect(ruta).toBeUndefined();
+  });
+
+  it('el aviso de un proyecto del Supervisor lleva al detalle de ese proyecto, no solo al listado', () => {
+    const ruta = rutaDeNotificacion(
+      aviso({ elemento: { tipo: 'PROYECTO', id: 'pry-pl2d' } }),
+      contexto('SUPERVISOR'),
+    );
+
+    expect(ruta).toBe('/supervisor/proyectos/pry-pl2d');
+  });
+
+  it('los demás avisos del Supervisor siguen yendo a la página de su módulo', () => {
+    for (const [tipo, modulo] of [
+      ['TAREA', '/supervisor/tareas'],
+      ['USUARIO', '/supervisor/practicantes'],
+    ] as const) {
+      expect(
+        rutaDeNotificacion(aviso({ elemento: { tipo, id: 'x' } }), contexto('SUPERVISOR')),
+      ).toBe(modulo);
+    }
   });
 
   it('los detalles de la tabla cuelgan de una página del menú del propio rol', () => {

@@ -48,7 +48,10 @@ export const RUTA_DE_DETALLE: Record<Rol, Partial<Record<TipoElemento, (id: Id) 
     ESPECIALIDAD: () => '/postulaciones/criterios',
     CRITERIO_EVALUACION: () => '/postulaciones/criterios',
   },
-  SUPERVISOR: {},
+  // El Supervisor usa el detalle de proyecto del Administrador bajo su prefijo (§9.1.1). Sus demás detalles llegan con la Fase 6.
+  SUPERVISOR: {
+    PROYECTO: (id) => `/proyectos/${id}`,
+  },
   PRACTICANTE: {},
 };
 
