@@ -1,8 +1,15 @@
 import { format, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { hoyEn, type Id, type Severidad, type TipoElemento, type TipoReglaInsight } from '@/domain';
+import {
+  hoyEn,
+  type Id,
+  type Rol,
+  type Severidad,
+  type TipoElemento,
+  type TipoReglaInsight,
+} from '@/domain';
 import { PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
-import type { IndicadoresAdministrador, ListadoInsights, ProyectoResumen } from '@/services';
+import type { IndicadoresVista, ListadoInsights, ProyectoResumen } from '@/services';
 import { RUTA_DE_DETALLE } from './notificacion';
 
 /** El nombre de cada regla (§5.6), para el filtro por tipo y la tarjeta. */
@@ -28,12 +35,18 @@ export function diaVisiblePeru(instante: string): string {
 }
 
 /**
- * La página de detalle del elemento afectado por un insight, para el Administrador; `null` si ese tipo de elemento no
- * tiene detalle. Usa la misma tabla que los avisos (`RUTA_DE_DETALLE`): una sola fuente para los enlaces.
+ * La página de detalle del elemento afectado por un insight, en el panel de `rol` (el del Administrador si no se dice);
+ * `null` si ese tipo de elemento no tiene detalle en ese panel. Usa la misma tabla que los avisos (`RUTA_DE_DETALLE`):
+ * una sola fuente para los enlaces. Así el Supervisor llega a `/supervisor/practicantes`, `/supervisor/proyectos` y
+ * `/supervisor/tareas`, y no a las páginas del Administrador (§9.1.4).
  */
-export function rutaDelElemento(tipo: TipoElemento, id: Id): string | null {
-  const detalle = RUTA_DE_DETALLE.ADMINISTRADOR[tipo];
-  return detalle === undefined ? null : `${PREFIJO_POR_ROL.ADMINISTRADOR}${detalle(id)}`;
+export function rutaDelElemento(
+  tipo: TipoElemento,
+  id: Id,
+  rol: Rol = 'ADMINISTRADOR',
+): string | null {
+  const detalle = RUTA_DE_DETALLE[rol][tipo];
+  return detalle === undefined ? null : `${PREFIJO_POR_ROL[rol]}${detalle(id)}`;
 }
 
 export interface FilaInsight {
@@ -66,7 +79,7 @@ export interface InsightsParaVista {
  * Los insights de `listarInsights` a las tarjetas. Solo presenta: conserva el orden y los contadores de la consulta, no
  * filtra ni decide nada (los permisos de cada botón llegan ya decididos).
  */
-export function aInsights(listado: ListadoInsights): InsightsParaVista {
+export function aInsights(listado: ListadoInsights, rol: Rol = 'ADMINISTRADOR'): InsightsParaVista {
   return {
     filas: listado.insights.map((i) => ({
       clave: `${i.tipo_regla}:${i.elemento.tipo}:${i.elemento.id}`,
@@ -75,7 +88,7 @@ export function aInsights(listado: ListadoInsights): InsightsParaVista {
       titulo: i.titulo,
       motivo: i.motivo,
       elemento: { tipo: i.elemento.tipo, id: i.elemento.id },
-      rutaElemento: rutaDelElemento(i.elemento.tipo, i.elemento.id),
+      rutaElemento: rutaDelElemento(i.elemento.tipo, i.elemento.id, rol),
       proyectos: i.proyectos,
       fechaDeteccionTexto: diaVisiblePeru(i.fecha_deteccion),
       revisado: i.revisado,
@@ -144,6 +157,8 @@ export interface PracticantesPorAreaParaVista {
 }
 
 export interface IndicadoresParaVista {
+  /** De quién son los indicadores: el Supervisor ve menos tarjetas y no ve el área técnica (§9.1.4). */
+  rol: Rol;
   dias: number;
   /** «Del 18 oct 2026 al 17 nov 2026 · hora de Perú». */
   periodoTexto: string;
@@ -151,38 +166,50 @@ export interface IndicadoresParaVista {
   tiempoCiclo: string;
   esperaSupervision: string;
   tasaDevolucion: string;
-  postulacionesDecididas: number;
-  puntajePorArea: PuntajePorAreaParaVista[];
+  /** `null` para el Supervisor: las postulaciones no son suyas (§9.1.4). */
+  postulacionesDecididas: number | null;
+  /** `null` para el Supervisor. */
+  puntajePorArea: PuntajePorAreaParaVista[] | null;
   porProyecto: FilaIndicadorProyecto[];
   porPracticante: FilaIndicadorPracticante[];
-  practicantesPorArea: PracticantesPorAreaParaVista[];
+  /** `null` para el Supervisor: no ve el área técnica (§9.1.4). */
+  practicantesPorArea: PracticantesPorAreaParaVista[] | null;
   /** No hay ningún proyecto en el alcance. */
   vacio: boolean;
 }
 
 /**
- * Los indicadores del Administrador (`obtenerIndicadores`) al modelo de presentación. Solo presenta: los números, las
- * proporciones y los promedios ya llegan calculados por `domain/` (con «Sin datos» donde no hay muestras); aquí solo se
- * convierten a texto.
+ * Los indicadores (`obtenerIndicadores`) al modelo de presentación, del Administrador o del Supervisor. Solo presenta:
+ * los números, las proporciones y los promedios ya llegan calculados por `domain/` (con «Sin datos» donde no hay
+ * muestras); aquí solo se convierten a texto. Lo que viene de postulaciones y del área técnica solo lo trae la variante
+ * del Administrador: para el Supervisor queda en `null`. Los enlaces van a las páginas del panel de quien mira.
  */
-export function aIndicadores(vista: IndicadoresAdministrador): IndicadoresParaVista {
+export function aIndicadores(vista: IndicadoresVista): IndicadoresParaVista {
+  const rol: Rol = vista.vista === 'SUPERVISOR' ? 'SUPERVISOR' : 'ADMINISTRADOR';
+  const admin = vista.vista === 'ADMINISTRADOR' ? vista : null;
   return {
+    rol,
     dias: vista.periodo.dias,
     periodoTexto: `Del ${diaVisiblePeru(vista.periodo.desde)} al ${diaVisiblePeru(vista.periodo.hasta)} · hora de Perú`,
     tareasTerminadas: vista.resumen.tareas_terminadas,
     tiempoCiclo: textoDias(vista.resumen.tiempo_ciclo_dias),
     esperaSupervision: textoDias(vista.resumen.espera_supervision_dias),
     tasaDevolucion: textoProporcion(vista.resumen.tasa_devolucion),
-    postulacionesDecididas: vista.postulaciones.decididas,
-    puntajePorArea: vista.postulaciones.por_area.map((a) => ({
-      area: a.area?.nombre ?? 'Sin área',
-      decididas: a.decididas,
-      puntaje:
-        a.puntaje_promedio === null ? SIN_DATOS : a.puntaje_promedio.toFixed(1).replace('.', ','),
-    })),
+    postulacionesDecididas: admin === null ? null : admin.postulaciones.decididas,
+    puntajePorArea:
+      admin === null
+        ? null
+        : admin.postulaciones.por_area.map((a) => ({
+            area: a.area?.nombre ?? 'Sin área',
+            decididas: a.decididas,
+            puntaje:
+              a.puntaje_promedio === null
+                ? SIN_DATOS
+                : a.puntaje_promedio.toFixed(1).replace('.', ','),
+          })),
     porProyecto: vista.por_proyecto.map((p) => ({
       proyecto: p.proyecto,
-      rutaProyecto: rutaDelElemento('PROYECTO', p.proyecto.id),
+      rutaProyecto: rutaDelElemento('PROYECTO', p.proyecto.id, rol),
       avance: textoProporcion(p.avance),
       tareasTerminadas: p.tareas_terminadas,
       tiempoCiclo: textoDias(p.tiempo_ciclo_dias),
@@ -193,17 +220,20 @@ export function aIndicadores(vista: IndicadoresAdministrador): IndicadoresParaVi
     porPracticante: vista.por_practicante.map((p) => ({
       id: p.id_practicante,
       nombre: p.nombre,
-      rutaPracticante: rutaDelElemento('USUARIO', p.id_practicante),
+      rutaPracticante: rutaDelElemento('USUARIO', p.id_practicante, rol),
       tareasTerminadas: p.tareas_terminadas,
       tiempoCiclo: textoDias(p.tiempo_ciclo_dias),
       tasaDevolucion: textoProporcion(p.tasa_devolucion),
       carga: p.carga,
       ultimaActividad: textoUltimaActividad(p.ultima_actividad),
     })),
-    practicantesPorArea: vista.practicantes_por_area.map((a) => ({
-      area: a.area.nombre,
-      practicantes: a.practicantes,
-    })),
+    practicantesPorArea:
+      admin === null
+        ? null
+        : admin.practicantes_por_area.map((a) => ({
+            area: a.area.nombre,
+            practicantes: a.practicantes,
+          })),
     vacio: vista.vacio,
   };
 }

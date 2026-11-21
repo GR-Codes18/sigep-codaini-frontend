@@ -41,7 +41,9 @@ export function PaginaReportes({ entorno = ENTORNO }: { entorno?: Entorno } = {}
         pestanas={PESTANAS_DE_REPORTES.map((p) => ({ valor: p, etiqueta: ETIQUETA_PESTANA[p] }))}
       />
 
-      {pestana === 'insights' && <TabInsights idActor={idUsuario} entorno={entorno} />}
+      {pestana === 'insights' && (
+        <TabInsights idActor={idUsuario} rol={sesion?.rol} entorno={entorno} />
+      )}
       {pestana === 'indicadores' && <TabIndicadores idActor={idUsuario} entorno={entorno} />}
     </section>
   );

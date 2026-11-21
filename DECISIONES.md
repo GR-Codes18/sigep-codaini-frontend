@@ -4401,3 +4401,35 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Pendientes que se conservan.** Para el 6.4: el «Ver detalle» de un insight debe usar la ruta del Supervisor según el rol (`rutaDelElemento` y la tarjeta compartida de insights usan hoy
   solo la del Administrador). Y el cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores. Ambos constan en `PROGRESO.md`.
 - **Siguiente paso.** Módulo 6.4 (Reportes del Supervisor).
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.4 (Reportes), Supervisor
+
+- **Commit:** `8194b00` (el módulo completo). Rama `feat/fase6-reportes`, sobre `55b212b` (que ya traía el 6.3). Regla de la fase: se reutiliza el módulo del Administrador (5.6) con el
+  alcance filtrado; solo es código nuevo donde la propuesta marca algo distinto (§9.1.4).
+- **Qué es el módulo.** Las mismas dos pestañas de Reportes, con datos solo de los proyectos del Supervisor. No se amplió ninguna consulta ni se tocó `domain/`: `listarInsights`
+  ya aplica solo sus 5 reglas (`REGLAS_INSIGHT_VISIBLES`), recorta los proyectos a los suyos y calcula «revisado» por persona; `obtenerIndicadores` ya devuelve la variante
+  `SUPERVISOR`, sin postulaciones ni área técnica; y «Notificar» lo decide `puede('NOTIFICAR_DESDE_INSIGHT')` (solo «Practicante inactivo» para el Supervisor).
+- **Insights.** `TabInsights` recibe el rol: el filtro de tipo ofrece solo las reglas de ese rol, el mensaje vacío del Supervisor es «No hay alertas en tus proyectos» y los enlaces
+  se arman con el rol. «Revisado» es independiente del Administrador (una prueba lo comprueba). La supervisión demorada lleva directo a la tarea en su cola.
+- **Indicadores.** `TabIndicadores` acepta las dos variantes. Para el Supervisor: tres tarjetas (tareas terminadas, tiempo de ciclo y tasa de devolución), sin «Espera de
+  supervisión», «Postulaciones decididas» ni «Puntaje promedio por área», y sin el gráfico ni la tabla de practicantes por área. `aIndicadores` recibe `IndicadoresVista` y deja
+  `null` en postulaciones, puntaje y área para el Supervisor; `IndicadoresParaVista` suma el campo `rol`. El periodo (30 días por defecto) y el filtro de proyecto (los de
+  `listarProyectos`, solo los suyos) son los mismos.
+- **Decisión: enlaces por rol (resuelve la nota pendiente de los «Ver detalle»).** `rutaDelElemento(tipo, id, rol)` (con el Administrador por defecto) usa `RUTA_DE_DETALLE[rol]`, la misma
+  tabla de los avisos: una sola fuente de enlaces. `aInsights(listado, rol)` y `aIndicadores` la usan, de modo que el «Ver detalle» de un insight de persona, de proyecto y de tarea y los
+  enlaces de las tablas llevan a `/supervisor/practicantes`, `/supervisor/proyectos` y `/supervisor/tareas`, y no a las páginas del Administrador. `rutaDeReportes(rol)` arma la dirección
+  del módulo (`/supervisor/reportes`). La tarjeta compartida de insights (`src/app/insights/`) no cambió: sus enlaces ya salían del adaptador. El tipo de elemento sin detalle en el
+  panel del Supervisor (por ejemplo, una postulación) no tiene enlace.
+- **Rama.** Al empezar, la rama no incluía el 6.3 (estaba en `feat/fase6-practicantes`, aún sin fusionar); se esperó a que `development` lo trajera (`55b212b`) porque el 6.4 depende del
+  destino `USUARIO` del Supervisor y de la página de Practicantes a cargo.
+- **Pruebas.** 3.955 → 3.973 en 179 archivos (+18 y +1 archivo de prueba: 14 de Reportes del Supervisor y 4 del adaptador con rol). `tsc -b`, Prettier y `npm run build` correctos; ESLint
+  sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`. Una línea de una
+  prueba existente del adaptador cambió (`puntajePorArea ?? []`) por el nuevo tipo; las pruebas de Reportes del Administrador no cambiaron.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.4 no define la dirección del módulo: va en `/supervisor/reportes`.
+  2. Las tablas de Indicadores del Supervisor tienen las mismas columnas que las del Administrador, incluida «Espera de supervisión» en la tabla por proyecto, porque §9.1.4 solo
+     nombra «tabla por proyecto y tabla por practicante» sin cambiarlas; lo único que se quitó es la tarjeta general de esa métrica.
+  3. El filtro de tipo de insight toma sus reglas de `REGLAS_INSIGHT_VISIBLES` (la constante de `domain/`), no de una lista de la pantalla.
+- **Prueba manual pendiente.** El 6.4 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
+- **Pendiente que se conserva.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores (`PROGRESO.md`).
+- **Siguiente paso.** Módulo 6.5 (Dashboard del Supervisor), que va al final de la Fase 6.

@@ -198,10 +198,21 @@
   ni en las consultas.
 - **Verificación (en `100efb3`):** 3.955 pruebas en 178 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Fase 6 — módulo 6.4 (Reportes, Supervisor): terminado (2026-11-21, `8194b00`).** Rama `feat/fase6-reportes` (sobre `55b212b`, con el 6.3), en un solo commit. Ruta
+  `/supervisor/reportes`: reutiliza `PaginaReportes` del 5.6 con las mismas dos pestañas y datos solo de sus proyectos, sin ampliar consultas ni tocar `domain/`
+  (`listarInsights` y `obtenerIndicadores` ya entregan la variante del Supervisor). **Insights:** solo sus 5 reglas (sin «Postulaciones sin decidir» ni «Fin de
+  práctica»), con el filtro de tipo tomado de `REGLAS_INSIGHT_VISIBLES`; «Notificar» solo en «Practicante inactivo» (lo decide `puede()`); «revisado» independiente
+  del Administrador; sin alertas, «No hay alertas en tus proyectos». **Indicadores:** selector de periodo (30 días por defecto) y filtro por proyecto (solo los suyos);
+  tres tarjetas (tareas terminadas, tiempo de ciclo y tasa de devolución), sin «Espera de supervisión», postulaciones ni puntaje por área, y sin el gráfico ni la tabla
+  de practicantes por área; las tablas por proyecto y por practicante traen solo lo suyo. **Enlaces por rol:** `rutaDelElemento(tipo, id, rol)` y `rutaDeReportes(rol)`;
+  el «Ver detalle» de un insight (de persona, de proyecto y de tarea) y los enlaces de las tablas llevan a `/supervisor/practicantes`, `/supervisor/proyectos` y
+  `/supervisor/tareas`. `aIndicadores` acepta las dos variantes (para el Supervisor deja `null` en postulaciones, puntaje y área).
+- **Verificación (en `8194b00`):** 3.973 pruebas en 179 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
 - **Pendiente de los autores (cierres de fase):** el cierre en `main` de las **Fases 3, 4 y 5**: PR de `development` a `main`, etiquetas `fase-3-completa`,
   `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2).
-- **Actualizado:** 2026-11-21, tras el módulo 6.3.
-- **Siguiente paso:** módulo 6.4 (Reportes del Supervisor).
+- **Actualizado:** 2026-11-21, tras el módulo 6.4.
+- **Siguiente paso:** módulo 6.5 (Dashboard del Supervisor), que va al final de la Fase 6.
 
 ### Cierres de fase
 
@@ -692,9 +703,11 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 | 2026-11-20 | 6.1 Mis proyectos | Los avisos de proyecto del Supervisor llevan a `/supervisor/proyectos/:id` | `f07aa48` |
 | 2026-11-21 | 6.2 Tareas | Tareas del Supervisor sobre el listado y el detalle del 5.5: pestaña inicial por rol, esqueleto de carga, «Días esperando» y avisos de tarea al detalle | `424779a` |
 | 2026-11-21 | 6.3 Practicantes a cargo | Listado en tabla con pestañas, filtro y búsqueda, y detalle de solo lectura del Supervisor; avisos de persona al detalle; `ListaDeTareasDePracticante` compartida | `100efb3` |
+| 2026-11-21 | 6.4 Reportes | Reportes del Supervisor sobre el módulo 5.6: sus 5 reglas, indicadores sin postulaciones ni área y enlaces según el rol (`rutaDelElemento(tipo, id, rol)`, `rutaDeReportes(rol)`) | `8194b00` |
 
-**Estado de pruebas (2026-11-21, en `100efb3`):** 3.955 pruebas en 178 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
-el módulo 6.3 sumó 34 y 4 archivos de prueba (listado, detalle, filtros y adaptador de Practicantes a cargo; más las de los avisos en `notificacion.test.ts` y la
+**Estado de pruebas (2026-11-21, en `8194b00`):** 3.973 pruebas en 179 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 6.4 sumó 18 y 1 archivo de prueba (Reportes del Supervisor, más las del adaptador con rol en `reportes.test.ts`). No se hicieron pruebas de mutación.
+Antes, en `100efb3`: 3.955 pruebas en 178 archivos; el módulo 6.3 sumó 34 y 4 archivos de prueba (listado, detalle, filtros y adaptador de Practicantes a cargo; más las de los avisos en `notificacion.test.ts` y la
 etiqueta «Anterior» de `Insignia`). No se hicieron pruebas de mutación. Antes, en `424779a`: 3.921 pruebas en 174 archivos; el módulo 6.2 sumó 24 y 2 archivos de prueba (Tareas del Supervisor y pestaña inicial, más pruebas de los avisos en `notificacion.test.ts`). No se hicieron
 pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el módulo 6.1 sumó 29 y 3 archivos de prueba (Mis proyectos, detalle del Supervisor y adaptador de la tarjeta; más 2 pruebas de los avisos en
 `notificacion.test.ts`). No se hicieron pruebas de mutación. Antes, en `0f2db6f`: 3.868 pruebas en 169 archivos.
@@ -1069,9 +1082,14 @@ pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el mó
       cubren el aspecto.
 - [ ] Cierre de las Fases 3, 4 y 5 en `main` (autores): PR de `development` a `main` con las etiquetas `fase-3-completa`, `fase-4-completa` y
       `fase-5-completa`, y sus filas en «Cierres de fase».
-- [ ] Módulo 6.4 (Reportes, Supervisor): el «Ver detalle» de un insight que habla de una persona (practicante inactivo, carga desbalanceada, fin de práctica) debe
+- [x] Módulo 6.4 (Reportes, Supervisor): el «Ver detalle» de un insight que habla de una persona (practicante inactivo, carga desbalanceada, fin de práctica) debe
       llevar a `/supervisor/practicantes/:idPracticante` (y el de un proyecto o una tarea, a su ruta del Supervisor). `rutaDelElemento` y la tarjeta compartida de
-      insights (`src/app/insights/`) usan hoy solo la ruta del Administrador (`RUTA_DE_DETALLE.ADMINISTRADOR`); hay que hacerlas depender del rol.
+      insights (`src/app/insights/`) usaban solo la ruta del Administrador (`RUTA_DE_DETALLE.ADMINISTRADOR`). **Resuelto en `8194b00`:** `rutaDelElemento(tipo, id, rol)` y
+      `aInsights(listado, rol)` arman los enlaces con el rol de la sesión, y los de las tablas de Indicadores también.
+- [ ] Prueba manual pendiente del módulo 6.4 (Reportes, Supervisor): en un navegador real, en tema claro y oscuro, entrar como `demo-supervisor`; comprobar en «Insights» que
+      el filtro de tipo ofrece solo sus 5 reglas, que «Notificar» solo sale en «Practicante inactivo», el «Ver detalle» de cada tipo de insight (persona, proyecto y
+      tarea) y marcar una alerta como revisada (el Administrador la sigue viendo); en «Indicadores», las tres tarjetas, el periodo, el filtro de proyecto y los enlaces de
+      las tablas, sin el gráfico ni la sección de practicantes por área; y el mensaje «No hay alertas en tus proyectos». Las pruebas son de jsdom y no cubren el aspecto.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
 - [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta

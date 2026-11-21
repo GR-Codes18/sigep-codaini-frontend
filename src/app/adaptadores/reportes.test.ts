@@ -159,7 +159,61 @@ describe('adaptadores de reportes', () => {
     it('el puntaje por área lleva coma o «Sin datos»', async () => {
       const v = aIndicadores(await vista(365));
 
-      for (const a of v.puntajePorArea) expect(a.puntaje).toMatch(/^(\d+,\d|Sin datos)$/);
+      for (const a of v.puntajePorArea ?? []) expect(a.puntaje).toMatch(/^(\d+,\d|Sin datos)$/);
+    });
+  });
+
+  describe('según el rol (§9.1.4)', () => {
+    it('rutaDelElemento lleva a las páginas del panel de quien mira', () => {
+      expect(rutaDelElemento('USUARIO', 'u1', 'SUPERVISOR')).toBe('/supervisor/practicantes/u1');
+      expect(rutaDelElemento('PROYECTO', 'p1', 'SUPERVISOR')).toBe('/supervisor/proyectos/p1');
+      expect(rutaDelElemento('TAREA', 't1', 'SUPERVISOR')).toBe('/supervisor/tareas/t1');
+      // Sin rol, las del Administrador, como siempre.
+      expect(rutaDelElemento('USUARIO', 'u1')).toBe('/administrador/practicantes/u1');
+      // Un tipo sin detalle en el panel del Supervisor no tiene enlace.
+      expect(rutaDelElemento('POSTULANTE', 'x', 'SUPERVISOR')).toBeNull();
+    });
+
+    it('aInsights arma los enlaces con el rol', async () => {
+      const lista = await listado();
+
+      const vista = aInsights(lista, 'SUPERVISOR');
+
+      for (const f of vista.filas) {
+        expect(f.rutaElemento).toBe(rutaDelElemento(f.elemento.tipo, f.elemento.id, 'SUPERVISOR'));
+        expect(f.rutaElemento === null || !f.rutaElemento.startsWith('/administrador')).toBe(true);
+      }
+    });
+
+    it('los indicadores del Supervisor no traen postulaciones ni área y enlazan a su panel', async () => {
+      const r = await obtenerIndicadores({ idActor: 'demo-supervisor', dias: 30 }, entorno);
+      if (!r.ok || r.valor.vista !== 'SUPERVISOR') throw new Error('sin datos');
+
+      const v = aIndicadores(r.valor);
+
+      expect(v.rol).toBe('SUPERVISOR');
+      expect(v.postulacionesDecididas).toBeNull();
+      expect(v.puntajePorArea).toBeNull();
+      expect(v.practicantesPorArea).toBeNull();
+      expect(v.porProyecto.length).toBe(r.valor.por_proyecto.length);
+      for (const f of v.porProyecto) {
+        expect(f.rutaProyecto).toBe('/supervisor/proyectos/' + f.proyecto.id);
+      }
+      for (const f of v.porPracticante) {
+        expect(f.rutaPracticante).toBe('/supervisor/practicantes/' + f.id);
+      }
+    });
+
+    it('los indicadores del Administrador siguen trayendo postulaciones y área', async () => {
+      const r = await obtenerIndicadores({ idActor: ADMIN, dias: 30 }, entorno);
+      if (!r.ok) throw new Error(r.mensaje);
+
+      const v = aIndicadores(r.valor);
+
+      expect(v.rol).toBe('ADMINISTRADOR');
+      expect(v.postulacionesDecididas).not.toBeNull();
+      expect(v.puntajePorArea).not.toBeNull();
+      expect(v.practicantesPorArea).not.toBeNull();
     });
   });
 });
