@@ -175,8 +175,21 @@
   `domain/` ni en las consultas.
 - **Verificación (en `f07aa48`):** 3.897 pruebas en 172 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-20, tras el módulo 6.1.
-- **Siguiente paso:** módulo 6.2 (Tareas del Supervisor).
+- **Fase 6 — módulo 6.2 (Tareas, Supervisor): terminado (2026-11-21, `424779a`).** Rama `feat/fase6-tareas`, en un solo commit. Rutas `/supervisor/tareas` y
+  `/supervisor/tareas/:idTarea`: reutiliza el listado y el detalle de Tareas del Administrador (5.5), que ya recibían solo las tareas de sus proyectos;
+  `PaginaTareas` y `PaginaDetalleTarea` toman el prefijo del rol de la sesión (`rutaDeTareas(rol)`, con el Administrador por defecto). El Supervisor abre en
+  «Esperando supervisión» si hay tareas ahí y, si no, en «Todas» (`pestanaInicialDeTareas`; una pestaña pedida en `?pestana=` gana); hasta tener los
+  contadores solo se ve el esqueleto de carga, sin pestañas ni filtros, para no mostrar «Todas» de paso. El contador de esa pestaña se resalta en ámbar solo
+  si tiene tareas, y en ella se agrega la columna «Días esperando» (solo para el Supervisor). Pestaña vacía: «No tienes tareas esperando tu supervisión».
+  Aprobar y devolver solo desde el detalle (también con el proyecto en pausa), «Nueva tarea» solo con sus proyectos, y ninguna tarea ajena llega a la
+  pantalla, ni por el listado ni por la dirección del detalle. Los avisos de tarea del Supervisor llevan a `/supervisor/tareas/:idTarea`
+  (`RUTA_DE_DETALLE`). `usePestanaInicial` admite `null` como predeterminada. Sin cambios en `domain/` ni en las consultas.
+- **Verificación (en `424779a`):** 3.921 pruebas en 174 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Pendiente de los autores (cierres de fase):** el cierre en `main` de las **Fases 3, 4 y 5**: PR de `development` a `main`, etiquetas `fase-3-completa`,
+  `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2).
+- **Actualizado:** 2026-11-21, tras el módulo 6.2.
+- **Siguiente paso:** módulo 6.3 (Practicantes a cargo).
 
 ### Cierres de fase
 
@@ -665,9 +678,11 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
 |---|---|---|---|
 | 2026-11-20 | 6.1 Mis proyectos | Listado en tarjetas con pestañas y búsqueda, detalle compartido con el Administrador (rutas según el rol) y `aTarjetaDeProyecto` | `179e3a6` |
 | 2026-11-20 | 6.1 Mis proyectos | Los avisos de proyecto del Supervisor llevan a `/supervisor/proyectos/:id` | `f07aa48` |
+| 2026-11-21 | 6.2 Tareas | Tareas del Supervisor sobre el listado y el detalle del 5.5: pestaña inicial por rol, esqueleto de carga, «Días esperando» y avisos de tarea al detalle | `424779a` |
 
-**Estado de pruebas (2026-11-20, en `f07aa48`):** 3.897 pruebas en 172 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
-el módulo 6.1 sumó 29 y 3 archivos de prueba (Mis proyectos, detalle del Supervisor y adaptador de la tarjeta; más 2 pruebas de los avisos en
+**Estado de pruebas (2026-11-21, en `424779a`):** 3.921 pruebas en 174 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 6.2 sumó 24 y 2 archivos de prueba (Tareas del Supervisor y pestaña inicial, más pruebas de los avisos en `notificacion.test.ts`). No se hicieron
+pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el módulo 6.1 sumó 29 y 3 archivos de prueba (Mis proyectos, detalle del Supervisor y adaptador de la tarjeta; más 2 pruebas de los avisos en
 `notificacion.test.ts`). No se hicieron pruebas de mutación. Antes, en `0f2db6f`: 3.868 pruebas en 169 archivos.
 
 ## Pendientes
@@ -1027,6 +1042,14 @@ el módulo 6.1 sumó 29 y 3 archivos de prueba (Mis proyectos, detalle del Super
       y como `usr-sup-02` y `usr-sup-03`; comprobar las tarjetas en 2 y 3 por fila según el ancho, el ámbar solo con tareas por supervisar, «Sin
       practicantes asignados», las pestañas y la búsqueda; abrir el detalle y comprobar que «Editar proyecto» solo ofrece reunión y rama base; escribir la
       dirección de un proyecto ajeno y ver que no muestra datos; y abrir un aviso de proyecto desde la campana. Las pruebas son de jsdom y no cubren el aspecto.
+- [ ] Prueba manual pendiente del módulo 6.2 (Tareas, Supervisor): en un navegador real, en tema claro y oscuro, entrar como `demo-supervisor` (con cola de
+      revisión) y como `usr-sup-02` (sin ella); comprobar que mientras cargan solo se ve el esqueleto y que luego abre en «Esperando supervisión» o en
+      «Todas» sin pasar por la otra; la columna «Días esperando» solo en esa pestaña, el ámbar solo con tareas y el mensaje de la pestaña vacía; abrir una
+      tarea y ver Aprobar y Devolver, también con el proyecto en pausa; escribir la dirección de una tarea ajena y ver que no muestra datos; abrir un aviso de
+      tarea desde la campana; y **provocar un error de la consulta de la pestaña inicial** (por ejemplo, sin conexión simulada) para ver que se muestra el error y
+      no un esqueleto eterno (en las pruebas no se pudo reproducir: con una sesión inválida la página ni se muestra).
+- [ ] Cierre de las Fases 3, 4 y 5 en `main` (autores): PR de `development` a `main` con las etiquetas `fase-3-completa`, `fase-4-completa` y
+      `fase-5-completa`, y sus filas en «Cierres de fase».
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
 - [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta
