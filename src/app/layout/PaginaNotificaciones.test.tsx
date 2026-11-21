@@ -51,7 +51,7 @@ function renderizar() {
     <MemoryRouter initialEntries={['/practicante/notificaciones']}>
       <Routes>
         <Route path="/practicante/notificaciones" element={<PaginaNotificaciones />} />
-        <Route path="/practicante/proyectos" element={<p>Página de proyectos</p>} />
+        <Route path="/practicante/proyectos/tareas/:idTarea" element={<p>Detalle de la tarea</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -126,7 +126,7 @@ describe('PaginaNotificaciones', () => {
     renderizar();
     await user.click(await screen.findByText('Aviso propio para validar la conexión.', {}, ESPERA));
 
-    expect(await screen.findByText('Página de proyectos', {}, ESPERA)).toBeInTheDocument();
+    expect(await screen.findByText('Detalle de la tarea', {}, ESPERA)).toBeInTheDocument();
     expect(leidaEnAlmacen(propia.id)).toBe(true);
   });
 

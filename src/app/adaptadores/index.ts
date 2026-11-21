@@ -138,3 +138,18 @@ export {
   type ParticipacionACargoParaVista,
   type PracticantesACargoParaVista,
 } from './practicantesACargo';
+export {
+  aEquipoPracticante,
+  aMisProyectos,
+  aResumenAnterior,
+  aResumenProyectoPracticante,
+  claseDeProyecto,
+  type ClaseDeProyecto,
+  type EquipoPracticanteParaVista,
+  type FilaCompanero,
+  type MisProyectosParaVista,
+  type ResumenAnteriorParaVista,
+  type ResumenPracticanteParaVista,
+  type TarjetaDeMiProyecto,
+  type TarjetaDeProyectoAnterior,
+} from './misProyectos';

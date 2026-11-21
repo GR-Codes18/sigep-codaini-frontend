@@ -56,7 +56,13 @@ export const RUTA_DE_DETALLE: Record<Rol, Partial<Record<TipoElemento, (id: Id) 
     // «Practicantes a cargo» (§9.1.2): el detalle de solo lectura de una persona de sus proyectos.
     USUARIO: (id) => `/practicantes/${id}`,
   },
-  PRACTICANTE: {},
+  // El Practicante (§9.2.1): el detalle de su proyecto vigente y el de una tarea, que lo aloja `/practicante/proyectos/tareas/:id`
+  // porque el aviso solo conoce el id de la tarea. Un proyecto que ya no es vigente va al resumen mínimo (ver
+  // `rutaDeNotificacion`).
+  PRACTICANTE: {
+    PROYECTO: (id) => `/proyectos/${id}`,
+    TAREA: (id) => `/proyectos/tareas/${id}`,
+  },
 };
 
 /** El aviso trata de la propia cuenta: lleva a Mi perfil, igual para los tres roles. */
@@ -76,6 +82,10 @@ export function rutaDeNotificacion(
   const { tipo, id } = notificacion.elemento;
   const prefijo = PREFIJO_POR_ROL[rol];
   if (tipo === 'USUARIO' && id === idUsuario) return `${prefijo}${RUTA_MI_PERFIL}`;
+  // La consulta dice que el proyecto ya no es vigente para quien mira (finalizado o «Ya no participas»): resumen mínimo.
+  if (tipo === 'PROYECTO' && notificacion.destino === 'RESUMEN_PROYECTO_ANTERIOR') {
+    return `${prefijo}/proyectos/${id}/anterior`;
+  }
   const detalle = RUTA_DE_DETALLE[rol][tipo];
   if (detalle !== undefined) return `${prefijo}${detalle(id)}`;
   const modulo = RUTA_DE_MODULO[rol][tipo];

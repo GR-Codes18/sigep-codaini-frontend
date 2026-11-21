@@ -20,7 +20,8 @@ export type TipoEstado =
   | 'practicante'
   | 'supervisor'
   | 'severidad'
-  | 'integracion';
+  | 'integracion'
+  | 'participacion';
 
 const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Familia }>> = {
   tarea: {
@@ -74,6 +75,11 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
   integracion: {
     CONECTADO: { etiqueta: 'Conectado', familia: 'success' },
     NO_CONECTADO: { etiqueta: 'Sin conexión', familia: 'danger' },
+  },
+  // Cómo terminó mi paso por un proyecto que ya no es vigente (§9.2.1): finalizado, o salí de él.
+  participacion: {
+    FINALIZADO: { etiqueta: 'Finalizado', familia: 'neutral' },
+    YA_NO_PARTICIPAS: { etiqueta: 'Ya no participas', familia: 'neutral' },
   },
   marca: {
     SOLO_PROTOTIPO: { etiqueta: 'Solo prototipo', familia: 'warning' },

@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { Insignia } from '@/compartido/Insignia';
+import { Insignia, type TipoEstado } from '@/compartido/Insignia';
 import { cn } from '@/compartido/utils';
 
 interface Props {
@@ -12,6 +12,10 @@ interface Props {
   enlace: string;
   /** Proyectos anteriores: atenuada, sin barra de avance. */
   atenuada?: boolean;
+  /** Menos relleno y menos aire entre bloques: para listados de pocas tarjetas que no deben quedar altas (§9.2.1). */
+  compacta?: boolean;
+  /** Qué etiqueta lleva `estado`: la del proyecto (por defecto) o la de mi participación («Ya no participas»). */
+  tipoEstado?: TipoEstado;
 }
 
 export function TarjetaProyecto({
@@ -22,12 +26,15 @@ export function TarjetaProyecto({
   detalles,
   enlace,
   atenuada,
+  compacta = false,
+  tipoEstado = 'proyecto',
 }: Props) {
   return (
     <Link
       to={enlace}
       className={cn(
-        'block rounded-xl border border-border bg-surface p-4 outline-none focus-visible:ring-2 focus-visible:ring-focus',
+        'block rounded-xl border border-border bg-surface outline-none focus-visible:ring-2 focus-visible:ring-focus',
+        compacta ? 'p-3' : 'p-4',
         atenuada ? 'opacity-60' : 'hover:bg-surface-2',
       )}
     >
@@ -36,11 +43,11 @@ export function TarjetaProyecto({
           <p className="truncate font-semibold text-text">{nombre}</p>
           <p className="text-xs text-text-2">{codigo}</p>
         </div>
-        <Insignia tipo="proyecto" estado={estado} />
+        <Insignia tipo={tipoEstado} estado={estado} />
       </div>
 
       {!atenuada && avance !== undefined && (
-        <div className="mt-4">
+        <div className={compacta ? 'mt-2' : 'mt-4'}>
           <div className="h-2 overflow-hidden rounded-full bg-surface-2">
             <div
               className="h-full bg-primary"
@@ -51,9 +58,12 @@ export function TarjetaProyecto({
         </div>
       )}
 
-      <dl className="mt-4 space-y-1 text-sm">
+      <dl className={cn(compacta ? 'mt-2 divide-y divide-border' : 'mt-4 space-y-1', 'text-sm')}>
         {detalles.map((d) => (
-          <div key={d.etiqueta} className="flex justify-between gap-2">
+          <div
+            key={d.etiqueta}
+            className={cn('flex justify-between gap-2', compacta && 'py-1 first:pt-0 last:pb-0')}
+          >
             <dt className="text-text-2">{d.etiqueta}</dt>
             <dd
               className={cn(

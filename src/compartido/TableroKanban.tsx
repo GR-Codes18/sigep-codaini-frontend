@@ -100,7 +100,15 @@ export function TableroKanban({
         </Button>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {/*
+        Altura (igual en los tres paneles):
+        - Pantalla ancha (xl): las cuatro columnas miden lo mismo, tomado de la ventana (su alto menos el encabezado, las
+          pestañas y los márgenes; nunca menos de 22 rem), y solo scrollea la lista de tarjetas de cada columna: la página no.
+        - Tablet (md): dos columnas por fila, con la misma altura dentro de la fila y la lista limitada a 26 rem con su scroll.
+        - Móvil: las columnas se apilan y fluyen sin scroll propio. En 390 px un scroll dentro de otro scroll atrapa el dedo y
+          se usa peor que dejar correr la página.
+      */}
+      <div className="grid gap-4 md:grid-cols-2 xl:h-[max(22rem,calc(100dvh-21rem))] xl:grid-cols-4 xl:grid-rows-1">
         {COLUMNAS.map(({ estado, titulo, borde }) => {
           const mostradas = visibles.filter((t) => t.estado === estado);
           const total =
@@ -113,25 +121,36 @@ export function TableroKanban({
               key={estado}
               aria-label={titulo}
               className={cn(
-                'space-y-3 rounded-xl border border-t-4 border-border bg-surface-2 p-3',
+                'flex min-h-0 flex-col rounded-xl border border-t-4 border-border bg-surface-2',
                 borde,
               )}
             >
-              <h2 className="flex items-center justify-between text-sm font-semibold text-text">
+              {/* El encabezado (nombre y contador) queda fijo: solo scrollean las tarjetas. */}
+              <h2 className="flex shrink-0 items-center justify-between px-3 pt-3 pb-2 text-sm font-semibold text-text">
                 {titulo}
                 <span className="text-xs text-text-2 tabular-nums">{total}</span>
               </h2>
-              {mostradas.map((t) => (
-                <Tarjeta key={t.id} t={t} onAbrir={onAbrir} />
-              ))}
+              {/* El relleno deja sitio al anillo de foco de las tarjetas, que el scroll recortaría. Barra de scroll fina. */}
+              <div
+                className={cn(
+                  'min-h-0 flex-1 space-y-3 px-3 pt-1 pb-3 md:max-h-[26rem] md:overflow-y-auto xl:max-h-none',
+                  '[scrollbar-width:thin] [scrollbar-color:var(--border)_transparent]',
+                )}
+              >
+                {mostradas.map((t) => (
+                  <Tarjeta key={t.id} t={t} onAbrir={onAbrir} />
+                ))}
+              </div>
               {estado === 'TERMINADA' && total > mostradas.length && (
-                <button
-                  type="button"
-                  onClick={onVerTerminadas}
-                  className="text-sm font-medium text-link underline underline-offset-2"
-                >
-                  Ver todas las terminadas
-                </button>
+                <div className="shrink-0 border-t border-border px-3 py-2">
+                  <button
+                    type="button"
+                    onClick={onVerTerminadas}
+                    className="text-sm font-medium text-link underline underline-offset-2"
+                  >
+                    Ver todas las terminadas
+                  </button>
+                </div>
               )}
             </section>
           );

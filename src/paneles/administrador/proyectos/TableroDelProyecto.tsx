@@ -116,6 +116,7 @@ export function TableroDelProyecto({ idActor, proyecto, entorno = ENTORNO }: Pro
       <TableroKanban
         tareas={vista.tareas}
         totalTerminadas={vista.totalTerminadas}
+        permitirSoloMias={sesion?.rol === 'PRACTICANTE'}
         onAbrir={abrir}
         onVerTerminadas={() => setVerTerminadas(true)}
       />

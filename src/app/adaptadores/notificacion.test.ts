@@ -3,6 +3,7 @@ import { ROLES, TIPOS_ELEMENTO, type Rol } from '@/domain';
 import { INICIO_POR_ROL, PREFIJO_POR_ROL } from '@/auth/rutasPorRol';
 import { MENU_POR_ROL } from '@/app/menus';
 import type { NotificacionVista } from '@/services';
+import { rutaDeDetalleDeTarea } from '@/paneles/administrador/proyectos/rutas';
 import {
   aNotificacionItem,
   RUTA_DE_DETALLE,
@@ -39,7 +40,7 @@ describe('aNotificacionItem', () => {
   it('con el enlace activo trae la ruta del módulo y existe=true', () => {
     const item = aNotificacionItem(aviso(), contexto('PRACTICANTE'));
     expect(item.existe).toBe(true);
-    expect(item.ruta).toBe('/practicante/proyectos');
+    expect(item.ruta).toBe('/practicante/proyectos/tareas/tar-1');
   });
 
   it('con el enlace desactivado no trae ruta y existe=false (el texto se conserva)', () => {
@@ -57,10 +58,10 @@ describe('rutaDeNotificacion', () => {
   it.each([
     ['ADMINISTRADOR', 'TAREA', '/administrador/tareas/otro-id'],
     ['SUPERVISOR', 'TAREA', '/supervisor/tareas/otro-id'],
-    ['PRACTICANTE', 'TAREA', '/practicante/proyectos'],
+    ['PRACTICANTE', 'TAREA', '/practicante/proyectos/tareas/otro-id'],
     ['ADMINISTRADOR', 'PROYECTO', '/administrador/proyectos/otro-id'],
     ['SUPERVISOR', 'PROYECTO', '/supervisor/proyectos/otro-id'],
-    ['PRACTICANTE', 'PROYECTO', '/practicante/proyectos'],
+    ['PRACTICANTE', 'PROYECTO', '/practicante/proyectos/otro-id'],
     ['ADMINISTRADOR', 'USUARIO', '/administrador/practicantes/otro-id'],
     ['SUPERVISOR', 'USUARIO', '/supervisor/practicantes/otro-id'],
     ['ADMINISTRADOR', 'AREA_TECNICA', '/administrador/postulaciones/criterios'],
@@ -137,12 +138,29 @@ describe('rutaDeNotificacion', () => {
     expect(ruta).toBe(`${PREFIJO_POR_ROL[rol]}/perfil`);
   });
 
-  it('el resumen de un proyecto anterior lleva a la página de Mis proyectos', () => {
+  it('el aviso de un proyecto vigente del Practicante lleva a su detalle', () => {
+    const ruta = rutaDeNotificacion(
+      aviso({ elemento: { tipo: 'PROYECTO', id: 'pry-1' }, destino: 'DETALLE' }),
+      contexto('PRACTICANTE'),
+    );
+    expect(ruta).toBe('/practicante/proyectos/pry-1');
+  });
+
+  it('un proyecto que ya no es vigente (finalizado o «Ya no participas») lleva a su resumen mínimo', () => {
     const ruta = rutaDeNotificacion(
       aviso({ elemento: { tipo: 'PROYECTO', id: 'pry-1' }, destino: 'RESUMEN_PROYECTO_ANTERIOR' }),
       contexto('PRACTICANTE'),
     );
-    expect(ruta).toBe('/practicante/proyectos');
+    expect(ruta).toBe('/practicante/proyectos/pry-1/anterior');
+  });
+
+  it('el aviso de una tarea del Practicante lleva al mismo destino que el clic en el tablero', () => {
+    const ruta = rutaDeNotificacion(
+      aviso({ elemento: { tipo: 'TAREA', id: 'tar-7' } }),
+      contexto('PRACTICANTE'),
+    );
+    expect(ruta).toBe('/practicante/proyectos/tareas/tar-7');
+    expect(rutaDeDetalleDeTarea('pry-1', 'tar-7', 'PRACTICANTE')).toBe(ruta);
   });
 
   it('un tipo sin entrada en la tabla cae al inicio del rol', () => {

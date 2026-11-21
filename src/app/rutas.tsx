@@ -17,6 +17,11 @@ import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/post
 import { PaginaDetalleTarea } from '@/paneles/administrador/tareas/PaginaDetalleTarea';
 import { PaginaTareas } from '@/paneles/administrador/tareas/PaginaTareas';
 import { RUTA_TAREAS, rutaDeTareas } from '@/paneles/administrador/tareas/rutas';
+import { PaginaDetalleProyectoPracticante } from '@/paneles/practicante/proyectos/PaginaDetalleProyectoPracticante';
+import { PaginaDetalleTareaPracticante } from '@/paneles/practicante/proyectos/PaginaDetalleTareaPracticante';
+import { PaginaMisProyectosPracticante } from '@/paneles/practicante/proyectos/PaginaMisProyectosPracticante';
+import { PaginaProyectoAnterior } from '@/paneles/practicante/proyectos/PaginaProyectoAnterior';
+import { RUTA_MIS_PROYECTOS_PRACTICANTE } from '@/paneles/practicante/proyectos/rutas';
 import { PaginaDashboardSupervisor } from '@/paneles/supervisor/dashboard/PaginaDashboardSupervisor';
 import { RUTA_DASHBOARD_SUPERVISOR } from '@/paneles/supervisor/dashboard/rutas';
 import { PaginaDetallePracticanteACargo } from '@/paneles/supervisor/practicantes/PaginaDetallePracticanteACargo';
@@ -59,6 +64,7 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_CONFIGURACION]: <PaginaConfiguracion />,
   [RUTA_DASHBOARD]: <PaginaDashboard />,
   [RUTA_DASHBOARD_SUPERVISOR]: <PaginaDashboardSupervisor />,
+  [RUTA_MIS_PROYECTOS_PRACTICANTE]: <PaginaMisProyectosPracticante />,
   [RUTA_MIS_PROYECTOS]: <PaginaMisProyectos />,
   [rutaDeTareas('SUPERVISOR')]: <PaginaTareas />,
   [RUTA_PRACTICANTES_A_CARGO]: <PaginaPracticantesACargo />,
@@ -79,6 +85,20 @@ const PAGINAS_INTERNAS: readonly RouteObject[] = [
   },
   // El Supervisor usa el mismo detalle de proyecto (§9.1.1) bajo su prefijo; qué botones ve lo deciden las consultas.
   { path: `${rutaDeTareas('SUPERVISOR')}/:idTarea`, element: <PaginaDetalleTarea /> },
+  // «Mis proyectos» del Practicante (§9.2.1). La ruta fija «tareas» gana a `:idProyecto` (React Router da prioridad a los
+  // segmentos estáticos).
+  {
+    path: `${RUTA_MIS_PROYECTOS_PRACTICANTE}/tareas/:idTarea`,
+    element: <PaginaDetalleTareaPracticante />,
+  },
+  {
+    path: `${RUTA_MIS_PROYECTOS_PRACTICANTE}/:idProyecto`,
+    element: <PaginaDetalleProyectoPracticante />,
+  },
+  {
+    path: `${RUTA_MIS_PROYECTOS_PRACTICANTE}/:idProyecto/anterior`,
+    element: <PaginaProyectoAnterior />,
+  },
   // «Practicantes a cargo» (§9.1.2): el detalle del Supervisor es otra pantalla, de solo lectura.
   {
     path: `${RUTA_PRACTICANTES_A_CARGO}/:idPracticante`,
