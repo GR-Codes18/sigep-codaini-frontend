@@ -8,7 +8,7 @@ import type { PestanaTareas } from '../tareas/filtros';
 import { RUTA_TAREAS } from '../tareas/rutas';
 
 /** Un módulo con su pestaña ya elegida; `T` es el tipo de pestañas de ese módulo, y el compilador comprueba que exista. */
-function conPestana<T extends string>(ruta: string, pestana: T): string {
+export function conPestana<T extends string>(ruta: string, pestana: T): string {
   return `${ruta}?pestana=${pestana}`;
 }
 

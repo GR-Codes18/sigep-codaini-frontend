@@ -4433,3 +4433,48 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Prueba manual pendiente.** El 6.4 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
 - **Pendiente que se conserva.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores (`PROGRESO.md`).
 - **Siguiente paso.** Módulo 6.5 (Dashboard del Supervisor), que va al final de la Fase 6.
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.5 (Dashboard), Supervisor
+
+- **Commit:** `7ece550` (el módulo completo). Rama `feat/fase6-dashboard`, sobre `9951a9a` (con el 6.1 al 6.4). Es el último módulo de la Fase 6. Se siguió el protocolo de proponer
+  el diseño y esperar la aprobación de los autores antes de implementar.
+- **Qué es el módulo.** La primera pantalla del Supervisor (§9.1.5): no calcula nada propio, resume lo que ya existe en los otros módulos, solo de sus proyectos. Usa
+  `obtenerDashboardSupervisor` (Fase 2, paso 11E) tal como estaba: no se amplió ninguna consulta ni se tocó `domain/`; un adaptador `aDashboardSupervisor` solo presenta.
+- **Ruta y distribución.** `/supervisor/dashboard` (la que ya tenía el menú). Cuatro tarjetas arriba; `Por revisar` **a todo el ancho** (con filas de una línea de cinco datos no cabe en
+  media pantalla, así que se cambió la propuesta inicial de ponerlo a la izquierda); debajo, dos columnas del mismo ancho: **Alertas a la izquierda** y, **apiladas a la derecha**,
+  Próximas reuniones y Avance de mis proyectos. En pantallas angostas, una columna.
+- **Tarjetas.** Compactas (etiqueta, cifra y cifra secundaria en tres líneas cortas, poco relleno, la misma forma con o sin tono), en rejilla de 4 en pantalla ancha, 2 en tablet y 1 en
+  móvil. La de «Tareas esperando mi supervisión» se pinta en ámbar solo si hay alguna, y la de «Tareas vencidas» en rojo solo si hay alguna; las demás nunca. Los colores salen de los
+  tokens (`state-warning`, `state-danger`), sin colores a mano.
+- **Por revisar.** Las cinco tareas que más llevan esperando, en una lista compacta: una fila de una línea por tarea (ID, título como enlace al detalle, proyecto, responsable o «Sin asignar» y
+  días esperando), sin tarjeta por fila. El enlace lleva a `/supervisor/tareas/:id`, donde decide.
+- **Alertas.** Hasta cinco, las mismas de Reportes, con la tarjeta compartida de insights en su variante compacta y sus acciones, con los enlaces de `aInsights(…, 'SUPERVISOR')`. Se agrega el
+  enlace **«Ver todas en Reportes»** (`rutaDeReportes('SUPERVISOR')`), porque no se indica cuántas quedaron fuera de las cinco (decisión de los autores).
+- **Estados vacíos.** «No tienes tareas esperando tu supervisión» y «No hay alertas en tus proyectos» salen como una línea baja (`Vacio compacta`) para no cambiar la altura del conjunto. Sin proyectos,
+  un solo mensaje («El Administrador aún no te ha asignado proyectos») y ninguna tarjeta. Con solo proyectos finalizados se muestran las tarjetas, con la de proyectos activos en cero.
+- **Componentes y adaptador compartidos.** `Seccion`, `Tarjeta`, `PorRevisar`, `Reuniones` y `Avance` (más `EnlaceDeTarjeta` y `Vacio`) pasan de `PaginaDashboard` del Administrador a
+  `src/app/dashboard/BloquesDeDashboard.tsx`, con la opción `compacta` que solo usa el Supervisor; y `aPorRevisar`, `aReuniones` y `aAvances` salen de `aDashboard` al adaptador
+  (`src/app/adaptadores/dashboard.ts`) con el rol para los enlaces. **El dashboard del Administrador (5.9) queda igual en comportamiento**: sus pruebas no cambiaron. El único cambio de
+  marcado es que el título de cada sección va dentro de un `div` flex (para poder poner un enlace a la derecha), sin efecto visual.
+- **Dos cambios aditivos de filtros por dirección** (aprobados por los autores, con la condición de que un valor inválido se ignore, el filtro que llega se vea activo y se pueda quitar, y sin
+  parámetros todo se comporte como hoy):
+  - **Tareas** (5.5 y 6.2) lee `?vencidas=1` y `?sin_asignar=1` (`filtrosDeLaDireccion`, en `filtros.ts`): solo vale el valor `1`; la casilla correspondiente queda marcada y se puede desmarcar.
+  - **Mis proyectos** (6.1) lee `?pestana=` (con `usePestanaInicial`): una pestaña desconocida abre «Activos»; la pestaña queda activa y se puede cambiar.
+  Los enlaces de las tarjetas se arman en `src/paneles/supervisor/dashboard/enlaces.ts`; `conPestana` del Administrador se exporta para reutilizarlo.
+- **Revisión visual.** La revisión visual del 6.5 (anchos, modo claro y oscuro) la hizo la autora a ojo, porque el agente no puede abrir el navegador. Las pruebas de jsdom cubren la estructura
+  (rejilla, tarjetas compactas, filas de una línea, ámbar y rojo condicionales), no el aspecto.
+- **Pruebas.** 3.973 → 4.012 en 183 archivos (+39 y +4 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío.
+  No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.5 no define la ruta del módulo (`/supervisor/dashboard`) ni la distribución en columnas descrita arriba.
+  2. §9.1.5 pide que las tarjetas enlacen «al módulo con el filtro ya aplicado» sin decir cómo: los filtros se fijan con parámetros de la dirección (`?pestana=`, `?vencidas=1`, `?sin_asignar=1`).
+  3. «Sin tareas en progreso» y «con N días o más de espera» son texto, sin enlace propio, porque ningún módulo tiene un filtro para ellos (mismo criterio que el 5.9).
+  4. §9.1.5 dice «más de 3 días»; la consulta cuenta las tareas que llevan el plazo de «Supervisión demorada» o más, y la tarjeta lo dice como «con N días o más de espera».
+  5. El enlace «Ver todas en Reportes» del bloque de alertas se añadió (§9.1.5 no lo pide).
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`). El pulido de las tarjetas con mucho espacio, que no se cambiaron: la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra
+  de 3xl), las tarjetas generales de Indicadores de Reportes (Administrador y Supervisor), las tarjetas de insight de Reportes (la variante compacta solo la usan los dashboards) y `TarjetaProyecto` de
+  «Mis proyectos» (espacios `mt-4`).
+- **Cierre de la Fase 6.** Con el 6.5 el panel del Supervisor queda terminado (6.1 a 6.5), con la salvedad de los pendientes de la Fase 8 y de las pruebas manuales de 6.1 a 6.4. Falta su cierre: el PR
+  a `development` y, después, a `main` con la etiqueta `fase-6-completa`.
+- **Pendiente que se conserva.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores (`PROGRESO.md`); la Fase 6 también se cerrará en `main`.
+- **Siguiente paso.** Fase 7, módulo 7.1 (Mis proyectos del Practicante).
