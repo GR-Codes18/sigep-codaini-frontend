@@ -88,3 +88,15 @@ export {
 export { aTareaDetalle } from './tarea';
 export { aTareas, type FilaTarea, type TareasParaVista } from './tareas';
 export { aTablero, aTareaTablero, aTareasTerminadas, type TableroParaVista } from './tablero';
+export {
+  aHistorial,
+  CATEGORIAS_DE_HISTORIAL,
+  ETIQUETA_ACCION,
+  ETIQUETA_CATEGORIA,
+  ETIQUETA_TIPO_ELEMENTO,
+  fechaHoraPeru,
+  TIPOS_ELEMENTO_DE_HISTORIAL,
+  type CambioParaVista,
+  type FilaHistorial,
+  type HistorialParaVista,
+} from './historial';
