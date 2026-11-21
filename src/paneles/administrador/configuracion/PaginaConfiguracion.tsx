@@ -60,7 +60,7 @@ export function PaginaConfiguracion({ entorno = ENTORNO }: { entorno?: Entorno }
         ))
       )}
 
-      <TarjetaGitHub />
+      <TarjetaGitHub entorno={entorno} />
       <RestablecerDatos idActor={idActor} entorno={entorno} />
     </section>
   );

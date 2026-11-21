@@ -228,6 +228,26 @@ describe('Configuración', () => {
     expect(within(tarjeta).queryByText(/token|clave|secret/i)).toBeNull();
   });
 
+  it('la última verificación de la tarjeta es relativa a hoy, no una fecha fija', async () => {
+    const ahora = new Date('2026-11-17T17:00:00.000Z');
+    render(
+      <MemoryRouter initialEntries={['/administrador/configuracion']}>
+        <Routes>
+          <Route
+            path="/administrador/configuracion"
+            element={
+              <PaginaConfiguracion entorno={crearEntorno({ demoraMs: 0, ahora: () => ahora })} />
+            }
+          />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    const tarjeta = await screen.findByRole('region', { name: 'Integraciones' });
+    // 12:00 en Perú menos dos horas.
+    expect(within(tarjeta).getByText(/^17 nov 2026,? 10:00$/)).toBeInTheDocument();
+  });
+
   it('«Restablecer datos» está marcado «solo prototipo», pide confirmación y cancelar no cambia nada', async () => {
     const usuario = userEvent.setup();
     await mostrar();
