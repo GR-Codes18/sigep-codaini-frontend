@@ -4215,3 +4215,42 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   — → INV» de «Proyectos reasignados» (debería leerse sin el «—»), «2 campos modificados» de «Tarea tomada» y «Tarea enviada a supervisión» (podría mostrar el
   campo principal) y el mensaje del rango de fechas inválido.
 - **Siguiente paso.** Módulo 5.8 (Configuración).
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.8 (Configuración), Administrador
+
+- **Commits:** `c814dca` (el módulo completo) y `59d3f76` (la fecha de la última verificación de la tarjeta de GitHub pasa a ser relativa a hoy). Rama
+  `feat/fase5-configuracion`. Mismo patrón de 5.1 a 5.7: `useConsulta`, adaptador en `src/app/adaptadores/configuracion.ts` y página en
+  `src/paneles/administrador/configuracion/`.
+- **URL.** `/administrador/configuracion` (la que ya tenía el menú).
+- **Servicios usados (Fase 2, sin ampliarlos ni tocar `domain/`).** `obtenerConfiguracion` (valor vigente, predeterminado y `es_predeterminado`),
+  `guardarConfiguracionSeccion`, `restaurarSeccionConfiguracion` y `restablecerDatosDemostracion`.
+- **Secciones y parámetros (§5.8).** Evaluación de postulaciones (banda de puntaje ambiguo y proporción de la nota), Prácticas (duración y aviso de fin) y
+  Seguimiento (los 10 umbrales, incluida la anticipación de «Fin de práctica»): 14 parámetros. Cada uno muestra su valor actual (la casilla), su unidad y
+  «Predeterminado: …». Los cambios valen hacia adelante y quedan en el Historial con su valor anterior y el nuevo (un evento por parámetro).
+- **La validación la decide el servicio.** La pantalla solo convierte el texto de cada casilla a número (una casilla vacía es `NaN` y el servicio responde
+  «Escribe un número.»; un decimal se envía tal cual y el servicio dice que debe ser entero). Los errores traen `campos` (`CLAVE` o `CLAVE.campo`) y se
+  muestran junto a la casilla del parámetro; un error del parámetro entero (la suma de la proporción, mínimo y máximo, crítico y atención) sale bajo su título.
+  Lo que no se asocia a ningún parámetro se muestra en un aviso de la sección. Al fallar, lo escrito se conserva.
+- **Restaurar por sección.** «Restaurar valores originales» pide confirmación y llama a `restaurarSeccionConfiguracion`. Queda deshabilitado si todos los
+  parámetros de la sección ya valen lo predeterminado (`es_predeterminado` de la consulta).
+- **Tarjeta de GitHub de ejemplo — decisiones de los autores.** (1) **Datos de ejemplo:** estado «Conectado», cuenta `codaini-demo` y última verificación,
+  todos de muestra; §5.8 solo pide «una tarjeta de ejemplo». (2) **Botones «Probar conexión» y «Reconectar»:** solo muestran el aviso «Acción simulada: en
+  el prototipo no hay conexión real con GitHub.»; no cambian la fecha ni guardan nada. (3) **La fecha de la última verificación es relativa a hoy** (plan §6:
+  sin fechas fijas del pasado): siempre hace 2 horas según el reloj del entorno, en hora de Perú. La clave de la conexión nunca se muestra. La tarjeta
+  lleva la marca «Solo prototipo».
+- **«Restablecer datos» (solo prototipo).** Con la marca «Solo prototipo» y confirmación destructiva. Llama a `restablecerDatosDemostracion`, aplica el
+  `{ usuario }` que devuelve (refresca la sesión o, si la persona ya no existe, la cierra) y vuelve al inicio del rol, para no dejar pantallas abiertas sobre
+  registros que ya no existen. La pantalla nunca toca el almacén. El sistema queda consistente: una sola escritura y la semilla nueva.
+- **`Insignia`.** Suma el tipo `integracion` (Conectado, Sin conexión) y la marca «Solo prototipo».
+- **Pruebas.** 3.823 → 3.844 en 166 archivos (+21 y +2 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.8 no define la ruta del módulo: va en `/administrador/configuracion`.
+  2. Los datos de la tarjeta de GitHub (Conectado, `codaini-demo`), el aviso «Acción simulada» de sus botones y la fecha de verificación relativa a hoy
+     (hace 2 horas) no están en §5.8, que solo dice «una tarjeta de ejemplo».
+  3. §5.8 dice que cada parámetro muestra su valor actual y el predeterminado, y se cumple; pero el rango permitido solo aparece como mensaje del servicio
+     al fallar, no como texto junto a la casilla.
+  4. «Restaurar valores originales» queda deshabilitado cuando la sección ya vale lo predeterminado; §5.8 no lo menciona.
+- **Pendiente anotado para la Fase 8.** Mostrar el rango permitido junto a cada casilla (por ejemplo «de 1 a 24 meses»); exige exportar los límites de los
+  umbrales de Seguimiento desde `domain/`. Queda en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.9 (Dashboard), que va al final de la Fase 5.

@@ -100,3 +100,16 @@ export {
   type FilaHistorial,
   type HistorialParaVista,
 } from './historial';
+export {
+  aConfiguracion,
+  aValorParametro,
+  DESCRIPCION_SECCION,
+  erroresPorParametro,
+  ETIQUETA_SECCION,
+  textoANumero,
+  type CampoParaVista,
+  type ErroresDeParametro,
+  type NombreCampo,
+  type ParametroParaVista,
+  type SeccionParaVista,
+} from './configuracion';
