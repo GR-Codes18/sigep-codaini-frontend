@@ -56,6 +56,8 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
     ACTIVO: { etiqueta: 'Activo', familia: 'success' },
     FINALIZADO: { etiqueta: 'Finalizado', familia: 'neutral' },
     SIN_PROYECTO: { etiqueta: 'Sin proyecto', familia: 'warning' },
+    // Quien ya salió de todos los proyectos del Supervisor (§9.1.2).
+    ANTERIOR: { etiqueta: 'Anterior', familia: 'neutral' },
   },
   // La cuenta de un supervisor (§5.3): activa, o desactivada (no puede iniciar sesión).
   supervisor: {
