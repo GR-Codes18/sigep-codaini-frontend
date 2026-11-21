@@ -226,11 +226,24 @@
   en «Pendientes» (entre ellos, el pulido de tarjetas con mucho espacio); (2) las pruebas manuales en un navegador real de los módulos 6.1 a 6.4, anotadas en
   «Pendientes»; el 6.5 lo revisó la autora a ojo. Pendiente de los autores: el cierre de la fase (PR a `development` y, después, a `main` con la etiqueta
   `fase-6-completa`).
+- **Fase 7 — módulo 7.1 (Mis proyectos, Practicante): terminado (2026-11-21, `96a2e8f`).** Rama `feat/fase7-proyectos` (sobre `7caff1a`, con las Fases 5 y 6), en un solo commit.
+  Rutas `/practicante/proyectos`, `/:id`, `/:id/anterior` y `/practicante/proyectos/tareas/:idTarea`, sobre las consultas que ya existían (`listarMisProyectos`, `obtenerProyecto`
+  y `obtenerEquipoProyecto` en su variante del Practicante, `obtenerTableroProyecto`, `listarTerminadasDeProyecto` y `obtenerResumenProyectoAnterior`): no se amplió ninguna ni se
+  tocó `domain/`. **Listado** en tarjetas compactas, sin pestañas ni búsqueda: vigentes (activos y en pausa) con supervisor, mi carga, tareas disponibles, avance y reunión, y
+  debajo «Anteriores» atenuadas («Finalizado» o «Ya no participas», con el periodo). **Detalle** con tres pestañas: Resumen en tarjetas con título (descripción, fechas y datos,
+  enlaces y repositorio, avance, mis tareas con las vencidas en rojo y mi actividad), Tablero con «Solo mis tareas» y Equipo (el supervisor en una tarjeta destacada y una tarjeta
+  por compañero, sin correo ni celular). **Resumen mínimo** de un proyecto anterior (periodo, tareas terminadas y enlace a Mi historial). Un proyecto no vigente redirige a
+  `/anterior`, uno vigente en `/anterior` redirige a `/:id` y uno ajeno no muestra nada. Los avisos del Practicante llevan al detalle del proyecto, al resumen mínimo si ya no es
+  vigente, y a la tarea. **Cambios compartidos:** el tablero (`TableroKanban`) tiene columnas de la misma altura con scroll propio en los tres paneles; `TarjetaDeDatos` y
+  `AvatarIniciales` en `src/compartido/`; `TarjetaProyecto` suma `compacta` y `tipoEstado`; `Insignia` suma «Finalizado» y «Ya no participas» (participación). La revisión visual del 7.1 la
+  hizo la autora a ojo, porque el agente no puede abrir el navegador.
+- **Verificación (en `96a2e8f`):** 4.098 pruebas en 191 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
+  `git diff -- docs` vacío. Detalle en «Estado de pruebas».
 - **Pendiente de los autores (cierres de fase):** el cierre en `main` de las **Fases 3, 4 y 5**: PR de `development` a `main`, etiquetas `fase-3-completa`,
   `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2). **La Fase 6 también se cerrará en `main`**
   con su etiqueta `fase-6-completa`.
-- **Actualizado:** 2026-11-21, tras el módulo 6.5 y el cierre de la Fase 6.
-- **Siguiente paso:** Fase 7, módulo 7.1 (Mis proyectos del Practicante).
+- **Actualizado:** 2026-11-21, tras el módulo 7.1.
+- **Siguiente paso:** módulo 7.2 (Mi historial del Practicante).
 
 ### Cierres de fase
 
@@ -733,6 +746,17 @@ etiqueta «Anterior» de `Insignia`). No se hicieron pruebas de mutación. Antes
 pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el módulo 6.1 sumó 29 y 3 archivos de prueba (Mis proyectos, detalle del Supervisor y adaptador de la tarjeta; más 2 pruebas de los avisos en
 `notificacion.test.ts`). No se hicieron pruebas de mutación. Antes, en `0f2db6f`: 3.868 pruebas en 169 archivos.
 
+### Fase 7 — panel del Practicante
+
+| Fecha | Módulo | Qué se hizo | Commit |
+|---|---|---|---|
+| 2026-11-21 | 7.1 Mis proyectos | Listado en tarjetas con «Anteriores», detalle de tres pestañas en tarjetas, resumen mínimo del proyecto anterior, avisos del Practicante al detalle, tablero con columnas de la misma altura y scroll propio, `TarjetaDeDatos` y `AvatarIniciales` | `96a2e8f` |
+
+**Estado de pruebas (2026-11-21, en `96a2e8f`):** 4.098 pruebas en 191 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`; el recuento de archivos
+coincide con `npx vitest list`, 191); el módulo 7.1 sumó 86 y 8 archivos de prueba (adaptador de Mis proyectos, listado, detalle, resumen anterior y tarea, diseño en tarjetas,
+`TarjetaDeDatos` y `AvatarIniciales`, tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.test.ts`). No se hicieron pruebas de mutación. Antes, en `7ece550`
+(base del 7.1): 4.012 pruebas en 183 archivos.
+
 ## Pendientes
 
 ### Fase 1 (`domain/`)
@@ -1101,6 +1125,13 @@ pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el mó
       fila con ambos; la columna «Fecha de baja» en «Anteriores»; abrir el detalle y ver que no hay área técnica, postulación de origen ni botones; escribir la
       dirección de un practicante de otro supervisor y ver que no muestra datos; y abrir un aviso de persona desde la campana. Las pruebas son de jsdom y no
       cubren el aspecto.
+- [ ] Módulo 7.2 (Mi historial, Practicante): `/practicante/historial` tiene que **leer el parámetro `?proyecto=<id>`** y filtrar por ese proyecto. El resumen mínimo de un proyecto anterior
+      (7.1) enlaza a `/practicante/historial?proyecto=<id>`, y hasta que exista el 7.2 esa dirección llega a una página vacía. Un valor que no sea un proyecto suyo se ignora.
+- [ ] Fase 8 (tablero, módulo 7.1): la altura del tablero en pantalla ancha se calcula como `max(22rem, 100dvh − 21rem)` en `TableroKanban`. Si la página scrollea un poco con las notas de pausa o
+      finalizado, o con las acciones del Administrador, hay que ajustar ese único número (el 21 es una estimación del encabezado, las pestañas y los márgenes; no se pudo medir en un navegador).
+- [ ] Fase 8 (tarjetas con mucho espacio, vigentes tras el 7.1): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl), las tarjetas generales de Indicadores de Reportes
+      (Administrador y Supervisor) y las tarjetas de insight de Reportes siguen sin variante compacta. `TarjetaProyecto` ya tiene `compacta` (la usa Mis proyectos del Practicante), pero Mis proyectos del
+      Supervisor (6.1) sigue con la estándar (`p-4`, espacios `mt-4`): se puede adoptar la compacta.
 - [ ] Cierre de las Fases 3, 4 y 5 en `main` (autores): PR de `development` a `main` con las etiquetas `fase-3-completa`, `fase-4-completa` y
       `fase-5-completa`, y sus filas en «Cierres de fase».
 - [ ] Cierre de la Fase 6 en `main` (autores): PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-6-completa`, y su fila en
