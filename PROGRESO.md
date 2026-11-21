@@ -135,8 +135,20 @@
   `etiquetaAutor` y `etiquetaEstado`. Nunca muestra contraseñas (una prueba lo vigila).
 - **Verificación (en `18b381b`):** 3.823 pruebas en 164 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-20, tras el módulo 5.7.
-- **Siguiente paso:** módulo 5.8 (Configuración).
+- **Fase 5 — módulo 5.8 (Configuración): terminado (2026-11-20, `c814dca` y `59d3f76`).** Rama `feat/fase5-configuracion`, en dos commits: el módulo
+  (`c814dca`) y el ajuste de la fecha de la tarjeta de GitHub a una relativa a hoy (`59d3f76`). Ruta `/administrador/configuracion`. **Tres
+  secciones** (Evaluación de postulaciones, Prácticas y Seguimiento) con los 14 parámetros de §5.8: cada uno muestra su valor actual, su unidad y
+  «Predeterminado: …»; «Guardar» llama a `guardarConfiguracionSeccion` y deja el cambio en el Historial con su valor anterior y el nuevo; la validación
+  (rango, entero, mínimo menor que máximo, proporción que suma 100, crítico mayor que atención) la decide el servicio y su mensaje sale junto a la
+  casilla; «Restaurar valores originales» va por sección, con confirmación, y queda deshabilitado si todo ya es predeterminado. **Integraciones:**
+  tarjeta de GitHub de ejemplo (Conectado, cuenta, última verificación relativa a hoy y «Probar conexión» y «Reconectar» con el aviso «Acción
+  simulada»), marcada «Solo prototipo». **Datos de demostración:** «Restablecer datos» con confirmación y la marca «Solo prototipo»; aplica la sesión
+  que devuelve el servicio y vuelve al inicio. Usa `obtenerConfiguracion` y los servicios de la Fase 2 sin ampliarlos; sin cambios en `domain/`.
+  `Insignia` suma los tipos `integracion` y «Solo prototipo».
+- **Verificación (en `59d3f76`):** 3.844 pruebas en 166 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-20, tras el módulo 5.8.
+- **Siguiente paso:** módulo 5.9 (Dashboard), que va al final de la Fase 5.
 
 ### Cierres de fase
 
@@ -569,9 +581,12 @@
 | 2026-11-20 | 5.6 Reportes | Gráfico de practicantes por área con alternativa en tabla | `864777f` |
 | 2026-11-20 | 5.6 Reportes | Se restaura el filtro por proyecto de Indicadores, que §5.6 pide y se había quitado por error | `5a81b38` |
 | 2026-11-20 | 5.7 Historial | Historial de actividad de solo lectura: listado, filtros, búsqueda y panel de detalle con valor anterior y nuevo; adaptador `historial` | `18b381b` |
+| 2026-11-20 | 5.8 Configuración | Configuración por secciones con guardar y restaurar, validación del servicio junto a cada casilla, tarjeta de GitHub de ejemplo y «Restablecer datos» (solo prototipo); adaptador `configuracion` | `c814dca` |
+| 2026-11-20 | 5.8 Configuración | La fecha de la última verificación de la tarjeta de GitHub es relativa a hoy | `59d3f76` |
 
-**Estado de pruebas (2026-11-20, en `18b381b`):** 3.823 pruebas en 164 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
-el módulo 5.7 sumó 20 y 2 archivos de prueba (adaptador y página del historial). No se hicieron pruebas de mutación. Antes, en `5a81b38`: 3.803 pruebas en
+**Estado de pruebas (2026-11-20, en `59d3f76`):** 3.844 pruebas en 166 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 5.8 sumó 21 y 2 archivos de prueba (adaptador y página de Configuración, más el tipo nuevo de `Insignia`). No se hicieron pruebas de mutación. Antes, en
+`18b381b`: 3.823 pruebas en 164 archivos; el módulo 5.7 sumó 20 y 2 archivos de prueba (adaptador y página del historial). No se hicieron pruebas de mutación. Antes, en `5a81b38`: 3.803 pruebas en
 162 archivos; el módulo 5.6 sumó 55 y 5 archivos de prueba (filtros de insights, adaptador de reportes, pestañas de Insights e Indicadores y gráfico). No se hicieron
 pruebas de mutación. Antes, en `c8d82e1`: 3.748 pruebas en 157 archivos; el módulo 5.5 sumó 62 y 5 archivos de prueba (filtros, adaptador, listado, detalle y «Nueva tarea», más consultas y ajustes). No se hicieron
 pruebas de mutación. Antes, en `eeb4d50`: 3.686 pruebas en 152 archivos; el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
@@ -961,6 +976,8 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       el campo principal (el estado) y dejar el resto para el detalle.
 - [ ] Fase 8 (pulido del Historial, módulo 5.7): el rango de fechas inválido («Desde» posterior a «Hasta») muestra el mensaje genérico «Revisa los datos
       ingresados.»; hay que darle un mensaje propio, lo que exige ampliar la consulta `listarHistorial`.
+- [ ] Fase 8 (pulido de Configuración, módulo 5.8): mostrar el rango permitido junto a cada casilla (por ejemplo «de 1 a 24 meses»). Hoy solo aparece
+      como mensaje del servicio al fallar, porque los límites de los umbrales de Seguimiento no se exportan desde `domain/`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
 - [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta
