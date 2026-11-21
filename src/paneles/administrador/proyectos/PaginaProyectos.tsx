@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { aProyectos, type FilaProyecto } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
+import { usePestanaInicial } from '@/app/usePestanaInicial';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { Insignia } from '@/compartido/Insignia';
@@ -13,6 +14,7 @@ import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, listarProyectos, type Entorno } from '@/services';
 import {
   FILTROS_INICIALES,
+  PESTANAS_DE_PROYECTOS,
   filtrarProyectos,
   hayFiltros,
   opcionesDeSupervisor,
@@ -109,7 +111,11 @@ export function PaginaProyectos({ entorno = ENTORNO }: { entorno?: Entorno } = {
   const { sesion } = useSesionActiva();
   const idUsuario = sesion?.id ?? null;
   const navegar = useNavigate();
-  const [filtros, setFiltros] = useState<FiltrosProyectos>(FILTROS_INICIALES);
+  const pestanaInicial = usePestanaInicial(PESTANAS_DE_PROYECTOS, FILTROS_INICIALES.pestana);
+  const [filtros, setFiltros] = useState<FiltrosProyectos>(() => ({
+    ...FILTROS_INICIALES,
+    pestana: pestanaInicial,
+  }));
   const [creando, setCreando] = useState(false);
 
   const cargar = useCallback(

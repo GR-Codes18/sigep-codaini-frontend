@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router';
 import { aTareas, type FilaTarea } from '@/app/adaptadores';
 import { DialogoNuevaTarea } from '@/app/tareas/DialogoNuevaTarea';
 import { useConsulta } from '@/app/useConsulta';
+import { usePestanaInicial } from '@/app/usePestanaInicial';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { Insignia } from '@/compartido/Insignia';
@@ -17,6 +18,7 @@ import { ENTORNO, listarTareas, type Entorno } from '@/services';
 import {
   ETIQUETA_ESTADO_PR,
   FILTROS_INICIALES,
+  PESTANAS_DE_TAREAS,
   OPCIONES_ESTADO_PR,
   filtrarTareas,
   hayFiltros,
@@ -134,7 +136,11 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
   const { sesion } = useSesionActiva();
   const idUsuario = sesion?.id ?? null;
   const navegar = useNavigate();
-  const [filtros, setFiltros] = useState<FiltrosTareas>(FILTROS_INICIALES);
+  const pestanaInicial = usePestanaInicial(PESTANAS_DE_TAREAS, FILTROS_INICIALES.pestana);
+  const [filtros, setFiltros] = useState<FiltrosTareas>(() => ({
+    ...FILTROS_INICIALES,
+    pestana: pestanaInicial,
+  }));
   const [creando, setCreando] = useState(false);
 
   const cargar = useCallback(

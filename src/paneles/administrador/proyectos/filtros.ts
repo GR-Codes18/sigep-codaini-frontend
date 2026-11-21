@@ -17,6 +17,14 @@ export interface FiltrosProyectos {
 }
 
 /** Abre en «Activos» (§5.4). */
+/** Las pestañas que un enlace puede pedir con `?pestana=` (el Dashboard, §5.9). */
+export const PESTANAS_DE_PROYECTOS = [
+  'ACTIVO',
+  'EN_PAUSA',
+  'FINALIZADO',
+  'TODOS',
+] as const satisfies readonly PestanaProyectos[];
+
 export const FILTROS_INICIALES: FiltrosProyectos = {
   pestana: 'ACTIVO',
   idSupervisor: '',

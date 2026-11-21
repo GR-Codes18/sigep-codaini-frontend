@@ -29,6 +29,15 @@ export interface FiltrosPostulaciones {
 }
 
 /** Abre en «Pendientes», ordenada por puntaje (§5.1). */
+/** Las pestañas que un enlace puede pedir con `?pestana=` (el Dashboard, §5.9). */
+export const PESTANAS_DE_POSTULACIONES = [
+  'PENDIENTES',
+  'REQUIEREN_REVISION',
+  'APROBADAS',
+  'RECHAZADAS',
+  'TODAS',
+] as const satisfies readonly PestanaPostulaciones[];
+
 export const FILTROS_INICIALES: FiltrosPostulaciones = {
   pestana: 'PENDIENTES',
   idArea: '',

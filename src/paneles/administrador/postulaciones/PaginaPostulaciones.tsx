@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { aPostulaciones, type FilaPostulacion } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
+import { usePestanaInicial } from '@/app/usePestanaInicial';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { Insignia } from '@/compartido/Insignia';
@@ -14,6 +15,7 @@ import { ENTORNO, listarPostulaciones, type Entorno } from '@/services';
 import { BarraPuntaje } from './BarraPuntaje';
 import {
   FILTROS_INICIALES,
+  PESTANAS_DE_POSTULACIONES,
   filtrarPostulaciones,
   hayFiltros,
   opcionesDeArea,
@@ -104,7 +106,11 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
   const { sesion } = useSesionActiva();
   const idUsuario = sesion?.id ?? null;
   const navegar = useNavigate();
-  const [filtros, setFiltros] = useState<FiltrosPostulaciones>(FILTROS_INICIALES);
+  const pestanaInicial = usePestanaInicial(PESTANAS_DE_POSTULACIONES, FILTROS_INICIALES.pestana);
+  const [filtros, setFiltros] = useState<FiltrosPostulaciones>(() => ({
+    ...FILTROS_INICIALES,
+    pestana: pestanaInicial,
+  }));
 
   const cargar = useCallback(
     () => listarPostulaciones({ idActor: idUsuario ?? '' }, entorno),
