@@ -98,7 +98,7 @@ describe('useNotificaciones', () => {
     expect(eliminada.existe).toBe(false);
     expect(eliminada.ruta).toBeUndefined();
     expect(existente.existe).toBe(true);
-    expect(existente.ruta).toBe('/practicante/proyectos');
+    expect(existente.ruta).toBe(`/practicante/proyectos/tareas/${datosIniciales.tareas[0].id}`);
   });
 
   it('vuelve a consultar cuando cambia la lista de notificaciones del almacén', async () => {

@@ -4478,3 +4478,51 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   a `development` y, después, a `main` con la etiqueta `fase-6-completa`.
 - **Pendiente que se conserva.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores (`PROGRESO.md`); la Fase 6 también se cerrará en `main`.
 - **Siguiente paso.** Fase 7, módulo 7.1 (Mis proyectos del Practicante).
+
+## 2026-11-21 — [A+B] Fase 7, módulo 7.1 (Mis proyectos), Practicante
+
+- **Commit:** `96a2e8f` (el módulo completo, con el rediseño a tarjetas y el ajuste del tablero, todo antes del commit). Rama `feat/fase7-proyectos`, sobre `7caff1a` (con las Fases 5 y 6). Se
+  siguió el protocolo de proponer el diseño y esperar la aprobación de los autores antes de implementar.
+- **Qué es el módulo.** La puerta de entrada del Practicante a su trabajo (§9.2.1): sus proyectos en tarjetas, el detalle de cada uno con Resumen, Tablero y Equipo, y un resumen mínimo de los que
+  ya no son vigentes. Usa las consultas que ya existían, que solo entregan lo suyo: no se amplió ninguna ni se tocó `domain/`.
+- **Rutas del Practicante.** `/practicante/proyectos` (listado), `/practicante/proyectos/:idProyecto` (detalle, con `?pestana=`: una desconocida abre «Resumen»),
+  `/practicante/proyectos/:idProyecto/anterior` (resumen mínimo) y `/practicante/proyectos/tareas/:idTarea` (detalle de una tarea).
+  - **Por qué la ruta de la tarea cuelga de «Mis proyectos».** No había ninguna ruta de detalle de tarea para el Practicante, y los avisos solo conocen el id de la tarea, no el del proyecto: el
+    destino del tablero y el de los avisos tenía que poder armarse solo con ese id (`rutaDeDetalleDeTarea` tiene una rama para el Practicante). Se eligió `/practicante/proyectos/tareas/:id` y no
+    `/practicante/tareas/:id` porque así el título y el menú activo siguen siendo los de «Mis proyectos» (el Practicante no tiene módulo de Tareas, §9.2) y se cumple la regla que ya vigila
+    `notificacion.test.ts`: los detalles cuelgan de una página del menú. El segmento fijo `tareas` gana a `:idProyecto` (React Router da prioridad a los segmentos estáticos). Reutiliza el
+    `DetalleDeTarea` compartido (los botones los decide la consulta; en una tarea ajena es de solo lectura); «Volver» regresa a donde estaba y, si se abrió la dirección directamente, a «Mis proyectos».
+- **Redirecciones por dirección** (aprobadas por los autores, con pruebas): `/:id` de un proyecto que ya no es vigente redirige a `/anterior`; `/anterior` de uno vigente redirige a `/:id`; un proyecto
+  ajeno muestra solo «No se encontró el proyecto.» y ningún dato, por las dos direcciones. Quién es vigente, anterior o ajeno lo decide `listarMisProyectos` (`claseDeProyecto`), no la pantalla.
+- **Avisos del Practicante** (decisión de los autores; solo cambia el destino del enlace). `RUTA_DE_DETALLE.PRACTICANTE` suma `PROYECTO` (`/practicante/proyectos/:id`) y `TAREA`
+  (`/practicante/proyectos/tareas/:id`, el mismo destino del clic en el tablero), y `rutaDeNotificacion` lleva un proyecto que la consulta marca como `RESUMEN_PROYECTO_ANTERIOR` (finalizado o «Ya no
+  participas») a `/practicante/proyectos/:id/anterior`. **Tests existentes ajustados a propósito**, porque dependían del destino anterior (el listado `/practicante/proyectos`): `CampanaConectada.test.tsx`,
+  `PaginaNotificaciones.test.tsx` y `useNotificaciones.test.tsx` (en `src/app/layout/`) y `notificacion.test.ts` (las expectativas de proyecto, tarea y proyecto anterior del Practicante).
+- **Tablero con columnas de la misma altura y scroll propio** (ajuste de los autores; `src/compartido/TableroKanban.tsx`, el mismo en Administrador, Supervisor y Practicante; sin tocar reglas ni
+  consultas). En pantalla ancha (xl) las cuatro columnas miden lo mismo, tomado de la ventana (`max(22rem, 100dvh − 21rem)`), y solo scrollea la lista de tarjetas de cada columna (`overflow-y-auto`); el
+  encabezado (nombre y contador) queda fijo y «Ver todas las terminadas» pasa a un pie fijo de «Terminada». **Tablet (md):** dos columnas por fila con la misma altura dentro de la fila y la lista limitada a
+  26 rem con su scroll. **Móvil (390 px):** las columnas se apilan y fluyen **sin scroll propio**, porque un scroll dentro de otro scroll atrapa el dedo y se usa peor que dejar correr la página. La barra de
+  scroll es fina y con el color del borde del tema; el relleno de la lista deja sitio al anillo de foco; los diálogos son portales y el overflow no los corta. Las pruebas existentes del tablero no cambiaron.
+- **Componentes reutilizables.** `src/compartido/TarjetaDeDatos.tsx` (`TarjetaDeDatos` y `FilasDeDatos`): tarjeta con título corto, borde fino, esquinas redondeadas y filas «etiqueta → valor» separadas por líneas
+  finas, con el estilo de las secciones del detalle de tarea y de `TarjetaProyecto`, y solo variables del tema. `src/compartido/AvatarIniciales.tsx`: círculo con las iniciales (no había ningún avatar).
+  `TarjetaProyecto` suma `compacta` (menos relleno, filas con líneas finas) y `tipoEstado`; `Insignia` suma el tipo `participacion` (`FINALIZADO`, `YA_NO_PARTICIPAS`). `TableroDelProyecto` ofrece «Solo mis tareas»
+  solo al Practicante.
+- **Detalle del proyecto.** Encabezado en una tarjeta propia, visible en las tres pestañas (nombre, código, estado, avance en barra grande y filas de supervisor, reunión, rama base y repositorio); Resumen en
+  seis tarjetas con título, dos columnas en pantalla ancha con alturas parejas; Equipo con el supervisor en una tarjeta destacada y una tarjeta pequeña por compañero (avatar, nombre, especialidad, carga en una insignia
+  y Discord y GitHub). El encabezado y el Resumen repiten a propósito el avance y el repositorio (los autores pidieron ambos). La consulta del Equipo excluye al propio practicante, así que no hay tarjeta «tú»:
+  mostrarla exigiría ampliar `obtenerEquipoProyecto` de forma aditiva y no se hizo.
+- **Pruebas.** 4.012 → 4.098 en 191 archivos (+86 y +8 archivos de prueba); el recuento de archivos coincide con `npx vitest list`. `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.2.1 no define las rutas del Practicante: `/practicante/proyectos`, `/:id`, `/:id/anterior` y `/practicante/proyectos/tareas/:idTarea`.
+  2. Con proyectos anteriores pero ninguno vigente, el listado dice «No tienes proyectos activos.» sobre la sección «Anteriores»; el mensaje de vacío total solo sale si no hay ninguno de los dos.
+  3. El enlace del resumen mínimo a Mi historial es `/practicante/historial?proyecto=<id>`; Mi historial (7.2) tendrá que leer ese parámetro.
+  4. «Ya no participas» se presenta como etiqueta de participación (tipo `participacion` de `Insignia`), no como estado del proyecto.
+  5. La ruta del detalle de tarea del Practicante, `/practicante/proyectos/tareas/:idTarea`, tampoco está definida en `docs/`.
+  6. «Disponibles para tomar» muestra el número que entrega la consulta aunque el proyecto esté en pausa (donde no se pueden tomar); solo el aviso del tablero lo dice.
+- **Revisión visual.** La revisión visual del 7.1 (listado, detalle, equipo, tablero, modo claro y oscuro, 390 y 1280 px) la hizo la autora a ojo, porque el agente no puede abrir el navegador. Las pruebas de
+  jsdom cubren la estructura y las clases, no el aspecto.
+- **Pendientes anotados** (en `PROGRESO.md`). Para el 7.2: leer `?proyecto=<id>` en `/practicante/historial`. Para la Fase 8: el descuento de 21 rem de la altura del tablero en pantalla ancha (si la página scrollea un
+  poco con las notas de pausa o las acciones del Administrador, se ajusta ese único número) y las tarjetas con mucho espacio que siguen vigentes (métrica del dashboard del Administrador, tarjetas de Indicadores,
+  tarjetas de insight y `TarjetaProyecto` en Mis proyectos del Supervisor). Se conserva el pendiente del cierre en `main` de las Fases 3, 4, 5 y 6, con sus etiquetas.
+- **Siguiente paso.** Módulo 7.2 (Mi historial del Practicante).

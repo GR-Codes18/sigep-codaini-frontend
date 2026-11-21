@@ -35,7 +35,7 @@ function renderizar() {
       <Routes>
         <Route path="/practicante/inicio" element={<p>Inicio</p>} />
         <Route path="/practicante/notificaciones" element={<p>Página de notificaciones</p>} />
-        <Route path="/practicante/proyectos" element={<p>Página de proyectos</p>} />
+        <Route path="/practicante/proyectos/tareas/:idTarea" element={<p>Detalle de la tarea</p>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -101,7 +101,7 @@ describe('CampanaConectada', () => {
     );
     await user.click(screen.getByText('Aviso 2'));
 
-    expect(await screen.findByText('Página de proyectos', {}, ESPERA)).toBeInTheDocument();
+    expect(await screen.findByText('Detalle de la tarea', {}, ESPERA)).toBeInTheDocument();
     expect(
       useAlmacen.getState().datos.notificaciones.find((n) => n.id === aviso(2).id)?.leida,
     ).toBe(true);

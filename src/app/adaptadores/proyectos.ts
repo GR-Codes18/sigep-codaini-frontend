@@ -21,7 +21,7 @@ import {
 import { aEventosLinea } from './eventos';
 
 /** «7 nov 2026» a partir de `AAAA-MM-DD` o de un instante ISO. */
-function diaVisible(valor: string): string {
+export function diaVisible(valor: string): string {
   return format(parseISO(valor), 'd MMM yyyy', { locale: es });
 }
 

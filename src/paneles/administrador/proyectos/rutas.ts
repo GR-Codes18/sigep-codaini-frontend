@@ -16,12 +16,19 @@ export type PestanaDelProyecto = (typeof PESTANAS_DEL_PROYECTO)[number];
 
 export const PESTANA_INICIAL: PestanaDelProyecto = 'resumen';
 
-/** El detalle de una tarea dentro de su proyecto (§6.7): clic en una tarjeta del tablero. */
+/**
+ * El detalle de una tarea (§6.7): clic en una tarjeta del tablero. El Administrador y el Supervisor lo abren dentro de su
+ * proyecto. El Practicante no tiene módulo de Tareas y sus avisos solo conocen el id de la tarea, así que el tablero y los
+ * avisos usan el mismo destino, `/practicante/proyectos/tareas/:idTarea`, que cuelga de «Mis proyectos».
+ */
 export const rutaDeDetalleDeTarea = (
   idProyecto: string,
   idTarea: string,
   rol: Rol = 'ADMINISTRADOR',
-) => `${rutaDeProyectos(rol)}/${idProyecto}/tareas/${idTarea}`;
+) =>
+  rol === 'PRACTICANTE'
+    ? `${rutaDeProyectos(rol)}/tareas/${idTarea}`
+    : `${rutaDeProyectos(rol)}/${idProyecto}/tareas/${idTarea}`;
 
 export function rutaDeDetalleDeProyecto(
   idProyecto: string,
