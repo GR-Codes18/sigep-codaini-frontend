@@ -99,19 +99,16 @@ describe('Reportes: pestaña «Indicadores»', () => {
     expect(screen.queryByRole('alert')).toBeNull();
   });
 
-  it('el filtro por proyecto deja solo ese proyecto en la tabla', async () => {
-    const usuario = userEvent.setup();
+  it('practicantes por área: el gráfico es una ayuda y la tabla es la alternativa accesible', async () => {
     await mostrar();
 
-    const select = screen.getByLabelText('Proyecto');
-    await waitFor(() => expect(within(select).getAllByRole('option').length).toBeGreaterThan(1));
-    const opcion = within(select).getAllByRole('option')[1]!;
-    await usuario.selectOptions(select, opcion);
-
-    await waitFor(() => {
-      const region = screen.getByRole('region', { name: 'Indicadores por proyecto' });
-      expect(within(region).getAllByRole('row')).toHaveLength(2);
-    });
+    const region = screen.getByRole('region', { name: 'Practicantes por área' });
+    expect(within(region).getByTestId('grafico-practicantes-por-area')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    expect(within(region).getByRole('columnheader', { name: 'Área' })).toBeInTheDocument();
+    expect(within(region).getAllByRole('row').length).toBeGreaterThan(1);
   });
 
   it('enlaza los proyectos a su detalle y muestra «Sin datos» o porcentajes, nunca vacío', async () => {
