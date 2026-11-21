@@ -126,8 +126,17 @@
   `severidad`.
 - **Verificación (en `5a81b38`):** 3.803 pruebas en 162 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
   conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
-- **Actualizado:** 2026-11-20, tras el módulo 5.6.
-- **Siguiente paso:** módulo 5.7 (Historial).
+- **Fase 5 — módulo 5.7 (Historial de actividad): terminado (2026-11-20, `18b381b`).** Rama `feat/fase5-historial`, en un solo commit. Ruta
+  `/administrador/historial`, de **solo lectura** (los eventos son inmutables: ni editar ni borrar). Listado del más reciente al más antiguo con fecha y hora
+  en hora de Perú, autor («Nombre (Rol)» o «Sistema»), acción, elemento con enlace al detalle y resumen del cambio; filtros por rango de fechas, autor
+  (incluido «Sistema»), categoría (las 8 de §5.7), tipo de elemento, proyecto y búsqueda de texto, más «Limpiar filtros». Un clic en la fila abre el
+  detalle con el valor anterior y el nuevo de cada campo y el motivo o la nota. Adaptador `historial.ts` con el nombre en español de las 63 acciones, las
+  8 categorías, los tipos de elemento y los campos. Usa `listarHistorial` sin ampliarla; sin cambios en `domain/`. `eventos.ts` exporta
+  `etiquetaAutor` y `etiquetaEstado`. Nunca muestra contraseñas (una prueba lo vigila).
+- **Verificación (en `18b381b`):** 3.823 pruebas en 164 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Actualizado:** 2026-11-20, tras el módulo 5.7.
+- **Siguiente paso:** módulo 5.8 (Configuración).
 
 ### Cierres de fase
 
@@ -559,9 +568,11 @@
 | 2026-11-20 | 5.6 Reportes | Instalación de `recharts` 3.11.0 (versión exacta) | `301442a` |
 | 2026-11-20 | 5.6 Reportes | Gráfico de practicantes por área con alternativa en tabla | `864777f` |
 | 2026-11-20 | 5.6 Reportes | Se restaura el filtro por proyecto de Indicadores, que §5.6 pide y se había quitado por error | `5a81b38` |
+| 2026-11-20 | 5.7 Historial | Historial de actividad de solo lectura: listado, filtros, búsqueda y panel de detalle con valor anterior y nuevo; adaptador `historial` | `18b381b` |
 
-**Estado de pruebas (2026-11-20, en `5a81b38`):** 3.803 pruebas en 162 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
-el módulo 5.6 sumó 55 y 5 archivos de prueba (filtros de insights, adaptador de reportes, pestañas de Insights e Indicadores y gráfico). No se hicieron
+**Estado de pruebas (2026-11-20, en `18b381b`):** 3.823 pruebas en 164 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`);
+el módulo 5.7 sumó 20 y 2 archivos de prueba (adaptador y página del historial). No se hicieron pruebas de mutación. Antes, en `5a81b38`: 3.803 pruebas en
+162 archivos; el módulo 5.6 sumó 55 y 5 archivos de prueba (filtros de insights, adaptador de reportes, pestañas de Insights e Indicadores y gráfico). No se hicieron
 pruebas de mutación. Antes, en `c8d82e1`: 3.748 pruebas en 157 archivos; el módulo 5.5 sumó 62 y 5 archivos de prueba (filtros, adaptador, listado, detalle y «Nueva tarea», más consultas y ajustes). No se hicieron
 pruebas de mutación. Antes, en `eeb4d50`: 3.686 pruebas en 152 archivos; el bloque 4 del módulo 5.4 sumó 64 y 2 archivos de prueba (ciclo de vida y equipo, más consultas y adaptador). Antes, en `9b2b378`:
 3.622 pruebas en 150 archivos; el bloque 3 sumó 51 y 3 archivos de prueba (nuevo proyecto, editar proyecto y enlaces, más consultas). Antes, en
@@ -943,6 +954,13 @@ la integración sumó 54 pruebas netas (2.836 → 2.890) y 9 archivos (99 → 10
       gráficos, o `build.rolldownOptions.output.codeSplitting`.
 - [ ] Fase 8: comprobación visual del gráfico de practicantes por área (módulo 5.6) en tema claro y oscuro, en un navegador real: en jsdom Recharts no
       mide nada y las pruebas no dibujan las barras.
+- [ ] Fase 8: comprobación visual del panel de detalle del evento del Historial (módulo 5.7) en un navegador real, en tema claro y oscuro; solo se
+      probó en jsdom.
+- [ ] Fase 8 (pulido del Historial, módulo 5.7): el resumen de «Proyectos reasignados» se lee «Proyectos: — → INV» y debería leerse sin el «—».
+- [ ] Fase 8 (pulido del Historial, módulo 5.7): «Tarea tomada» y «Tarea enviada a supervisión» muestran «2 campos modificados»; el resumen podría mostrar
+      el campo principal (el estado) y dejar el resto para el detalle.
+- [ ] Fase 8 (pulido del Historial, módulo 5.7): el rango de fechas inválido («Desde» posterior a «Hasta») muestra el mensaje genérico «Revisa los datos
+      ingresados.»; hay que darle un mensaje propio, lo que exige ampliar la consulta `listarHistorial`.
 - [ ] Revisar las vulnerabilidades de `shadcn` y `eslint` al actualizar esas dependencias y en la Fase 8
       (no se usa `npm audit fix` ni `--force`).
 - [x] Actualizar a mano `docs/` con las decisiones del paso 9 (hecho por los autores, 2026-11-17): propuesta

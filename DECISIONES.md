@@ -4185,3 +4185,33 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Pendientes anotados para la Fase 8.** El aviso del build por chunks de más de 500 kB, que `recharts` agranda, y la comprobación visual del gráfico en
   tema claro y oscuro (en jsdom Recharts no dibuja las barras). Quedan en `PROGRESO.md`.
 - **Siguiente paso.** Módulo 5.7 (Historial).
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.7 (Historial de actividad), Administrador
+
+- **Commit:** `18b381b` (el módulo completo, en un solo commit). Rama `feat/fase5-historial`. Mismo patrón de 5.1 a 5.6: `useConsulta`, adaptador en
+  `src/app/adaptadores/historial.ts` y página en `src/paneles/administrador/historial/`.
+- **Qué es el módulo.** El registro de auditoría (§5.7), vista global **solo del Administrador**. La actividad de un proyecto, una tarea o un perfil
+  sigue viéndose en las líneas de tiempo de cada uno (Supervisor y Practicante, Fases 6 y 7).
+- **URL.** `/administrador/historial` (la que ya tenía el menú).
+- **Solo lectura.** Los eventos son inmutables: ni la tabla ni el panel de detalle ofrecen editar ni borrar, y dos pruebas lo vigilan.
+- **Consulta.** Se usa `listarHistorial` tal como estaba (Fase 2, paso 11D): ya recibe los filtros de §5.7 (fechas, autor o «Sistema», categoría, tipo de
+  elemento, proyecto y texto). No se amplió ninguna consulta ni se tocó `domain/`. Las personas del filtro «Autor» salen de una segunda lectura sin filtros, para
+  que sigan ofreciéndose todas aunque la lista ya esté filtrada; los proyectos, de `listarProyectos`.
+- **Listado y detalle (§5.7).** Del más reciente al más antiguo: fecha y hora en hora de Perú, autor («Nombre (Rol)», «Sistema» o «Usuario desconocido»),
+  acción, elemento con enlace a su detalle (el nombre guardado en el evento, que sigue legible si el elemento ya no existe) y resumen. Un clic en la fila abre
+  el panel con el valor anterior y el nuevo de cada campo modificado y el motivo o la nota; el enlace del elemento no abre el panel.
+- **Nombres.** `ETIQUETA_ACCION` es un `Record` completo de las 63 acciones (una acción nueva obliga a nombrarla), y hay etiquetas para las 8 categorías, los
+  tipos de elemento y los campos registrados. `eventos.ts` exporta `etiquetaAutor` y `etiquetaEstado` para reutilizarlas.
+- **Lo que nunca se muestra.** Ni contraseñas ni inicios de sesión: el almacén no guarda ninguno y la pantalla solo presenta lo guardado. Una prueba revisa que
+  ningún campo ni valor del historial las mencione.
+- **Pruebas.** 3.803 → 3.823 en 164 archivos (+20 y +2 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.7 no define la ruta del módulo: va en `/administrador/historial`.
+  2. El resumen de un evento con varios campos es «N campos modificados» y el detalle da el desglose; §5.7 solo da el ejemplo de un cambio de estado.
+  3. El rango de fechas inválido («Desde» posterior a «Hasta») muestra el mensaje genérico de la consulta, «Revisa los datos ingresados.»; §5.7 no dice nada.
+  4. Los nombres legibles de los campos y de los estados salen de una tabla del adaptador; la propuesta no los lista.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`). La comprobación del detalle del evento en un navegador real, y tres pulidos del resumen: «Proyectos:
+  — → INV» de «Proyectos reasignados» (debería leerse sin el «—»), «2 campos modificados» de «Tarea tomada» y «Tarea enviada a supervisión» (podría mostrar el
+  campo principal) y el mensaje del rango de fechas inválido.
+- **Siguiente paso.** Módulo 5.8 (Configuración).
