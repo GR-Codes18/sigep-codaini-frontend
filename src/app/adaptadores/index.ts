@@ -27,6 +27,13 @@ export {
   type PostulacionesParaVista,
 } from './postulaciones';
 export {
+  aInicioPracticante,
+  type FilaPullRequestPorAtender,
+  type FilaTareaEnCurso,
+  type InicioPracticanteParaVista,
+  type InicioPracticanteVacioParaVista,
+} from './inicioPracticante';
+export {
   aMiHistorial,
   filtrarMiHistorial,
   idProyectoValido,

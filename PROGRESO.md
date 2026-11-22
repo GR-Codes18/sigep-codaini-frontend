@@ -255,11 +255,27 @@
   porque el agente no puede abrir el navegador.
 - **Verificación (en `c43d69c`):** 4.131 pruebas en 193 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
   `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Fase 7 — módulo 7.3 (Inicio, Practicante): terminado (2026-11-21, `75c8139`).** Rama `feat/fase7-inicio`, sobre `46a8185` (el merge del PR #46, que trajo el 7.2), en un solo commit.
+  Ruta `/practicante/inicio` (la del menú) con el título «Inicio», sobre `obtenerInicioPracticante` (ya existía; sin ampliar consultas ni tocar `domain/`). **Cuatro tarjetas compactas**
+  (Mis tareas en progreso, Devueltas con observaciones, Esperando supervisión, Disponibles para tomar; solo «Devueltas» se pinta, en rojo, y solo si hay alguna) que enlazan **sin filtro**
+  a `/practicante/proyectos`; **Mis tareas en curso** (tabla a todo el ancho, con scroll horizontal interno a 390 px; devueltas, vencidas y por fecha, como las ordena la consulta);
+  **Pull Requests por atender** (etiqueta Pendiente o Con conflictos, estén en la columna que estén) y **Próximas reuniones** (el bloque compartido), lado a lado con `items-start` y en una
+  columna en móvil. Sin botones de acción: todo clic navega. Sin ningún proyecto vigente (también quien solo sigue en uno finalizado), un solo mensaje. Bloques nuevos en
+  `src/app/dashboard/BloquesDelPracticante.tsx`, sin tocar los compartidos (los dashboards del Administrador y del Supervisor no cambian) y adaptador `inicioPracticante.ts`. **Se elimina la
+  página de desarrollo temporal de la Fase 4** (`src/app/desarrollo/` y la ruta `/<panel>/desarrollo`), que el plan (§7.3, «Listo cuando») exigía; antes se migraron sus cuatro pruebas de
+  integración sin cobertura en otro sitio (Tomar tarea, Crear nuevo Pull Request, Cerrar Pull Request y Editar) a `AccionesDeTareaPracticante.test.tsx` y `AccionesDeTareaSupervisor.test.tsx`.
+  «Liberar» y «Enviar a supervisión» no las cubría ese test y no se añadieron. La revisión visual del 7.3 la hizo la autora a ojo, porque el agente no puede abrir el navegador.
+- **Cierre de la Fase 7 (módulos 7.1 a 7.3): terminada** en la rama (2026-11-21); falta su cierre en `main` con la etiqueta `fase-7-completa`.
+- **Verificación (en `75c8139`):** 4.152 pruebas en 196 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
+  `git diff -- docs` vacío. Detalle en «Estado de pruebas».
 - **Pendiente de los autores (cierres de fase):** el cierre en `main` de las **Fases 3, 4 y 5**: PR de `development` a `main`, etiquetas `fase-3-completa`,
-  `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2). **La Fase 6 también se cerrará en `main`**
-  con su etiqueta `fase-6-completa`.
-- **Actualizado:** 2026-11-21, tras el módulo 7.2.
-- **Siguiente paso:** módulo 7.3 (Inicio del Practicante).
+  `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2). **Las Fases 6 y 7 también se cerrarán en `main`**
+  con sus etiquetas `fase-6-completa` y `fase-7-completa`.
+- **Actualizado:** 2026-11-21, tras el módulo 7.3 y el cierre de la Fase 7.
+- **Siguiente paso:** Fase 8 (pulido, pruebas de punta a punta y entrega). Lista de pendientes acumulada en «Pendientes»: comprobación manual en un navegador real de los módulos 5.1 a 7.3
+  (la hizo a ojo la autora en parte; el agente no puede abrir el navegador); contraste de las tarjetas en modo oscuro, de todo el sistema; menú que resalta «Mis proyectos» desde Mi
+  historial; formatos de fecha de `TableroKanban` y `ListaDeTareasDePracticante`; el `21rem` de la altura del tablero; tarjetas con mucho espacio; enlaces de las tarjetas del Inicio sin
+  filtro; «Disponibles para tomar» con proyectos en pausa; pulidos del Historial de actividad y de Configuración; chunks de más de 500 kB; y el cierre en `main` de las Fases 3 a 7.
 
 ### Cierres de fase
 
@@ -769,12 +785,16 @@ pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el mó
 | 2026-11-21 | 7.1 Mis proyectos | Listado en tarjetas con «Anteriores», detalle de tres pestañas en tarjetas, resumen mínimo del proyecto anterior, avisos del Practicante al detalle, tablero con columnas de la misma altura y scroll propio, `TarjetaDeDatos` y `AvatarIniciales` | `96a2e8f` |
 | 2026-11-21 | Ajuste del 7.1 | Resumen del proyecto del Practicante en dos columnas independientes (`items-start`), compañeros con `items-start` y fecha límite con `diaVisible` | `ded0577` |
 | 2026-11-21 | 7.2 Mi historial | Tabla de tareas terminadas con filtro por proyecto en la dirección (`?proyecto=`), búsqueda y scroll horizontal interno; `miHistorial` (adaptador) | `c43d69c` |
+| 2026-11-21 | 7.3 Inicio | Inicio del Practicante: cuatro tarjetas sin filtro, tareas en curso, Pull Requests por atender y reuniones (`BloquesDelPracticante`, `inicioPracticante`); elimina la página de desarrollo temporal tras migrar sus cuatro pruebas de integración | `75c8139` |
+| 2026-11-21 | Cierre de la Fase 7 | Los tres módulos del panel del Practicante (7.1 a 7.3) terminados; falta su cierre en `main` con la etiqueta `fase-7-completa` | — |
 
-**Estado de pruebas (2026-11-21, en `c43d69c`):** 4.131 pruebas en 193 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`; el recuento de archivos
-coincide con `npx vitest list`, 193); el módulo 7.2 sumó 31 y 2 archivos de prueba (el adaptador `miHistorial` y la página de Mi historial). No se hicieron pruebas de mutación.
-Antes, en `ded0577` (ajuste del 7.1): 4.100 pruebas en 191 archivos; el ajuste sumó 2 (tres pruebas nuevas y una reescrita). Antes, en `96a2e8f`: 4.098 pruebas en 191 archivos; el
-módulo 7.1 sumó 86 y 8 archivos de prueba (adaptador de Mis proyectos, listado, detalle, resumen anterior y tarea, diseño en tarjetas, `TarjetaDeDatos` y `AvatarIniciales`,
-tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.test.ts`). Antes, en `7ece550` (base del 7.1): 4.012 pruebas en 183 archivos.
+**Estado de pruebas (2026-11-21, en `75c8139`):** 4.152 pruebas en 196 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`; el recuento de archivos
+coincide con `npx vitest list`, 196). Desde las 4.131 pruebas en 193 archivos del 7.2: **+32 pruebas y +2 archivos del 7.3** (el adaptador `inicioPracticante` y la página del Inicio), **+4
+pruebas y +2 archivos de la migración** (`AccionesDeTareaPracticante.test.tsx` y `AccionesDeTareaSupervisor.test.tsx`) y **−15 pruebas y −1 archivo de la eliminación** de la página de
+desarrollo (`PaginaDesarrollo.test.tsx`). No se hicieron pruebas de mutación. Antes, en `c43d69c`: 4.131 pruebas en 193 archivos; el módulo 7.2 sumó 31 y 2 archivos de prueba (el adaptador
+`miHistorial` y la página de Mi historial). Antes, en `ded0577` (ajuste del 7.1): 4.100 pruebas en 191 archivos; el ajuste sumó 2 (tres pruebas nuevas y una reescrita). Antes, en `96a2e8f`:
+4.098 pruebas en 191 archivos; el módulo 7.1 sumó 86 y 8 archivos de prueba (adaptador de Mis proyectos, listado, detalle, resumen anterior y tarea, diseño en tarjetas, `TarjetaDeDatos` y
+`AvatarIniciales`, tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.test.ts`). Antes, en `7ece550` (base del 7.1): 4.012 pruebas en 183 archivos.
 
 ## Pendientes
 
@@ -991,7 +1011,7 @@ tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.t
       (divergencia temporal con §8.1).
 - [ ] Fase 5 y 6 (listados): las consultas devuelven el conjunto completo del alcance con contadores por pestaña; la pantalla
       filtra pestañas y búsqueda en memoria. Solo `listarHistorial` y `obtenerIndicadores` reciben filtros.
-- [ ] Fase 7 (Practicante): `listarMisProyectos`, `obtenerProyecto` (variante `PRACTICANTE`), `obtenerEquipoProyecto`,
+- [x] Fase 7 (Practicante, cumplido en los módulos 7.1 a 7.3 sin ampliar las consultas): `listarMisProyectos`, `obtenerProyecto` (variante `PRACTICANTE`), `obtenerEquipoProyecto`,
       `listarMiHistorial` y `obtenerInicioPracticante`. Una tarea que el supervisor devolvió o reabrió y que quedó a nombre de
       alguien que ya salió del proyecto no aparece en «Mis tareas en curso» (solo en proyectos vigentes), pero sí en
       `listarTareas` y en `obtenerTarea` (decisión D6-A del paso 5).
@@ -1159,10 +1179,19 @@ tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.t
       modo oscuro. Se resolverá **una sola vez, con los tokens del tema**, y no pantalla por pantalla; por eso ni el 7.1 ni el 7.2 cambiaron colores, bordes ni tokens.
 - [ ] Fase 8 (formato de fecha): `TableroKanban` («Límite dd/MM/yyyy») y `ListaDeTareasDePracticante` (la fecha límite sin formato, «2026-11-18») usan un formato distinto del de `diaVisible`
       («9 oct 2026»), que es el del Resumen del proyecto del Practicante y de Mi historial. El ajuste `ded0577` solo unificó el Resumen.
+- [ ] Revisión en un navegador real del 7.3 (Inicio a 1280 y 390 px en los dos temas, tarjetas parejas con y sin rojo, scroll horizontal de la tabla de tareas en curso, bloques inferiores con
+      `items-start`): la hizo la autora a ojo; las pruebas de jsdom cubren la estructura y el comportamiento, no el aspecto.
+- [ ] Fase 8 (Inicio del Practicante, módulo 7.3): las cuatro tarjetas enlazan **sin filtro** a `/practicante/proyectos`. Afinarlas exige un filtro en el detalle de Mis proyectos (por ejemplo, abrir el
+      tablero con «Solo mis tareas») y el id del proyecto en la consulta del Inicio, que hoy no lo trae en las tarjetas; el cambio sería aditivo en el 7.1 y en `obtenerInicioPracticante`.
+- [ ] Fase 8 (consistencia, 7.1 y 7.3): «Disponibles para tomar» no cuenta los proyectos en pausa en el Inicio (§9.2.3), pero la tarjeta de Mis proyectos (7.1) muestra el número que entrega la consulta
+      aunque el proyecto esté en pausa. Decidir si Mis proyectos también lo oculta o lo marca.
+- [ ] Posible mejora (Fase 8): «Liberar» y «Enviar a supervisión» siguen **sin prueba de integración con clics reales** sobre la pantalla y el almacén. La página de desarrollo que se eliminó en el 7.3
+      tampoco las cubría; sí tienen pruebas de servicio (`transiciones.test.ts`, `flujo.test.ts`) y de los botones y modales del detalle (`DetalleTarea.test.tsx`).
 - [ ] Cierre de las Fases 3, 4 y 5 en `main` (autores): PR de `development` a `main` con las etiquetas `fase-3-completa`, `fase-4-completa` y
       `fase-5-completa`, y sus filas en «Cierres de fase».
 - [ ] Cierre de la Fase 6 en `main` (autores): PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-6-completa`, y su fila en
       «Cierres de fase».
+- [ ] Cierre de la Fase 7 en `main` (autores): PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-7-completa`, y su fila en «Cierres de fase».
 - [ ] Fase 8 (pulido de tarjetas con mucho espacio, detectado en el 6.5; no se cambiaron): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl); las
       tarjetas generales de Indicadores de Reportes (Administrador y Supervisor); las tarjetas de insight de Reportes (la variante compacta solo la usan los dashboards);
       y `TarjetaProyecto` de «Mis proyectos» (espacios `mt-4`). El Dashboard del Supervisor ya usa la variante compacta de `Tarjeta` (`BloquesDeDashboard`) como referencia.
