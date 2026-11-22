@@ -130,16 +130,52 @@ describe('Diseño de Mis proyectos del Practicante: tarjetas limpias y consisten
       }
     });
 
-    it('va en dos columnas en pantalla ancha, con alturas parejas, y en una en móvil', async () => {
+    it('va en dos columnas independientes en pantalla ancha y en una en móvil, sin estirar las tarjetas', async () => {
       mostrar(`/practicante/proyectos/${VIGENTE}`);
 
-      const rejilla = (await screen.findByRole('region', { name: 'Descripción' })).parentElement!;
+      const columna = (await screen.findByRole('region', { name: 'Descripción' })).parentElement!;
+      const rejilla = columna.parentElement!;
       expect(rejilla.className).toContain('lg:grid-cols-2');
-      expect(rejilla.className).toContain('items-stretch');
+      expect(rejilla.className).toContain('items-start');
+      expect(rejilla.className).not.toContain('items-stretch');
       expect(rejilla.className.split(' ')).not.toContain('grid-cols-2'); // móvil: una columna
+      expect(rejilla.children).toHaveLength(2);
+      // Cada columna apila sus tarjetas con la altura de su contenido.
+      for (const c of Array.from(rejilla.children)) {
+        expect(c.className).toContain('flex-col');
+      }
       for (const t of TARJETAS_DEL_RESUMEN) {
-        expect(screen.getByRole('region', { name: t }).className).toContain('h-full');
-        expect(screen.getByRole('region', { name: t }).parentElement).toBe(rejilla);
+        const tarjeta = screen.getByRole('region', { name: t });
+        expect(rejilla.contains(tarjeta)).toBe(true);
+        expect(tarjeta.parentElement!.parentElement).toBe(rejilla);
+      }
+    });
+
+    it('reparte las tarjetas para que las dos columnas queden parecidas', async () => {
+      mostrar(`/practicante/proyectos/${VIGENTE}`);
+
+      const rejilla = (await screen.findByRole('region', { name: 'Descripción' })).parentElement!
+        .parentElement!;
+      const nombres = Array.from(rejilla.children).map((c) =>
+        Array.from(c.children).map((t) => t.getAttribute('aria-label')),
+      );
+      expect(nombres).toEqual([
+        ['Descripción', 'Enlaces y repositorio', 'Mis tareas'],
+        ['Fechas y datos del proyecto', 'Avance', 'Mi actividad'],
+      ]);
+    });
+
+    it('las fechas de Mis tareas usan el mismo formato que el resto del Resumen', async () => {
+      mostrar(`/practicante/proyectos/${VIGENTE}`);
+
+      const fechas = await screen.findByRole('region', { name: 'Fechas y datos del proyecto' });
+      const inicio = within(fechas).getByText('Fecha de inicio').nextElementSibling!.textContent!;
+      const tareas = screen.getByRole('region', { name: 'Mis tareas' });
+      const limites = within(tareas).queryAllByText(/Límite:/);
+      expect(inicio).toMatch(/^\d{1,2} \p{L}+\.? \d{4}$/u);
+      for (const l of limites) {
+        expect(l.textContent).toMatch(/^Límite: \d{1,2} \p{L}+\.? \d{4}/u);
+        expect(l.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}/);
       }
     });
 
@@ -166,6 +202,7 @@ describe('Diseño de Mis proyectos del Practicante: tarjetas limpias y consisten
 
       const lista = within(companeros).getByRole('list');
       expect(lista.className).toContain('md:grid-cols-2');
+      expect(lista.className).toContain('items-start');
       expect(lista.className.split(' ')).not.toContain('grid-cols-2');
       const tarjetas = within(lista).getAllByRole('listitem');
       expect(tarjetas.length).toBeGreaterThan(0);

@@ -27,11 +27,20 @@ export {
   type PostulacionesParaVista,
 } from './postulaciones';
 export {
+  aMiHistorial,
+  filtrarMiHistorial,
+  idProyectoValido,
+  type FilaMiHistorial,
+  type FiltrosMiHistorial,
+  type MiHistorialParaVista,
+} from './miHistorial';
+export {
   aDatosProyecto,
   aEquipoProyecto,
   aProyectos,
   aTarjetaDeProyecto,
   aResumenProyecto,
+  diaVisible,
   type AvanceParaVista,
   type CicloDeVidaParaVista,
   type DatosProyectoParaVista,
