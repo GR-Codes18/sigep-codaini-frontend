@@ -6,7 +6,6 @@ import type { Rol } from '@/auth/tipos';
 import { LayoutPanel } from '@/app/layout/LayoutPanel';
 import { PaginaVacia } from '@/app/layout/PaginaVacia';
 import { MENU_POR_ROL } from '@/app/menus';
-import { PaginaDesarrollo } from '@/app/desarrollo/PaginaDesarrollo';
 import { PaginaNotificaciones } from '@/app/layout/PaginaNotificaciones';
 import { PaginaPerfil } from '@/app/perfil/PaginaPerfil';
 import { AccesoSiNoHaySesion, RaizSegunSesion } from '@/app/RedireccionesSesion';
@@ -17,6 +16,8 @@ import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/post
 import { PaginaDetalleTarea } from '@/paneles/administrador/tareas/PaginaDetalleTarea';
 import { PaginaTareas } from '@/paneles/administrador/tareas/PaginaTareas';
 import { RUTA_TAREAS, rutaDeTareas } from '@/paneles/administrador/tareas/rutas';
+import { PaginaInicioPracticante } from '@/paneles/practicante/inicio/PaginaInicioPracticante';
+import { RUTA_INICIO_PRACTICANTE } from '@/paneles/practicante/inicio/rutas';
 import { PaginaMiHistorial } from '@/paneles/practicante/historial/PaginaMiHistorial';
 import { RUTA_MI_HISTORIAL } from '@/paneles/practicante/historial/rutas';
 import { PaginaDetalleProyectoPracticante } from '@/paneles/practicante/proyectos/PaginaDetalleProyectoPracticante';
@@ -68,6 +69,7 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_DASHBOARD_SUPERVISOR]: <PaginaDashboardSupervisor />,
   [RUTA_MIS_PROYECTOS_PRACTICANTE]: <PaginaMisProyectosPracticante />,
   [RUTA_MI_HISTORIAL]: <PaginaMiHistorial />,
+  [RUTA_INICIO_PRACTICANTE]: <PaginaInicioPracticante />,
   [RUTA_MIS_PROYECTOS]: <PaginaMisProyectos />,
   [rutaDeTareas('SUPERVISOR')]: <PaginaTareas />,
   [RUTA_PRACTICANTES_A_CARGO]: <PaginaPracticantesACargo />,
@@ -125,7 +127,6 @@ function rutasDeRol(rol: Rol): RouteObject[] {
     ...PAGINAS_INTERNAS.filter((r) => r.path?.startsWith(`${prefijo}/`)),
     { path: `${prefijo}/perfil`, element: <PaginaPerfil /> },
     { path: `${prefijo}/notificaciones`, element: <PaginaNotificaciones /> },
-    { path: `${prefijo}/desarrollo`, element: <PaginaDesarrollo /> },
   ];
 }
 
