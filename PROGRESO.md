@@ -239,11 +239,27 @@
   hizo la autora a ojo, porque el agente no puede abrir el navegador.
 - **Verificación (en `96a2e8f`):** 4.098 pruebas en 191 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
   `git diff -- docs` vacío. Detalle en «Estado de pruebas».
+- **Fase 7 — ajuste de distribución del 7.1: terminado (2026-11-21, `ded0577`).** Sobre `7f21bbe` (el merge del PR #45, que trajo el 7.1). Solo distribución: el Resumen del detalle del
+  proyecto del Practicante pasa a **dos columnas independientes** (`items-start`, cada tarjeta con la altura de su contenido; una columna en móvil), con Descripción, Enlaces y repositorio y
+  Mis tareas a un lado, y Fechas y datos, Avance y Mi actividad al otro; la cuadrícula de compañeros del Equipo también va con `items-start`; y «Límite» en Mis tareas usa `diaVisible`
+  (el formato de las demás fechas del Resumen). Sin cambios de colores, bordes, tokens, reglas ni consultas. `diaVisible` se exporta desde el índice de adaptadores. Un test
+  reescrito (`DisenoDeMiProyecto.test.tsx`, que exigía `items-stretch`) y dos nuevos.
+- **Fase 7 — módulo 7.2 (Mi historial, Practicante): terminado (2026-11-21, `c43d69c`).** Rama `feat/fase7-historial`, sobre el ajuste del 7.1. Ruta `/practicante/historial` (la del menú), sin
+  ampliar `listarMiHistorial` ni tocar `domain/`. **Tabla** (`TablaCompacta`) de las tareas que terminó, de todos sus proyectos (también los anteriores), de la más reciente a la más antigua:
+  ID, Título, Proyecto, Fecha de término, Veces devuelta, Pull Request (la etiqueta ya filtrada por visibilidad) y «Ver detalle»; sin acciones en las filas. En 390 px la tabla scrollea
+  **horizontalmente dentro de su contenedor** (no hay tarjetas por fila). **Filtros** en una `TarjetaDeDatos` compacta: búsqueda por título o ID (sin tildes), selector «Proyecto» con sus
+  proyectos vigentes y anteriores, etiqueta «Proyecto: XXX ✕» para quitarlo y conteo. El filtro vive en la dirección (`?proyecto=<id>`, el que usa el resumen mínimo del 7.1): elegirlo o
+  quitarlo cambia la dirección con `replace`, y un valor inválido, inexistente o ajeno se ignora sin mensaje y se limpia de la dirección; el filtro se aplica en memoria. Un clic
+  en la fila abre el detalle de la tarea del 7.1 (solo lectura) y «Volver» regresa con el filtro conservado. Estados vacíos: «Aún no has terminado tareas», «No has terminado tareas en
+  este proyecto» (con «Quitar filtro») y «Ninguna tarea coincide con la búsqueda». Adaptador `src/app/adaptadores/miHistorial.ts`. La revisión visual del 7.2 la hizo la autora a ojo,
+  porque el agente no puede abrir el navegador.
+- **Verificación (en `c43d69c`):** 4.131 pruebas en 193 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
+  `git diff -- docs` vacío. Detalle en «Estado de pruebas».
 - **Pendiente de los autores (cierres de fase):** el cierre en `main` de las **Fases 3, 4 y 5**: PR de `development` a `main`, etiquetas `fase-3-completa`,
   `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2). **La Fase 6 también se cerrará en `main`**
   con su etiqueta `fase-6-completa`.
-- **Actualizado:** 2026-11-21, tras el módulo 7.1.
-- **Siguiente paso:** módulo 7.2 (Mi historial del Practicante).
+- **Actualizado:** 2026-11-21, tras el módulo 7.2.
+- **Siguiente paso:** módulo 7.3 (Inicio del Practicante).
 
 ### Cierres de fase
 
@@ -751,11 +767,14 @@ pruebas de mutación. Antes, en `f07aa48`: 3.897 pruebas en 172 archivos; el mó
 | Fecha | Módulo | Qué se hizo | Commit |
 |---|---|---|---|
 | 2026-11-21 | 7.1 Mis proyectos | Listado en tarjetas con «Anteriores», detalle de tres pestañas en tarjetas, resumen mínimo del proyecto anterior, avisos del Practicante al detalle, tablero con columnas de la misma altura y scroll propio, `TarjetaDeDatos` y `AvatarIniciales` | `96a2e8f` |
+| 2026-11-21 | Ajuste del 7.1 | Resumen del proyecto del Practicante en dos columnas independientes (`items-start`), compañeros con `items-start` y fecha límite con `diaVisible` | `ded0577` |
+| 2026-11-21 | 7.2 Mi historial | Tabla de tareas terminadas con filtro por proyecto en la dirección (`?proyecto=`), búsqueda y scroll horizontal interno; `miHistorial` (adaptador) | `c43d69c` |
 
-**Estado de pruebas (2026-11-21, en `96a2e8f`):** 4.098 pruebas en 191 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`; el recuento de archivos
-coincide con `npx vitest list`, 191); el módulo 7.1 sumó 86 y 8 archivos de prueba (adaptador de Mis proyectos, listado, detalle, resumen anterior y tarea, diseño en tarjetas,
-`TarjetaDeDatos` y `AvatarIniciales`, tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.test.ts`). No se hicieron pruebas de mutación. Antes, en `7ece550`
-(base del 7.1): 4.012 pruebas en 183 archivos.
+**Estado de pruebas (2026-11-21, en `c43d69c`):** 4.131 pruebas en 193 archivos, todas aprobadas (`npx vitest run --testTimeout=60000 --maxWorkers=3`; el recuento de archivos
+coincide con `npx vitest list`, 193); el módulo 7.2 sumó 31 y 2 archivos de prueba (el adaptador `miHistorial` y la página de Mi historial). No se hicieron pruebas de mutación.
+Antes, en `ded0577` (ajuste del 7.1): 4.100 pruebas en 191 archivos; el ajuste sumó 2 (tres pruebas nuevas y una reescrita). Antes, en `96a2e8f`: 4.098 pruebas en 191 archivos; el
+módulo 7.1 sumó 86 y 8 archivos de prueba (adaptador de Mis proyectos, listado, detalle, resumen anterior y tarea, diseño en tarjetas, `TarjetaDeDatos` y `AvatarIniciales`,
+tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.test.ts`). Antes, en `7ece550` (base del 7.1): 4.012 pruebas en 183 archivos.
 
 ## Pendientes
 
@@ -1125,13 +1144,21 @@ coincide con `npx vitest list`, 191); el módulo 7.1 sumó 86 y 8 archivos de pr
       fila con ambos; la columna «Fecha de baja» en «Anteriores»; abrir el detalle y ver que no hay área técnica, postulación de origen ni botones; escribir la
       dirección de un practicante de otro supervisor y ver que no muestra datos; y abrir un aviso de persona desde la campana. Las pruebas son de jsdom y no
       cubren el aspecto.
-- [ ] Módulo 7.2 (Mi historial, Practicante): `/practicante/historial` tiene que **leer el parámetro `?proyecto=<id>`** y filtrar por ese proyecto. El resumen mínimo de un proyecto anterior
-      (7.1) enlaza a `/practicante/historial?proyecto=<id>`, y hasta que exista el 7.2 esa dirección llega a una página vacía. Un valor que no sea un proyecto suyo se ignora.
+- [x] Módulo 7.2 (Mi historial, Practicante): `/practicante/historial` lee `?proyecto=<id>` y filtra por ese proyecto (cumplido en `c43d69c`). Un valor que no sea un proyecto suyo se
+      ignora sin mensaje y se limpia de la dirección con `replace`.
+- [ ] Revisión en un navegador real del 7.2 (listado a 1280 y 390 px en los dos temas, scroll horizontal de la tabla, tarjeta de filtros y etiqueta del filtro): la hizo la autora a ojo; las
+      pruebas de jsdom cubren la estructura y el comportamiento, no el aspecto.
 - [ ] Fase 8 (tablero, módulo 7.1): la altura del tablero en pantalla ancha se calcula como `max(22rem, 100dvh − 21rem)` en `TableroKanban`. Si la página scrollea un poco con las notas de pausa o
       finalizado, o con las acciones del Administrador, hay que ajustar ese único número (el 21 es una estimación del encabezado, las pestañas y los márgenes; no se pudo medir en un navegador).
 - [ ] Fase 8 (tarjetas con mucho espacio, vigentes tras el 7.1): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl), las tarjetas generales de Indicadores de Reportes
       (Administrador y Supervisor) y las tarjetas de insight de Reportes siguen sin variante compacta. `TarjetaProyecto` ya tiene `compacta` (la usa Mis proyectos del Practicante), pero Mis proyectos del
       Supervisor (6.1) sigue con la estándar (`p-4`, espacios `mt-4`): se puede adoptar la compacta.
+- [ ] Fase 8 (menú, observación del 7.2): al abrir el detalle de una tarea desde Mi historial (`/practicante/proyectos/tareas/:id`), el menú resalta «Mis proyectos» y no «Mi historial». Es
+      consecuencia de que el detalle de tarea del Practicante cuelgue de Mis proyectos (decisión del 7.1); no se cambió.
+- [ ] Fase 8 (contraste en modo oscuro, de todo el sistema): el borde y el fondo de las tarjetas (`TarjetaDeDatos`, `TarjetaProyecto`, tablas y demás) quedan casi iguales a los de la página en
+      modo oscuro. Se resolverá **una sola vez, con los tokens del tema**, y no pantalla por pantalla; por eso ni el 7.1 ni el 7.2 cambiaron colores, bordes ni tokens.
+- [ ] Fase 8 (formato de fecha): `TableroKanban` («Límite dd/MM/yyyy») y `ListaDeTareasDePracticante` (la fecha límite sin formato, «2026-11-18») usan un formato distinto del de `diaVisible`
+      («9 oct 2026»), que es el del Resumen del proyecto del Practicante y de Mi historial. El ajuste `ded0577` solo unificó el Resumen.
 - [ ] Cierre de las Fases 3, 4 y 5 en `main` (autores): PR de `development` a `main` con las etiquetas `fase-3-completa`, `fase-4-completa` y
       `fase-5-completa`, y sus filas en «Cierres de fase».
 - [ ] Cierre de la Fase 6 en `main` (autores): PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-6-completa`, y su fila en

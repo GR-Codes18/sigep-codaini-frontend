@@ -4526,3 +4526,49 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   poco con las notas de pausa o las acciones del Administrador, se ajusta ese único número) y las tarjetas con mucho espacio que siguen vigentes (métrica del dashboard del Administrador, tarjetas de Indicadores,
   tarjetas de insight y `TarjetaProyecto` en Mis proyectos del Supervisor). Se conserva el pendiente del cierre en `main` de las Fases 3, 4, 5 y 6, con sus etiquetas.
 - **Siguiente paso.** Módulo 7.2 (Mi historial del Practicante).
+
+## 2026-11-21 — [A+B] Fase 7, módulo 7.2 (Mi historial), Practicante, y ajuste de distribución del 7.1
+
+- **Commits:** `c43d69c` (el módulo 7.2 completo) y `ded0577` (el ajuste de distribución del 7.1, aparte del módulo, sobre `7f21bbe`, el merge del PR #45). Rama `feat/fase7-historial`. Se siguió el
+  protocolo de proponer el diseño y esperar la aprobación de los autores antes de implementar.
+- **Qué es el módulo.** La vista de solo lectura de lo que el Practicante ya terminó (§9.2.2): las tareas que terminó, de todos sus proyectos (vigentes, finalizados o de los que salió), de la más reciente
+  a la más antigua. Usa `listarMiHistorial`, que ya existía y solo entrega lo suyo (excluye las liberadas; una reabierta sale mientras está en progreso y vuelve al terminarse): no se amplió ninguna consulta ni se
+  tocó `domain/`. La pantalla no lleva reglas de negocio; el adaptador `src/app/adaptadores/miHistorial.ts` solo presenta y filtra.
+- **Ruta y filtro por dirección.** `/practicante/historial` (la que ya tenía el menú) acepta `?proyecto=<id>`, el parámetro al que enlaza el resumen mínimo de un proyecto anterior (7.1). La pantalla pide
+  **siempre el historial completo** y el filtro se aplica en memoria (no se pasa `id_proyecto` a la consulta): el filtro solo vale si el id está en los proyectos que entrega la consulta, que son los suyos.
+  Un valor **inválido, inexistente, vacío o de un proyecto ajeno se ignora sin mensaje y se limpia de la dirección con `replace`** (conservando los demás parámetros), y nunca llegan datos ajenos a la
+  pantalla: ni siquiera se consulta por ese id (con pruebas de los cuatro casos). Elegir o quitar el filtro también cambia la dirección con `replace`, así que recargar o compartir el enlace conserva el estado
+  y no se llena el historial del navegador de entradas.
+- **«Volver» conserva el filtro.** Un clic en la fila (o en «Ver detalle») abre el detalle de la tarea del 7.1, en solo lectura. Como el filtro está en la dirección y su cambio es con `replace`, «Volver» del detalle
+  (que regresa a donde estaba) llega a `/practicante/historial?proyecto=<id>` con el selector y la etiqueta puestos (con prueba).
+- **La tabla.** `TablaCompacta` con las columnas de §9.2.2: ID, Título, Proyecto, Fecha de término (con `diaVisiblePeru`, el día cortado en hora de Perú), Veces devuelta, Pull Request (la etiqueta
+  que ya viene filtrada por la regla de visibilidad, §7.3) y «Ver detalle»; sin botones de acción. **En 390 px** scrollea **horizontalmente dentro de su contenedor con borde** (el comportamiento de las
+  demás tablas del sistema) y la página no scrollea de lado; se descartó mostrar tarjetas por fila en móvil porque exige un componente nuevo que ninguna otra tabla tiene y §9.2.2 pide una tabla.
+- **Filtros y estados vacíos.** Los filtros van en una `TarjetaDeDatos` compacta («Filtros», con el conteo «N tareas terminadas», o «N de M» si hay filtros): búsqueda por título o ID sin distinguir tildes,
+  selector «Proyecto» con los proyectos vigentes **y anteriores** del Practicante (solo los suyos) y, con un filtro puesto, la etiqueta «Proyecto: XXX ✕» para quitarlo. Sin pestañas ni selector de periodo (§9.2.2).
+  Vacíos: «Aún no has terminado tareas» (sin tareas ni proyectos; no se dibujan los filtros), «No has terminado tareas en este proyecto» con «Quitar filtro», y «Ninguna tarea coincide con la búsqueda».
+- **Pulidos del Historial de la Fase 8 que el 7.2 no hereda.** Los tres pendientes del Historial anotados (los resúmenes «Proyectos: — → INV» y «2 campos modificados», y el mensaje del rango de fechas inválido)
+  son del Historial de actividad del Administrador (§5.7). Mi historial es una tabla de tareas, sin resúmenes de eventos ni filtro de fechas. El riesgo análogo, un filtro inválido con un mensaje genérico, se
+  evita ignorándolo en silencio.
+- **Ajuste `ded0577` del 7.1 (solo distribución; sin cambiar colores, bordes, tokens, reglas ni consultas).** (1) El Resumen del detalle del proyecto del Practicante son **dos columnas independientes**
+  (`grid items-start lg:grid-cols-2`, cada columna un `flex flex-col`): cada tarjeta mide lo que mide su contenido y ya no se estira a la altura de la vecina; una columna en móvil. Se evitó `items-stretch` y
+  no se tocó `TarjetaDeDatos` (que lleva `h-full`, inocuo dentro de una columna de altura automática). (2) Orden: Descripción, Enlaces y repositorio y Mis tareas a un lado; Fechas y datos del proyecto,
+  Avance y Mi actividad al otro, para que las dos columnas midan parecido (no se pudo medir en un navegador); en móvil se apilan en ese orden. (3) La cuadrícula de compañeros del Equipo también va con
+  `items-start`. (4) «Límite» de Mis tareas usa `diaVisible` («18 nov 2026»), el mismo formateador de las demás fechas del Resumen; `diaVisible` se exporta desde `src/app/adaptadores/index.ts`.
+  Un test existente dependía de la estructura (`DisenoDeMiProyecto.test.tsx` exigía `items-stretch`, `h-full` y las tarjetas hijas directas de la rejilla): se reescribió y se añadieron dos (el reparto por
+  columna y el formato de las fechas). Quedaron fuera, a propósito, el formato `dd/MM/yyyy` de `TableroKanban` (compartido con los otros paneles) y la fecha sin formato de `ListaDeTareasDePracticante`.
+- **Pruebas.** 4.098 → 4.100 en 191 archivos con el ajuste (+2) y 4.100 → 4.131 en 193 archivos con el 7.2 (+31 pruebas y +2 archivos: el adaptador y la página); el recuento de archivos coincide con
+  `npx vitest list`. `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó
+  con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (aceptadas por los autores; para que las actualicen a mano).**
+  1. §9.2.2 no define la ruta de Mi historial: va en `/practicante/historial`, la del menú.
+  2. El detalle de la tarea abierta desde Mi historial vive bajo `/practicante/proyectos/tareas/:idTarea` (decisión del 7.1), no bajo Mi historial.
+  3. El enlace del resumen mínimo de un proyecto anterior a Mi historial es `/practicante/historial?proyecto=<id>`.
+  4. Los filtros de proyecto y búsqueda se aplican en memoria, no en la consulta (el patrón del resto del sistema); la consulta, que admite `id_proyecto`, no se usa con él.
+- **Revisión visual.** La revisión visual del 7.2 (1280 y 390 px, modo claro y oscuro, el scroll horizontal de la tabla y la tarjeta de filtros) la hizo la autora a ojo, porque el agente no puede abrir el
+  navegador. Las pruebas de jsdom cubren la estructura, las clases y el comportamiento, no el aspecto.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`): (a) el menú resalta «Mis proyectos» al ver el detalle de una tarea abierta desde Mi historial (consecuencia de que el detalle de tarea cuelgue de
+  Mis proyectos; no se cambió); (b) el contraste de las tarjetas en modo oscuro (borde y fondo casi iguales a los de la página) es de todo el sistema y se resolverá una sola vez con los tokens del tema,
+  por eso este módulo y el 7.1 no tocaron colores ni bordes; (c) el formato de fecha de `TableroKanban` (`dd/MM/yyyy`) y de `ListaDeTareasDePracticante`, distintos del de `diaVisible`. Se conserva el
+  pendiente del cierre en `main` de las Fases 3, 4, 5 y 6, con sus etiquetas.
+- **Siguiente paso.** Módulo 7.3 (Inicio del Practicante).
