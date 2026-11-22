@@ -11,9 +11,6 @@ export const rutaDeMiProyecto = (idProyecto: string) =>
 export const rutaDeProyectoAnterior = (idProyecto: string) =>
   `${RUTA_MIS_PROYECTOS_PRACTICANTE}/${idProyecto}/anterior`;
 
-/**
- * Mi historial filtrado por un proyecto. Mi historial (7.2) todavía no existe: hasta entonces la dirección llega a una
- * página vacía, y el 7.2 tendrá que leer `?proyecto=`.
- */
+/** Mi historial (7.2) filtrado por un proyecto: lee `?proyecto=` y lo ignora si no es un proyecto suyo. */
 export const rutaDeHistorialDelProyecto = (idProyecto: string) =>
   `${PREFIJO_POR_ROL.PRACTICANTE}/historial?proyecto=${idProyecto}`;

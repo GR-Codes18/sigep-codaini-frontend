@@ -17,6 +17,8 @@ import { RUTA_CRITERIOS, RUTA_POSTULACIONES } from '@/paneles/administrador/post
 import { PaginaDetalleTarea } from '@/paneles/administrador/tareas/PaginaDetalleTarea';
 import { PaginaTareas } from '@/paneles/administrador/tareas/PaginaTareas';
 import { RUTA_TAREAS, rutaDeTareas } from '@/paneles/administrador/tareas/rutas';
+import { PaginaMiHistorial } from '@/paneles/practicante/historial/PaginaMiHistorial';
+import { RUTA_MI_HISTORIAL } from '@/paneles/practicante/historial/rutas';
 import { PaginaDetalleProyectoPracticante } from '@/paneles/practicante/proyectos/PaginaDetalleProyectoPracticante';
 import { PaginaDetalleTareaPracticante } from '@/paneles/practicante/proyectos/PaginaDetalleTareaPracticante';
 import { PaginaMisProyectosPracticante } from '@/paneles/practicante/proyectos/PaginaMisProyectosPracticante';
@@ -65,6 +67,7 @@ const PAGINAS_DE_MODULO: Readonly<Record<string, ReactElement>> = {
   [RUTA_DASHBOARD]: <PaginaDashboard />,
   [RUTA_DASHBOARD_SUPERVISOR]: <PaginaDashboardSupervisor />,
   [RUTA_MIS_PROYECTOS_PRACTICANTE]: <PaginaMisProyectosPracticante />,
+  [RUTA_MI_HISTORIAL]: <PaginaMiHistorial />,
   [RUTA_MIS_PROYECTOS]: <PaginaMisProyectos />,
   [rutaDeTareas('SUPERVISOR')]: <PaginaTareas />,
   [RUTA_PRACTICANTES_A_CARGO]: <PaginaPracticantesACargo />,

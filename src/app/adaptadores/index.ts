@@ -27,6 +27,14 @@ export {
   type PostulacionesParaVista,
 } from './postulaciones';
 export {
+  aMiHistorial,
+  filtrarMiHistorial,
+  idProyectoValido,
+  type FilaMiHistorial,
+  type FiltrosMiHistorial,
+  type MiHistorialParaVista,
+} from './miHistorial';
+export {
   aDatosProyecto,
   aEquipoProyecto,
   aProyectos,
