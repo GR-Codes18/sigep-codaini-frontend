@@ -4,6 +4,7 @@ import {
   aEquipoPracticante,
   aResumenProyectoPracticante,
   claseDeProyecto,
+  diaVisible,
   type EquipoPracticanteParaVista,
   type FilaCompanero,
   type ResumenPracticanteParaVista,
@@ -139,86 +140,86 @@ function EncabezadoDelProyecto({
 const MENSAJE_VACIO = 'rounded-lg bg-surface-2 px-3 py-2 text-sm text-text-2';
 
 /**
- * Resumen (solo lectura, sin ningún botón de edición): una tarjeta con título por tema, en dos columnas en pantalla ancha
- * (las dos de cada fila miden lo mismo) y en una en móvil.
+ * Resumen (solo lectura, sin ningún botón de edición): una tarjeta con título por tema. En pantalla ancha va en dos
+ * columnas independientes, cada tarjeta con la altura de su contenido y repartidas para que las dos columnas midan
+ * parecido; en móvil, en una sola.
  */
 function Resumen({ resumen }: { resumen: ResumenPracticanteParaVista }) {
   return (
-    <div className="grid items-stretch gap-3 lg:grid-cols-2">
-      <TarjetaDeDatos titulo="Descripción">
-        <p className="text-sm whitespace-pre-line text-text">{resumen.descripcion}</p>
-      </TarjetaDeDatos>
-
-      <TarjetaDeDatos titulo="Fechas y datos del proyecto">
-        <FilasDeDatos
-          filas={[
-            { etiqueta: 'Código', valor: resumen.codigo },
-            { etiqueta: 'Fecha de inicio', valor: resumen.fechaInicioTexto },
-            { etiqueta: 'Fecha de fin prevista', valor: resumen.fechaFinPrevistaTexto },
-            { etiqueta: 'Reunión semanal', valor: resumen.reunionTexto },
-            { etiqueta: 'Próxima reunión', valor: resumen.proximaReunionTexto },
-          ]}
-        />
-      </TarjetaDeDatos>
-
-      <TarjetaDeDatos titulo="Enlaces y repositorio">
-        <FilasDeDatos
-          filas={[
-            { etiqueta: 'Repositorio', valor: <EnlaceExterno url={resumen.repositorioUrl} /> },
-            { etiqueta: 'Rama base', valor: resumen.ramaBase },
-            ...resumen.enlaces.map((e) => ({
-              etiqueta: e.nombre,
-              valor: <EnlaceExterno url={e.url} />,
-            })),
-          ]}
-        />
-        {resumen.enlaces.length === 0 && (
-          <p className="text-xs text-text-2">Aún no hay enlaces útiles.</p>
-        )}
-      </TarjetaDeDatos>
-
-      <TarjetaDeDatos titulo="Avance">
-        <BarraDeAvance porcentaje={resumen.avance} etiqueta="Avance del proyecto en el resumen" />
-        <p className="text-xs text-text-2 tabular-nums">{resumen.avanceTexto}</p>
-      </TarjetaDeDatos>
-
-      <TarjetaDeDatos titulo="Mis tareas">
-        {resumen.misTareas.length === 0 ? (
-          <p className={MENSAJE_VACIO}>No tienes tareas abiertas en este proyecto.</p>
-        ) : (
-          <ul className="divide-y divide-border text-sm">
-            {resumen.misTareas.map((t) => (
-              <li
-                key={t.id}
-                className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1.5 first:pt-0 last:pb-0"
-              >
-                <span className="min-w-0 text-text">
-                  <span className="font-medium tabular-nums">{t.idLegible}</span> · {t.titulo}
-                </span>
-                <span className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'text-xs tabular-nums',
-                      t.vencida ? 'font-medium text-danger-text' : 'text-text-2',
-                    )}
-                  >
-                    Límite: {t.fechaLimite}
-                    {t.vencida && ' (vencida)'}
+    <div className="grid items-start gap-3 lg:grid-cols-2">
+      <div className="flex min-w-0 flex-col gap-3">
+        <TarjetaDeDatos titulo="Descripción">
+          <p className="text-sm whitespace-pre-line text-text">{resumen.descripcion}</p>
+        </TarjetaDeDatos>
+        <TarjetaDeDatos titulo="Enlaces y repositorio">
+          <FilasDeDatos
+            filas={[
+              { etiqueta: 'Repositorio', valor: <EnlaceExterno url={resumen.repositorioUrl} /> },
+              { etiqueta: 'Rama base', valor: resumen.ramaBase },
+              ...resumen.enlaces.map((e) => ({
+                etiqueta: e.nombre,
+                valor: <EnlaceExterno url={e.url} />,
+              })),
+            ]}
+          />
+          {resumen.enlaces.length === 0 && (
+            <p className="text-xs text-text-2">Aún no hay enlaces útiles.</p>
+          )}
+        </TarjetaDeDatos>
+        <TarjetaDeDatos titulo="Mis tareas">
+          {resumen.misTareas.length === 0 ? (
+            <p className={MENSAJE_VACIO}>No tienes tareas abiertas en este proyecto.</p>
+          ) : (
+            <ul className="divide-y divide-border text-sm">
+              {resumen.misTareas.map((t) => (
+                <li
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1.5 first:pt-0 last:pb-0"
+                >
+                  <span className="min-w-0 text-text">
+                    <span className="font-medium tabular-nums">{t.idLegible}</span> · {t.titulo}
                   </span>
-                  <Insignia tipo="tarea" estado={t.estado} />
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </TarjetaDeDatos>
-
-      <TarjetaDeDatos titulo="Mi actividad">
-        <LineaTiempo
-          eventos={resumen.miActividad}
-          vacio="Aún no tienes actividad en este proyecto."
-        />
-      </TarjetaDeDatos>
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'text-xs tabular-nums',
+                        t.vencida ? 'font-medium text-danger-text' : 'text-text-2',
+                      )}
+                    >
+                      Límite: {diaVisible(t.fechaLimite)}
+                      {t.vencida && ' (vencida)'}
+                    </span>
+                    <Insignia tipo="tarea" estado={t.estado} />
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </TarjetaDeDatos>
+      </div>
+      <div className="flex min-w-0 flex-col gap-3">
+        <TarjetaDeDatos titulo="Fechas y datos del proyecto">
+          <FilasDeDatos
+            filas={[
+              { etiqueta: 'Código', valor: resumen.codigo },
+              { etiqueta: 'Fecha de inicio', valor: resumen.fechaInicioTexto },
+              { etiqueta: 'Fecha de fin prevista', valor: resumen.fechaFinPrevistaTexto },
+              { etiqueta: 'Reunión semanal', valor: resumen.reunionTexto },
+              { etiqueta: 'Próxima reunión', valor: resumen.proximaReunionTexto },
+            ]}
+          />
+        </TarjetaDeDatos>
+        <TarjetaDeDatos titulo="Avance">
+          <BarraDeAvance porcentaje={resumen.avance} etiqueta="Avance del proyecto en el resumen" />
+          <p className="text-xs text-text-2 tabular-nums">{resumen.avanceTexto}</p>
+        </TarjetaDeDatos>
+        <TarjetaDeDatos titulo="Mi actividad">
+          <LineaTiempo
+            eventos={resumen.miActividad}
+            vacio="Aún no tienes actividad en este proyecto."
+          />
+        </TarjetaDeDatos>
+      </div>
     </div>
   );
 }
@@ -288,7 +289,7 @@ function Equipo({ equipo }: { equipo: EquipoPracticanteParaVista }) {
         {equipo.companeros.length === 0 ? (
           <p className={MENSAJE_VACIO}>No tienes compañeros activos en este proyecto.</p>
         ) : (
-          <ul className="grid gap-3 md:grid-cols-2">
+          <ul className="grid items-start gap-3 md:grid-cols-2">
             {equipo.companeros.map((c) => (
               <TarjetaDeCompanero key={c.id} c={c} />
             ))}
