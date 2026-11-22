@@ -298,6 +298,47 @@ describe('obtenerPostulacion', () => {
     expect(valor(await obtener(prueba, PENDIENTE)).practicante).toBeNull();
   });
 
+  describe('decisiones disponibles', () => {
+    it('una pendiente se puede aprobar o rechazar', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await obtener(prueba, PENDIENTE)).decisiones).toEqual(['APROBAR', 'RECHAZAR']);
+    });
+
+    it('una rechazada solo se puede reconsiderar', async () => {
+      const prueba = prepararPrueba();
+      const rechazada = prueba.datos().postulantes.find((p) => p.estado === 'RECHAZADA')!;
+
+      expect(valor(await obtener(prueba, rechazada.id)).decisiones).toEqual(['RECONSIDERAR']);
+    });
+
+    it('una aprobada no tiene decisiones: no se revierte aquí', async () => {
+      const prueba = prepararPrueba();
+
+      expect(valor(await obtener(prueba, APROBADA)).decisiones).toEqual([]);
+    });
+
+    it('siguen al estado: al pasar una pendiente a rechazada cambian', async () => {
+      const prueba = prepararPrueba();
+      prueba.modificar((d) => ({
+        postulantes: d.postulantes.map((p) =>
+          p.id === PENDIENTE ? { ...p, estado: 'RECHAZADA' as const } : p,
+        ),
+      }));
+
+      expect(valor(await obtener(prueba, PENDIENTE)).decisiones).toEqual(['RECONSIDERAR']);
+    });
+
+    it('no dependen de que tenga evaluación: se decide siempre, con o sin ella', async () => {
+      const prueba = prepararPrueba();
+      prueba.modificar((d) => ({
+        evaluaciones: d.evaluaciones.filter((e) => e.id_postulante !== PENDIENTE),
+      }));
+
+      expect(valor(await obtener(prueba, PENDIENTE)).decisiones).toEqual(['APROBAR', 'RECHAZAR']);
+    });
+  });
+
   it('una postulación inexistente da NO_ENCONTRADO', async () => {
     const prueba = prepararPrueba();
 

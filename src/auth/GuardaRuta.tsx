@@ -1,14 +1,14 @@
 import { Navigate, Outlet, useLocation } from 'react-router';
-import { useAlmacenSesion } from './almacenSesion';
+import { useSesionActiva } from './useSesionActiva';
 import { INICIO_POR_ROL, puedeVerRuta } from './rutasPorRol';
 
 export function GuardaRuta() {
-  const usuario = useAlmacenSesion((s) => s.usuario);
+  const { sesion } = useSesionActiva();
   const { pathname } = useLocation();
 
-  if (!usuario) return <Navigate to="/acceso" replace />;
-  if (!puedeVerRuta(usuario.rol, pathname)) {
-    return <Navigate to={INICIO_POR_ROL[usuario.rol]} replace />;
+  if (!sesion) return <Navigate to="/acceso" replace />;
+  if (!puedeVerRuta(sesion.rol, pathname)) {
+    return <Navigate to={INICIO_POR_ROL[sesion.rol]} replace />;
   }
   return <Outlet />;
 }

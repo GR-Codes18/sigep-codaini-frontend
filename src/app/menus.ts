@@ -83,8 +83,15 @@ export const MENU_POR_ROL: Record<Rol, GrupoMenu[]> = {
   ],
 };
 
+/**
+ * El título de la barra superior para una ruta: el del módulo al que pertenece, también en sus páginas internas
+ * (`/administrador/postulaciones/pos-25` es «Postulaciones»). Gana la ruta más específica.
+ */
 export function etiquetaDeRuta(rol: Rol, ruta: string): string {
-  const item = MENU_POR_ROL[rol].flatMap((g) => g.items).find((i) => i.ruta === ruta);
+  const items = MENU_POR_ROL[rol].flatMap((g) => g.items);
+  const item = items
+    .filter((i) => ruta === i.ruta || ruta.startsWith(`${i.ruta}/`))
+    .sort((a, b) => b.ruta.length - a.ruta.length)[0];
   if (item) return item.etiqueta;
   return ruta.endsWith('/perfil') ? 'Mi perfil' : '';
 }

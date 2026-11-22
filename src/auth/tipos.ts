@@ -1,8 +1,8 @@
 import { z } from 'zod';
+import { ROLES, type Rol as RolDominio, type Usuario } from '@/domain';
 
-// PROVISIONAL: se reemplaza por los tipos de domain/ cuando entre feat/fase1-tipos.
-export const esquemaRol = z.enum(['ADMINISTRADOR', 'SUPERVISOR', 'PRACTICANTE']);
-export type Rol = z.infer<typeof esquemaRol>;
+export const esquemaRol = z.enum(ROLES);
+export type Rol = RolDominio;
 
 export const esquemaUsuarioSesion = z.object({
   id: z.string().min(1),
@@ -11,4 +11,7 @@ export const esquemaUsuarioSesion = z.object({
   rol: esquemaRol,
   debe_cambiar_contrasena: z.boolean(),
 });
-export type UsuarioSesion = z.infer<typeof esquemaUsuarioSesion>;
+export type UsuarioSesion = Pick<
+  Usuario,
+  'id' | 'nombre' | 'correo' | 'rol' | 'debe_cambiar_contrasena'
+>;

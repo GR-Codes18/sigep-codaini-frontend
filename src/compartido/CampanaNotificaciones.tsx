@@ -4,7 +4,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '@/compartido/utils';
 
-/** Forma provisional: se reemplaza por el tipo Notificacion de domain/. */
+/** Datos de presentación derivados de una notificación del almacén. */
 export interface NotificacionItem {
   id: string;
   texto: string;
@@ -16,25 +16,22 @@ export interface NotificacionItem {
 }
 
 interface Props {
+  /** Las que se muestran, ya ordenadas (las más recientes primero) y limitadas por la consulta. */
   notificaciones: NotificacionItem[];
+  /** Cuántas siguen sin leer en total (punto verde): puede ser más que las que se muestran. */
+  noLeidas: number;
   onAbrir: (n: NotificacionItem) => void;
   onMarcarTodas: () => void;
   onVerTodas: () => void;
 }
 
-const MAXIMO = 8;
-
 export function CampanaNotificaciones({
   notificaciones,
+  noLeidas: sinLeer,
   onAbrir,
   onMarcarTodas,
   onVerTodas,
 }: Props) {
-  const sinLeer = notificaciones.filter((n) => !n.leida).length;
-  const ultimas = [...notificaciones]
-    .sort((a, b) => b.fecha.getTime() - a.fecha.getTime())
-    .slice(0, MAXIMO);
-
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -67,19 +64,20 @@ export function CampanaNotificaciones({
             </button>
           </div>
 
-          {ultimas.length === 0 ? (
+          {notificaciones.length === 0 ? (
             <p className="px-3 py-6 text-center text-sm text-text-2">No tienes notificaciones.</p>
           ) : (
             <ul className="max-h-80 overflow-y-auto">
-              {ultimas.map((n) => (
+              {notificaciones.map((n) => (
                 <li key={n.id}>
                   <button
                     type="button"
+                    disabled={!n.existe || !n.ruta}
                     onClick={() => onAbrir(n)}
                     aria-disabled={!n.existe || !n.ruta}
                     className={cn(
                       'flex w-full gap-2 px-3 py-2 text-left hover:bg-surface-2',
-                      (!n.existe || !n.ruta) && 'cursor-default',
+                      (!n.existe || !n.ruta) && 'cursor-default opacity-60',
                     )}
                   >
                     <Info

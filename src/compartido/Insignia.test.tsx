@@ -36,4 +36,71 @@ describe('Insignia', () => {
     const { container } = render(<Insignia tipo="tarea" estado="INVENTADO" />);
     expect(container).toBeEmptyDOMElement();
   });
+
+  it('el catálogo de evaluación muestra «Activa» en verde e «Inactiva» en gris', () => {
+    render(
+      <>
+        <Insignia tipo="catalogo" estado="ACTIVO" />
+        <Insignia tipo="catalogo" estado="INACTIVO" />
+      </>,
+    );
+    expect(screen.getByText('Activa').className).toContain('state-success');
+    expect(screen.getByText('Inactiva').className).toContain('state-neutral');
+  });
+
+  it('el practicante es «Activo» (verde) o «Finalizado» (gris), y «Sin proyecto» es una marca ámbar', () => {
+    render(
+      <>
+        <Insignia tipo="practicante" estado="ACTIVO" />
+        <Insignia tipo="practicante" estado="FINALIZADO" />
+        <Insignia tipo="practicante" estado="SIN_PROYECTO" />
+      </>,
+    );
+    expect(screen.getByText('Activo').className).toContain('state-success');
+    expect(screen.getByText('Finalizado').className).toContain('state-neutral');
+    expect(screen.getByText('Sin proyecto').className).toContain('state-warning');
+  });
+
+  it('la severidad de un insight es «Crítico» (rojo), «Atención» (ámbar) o «Informativo» (azul)', () => {
+    render(
+      <>
+        <Insignia tipo="severidad" estado="CRITICO" />
+        <Insignia tipo="severidad" estado="ATENCION" />
+        <Insignia tipo="severidad" estado="INFORMATIVO" />
+      </>,
+    );
+    expect(screen.getByText('Crítico').className).toContain('state-danger');
+    expect(screen.getByText('Atención').className).toContain('state-warning');
+    expect(screen.getByText('Informativo').className).toContain('state-info');
+  });
+
+  it('el supervisor es «Activo» (verde) o «Inactivo» (gris)', () => {
+    render(
+      <>
+        <Insignia tipo="supervisor" estado="ACTIVO" />
+        <Insignia tipo="supervisor" estado="INACTIVO" />
+      </>,
+    );
+    expect(screen.getByText('Activo').className).toContain('state-success');
+    expect(screen.getByText('Inactivo').className).toContain('state-neutral');
+  });
+
+  it('la integración está «Conectado» (verde) o «Sin conexión» (rojo) y lo que solo existe en el prototipo se marca', () => {
+    render(
+      <>
+        <Insignia tipo="integracion" estado="CONECTADO" />
+        <Insignia tipo="integracion" estado="NO_CONECTADO" />
+        <Insignia tipo="marca" estado="SOLO_PROTOTIPO" />
+      </>,
+    );
+    expect(screen.getByText('Conectado').className).toContain('state-success');
+    expect(screen.getByText('Sin conexión').className).toContain('state-danger');
+    expect(screen.getByText('Solo prototipo').className).toContain('state-warning');
+  });
+
+  it('un practicante que ya salió de los proyectos del Supervisor es «Anterior» (gris)', () => {
+    render(<Insignia tipo="practicante" estado="ANTERIOR" />);
+
+    expect(screen.getByText('Anterior').className).toContain('state-neutral');
+  });
 });

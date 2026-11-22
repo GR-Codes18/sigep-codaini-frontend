@@ -2150,6 +2150,25 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
 - El historial queda en orden de escritura, que coincide con el cronológico porque la marca se toma dentro de
   la transacción.
 
+
+## 2026-11-17 — [A+B] Autenticación simulada desde el almacén
+
+- **Commit:** `0307f83` (`feat(auth): integrar inicio de sesión con servicios de fase 2 y actualizar interfaz`).
+- `src/services/autenticacion.ts` consulta `entorno.almacen.getState().datos.usuarios`; es una consulta de solo
+  lectura, con demora simulada y un `Entorno` inyectable para pruebas. Amplía `AlmacenServicio` para exponer
+  los datos junto con `transaccion`.
+- `iniciarSesion` delega en el servicio. Las credenciales incorrectas, inexistentes o de una cuenta INACTIVA
+  comparten `CREDENCIALES_INVALIDAS` y el mismo mensaje. El acceso rápido consulta por IDs fijos de la semilla,
+  valida también el rol y devuelve `ACCESO_RAPIDO_NO_DISPONIBLE` si la cuenta falta o está INACTIVA.
+- `usuariosDemo.ts` deja de duplicar cuentas y contraseñas; conserva solo el mapa de roles a IDs de acceso
+  rápido. `UsuarioSesion` usa los tipos `Rol` y `Usuario` de `domain/`. `almacenSesion.ts` no cambia: conserva
+  la validación y persistencia de un resumen sin contraseña.
+- `semilla.test.ts` comprueba directamente las tres cuentas previstas y ya no importa desde `auth/`, evitando
+  invertir la dependencia entre `data/` y `auth/`.
+- Verificación: 966 pruebas en 44 archivos; `tsc -b`, ESLint y Prettier pasan; `npm run build` pasa con el
+  aviso existente de chunk mayor a 500 kB. No se modificaron los servicios de mutación de tareas ni otras
+  mutaciones del almacén.
+
 ## 2026-11-17 — [A+B] Fase 2, paso 5A: servicios para crear, editar y eliminar tareas
 
 - **Commit:** `2c54c04` (`feat: agrega los servicios para crear, editar y eliminar tareas (Fase 2, paso5A)`). Verificación: 1010 pruebas en 45 archivos (50 nuevas en `src/services/tareas/`), `tsc -b`,
@@ -2638,8 +2657,6 @@ Hechas por el agente con `git restore` entre cada una (script en el scratchpad, 
   la otra hasta que vuelva a llegar.
 - **Bloque 3 (pasos 7 a 11):** postulaciones, practicantes y supervisores, proyectos, cuenta y consultas con
   alcance por rol, en una sesión nueva desde `development`.
-
----
 
 ## 2026-11-17 — [A+B] Fase 2, paso 7A: evaluar, aprobar, rechazar y reconsiderar postulaciones
 
@@ -3577,3 +3594,1027 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
 - **Sesión abierta** (pendiente desde el paso 10): decidir en la fase de interfaz si `GuardaRuta` revalida la sesión guardada.
 - **Cierre de la rama:** PR de `feat/fase2-cuenta-consultas` a `development`, revisado por ambos autores, y después
   `development` → `main` con la etiqueta `fase-2-completa` (plan §11).
+
+## 2026-11-18 — [A+B] Cierre de Fase 4, pasos 6–11, e integración del Bloque 2
+
+### Alcance registrado
+
+- Se completan los pasos 6 a 11 de Fase 4: detalle de tarea con acciones reales y señal D6-A; creación y cierre
+  de Pull Requests; formulario conectado a crear/editar tarea; notificaciones desde el almacén; perfil y sesión
+  conectados con la cuenta actual; limpieza de la página de desarrollo temporal para dejarla como contenedor
+  de integración.
+- El Bloque 2 de Fase 2 (pasos 5 y 6) queda registrado como terminado: servicios de tareas y Pull Request,
+  puerto de GitHub simulado, y flujos con historial y notificaciones. El cierre no afirma que el PR del bloque
+  se haya fusionado.
+- La Fase 2, Bloque 3 no se declara cerrado en esta entrada.
+
+### Decisiones de arquitectura aplicadas
+
+- **Sesión validada contra el almacén actual:** el resumen persistido no basta para autorizar ni para mostrar el
+  estado de cuenta. Se resuelve el usuario actual por ID y se exige que exista, esté ACTIVO y conserve el rol
+  de la sesión. Si falta, está INACTIVO o cambió de rol, se cierra la sesión. Los cambios vigentes de nombre,
+  correo y contraseña temporal se sincronizan al resumen de sesión.
+- **Las acciones de cuenta pasan por `services/`:** el servicio resuelve al actor actual, aplica permisos de
+  `domain/`, valida los datos y devuelve `Resultado<T>`. Las pantallas no escriben en el almacén. Las
+  contraseñas no se incluyen en el historial ni en el resumen de sesión.
+- **Persistencia de perfil:** las ediciones permitidas se guardan mediante las transacciones del almacén, que
+  persiste en `localStorage`; el cambio de contraseña solo registra el evento de cuenta sin almacenar claves
+  en historial o notificaciones.
+- **Responsabilidades del perfil:** el practicante ve sus tareas no terminadas; el supervisor, las tareas no
+  terminadas de sus proyectos no finalizados; el administrador, las tareas no terminadas de todos los proyectos
+  no finalizados. El filtro por rol y permisos se aplica antes de presentar la lista.
+- **Notificaciones:** la interfaz lee las notificaciones persistidas y filtra por destinatario; marcarlas como
+  leídas usa el servicio correspondiente. Los eventos y avisos derivados de mutaciones siguen siendo
+  responsabilidad de los servicios.
+- **Paso 11 de Fase 4:** la página temporal deja de fabricar tareas o simular mutaciones; sirve únicamente para
+  componer las vistas con estado global y servicios.
+
+### Verificación
+
+- `npm.cmd test`: **1,223 pruebas en 58 archivos**, todas aprobadas.
+- `npx.cmd tsc -b`, Prettier y `npm.cmd run build`: correctos.
+- ESLint: sin errores; permanece el aviso conocido de `react-refresh/only-export-components` en
+  `src/compartido/ui/button.tsx`. La compilación conserva el aviso de Vite por el chunk principal mayor a
+  500 kB.
+- No se anotan hashes: esta actualización se hizo bajo la restricción expresa de no ejecutar comandos de Git.
+
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso 0: servicios unificados y acceso
+
+- **Commit:** `83b1315` (`refactor: unifica el acceso, Mi perfil y las notificaciones en los servicios de la Fase 2`).
+- **Por qué.** La fusión `48abbbc` dejó dos implementaciones de lo mismo y la interfaz usaba las de la Fase 4:
+  `services/cuenta.ts` frente a `cuentas/perfil.ts` y `cuentas/contrasenaPropia.ts`; `marcar*` de `services/notificaciones.ts` frente
+  a `seguimiento/notificaciones.ts`; y `services/autenticacion.ts` con `auth/iniciarSesion.ts` frente a `cuentas/sesion.ts`.
+  Las de la Fase 4 validaban menos (celular con formato laxo, sin un `puede()` por campo) y el acceso no llamaba a
+  `emitirAvisosFinDePractica`: el aviso previo de fin de práctica (F6-A) dejó de emitirse (regresión H2).
+- **Decisión (D1-A).** La interfaz adopta los servicios de la Fase 2 y se retiran los duplicados: `services/cuenta.ts`,
+  `services/autenticacion.ts`, `marcarNotificacionLeida` y `marcarTodasNotificacionesLeidas` de `services/notificaciones.ts` (que
+  conserva `crearNotificaciones` y `agregarNotificaciones`) y `auth/iniciarSesion.ts`, con sus pruebas. Antes de retirarlas se
+  comprobó caso por caso que las pruebas de `cuentas/` y `seguimiento/` cubren todo lo que probaban. Alternativas descartadas:
+  conservar ambas (dos validaciones del mismo dato y el login sin avisos) o arreglar solo el login.
+- **Acceso.** `PaginaAcceso` llama a `iniciarSesion` y `accesoRapido` de `cuentas/`: con contraseña correcta una cuenta inactiva
+  recibe «Tu cuenta está inactiva…»; con una falsa, el mensaje genérico, sin revelar que la cuenta existe (decisión de 10A).
+- **Mi perfil.** `PaginaPerfil` envía solo los campos editables del rol que cambiaron, porque el servicio rechaza un campo
+  prohibido aunque no cambie. Los errores del servicio (`cuenta_github`, `disponibilidad_horaria`, `contrasenaActual`,
+  `contrasenaNueva`) se renombran a los del formulario. Sin cambios devuelve `SIN_CAMBIOS`. La `SesionUsuario` devuelta se
+  aplica con `abrirSesion`. `PerfilUsuario` acepta `Resultado<unknown>` y deja de reemplazar el formulario con el valor devuelto:
+  los valores se derivan del almacén.
+- **Pruebas.** 2.890 → 2.871 en 104 archivos: 23 retiradas por duplicadas y 4 nuevas (contraseña falsa sin revelar la cuenta
+  inactiva y tres de Mi perfil). Dos pruebas de `PaginaAcceso` se ajustaron al mensaje de 10A.
+- **Abierto.** H3: `esquemasPerfil.ts` conserva la regex laxa del celular; el servicio ya aplica la regla real. Se resuelve en el
+  sub-paso d). `ACCESO_RAPIDO_NO_DISPONIBLE` quedó sin uso real.
+- **Sesión (cierre de pendiente).** `GuardaRuta` ya revalida la sesión contra el almacén (existe, ACTIVO, mismo rol) desde `a4d2e54`.
+- **Plan de la conexión.** Sub-pasos a) adaptadores en `src/app/adaptadores/`, b) campana y «Ver todas», c) detalle de tarea y
+  Kanban, d) Mi perfil y sesión, e) retirar `src/app/ejemplos/`. Decisiones de los autores: `PaginaDesarrollo` se conserva como contenedor
+  de integración, sin simulaciones, hasta la Fase 7 (D2-B); la señal D6-A pasará a una consulta (D3-A); el enlace de una
+  notificación usa una tabla de destino a ruta del panel mientras no existan los módulos (D4-A); se conecta solo «editar» de
+  `FormularioTarea` (D6-A); se retira el bloque «Asignaciones y responsabilidades» de Mi perfil, que no está en §8.2 (D7-A); y se
+  ocultan Discord, GitHub y disponibilidad a quien su rol no los edita (D8-A).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso a): adaptadores de las consultas
+
+- **Commit:** `0ed86c9` (adaptadores de las consultas a los componentes compartidos).
+- **Qué se construyó.** Funciones puras en `src/app/adaptadores/`, una por modelo de presentación, con sus pruebas (44 en 4
+  archivos): `aTareaDetalle` (`TareaDetalleVista` → `TareaDetalle`), `aTareaTablero` y `aTareasDelTablero` (`TareaDeTablero` y
+  `TableroProyecto` → `TareaTablero`), `aEventosLinea` (`EventoConAutor` → `EventoLinea`) y `aNotificacionItem` con
+  `rutaDeNotificacion` (`NotificacionVista` → `NotificacionItem`). Aún no los usa ningún componente: se conectan en b) y c).
+- **Decisión: los cuatro tipos se conservan.** `TareaDetalle`, `TareaTablero`, `EventoLinea` y `NotificacionItem` dejan de llamarse
+  «provisionales» y quedan como el modelo de presentación de los componentes; el contrato con las consultas son los adaptadores.
+  Alternativa descartada: que los componentes reciban directamente la forma de las consultas (snake_case e ISO), que los
+  acoplaría a ella.
+- **Decisión: los adaptadores no calculan reglas.** Renombran, aplanan y convierten fechas con `parseISO` en el borde. La etiqueta
+  de PR visible, la marca «Devuelta», la observación, `vencida` y las acciones ya vienen decididas por la consulta. Mientras tanto
+  `DetalleTarea` y `TableroKanban` siguen recalculando `etiquetaPRVisible` y `estaVencida`; se retira en el sub-paso c).
+- **Autor no resuelto.** La consulta devuelve el ID como nombre cuando la cuenta del autor no se encuentra; el adaptador lo detecta
+  (`autor_rol` nulo con autor de tipo `USUARIO`) y muestra «Usuario desconocido», nunca un ID.
+- **Enlaces de las notificaciones (D4-A).** `RUTA_DE_MODULO` es una constante de datos con la página del módulo por rol y tipo de
+  elemento; un aviso de la propia cuenta lleva a `/<panel>/perfil`; un tipo sin entrada cae al inicio del rol; y si la consulta
+  dice `destino: null`, no hay ruta y el enlace queda desactivado. Qué puede abrir cada persona sigue decidiéndolo la consulta.
+  Una prueba comprueba que toda ruta de la tabla exista en el menú de su rol. Cuando los módulos tengan detalle, se afina en este
+  archivo sin tocar los componentes.
+- **Etiqueta de acciones.** El mapa de etiquetas de la línea de tiempo (los 15 tipos de tarea y de Pull Request) se migró de
+  `src/app/ejemplos/datos.ts`; un tipo sin etiqueta muestra su código.
+- **Pruebas.** 2.871 → 2.915 en 108 archivos (+44 en 4 archivos nuevos).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso b): campana y «Ver todas»
+
+- **Commit:** `7269ba6` (campana y «Ver todas» conectadas a `listarNotificaciones`).
+- **Qué se construyó.** El hook `useNotificaciones({ limite, soloNoLeidas })` (`src/app/layout/useNotificaciones.ts`) llama a
+  `listarNotificaciones`, adapta con `aNotificacionItem` y devuelve `{ items, noLeidas, total, cargando, error }`. La campana pide
+  las últimas 8; «Ver todas» hace dos consultas (todas y solo no leídas). `CampanaNotificaciones` recibe `noLeidas` por prop y ya no
+  cuenta, ordena ni recorta. Se retiró `notificacionVista.ts`, que decidía en la pantalla la existencia y la ruta de cada aviso
+  (y tenía el caso especial `pry-pl2d`).
+- **Decisión (recarga, opción A).** El hook vuelve a consultar al montarse y cada vez que cambia la lista de notificaciones del
+  almacén, que se usa solo como señal de cambio y no sale del hook: los componentes no leen el almacén. Alternativa descartada:
+  consultar solo al montar y tras las acciones propias, porque un aviso nuevo en la misma sesión no aparecería hasta navegar.
+- **Por qué `noLeidas` va aparte.** Con `limite: 8` la lista ya no trae todos los avisos; contar sobre ella daría un punto verde
+  equivocado. `no_leidas` de la consulta cuenta siempre todos los del usuario.
+- **Comportamiento.** Mientras llega una respuesta nueva se conserva la anterior (sin parpadeo); una respuesta que llega tarde no
+  pisa a otra más reciente; la respuesta de otra persona (cambio de sesión) no se muestra. Cada consulta conserva la demora de red
+  simulada de 600 ms, así que tras marcar un aviso el contador baja con ese retraso.
+- **Consecuencia de D4-A (divergencia temporal con §8.1).** Un aviso de una tarea lleva a la página vacía del módulo
+  (`/<panel>/tareas` o `/proyectos`) y ya no a `/desarrollo`: «se abre el elemento relacionado» se cumple cuando los módulos tengan
+  detalle. Mientras tanto, la única forma de abrir una tarea es `PaginaDesarrollo`.
+- **Pruebas.** 2.915 → 2.937 en 109 archivos: +23 (hook 9, campana conectada 6, «Ver todas» 6 más, `CampanaNotificaciones` 2 más) y
+  −1 (la de `notificacionVista`). Sin cobertura propia: el aviso de error de «Ver todas» (el hook sí lo prueba).
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso c): detalle de tarea, Kanban y «Ver todas las terminadas»
+
+- **Commit:** `7354f39` (detalle de tarea, tablero y «Ver todas las terminadas» conectados a las consultas; incluye la regla D6-A de
+  `domain/` y los campos de `obtenerTarea`).
+- **Partición.** El sub-paso se planeó en tres commits (c1 dominio y consulta, c2 detalle y tablero, c3 listado y edición) y los
+  autores pidieron unirlos en uno solo para no multiplicar commits; el contenido es el mismo.
+- **Señal D6-A (D3-A).** Devolver o reabrir conserva al responsable, así que una tarea puede quedar EN_PROGRESO a nombre de alguien que
+  ya no puede trabajarla. La regla pura `motivosDeAtencionDelResponsable` (`src/domain/responsableTarea.ts`) devuelve los motivos
+  `CUENTA_INACTIVA`, `CUENTA_NO_ENCONTRADA` y `SIN_ASIGNACION_VIGENTE` (pueden darse varios, en ese orden; `[]` si no hay nada que
+  señalar). Solo aplica con la tarea EN_PROGRESO y con responsable. `obtenerTarea` la expone como `atencion_responsable`, que
+  **solo reciben el Administrador y el Supervisor** (quienes liberan la tarea); para el Practicante es `[]`, para que no se entere del
+  estado de la cuenta de un compañero. Se eligió un arreglo de motivos y no un booleano porque la interfaz distingue tres mensajes. 13
+  mutaciones detectadas de 13 (10 sobre la regla y 3 sobre la consulta); se aplicaron con un script que restaura el archivo, sin Git.
+- **Rama base del proyecto.** `obtenerTarea` trae `proyecto.rama_base`: el modal de «Crear Pull Request» la necesita aunque aún no
+  exista el PR (`pull_request.rama_base` es `null` hasta entonces). Antes se leía del almacén.
+- **Mapeador de acciones.** `src/app/tareas/accionesDelDetalle.ts` convierte las `AccionDisponible` que entrega la consulta en las
+  acciones de `DetalleTarea`: clave, etiqueta, si es destructiva, el texto que se pide (`MOTIVO` o `NOTA`) y el servicio al que
+  llama. No consulta permisos ni estados. La tabla está tipada `Record<AccionDeTarea, …>`, así que una acción nueva del dominio no
+  compila hasta describirla. Crear un PR y editar no llaman a un servicio: los resuelve la página (modal de PR y formulario).
+- **Componentes sin reglas.** `DetalleTarea` ya no lee el almacén ni recalcula la etiqueta de PR (llega decidida por la consulta, y
+  con «Pendiente» la consulta no trae URL). `TableroKanban` ya no usa `estaVencida` ni `hoy` (usa `vencida` de la consulta) ni
+  recorta o reordena las terminadas: recibe las 5 más recientes y `totalTerminadas` para el contador y el enlace «Ver todas».
+- **`useConsulta`.** Hook genérico (`src/app/useConsulta.ts`) con el patrón de `useNotificaciones`: vuelve a consultar cuando cambia
+  el almacén (usado solo como señal de cambio), conserva la respuesta anterior mientras llega la nueva, no muestra el valor de otra
+  consulta ni deja que una respuesta tardía pise a una reciente.
+- **«Ver todas las terminadas» (§6.8).** Vista dentro de `PaginaDesarrollo` (`ListadoTerminadas`): lista completa, búsqueda por título o
+  ID en memoria, clic al detalle y «Volver al listado» o «Volver al tablero». La búsqueda es un filtro de presentación sobre datos ya
+  limitados por la consulta.
+- **Selector de proyecto.** `PaginaDesarrollo` ya no está fijada a `pry-pl2d`: el Administrador y el Supervisor usan `listarProyectos`
+  y el Practicante, `listarMisProyectos` (solo los vigentes); por defecto, el primero. No hizo falta ajustar ninguna consulta.
+- **Editar tarea (D6-A).** Solo «editar» se conecta a `FormularioTarea`, desde el detalle y cuando la consulta ofrece `EDITAR_DATOS`.
+  Crear tarea no tiene todavía pantalla anfitriona: espera a los módulos 5.4 y 5.5.
+- **Retiros.** `ejemplos/accionesDeTarea.ts` y `ejemplos/datos.ts`, con sus pruebas. `PaginaDesarrollo` se conserva como contenedor
+  de integración hasta la Fase 7 (D2-B).
+- **Pruebas.** 2.937 → 3.017 en 112 archivos (+80 netas): la regla D6-A y la consulta, el mapeador, `useConsulta`, el listado de
+  terminadas, el detalle, el tablero, los adaptadores y `PaginaDesarrollo` reescrita (15). Las pruebas de la página usan un entorno sin
+  demora de red para no esperar 600 ms por consulta.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** (1) §6.5 y plan §5: la señal D6-A y quién la ve no están
+  documentadas. (2) §6.8 describe «Ver todas las terminadas» como un listado con búsqueda; hoy es una vista del contenedor temporal
+  hasta los módulos de las Fases 5 a 7. (3) «Solo mis tareas» actúa sobre las terminadas que muestra el tablero (las 5 más recientes):
+  conviene decidir si debe actuar sobre todas.
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso d): Mi perfil y sesión
+
+- **Commit:** `f2bb209` (Mi perfil conectado a `obtenerMiPerfil` y a los servicios de cuentas).
+- **Consulta nueva `obtenerMiPerfil`.** Hasta ahora ninguna consulta daba a una persona sus propios datos (`obtenerPracticante` es solo del
+  Administrador), así que `PaginaPerfil` leía el almacén. Se amplió `services/consultas/` (Fase 2): cada persona recibe **solo su cuenta**,
+  sea cual sea su rol, sin parámetro para pedir la de otra. Trae los bloques de lectura de §8.2: rol, estado y fecha de alta; para el
+  Practicante, área, especialidad y fechas de práctica; los datos personales; y los campos del formulario. Nunca devuelve la contraseña
+  ni la postulación de origen. Un usuario INACTIVO recibe `USUARIO_INACTIVO`, y un Practicante o Supervisor sin su detalle (o sin su
+  área o especialidad) recibe `NO_ENCONTRADO` en vez de un perfil a medias.
+- **Regla `camposDelPerfil` en `domain/` (`src/domain/perfil.ts`).** Decide qué campos **existen** para el rol y cuáles son **editables**, con
+  `puede(EDITAR_*_PROPIO)`; antes era una tabla escrita a mano en la pantalla que duplicaba los permisos. Practicante: los seis campos,
+  todos editables. Supervisor: nombre y correo de solo lectura («los fija el Administrador», §8.2) y celular, Discord y GitHub editables.
+  Administrador: nombre, correo y celular. Un usuario INACTIVO conserva sus campos pero no edita ninguno. Alternativa descartada: la
+  tabla en la página.
+- **Discord, GitHub y disponibilidad del Administrador (D8-A).** No se muestran: no existen en su modelo (no tiene registro de practicante
+  ni de supervisor). Mostrarlos bloqueados y vacíos hacía pensar en un error. Cierra la pregunta pendiente de «Decisiones pendientes».
+  Alternativa descartada: dejarlos bloqueados.
+- **Validación en el formulario (H3).** El correo y el celular reutilizan `esquemaCorreo` y `esquemaCelular` del servicio (9 dígitos que
+  empiezan con 9, F7-A), y el mínimo de la contraseña usa `LARGO_MINIMO_CONTRASENA`: desaparece la regex laxa del celular que dejaba pasar
+  números que el servicio rechazaba. Discord, GitHub y disponibilidad los valida el servicio y su error sale junto al campo. Solo se
+  validan los campos editables, así que un dato de solo lectura no bloquea guardar los demás.
+- **Formulario.** Todos los campos son texto con los nombres de los datos (`cuenta_github`, `disponibilidad_horaria`), así los errores del
+  servicio llegan al campo sin renombrar (solo se renombran los de la contraseña). La página envía únicamente los campos editables que
+  cambiaron (el servicio rechaza uno prohibido aunque no cambie); sin cambios devuelve `SIN_CAMBIOS`; vaciar Discord, GitHub o la
+  disponibilidad quita el dato. `PerfilUsuario` ya no reinicia el formulario cuando llegan los mismos valores en un objeto nuevo
+  (una consulta repetida no borra lo que se está escribiendo) y sí lo reinicia cuando cambian de verdad. Un `null` se muestra como vacío,
+  nunca como «null».
+- **Sesión.** `editarMiPerfil` y `cambiarMiContrasena` devuelven la `SesionUsuario` y la página la aplica con `abrirSesion`: la barra
+  superior y la franja de contraseña temporal se refrescan. `GuardaRuta` ya revalidaba la cuenta contra el almacén (`a4d2e54`).
+- **«Asignaciones y responsabilidades» (D7-A).** Se retiró: §8.2 define tres bloques y ese no estaba (regla de oro del plan §1). Con ello
+  salen `responsabilidadesPerfil.ts` y su cálculo de alcance en la pantalla.
+- **Ubicación.** `PaginaPerfil` pasa de `src/app/ejemplos/` a `src/app/perfil/`.
+- **Mutaciones.** 19 mutaciones, 18 detectadas y 1 equivalente (la disponibilidad usa el permiso del celular: el único rol que tiene ese
+  campo es el Practicante y para él ambos permisos dan el mismo resultado). Aplicadas con un script que restaura los archivos, sin Git.
+- **Pruebas.** 3.017 → 3.068 en 114 archivos (+51 netas): regla de `domain/` (9), consulta (12), adaptador (6), formulario (18) y página (19),
+  menos las de `PaginaPerfil` y `responsabilidadesPerfil` de `ejemplos/`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** §8.2 no dice que el Supervisor ve su nombre y correo en solo
+  lectura dentro del formulario (hoy son campos bloqueados); conviene aclararlo. El resto de §8.2 coincide con lo implementado.
+
+## 2026-11-18 — [A+B] Conexión de pantallas, sub-paso e) y cierre de la Fase 4
+
+- **Commit:** `9ea9835` (mueve `PaginaDesarrollo` a `src/app/desarrollo/`, elimina `src/app/ejemplos/` y retira `ACCESO_RAPIDO_NO_DISPONIBLE`).
+- **`PaginaDesarrollo`.** Se movió con su prueba, sin cambios de comportamiento y con la misma ruta (`/<panel>/desarrollo`). La carpeta se llama
+  `desarrollo` porque la página es un contenedor temporal de integración y no un «ejemplo»; se elimina al terminar la Fase 7 (plan §9, D2-B).
+  No está en ningún menú: se llega escribiendo la URL.
+- **Código muerto.** `ACCESO_RAPIDO_NO_DISPONIBLE` (mensaje en `services/resultado.ts` y su entrada en `resultado.test.ts`) quedó sin uso
+  cuando el acceso pasó a los servicios de la Fase 2 (sub-paso 0, `83b1315`); se retira ahora y no en la limpieza de la Fase 8.
+- **Pendientes cerrados.** `src/app/ejemplos/` ya no existe. El pendiente de migrar los formateos de ID a `formatearIdLegible` dejó de aplicar: el
+  único código de la interfaz que formateaba IDs (`ejemplos/datos.ts`) se retiró en `7354f39`, y las consultas entregan `id_legible`.
+- **Pruebas.** Sin cambios en el total (3.068 en 114 archivos): se movieron las 15 de `PaginaDesarrollo` y se quitó un elemento de una lista.
+
+### Cierre de la Fase 4 (componentes compartidos)
+
+- **Qué quedó.** Los componentes compartidos de los pasos 1 a 11 están construidos, probados y conectados. Las pantallas llaman a `services/`
+  para actuar y a `services/consultas/` para leer, mediante adaptadores (`src/app/adaptadores/`) y los hooks `useConsulta` y
+  `useNotificaciones`. Ni las pantallas ni los componentes compartidos leen el almacén ni deciden reglas: el almacén solo se usa dentro de esos
+  dos hooks, como señal de cambio. El recorrido fue: 0 unificar servicios y acceso (`83b1315`), a adaptadores (`0ed86c9`), b campana y «Ver
+  todas» (`7269ba6`), c detalle, Kanban y terminadas (`7354f39`), d Mi perfil (`f2bb209`) y e retiro de `ejemplos/` (`9ea9835`).
+- **Salvedad.** `FormularioTarea` solo tiene pantalla anfitriona para **editar** (desde el detalle). Su modo **crear** no se aloja en ninguna
+  pantalla hasta los módulos 5.4 (Proyectos) y 5.5 (Tareas), que son quienes lo usan.
+- **Ampliaciones a la Fase 2 hechas durante la conexión** (aditivas, con sus pruebas): la regla `motivosDeAtencionDelResponsable` y los campos
+  `atencion_responsable` y `proyecto.rama_base` de `obtenerTarea`; la regla `camposDelPerfil` y la consulta `obtenerMiPerfil`.
+- **Siguiente.** Fase 5, módulo 5.1 (Postulaciones). Para cerrar la fase, los autores revisan el PR de esta rama a `development`; el cierre en
+  `main` con su etiqueta sigue el plan §11.
+- **Divergencias con `docs/` (consolidadas, para que los autores las actualicen a mano).**
+  1. §8.1 «se abre el elemento relacionado»: hoy el aviso lleva a la página del módulo, vacía hasta las Fases 5 a 7 (D4-A, temporal).
+  2. §6.5 y plan §5: no está documentada la señal D6-A (tarea EN_PROGRESO a cargo de alguien con la cuenta inactiva, sin cuenta o sin
+     asignación vigente) ni que solo la ven el Administrador y el Supervisor.
+  3. §6.8: «Ver todas las terminadas» es una vista dentro de `PaginaDesarrollo` mientras no existan los módulos.
+  4. §9.2.1: «Solo mis tareas» actúa sobre las 5 terminadas visibles del tablero; decidir si debe actuar sobre todas.
+  5. §8.2: aclarar que el Supervisor ve su nombre y correo en el formulario como campos de solo lectura.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.1 (Postulaciones), bloque 1: lectura
+
+- **Commit:** `61f368a` (listado y detalle de postulaciones del Administrador).
+- **Partición (decisión 5-A).** El módulo se hace en tres commits: 1) lectura (este), 2) decisiones y «Analizando…», 3) criterios, áreas y especialidades.
+- **URLs (decisión 1-A; la propuesta no las define).** `/administrador/postulaciones`, `/administrador/postulaciones/:idPostulante` y, en el
+  bloque 3, `/administrador/postulaciones/criterios`. Permiten enlaces directos, como el de una notificación. Alternativa descartada: el detalle
+  como panel lateral sin ruta propia. Las rutas cuelgan del módulo, así que `puedeVerRuta` ya las limita al Administrador, y la barra superior
+  resuelve el título por prefijo (`etiquetaDeRuta` respeta el límite del segmento: `postulacionesX` no es «Postulaciones»).
+- **Cambio aditivo a la Fase 2.** `obtenerPostulacion` trae `decisiones: AccionDecisionPostulacion[]` calculado con `decisionesDisponibles(estado)`
+  de `domain/`, igual que el detalle de tarea trae `acciones`: la pantalla no deduce qué se puede decidir a partir del estado. No hay regla nueva
+  en `domain/`.
+- **Listado.** Abre en «Pendientes» y por puntaje (el ranking de la consulta). Pestañas con los contadores de la consulta («Requieren revisión»
+  son las pendientes con la marca, resaltada en ámbar si hay), filtros por área, especialidad y rango de fechas, búsqueda por nombre o correo sin
+  distinguir mayúsculas ni tildes, y orden por puntaje o por fecha (más reciente primero, desempate por ID). Todo se aplica en memoria sobre lo que
+  entrega la consulta (Q5) con funciones puras (`filtros.ts`). El rango de fechas usa el día de Perú de la postulación (`hoyEn`), con los dos
+  extremos incluidos. Sin acciones en las filas: un clic abre el detalle. Estados vacíos distintos para «sin postulaciones», «sin coincidencias
+  con los filtros» y cada pestaña vacía.
+- **Detalle.** Datos del postulante, evaluación de la IA (puntaje final, justificación, marca de revisión, nota fija «El puntaje es una ayuda…» y
+  el desglose en los dos bloques, el guardado: un cambio posterior de criterios no lo altera), CV e historial. Una aprobada dice qué cuenta de
+  practicante nació de ella. Sin evaluación dice que todavía no la tiene (el flujo «Analizando…» llega en el bloque 2).
+- **CV (decisión 3-A).** La semilla apunta a `/cv-ejemplo/<slug>.pdf` y esos archivos no existen: el detalle muestra el nombre del archivo, dice que el
+  prototipo no incluye el documento y deja «Descargar» desactivado. No se inventa contenido de CV. Alternativa descartada: generar un archivo al vuelo.
+- **Aviso sobre el uso del CV (decisión 4).** Texto de los autores: «El CV se usa únicamente para evaluar esta postulación y no para otros fines.»
+  (plan §9, módulo 5.1; propuesta §10.1).
+- **Notificaciones.** El aviso de una postulación lleva a su detalle: nueva tabla `RUTA_DE_DETALLE` (afina D4-A). Los demás elementos siguen yendo a
+  la página de su módulo hasta que tengan detalle.
+- **Motivos de la marca de revisión.** Se muestra solo la marca: los motivos (criterio obligatorio o banda ambigua) no se guardan (P7 del paso 7).
+- **Estructura.** `src/paneles/administrador/postulaciones/` (empieza dentro del panel, §14.2); la barra de puntaje subirá a `compartido/` cuando
+  el Dashboard (5.9) la use. `rutas.tsx` tiene ahora un mapa de módulos con pantalla (los demás siguen con su página vacía) y otro de páginas internas.
+- **Pruebas y mutaciones.** 3.068 → 3.174 en 120 archivos (+106). 17 mutaciones detectadas de 17 (pestañas, extremos del rango de fechas, tildes y
+  mayúsculas de la búsqueda, orden por fecha y su desempate, filtros de área y especialidad, opciones por área, prefijo del título, enlace de la
+  notificación y `decisiones`), con el script que restaura los archivos, sin Git.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** (1) La propuesta no define las URLs del módulo. (2) No fija cómo se ve el
+  CV en el prototipo ni el texto del aviso de uso. (3) Los motivos de la marca de revisión no se guardan, así que la pantalla muestra solo la marca.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.1 (Postulaciones), bloque 2: decisiones y «Analizando…»
+
+- **Commit:** `f8baf90` (aprobar, rechazar, reconsiderar y evaluación al abrir).
+- **Botones.** Salen de `decisiones` (la consulta, que usa `decisionesDisponibles` de `domain/`), no del estado: una pendiente ofrece Aprobar y
+  Rechazar, una rechazada Reconsiderar y una aprobada nada (no se revierte aquí). Quien no es Administrador no recibe las decisiones porque
+  la consulta le devuelve el error.
+- **Aprobar.** Con confirmación. Al confirmar, `aprobarPostulacion` crea la cuenta (PRACTICANTE, ACTIVO, con contraseña temporal) y la pantalla
+  muestra esa contraseña **una sola vez** en un modal (`ModalContrasenaTemporal`): usuario (el correo), contraseña, aviso de «una sola vez» y de
+  que se entrega por fuera del sistema (WhatsApp o Discord) y un botón «Copiar contraseña» (si el portapapeles falla, pide copiarla a mano).
+  El modal solo se cierra con «Entendido»: Escape y el clic fuera no cierran (`onOpenChange` ignora todo intento), y no hay «X». La contraseña
+  vive solo en el estado del componente: no se persiste, no va al historial ni a las notificaciones y desaparece del documento al cerrar.
+  `AccionesDePostulacion` sigue montado aunque la página se refresque y los botones desaparezcan, para que la contraseña no se pierda antes
+  de que se vea (una prueba y una mutación lo vigilan).
+- **Rechazar y reconsiderar.** Reusan `ModalConfirmacion`: el motivo (rechazar) y la nota (reconsiderar) son obligatorios; vacío o solo espacios no
+  se puede confirmar, y el servicio vuelve a exigirlo. Un error del servicio llega como excepción: el modal sigue abierto con el mensaje y no se
+  escribe nada. Al reconsiderar, la evaluación se conserva (§5.1).
+- **«Analizando…» (E5-A, decisión 2-A).** Al abrir una postulación sin evaluación, la pantalla llama a `evaluarPostulacion` una sola vez por
+  postulación y muestra «Analizando…» hasta que la consulta trae la evaluación. La semilla evalúa a las 42, así que en la demostración no se
+  ve salvo que se quite una evaluación; se cubre con pruebas. Alternativa descartada: dejar una pendiente sin evaluar en la semilla (cambia la
+  semilla y sus pruebas).
+- **Error de evaluación (E3-A).** Si el catálogo no permite calcular el puntaje, la pantalla dice «No se pudo evaluar: <mensaje> Puedes decidir
+  igualmente.» y las decisiones siguen disponibles («el Administrador decide siempre, con o sin marca»). No se reintenta en ciclo. Si otra
+  pestaña ya la había evaluado (`POSTULACION_YA_EVALUADA`), no se dice nada: la consulta traerá la evaluación.
+- **Código redundante retirado.** Se quitaron `onInteractOutside` y `onEscapeKeyDown` del modal de la contraseña: dos mutaciones sobrevivían
+  porque `onOpenChange` vacío ya impide cualquier cierre. La protección real se vigila con una mutación sobre `onOpenChange` y otra sobre la «X».
+- **Pruebas y mutaciones.** 3.174 → 3.214 en 123 archivos (+40 netas): modal de la contraseña (8), acciones (19), evaluación y decisiones en el
+  detalle (14) y una del bloque 1 que quedó superada. 17 mutaciones detectadas de 17, con el script que restaura los archivos, sin Git.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no describe «Analizando…» (evaluar al abrir una
+  postulación sin evaluación) ni el texto «No se pudo evaluar: …»; son las decisiones E5-A y E3-A del paso 7A y conviene pasarlas a §5.1 o §10.1.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.1 (Postulaciones), bloque 3: criterios, áreas y especialidades
+
+- **Commit:** `b47d571` (página de criterios, áreas y especialidades del Administrador).
+- **Ruta.** `/administrador/postulaciones/criterios` (decisión 1-A del bloque 1), con el enlace «Criterios de evaluación» en el listado y
+  «Volver a postulaciones». La ruta fija gana a `:idPostulante` porque React Router da prioridad a los segmentos estáticos.
+- **Lectura y escritura.** Lee con `listarCatalogoEvaluacion` y escribe con los siete servicios del paso 7B (`crearAreaTecnica`,
+  `editarAreaTecnica`, `cambiarActivoAreaTecnica`, `crearEspecialidad`, `editarEspecialidad`, `cambiarActivoEspecialidad` y
+  `guardarCriteriosDeBloque`). No hay cambios en `domain/` ni en `services/`. El adaptador `src/app/adaptadores/catalogo.ts` solo renombra
+  los campos de la consulta (`suma_actual`, `valido`, `mensaje_invalido`) al modelo de la pantalla.
+- **Editor de bloque.** Crea, edita y activa o desactiva criterios (nombre, tipo, peso entero, obligatorio, activo) y guarda **el bloque completo**
+  en una sola operación, así pasar de 30/70 a 40/60 no pasa por una suma distinta de 100. «Suma actual: N/100» y el mensaje de validez salen de
+  `sumaPesosActivos` y `validarBloqueCriterios` de `domain/`, las mismas funciones que usa el servicio; el servicio decide siempre y su error se
+  muestra en la pantalla (por campo, con `criterios.<posición>.<campo>`). Un peso sin escribir no suma; un criterio **activo** sin peso no se envía.
+- **Los criterios no se borran.** Los guardados solo se desactivan; «Quitar» existe solo para los nuevos que aún no se guardaron.
+- **Activar solo con bloque válido.** Áreas y especialidades nacen inactivas; «Activar» está deshabilitado mientras los criterios activos de su
+  bloque no sumen 100 y se explica por qué. Desactivar no arrastra a las demás. El servicio vuelve a comprobarlo y un error se muestra con un aviso.
+- **Borrador.** Si lo guardado cambia de verdad el borrador se reinicia; si llega lo mismo en un objeto nuevo se conserva lo que se está escribiendo
+  (se compara por una huella, no por identidad). «Descartar cambios» y «Guardar criterios» solo se habilitan con cambios.
+- **Evaluaciones anteriores.** Cambiar criterios no recalcula las evaluaciones guardadas (§5.1); la pantalla lo dice en su texto.
+- **Insignia y notificaciones.** `Insignia` gana el tipo `catalogo` («Activa» en verde, «Inactiva» en gris). Los avisos de área, especialidad y
+  criterio llevan a `/postulaciones/criterios`.
+- **Estructura.** `PaginaCriterios`, `SeccionDeArea` (con sus filas de especialidad y el botón de activar), `EditorBloqueCriterios` y
+  `FormularioNombre` en `src/paneles/administrador/postulaciones/`. `SeccionDeArea` no tiene prueba propia: se cubre desde `PaginaCriterios`.
+- **Pruebas y mutaciones.** 3.214 → 3.276 en 127 archivos (+62 y +4 archivos). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores,
+  con el aviso conocido en `button.tsx`. No se hicieron pruebas de mutación en este bloque.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define la URL de esta sub-sección ni dice que un bloque
+  se guarda completo de una vez; conviene pasarlas a §5.1.
+
+## 2026-11-18 — [A+B] Fase 5, módulo 5.2 (Practicantes), Administrador
+
+- **Commit:** `2f3a4c9` (módulo completo en un solo commit: lectura, acciones y ciclo de vida; rama `feat/fase5-practicantes`).
+- **URLs.** `/administrador/practicantes` y `/administrador/practicantes/:idPracticante`, con el mismo patrón del 5.1 (rutas por prefijo,
+  `useConsulta`, filtros puros en memoria, adaptadores en `src/app/adaptadores/`).
+- **Cambios aditivos a la Fase 2 (consultas), sin tocar `domain/`.** `obtenerPracticante` trae `acciones` (editar datos, restablecer
+  contraseña, finalizar, reactivar) y `tareas_a_liberar`. Salen de `puede()` y de las reglas de ciclo de vida de `domain/`
+  (`finalizarPractica` y `reactivarPractica` llamadas sin texto: solo dicen si es posible y qué efectos tendría). La pantalla no deduce
+  botones ni cuenta tareas. Consulta nueva `listarProyectosAsignables` (Administrador), que usa `puedeAsignarPracticante`: excluye los
+  proyectos finalizados y aquellos donde ya hay una asignación vigente; con la práctica finalizada, la lista viene vacía.
+- **Listado.** Abre en «Activos» (incluye a «Sin proyecto»; un finalizado nunca está en «Sin proyecto»). Columnas de §5.2: practicante, área y
+  especialidad, proyectos activos, carga, última actividad, fin previsto (con «Vencida hace N días» o «Termina hoy» según la situación que
+  calcula la consulta), estado (con la marca «Sin proyecto») y detalle. Filtros por área y proyecto; búsqueda por nombre o correo sin tildes.
+  `Insignia` gana el tipo `practicante` (Activo, Finalizado y la marca ámbar «Sin proyecto»).
+- **«Asignar a proyecto».** Atajo solo en la pestaña «Sin proyecto» (no en las demás ni en el detalle). Es un diálogo con casillas, uno o
+  varios proyectos, y el propio diálogo es la confirmación; aplica `asignarPracticantes` con una lista de pares, todo o nada. El estado vive
+  en la página y no en la fila, porque al asignar la persona sale de «Sin proyecto» y su fila desaparece. El error del servicio se muestra sin
+  cerrar el diálogo.
+- **Editar datos de la práctica (F5-A).** Especialidad (solo activas, más la actual aunque esté inactiva; el área sigue a la especialidad),
+  ingreso y fin. Al cambiar el ingreso se propone el fin con `fechaFinPrevista` de `domain/` y la duración de `PRACTICA_DURACION_MESES`
+  (leída con `obtenerConfiguracion`), y se envían las dos fechas. Si el fin se escribió a mano, no se pisa. Que el fin no sea anterior al
+  ingreso lo comprueba el servicio y su mensaje sale en el campo.
+- **Restablecer contraseña.** Confirmación y modal de una sola vez. Se reutiliza `ModalContrasenaTemporal` (de `postulaciones/`, sin moverlo
+  a `compartido/` para no tocar el 5.1) con un título opcional («Contraseña restablecida»). No llega al historial ni a las notificaciones.
+  No se ofrece a un practicante con la práctica finalizada (el servicio ya lo exige).
+- **Finalizar.** Motivo obligatorio y el aviso «Tiene N tareas en progreso que serán liberadas» (singular y «No tiene tareas en progreso»)
+  antes de confirmar, con N de `tareas_a_liberar`. Dice que las tareas que esperan supervisión no se liberan.
+- **Reactivar.** Nota obligatoria; explica que las asignaciones antiguas no se reactivan (queda en «Sin proyecto») y que la fecha de fin
+  prevista no cambia (F4-A), por lo que puede quedar vencida.
+- **Línea de tiempo y avisos.** `eventos.ts` gana las etiquetas de los seis eventos de practicante y no muestra el resumen
+  «ACTIVO → INACTIVO» en finalizar y reactivar (la acción ya lo dice). El aviso de un usuario para el Administrador lleva al detalle del
+  practicante (`RUTA_DE_DETALLE.ADMINISTRADOR.USUARIO`, afina D4-A); por eso `notificacion.test.ts` cambió su expectativa a
+  `/administrador/practicantes/<id>`. El Supervisor sigue yendo a la página del módulo.
+- **Pruebas.** 3.276 → 3.380 en 134 archivos (+104 y +7 archivos). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con
+  el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación en este módulo.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni cómo es el
+  atajo «Asignar a proyecto» (diálogo con selección múltiple), ni el texto en singular del aviso de tareas, ni la propuesta automática de la
+  fecha de fin que no pisa una edición a mano. Conviene pasarlos a §5.2.
+- **Siguiente paso.** Módulo 5.3 (Supervisores).
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.3 (Supervisores), Administrador
+
+- **Commits:** `b0d150f` (bloque 1, lectura), `97fda22` (bloque 2a, `ModalContrasenaTemporal` a `compartido/`), `16b67b6` (bloque 2b, cuenta) y
+  `c5d5e0d` (bloque 3, ciclo de vida); rama `feat/fase5-supervisores`. Mismo patrón del 5.2 (rutas por prefijo, `useConsulta`, filtros puros
+  en memoria, adaptadores en `src/app/adaptadores/`).
+- **URLs.** `/administrador/supervisores` y `/administrador/supervisores/:idSupervisor`.
+- **Indicador de sobrecarga (decisión de los autores, opción A).** §5.3 dice que la sobrecarga «se ve como indicador en el listado» pero no define
+  umbral ni forma. No se inventa ninguno: el listado muestra los números y resalta en ámbar «Tareas por revisar» cuando es mayor que 0.
+  Descartadas: reutilizar un umbral de Configuración (B) y definir uno nuevo, que tocaría Configuración y `domain/` (C).
+- **Bloque 1 (lectura).** Listado con pestañas Activos (abre ahí), Inactivos y Todos con los contadores de la consulta, y búsqueda por nombre o
+  correo sin tildes; columnas de §5.3. Detalle de solo lectura: contacto, proyectos a cargo con la reunión semanal (`textoReunion`, «Sin definir»
+  si falta) y cuántos practicantes tienen, tareas por revisar con los días que llevan esperando, proyectos anteriores y línea de tiempo.
+  `Insignia` gana el tipo `supervisor` (Activo y Inactivo). `eventos.ts` gana las etiquetas de los eventos `SUPERVISOR_*` y de
+  `PROYECTO_SUPERVISOR_CAMBIADO`, y desactivar y reactivar no muestran el resumen «ACTIVO → INACTIVO». Los avisos al Administrador sobre un usuario
+  son siempre de practicantes, así que `RUTA_DE_DETALLE` no cambia.
+- **Bloque 2a (`ModalContrasenaTemporal` a `compartido/`, decisión de los autores).** Pasa a usarse en 5.1, 5.2 y 5.3; se mueve con su prueba y se
+  ajustan los imports de `AccionesDePostulacion` y `AccionesDePracticante`. Cambio mecánico, en su propio commit.
+- **Bloque 2b (cuenta).** «Nuevo supervisor» es un diálogo con nombre, correo y celular; el correo y el celular reutilizan `esquemaCorreo` y
+  `esquemaCelular` del servicio y el servicio vuelve a validar. Muestra la contraseña temporal una sola vez («Cuenta de supervisor creada»); no llega
+  al historial ni a las notificaciones. Editar nombre y correo envía solo lo que cambió; el celular, Discord y GitHub los edita el propio
+  supervisor. Restablecer contraseña: confirmación y modal de una sola vez («Contraseña restablecida»), no se ofrece a una cuenta inactiva.
+  Si el error ya salió junto a un campo (por ejemplo, el correo repetido), la alerta general no lo repite.
+- **Bloque 3 (ciclo de vida).**
+  - **Consulta ampliada, aditiva y sin tocar `domain/`.** `obtenerSupervisor` trae `acciones` (editar, restablecer, reasignar, desactivar y reactivar),
+    `proyectos_pendientes` (la cantidad que da la regla `desactivarSupervisor`) y `supervisores_destino` (filtrados con `puedeCambiarSupervisor`:
+    activos, distintos y con algún proyecto a cargo que no esté finalizado). «Desactivar» se ofrece también con proyectos pendientes para poder
+    explicar el bloqueo; con la cuenta inactiva no.
+  - **Desactivar.** Con proyectos pendientes abre «No se puede desactivar» con «Tiene N proyectos pendientes: reasígnalos primero.» (singular:
+    «Tiene 1 proyecto pendiente: reasígnalo primero.») y ofrece ir a reasignar; el N lo trae la consulta, la pantalla no cuenta. Los proyectos
+    finalizados no cuentan y uno en pausa sí. Sin pendientes, confirmación simple (el servicio no pide motivo). Si cambian los datos con la
+    confirmación abierta, la pantalla se actualiza sola y pasa al aviso de bloqueo.
+  - **Reactivar.** Confirmación simple; no recupera los proyectos que tenía.
+  - **Reasignar proyectos (G4-A y F1-A).** Diálogo con un selector por proyecto activo o en pausa; «Reasignar» solo se habilita cuando todos tienen
+    supervisor elegido (aunque el servicio no lo exija). Se aplica todo o nada con `reasignarProyectosDeSupervisor` y, si el servicio rechaza algún
+    proyecto, el mensaje queda en el diálogo sin escribir nada. Las tareas que esperan supervisión siguen al proyecto (lo hace el servicio).
+- **Pruebas.** 3.380 → 3.477 en 141 archivos (+97 y +7 archivos). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Con el equipo lento algunas pruebas pesadas de 5.1 a 5.3
+  superan el límite de 5 s y pasan con `--testTimeout=60000`; no cambia ninguna lógica.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni «Nuevo supervisor»
+  como diálogo, ni el diálogo de reasignación con un selector por proyecto, ni el texto del bloqueo al desactivar (singular incluido). La
+  sobrecarga queda sin umbral: solo el resalte en ámbar. Conviene pasarlos a §5.3.
+- **Siguiente paso.** Módulo 5.4 (Proyectos).
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 1 y 2: lectura y tablero
+
+- **Commits:** `5431b8a` (bloque 1, lectura) y `da41753` (bloque 2, tablero). Rama `feat/fase5-supervisores` (los bloques 1 y 2 del 5.4 se hicieron ahí, junto al 5.3); quedan los bloques 3 (datos del proyecto:
+  crear, editar, reunión y enlaces) y 4 (equipo y ciclo de vida).
+- **Partición (decisión de los autores).** Cuatro bloques: 1) lectura, 2) tablero y detalle de tarea, 3) datos del proyecto y 4) equipo y ciclo de
+  vida. Mismo patrón de 5.1 a 5.3: rutas por prefijo, `useConsulta`, filtros puros en memoria y adaptadores en `src/app/adaptadores/`.
+- **URLs.** `/administrador/proyectos`, `/administrador/proyectos/:idProyecto` y `/administrador/proyectos/:idProyecto/tareas/:idTarea`. Las pestañas
+  del detalle van en `?pestana=resumen|tablero|equipo` (decisión de los autores: un solo componente de detalle, y la pestaña se puede enlazar);
+  una pestaña desconocida abre «Resumen», y «Equipo» y «Tablero» solo piden sus datos cuando se abren.
+- **Bloque 1 (lectura).** Listado con pestañas Activos (abre ahí), En pausa, Finalizados y Todos con los contadores de la consulta, filtro por
+  supervisor y búsqueda **por nombre** (no por código, como dice §5.4). Columnas de §5.4: avance como «N de M · P %» o «Sin tareas», tareas esperando
+  supervisión resaltadas en ámbar cuando hay alguna, y próxima reunión como fecha y hora en Perú o «Sin definir». Resumen: datos del proyecto, avance,
+  tareas por estado en el orden del flujo, vencidas, enlaces (solo lectura) y actividad reciente; el repositorio es un enlace que abre en otra
+  pestaña. Equipo: activos con su carga en el proyecto y anteriores con alta y baja. `eventos.ts` gana las etiquetas de los 12 eventos de proyecto y
+  pausar, reanudar, finalizar y reactivar no muestran el resumen de estado crudo. El aviso de un proyecto lleva al Administrador a su detalle
+  (`RUTA_DE_DETALLE.ADMINISTRADOR.PROYECTO`, afina D4-A). Sin ampliar consultas.
+- **Bloque 2 (tablero).**
+  - **Detalle de tarea (decisión de los autores, opción A).** Se extrae el contenedor del detalle de tarea de `PaginaDesarrollo` a
+    `src/app/tareas/DetalleDeTarea.tsx`, con el mapeador de acciones, el formulario de edición y `ModalCrearPR`; lo reutilizará el módulo 5.5 en
+    `/administrador/tareas/:idTarea`. `PaginaDesarrollo` pasa a usar el mismo componente. Una tarea de otro proyecto no se muestra por la dirección de
+    un proyecto («No se encontró la tarea en este proyecto.»). «Volver al tablero» regresa a `?pestana=tablero`.
+  - **«Nueva tarea» en el Tablero del 5.4 (decisión de los autores).** Diálogo con `FormularioTarea` en modo «crear» y el proyecto ya fijado; el 5.5
+    lo reutilizará. Se ofrece en un proyecto activo o en pausa (§5.4: en pausa solo se bloquea tomar tareas) y no en uno finalizado.
+  - **Ampliación aditiva de la Fase 2.** `obtenerTableroProyecto` trae `puede_crear_tarea`, calculado con `puede('CREAR_TAREA')` de `domain/`: la
+    pantalla no decide cuándo ofrecer «Nueva tarea». `FormularioTarea` recibe un `entorno` opcional, como los demás formularios (sin él las pruebas
+    esperaban la demora simulada).
+  - **Avisos del tablero.** Finalizado: «el tablero es de solo lectura»; en pausa: «nadie puede tomar tareas nuevas». Los servicios son los que lo
+    hacen cumplir; la pantalla solo lo dice. Ninguna acción se ejecuta desde una tarjeta (§6.7).
+  - **Avisos de tarea.** Un aviso de `TAREA` sigue yendo a la página del módulo: sin el ID del proyecto no se puede armar la dirección del detalle
+    dentro del proyecto. Se afina en el 5.5.
+- **Pruebas.** 3.477 → 3.571 en 147 archivos (+94 y +6 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el
+  aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se ajustaron pruebas existentes por los campos nuevos
+  (`tablero`, `FormularioTarea`, una consulta de `proyectos` y `notificacion`) y el ejemplo de «evento sin etiqueta» de `eventos.test.ts` pasó de
+  `PROYECTO_PAUSADO` a `AREA_TECNICA_CREADA`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo, ni que las pestañas vayan en
+  `?pestana=`, ni la dirección del detalle de tarea dentro del proyecto, ni dónde vive «Nueva tarea» entre 5.4 y 5.5, ni los textos de los avisos
+  del tablero. Conviene pasarlos a §5.4.
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.4 (Proyectos), bloques 3 y 4: datos, equipo y ciclo de vida
+
+- **Commits:** `9b2b378` (bloque 3, datos del proyecto) y `eeb4d50` (bloque 4, equipo y ciclo de vida). Rama `feat/fase5-supervisores`. Con ellos termina el módulo 5.4.
+- **Bloque 3 — formulario de proyecto (decisión de los autores: diálogo).**
+  - **Crear.** Nombre, código, descripción, fechas, supervisor, repositorio, rama base y reunión opcional. El código se pone en mayúsculas y sin
+    espacios **antes** de enviarlo (`normalizarCodigoDeProyecto`, en `codigo.ts`) porque el servicio no lo normaliza (G1/9A); que sea de 3 a 5
+    caracteres y único entre todos los proyectos, también los finalizados, lo decide el servicio y su mensaje sale en el campo del código. El
+    repositorio, la rama base, el nombre, la descripción y las fechas se validan con los esquemas de `services/proyectos/esquemas.ts` (una sola
+    regla). Al crear se abre el detalle del proyecto nuevo.
+  - **Editar.** El código se muestra y **no es editable**. Cada grupo de campos (datos, rama base y reunión) solo se ofrece si `puede()` lo permite y
+    llega en `acciones`: el Supervisor del proyecto ve solo la rama base y la reunión. Se envía solo lo que cambió, cada grupo con su servicio
+    (`editarDatosProyecto`, `cambiarRamaBase` y `definirReunion`); si uno falla se muestra su mensaje y lo ya guardado no se reenvía (el guardado
+    no es atómico entre grupos). Un proyecto finalizado también se edita (§5.4). La reunión se quita dejando el día en «Sin definir» y la hora
+    vacía, y se avisa al equipo (lo hace el servicio).
+  - **Enlaces útiles.** Agregar, editar (solo lo que cambió) y quitar con confirmación; quien no puede gestionarlos (`GESTIONAR_ENLACES`) ve la lista
+    de solo lectura.
+  - **Ampliaciones aditivas de la Fase 2.** `listarProyectos` trae `puede_crear` (`puede('CREAR_PROYECTO')`) y `supervisores_disponibles` (los
+    supervisores activos, por nombre; vacío para quien no puede crear). `obtenerProyecto` (vista de gestión) trae `acciones`: `EDITAR_DATOS`,
+    `CAMBIAR_RAMA_BASE`, `DEFINIR_REUNION` y `GESTIONAR_ENLACES`, cada una decidida por `puede()`; el código nunca figura entre ellas.
+  - **Pendiente anotado (decisión de los autores).** La regla «un proyecto nuevo siempre con un supervisor activo» la comprueba `crearProyecto` con
+    código propio y la repite `listarProyectos` en `supervisores_disponibles`. Se deja así y pasa a un paso aparte, con la regla pura en `domain/`,
+    pruebas por combinación y mutación (anotado en `PROGRESO.md`).
+- **Bloque 4 — ciclo de vida del proyecto.**
+  - **Acciones desde la consulta.** `obtenerProyecto` suma a `acciones`: `PAUSAR`, `REANUDAR`, `FINALIZAR`, `REACTIVAR` y `CAMBIAR_SUPERVISOR`, que salen de
+    `puede()` y de las reglas de `domain/` (`puedePausarProyecto`, `puedeReanudarProyecto`, `finalizarProyecto`, `puedeReactivarProyecto` y
+    `puedeCambiarSupervisor`), no del estado en la pantalla. Finalizar con tareas «Esperando supervisión» y reactivar con el supervisor inactivo se
+    **ofrecen igual** (como desactivar a un supervisor con proyectos en el 5.3) para poder explicar el bloqueo.
+  - **`ciclo_de_vida`** (aditivo): `tareas_esperando_supervision` (la cantidad que bloquea finalizar, de la regla de `domain/`), `tareas_a_liberar`
+    (las «En progreso» que se liberarían; 0 si está bloqueado) y `supervisor_inactivo`. La pantalla no cuenta tareas. **`supervisores_destino`**:
+    supervisores activos y distintos del actual, con `puedeCambiarSupervisor`; vacío en un proyecto finalizado.
+  - **Pausar, reanudar, finalizar y reactivar** piden una **nota obligatoria**. Finalizar bloqueado dice «Tiene N tareas esperando supervisión» (singular
+    incluido); sin bloqueo avisa «Tiene N tareas en progreso que serán liberadas.» o «No tiene tareas en progreso.», guarda la fecha real, deja el
+    tablero en solo lectura y no cierra las asignaciones. Reactivar con el supervisor inactivo no se puede: lo explica y enlaza al supervisor para
+    reactivarlo primero; reactivar no avisa al equipo (G2-A). Si los datos cambian con el diálogo abierto (por ejemplo, llega una tarea a supervisión), la
+    pantalla pasa sola al aviso de bloqueo; si el servicio rechaza la acción, el mensaje queda en el diálogo y no se escribe nada.
+  - **Cambiar supervisor.** Diálogo con un selector (el mismo cuadro que la reasignación del módulo Supervisores, para un solo proyecto). Las tareas que
+    esperan supervisión siguen al proyecto y se avisa a quien entra y a quien sale (lo hace el servicio).
+- **Bloque 4 — pestaña «Equipo».**
+  - **Ampliaciones aditivas.** `obtenerEquipoProyecto` (gestión) trae `estado_proyecto`, `puede_asignar` (hay algún practicante a quien la regla
+    `puedeAsignarPracticante` deja asignar) y, por miembro activo, `tareas_a_liberar` y `puede_quitar` (con `puedeQuitarPracticante`). Consulta nueva
+    `listarPracticantesAsignables`: practicantes activos sin asignación vigente en el proyecto, por nombre, con su carga total de tareas en progreso;
+    vacía en un proyecto finalizado y para quien no es Administrador.
+  - **Asignar.** Diálogo con casillas (uno o varios) y la carga de cada uno; aplica `asignarPracticantes` con una lista de pares, todo o nada, y cada
+    practicante recibe un aviso. **Quitar.** Confirmación que avisa cuántas tareas «En progreso» de ese proyecto se liberarán (número de `domain/`), con
+    motivo opcional; la asignación recibe fecha de baja y el practicante pasa a «anteriores».
+  - **Proyecto finalizado.** No admite asignar ni quitar: la pantalla lo dice («si hace falta, se reactiva primero») y no ofrece los botones; lo hace
+    cumplir `domain/`, no la pantalla.
+- **Estructura.** En `src/paneles/administrador/proyectos/`: `FormularioProyecto`, `codigo.ts`, `SeccionEnlaces`, `AccionesDeProyecto`,
+  `CambiarSupervisorDelProyecto`, `EquipoDelProyecto` y `AsignarPracticantes`. El componente `Equipo` en línea del detalle se reemplaza por
+  `EquipoDelProyecto`.
+- **Pruebas.** Bloque 3: 3.571 → 3.622 en 150 archivos (+51 y +3 archivos). Bloque 4: 3.622 → 3.686 en 152 archivos (+64 y +2 archivos). `tsc -b`,
+  Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de
+  mutación. Con el equipo lento, `vitest` pierde workers al arrancar y algunas pruebas pesadas superan los 5 s: se verificó con
+  `--testTimeout=60000 --maxWorkers=3`, sin cambios de lógica.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define que «Editar proyecto» agrupe datos, rama base y
+  reunión en un solo diálogo ni que un guardado parcial conserve lo ya guardado; ni cómo se quita la reunión en pantalla; ni que «Nuevo proyecto» abra
+  el detalle del proyecto creado; ni los textos de los bloqueos de finalizar y reactivar (singular incluido); ni que finalizar y reactivar se ofrezcan
+  aunque estén bloqueados para explicarlo; ni cómo se ve el diálogo de asignar (casillas con la carga) ni el motivo opcional al quitar. Conviene pasarlos a
+  §5.4.
+- **Siguiente paso.** Módulo 5.5 (Tareas): reutiliza `DetalleDeTarea`, el formulario de «Nueva tarea» y el detalle en `/administrador/tareas/:idTarea`.
+
+## 2026-11-19 — [A+B] Fase 5, módulo 5.5 (Tareas), Administrador
+
+- **Commit:** `c8d82e1` (el módulo completo, en un solo commit con dos partes: lectura y «Nueva tarea»). Rama `feat/fase5-supervisores`. Mismo patrón de 5.1
+  a 5.4: rutas por prefijo, `useConsulta`, filtros puros en memoria y adaptadores en `src/app/adaptadores/`.
+- **Qué es el módulo.** Una vista transversal (§5.5): las tareas de todos los proyectos juntas. No repite el tablero, que vive en cada proyecto (5.4).
+- **URLs.** `/administrador/tareas` y `/administrador/tareas/:idTarea`. El detalle es el mismo `DetalleDeTarea` del 5.4 (opción A del 5.4, decisión de los
+  autores), alojado por una página delgada cuyo «Volver al listado» regresa a `/administrador/tareas`. El detalle dentro de un proyecto
+  (`/administrador/proyectos/:idProyecto/tareas/:idTarea`) sigue existiendo, con su propio «Volver al tablero».
+- **Avisos de tipo `TAREA` (decisión de los autores).** Para el Administrador llevan a `/administrador/tareas/:idTarea` (`RUTA_DE_DETALLE`, afina D4-A);
+  no hacía falta el proyecto en la dirección, que fue lo que impedía afinarlo en el 5.4. El Supervisor y el Practicante siguen yendo a la página de su
+  módulo hasta que tengan detalle (Fases 6 y 7); `notificacion.test.ts` cambió su expectativa del Administrador a `/administrador/tareas/<id>`.
+- **Listado.** Abre en «Todas»; pestañas Todas, Disponibles, En progreso, Esperando supervisión (con el contador resaltado en ámbar cuando hay alguna) y
+  Terminadas, con los contadores de la consulta. Filtros: proyecto, responsable, vencidas, sin asignar, «Requiere supervisión», estado del Pull Request y
+  búsqueda por título o ID (sin distinguir tildes ni mayúsculas); todo se aplica en memoria sobre lo que entrega `listarTareas` (Q5). Columnas de §5.5: ID
+  legible, título, proyecto, responsable o «Sin asignar», estado, ícono de «Requiere supervisión», etiqueta del Pull Request, fecha límite (en rojo si está
+  vencida, según la regla de `domain/` que ya trae la consulta) y «Ver detalle».
+- **«Requiere supervisión» (comprobado en §5.5, línea 350).** Es una columna de **ícono**, no de texto, y además un filtro; así está construido. No hay
+  orden por esa columna porque la propuesta no lo pide. No hay divergencia con `docs/` en este punto.
+- **Etiqueta del Pull Request.** La del listado es la que la consulta ya filtró con la regla de visibilidad (§7.3), no la que guarda la tarea; el filtro por
+  estado del Pull Request solo alcanza a las tareas cuya etiqueta se muestra.
+- **Sin acciones en las filas (§6.7).** La tabla no tiene botones: un clic en la fila o en «Ver detalle» abre el detalle, donde se ejecutan todas las
+  acciones con los botones que decide `domain/`. Una prueba lo vigila.
+- **«Nueva tarea» desde el módulo («eligiendo el proyecto», §5.5).** Diálogo con `FormularioTarea` en modo «crear» y el selector de proyecto sin valor por
+  defecto. Qué proyectos se ofrecen lo decide la consulta.
+  - **Ampliación aditiva de la Fase 2.** `listarTareas` trae `proyectos_para_crear`: los proyectos donde `puede('CREAR_TAREA')` lo permite (el Administrador,
+    los no finalizados, también en pausa; el Supervisor, los suyos no finalizados; el Practicante, ninguno), por código. La pantalla no lo decide. Sin
+    cambios en `domain/`.
+  - **Refactor.** El diálogo del tablero del 5.4 se extrae a `src/app/tareas/DialogoNuevaTarea.tsx` y lo usan los dos sitios (el tablero con el proyecto ya
+    elegido). Las pruebas de «Nueva tarea» del 5.4 siguen pasando sin cambios.
+  - **Qué pasa al crear.** La tarea nace «Disponible» y sin responsable, el diálogo se cierra y la fila aparece en el listado; no se abre su detalle.
+- **Pruebas.** 3.686 → 3.748 en 157 archivos (+62 y +5 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).** La propuesta no define las URLs del módulo ni el detalle en
+  `/administrador/tareas/:idTarea`; no dice que la etiqueta del Pull Request del listado sea la ya filtrada por la regla de visibilidad ni que el filtro por
+  estado del Pull Request solo alcance a las tareas que la muestran; ni cómo es el selector de proyecto de «Nueva tarea» (sin valor por defecto y solo con
+  los proyectos donde se puede crear); ni que, al crear, el listado se actualice sin abrir el detalle. Conviene pasarlos a §5.5.
+- **Pendiente anotado.** En el panel del Supervisor (Fase 6, §9.1.3) la pestaña «Esperando supervisión» agrega «Días esperando»; `listarTareas` ya entrega
+  el dato y el adaptador lo lleva (`diasEsperando`). Queda en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.6 (Reportes).
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.6 (Reportes), Administrador
+
+- **Commits:** `77ecb38` (insights e indicadores, en un solo commit), `301442a` (instalación de `recharts` 3.11.0) y `864777f` (gráfico por área; ese commit quitó por error el
+  filtro por proyecto de Indicadores, restaurado después, ver abajo). Rama `feat/fase5-reportes`. Mismo patrón de 5.1 a 5.5: `useConsulta`, filtros puros, adaptador en
+  `src/app/adaptadores/reportes.ts` y pestañas en `?pestana=`.
+- **URL.** `/administrador/reportes`, con las pestañas «Insights» (abre ahí) e «Indicadores».
+- **Insights.** No se guardan: `listarInsights` los calcula con las 7 reglas y se identifican por regla y elemento. Filtros por severidad, tipo, proyecto
+  (los que aparecen en los insights) y estado («Activos» por defecto, «Revisados», «Todos»). Cada tarjeta ofrece «Ver detalle» (la misma tabla
+  `RUTA_DE_DETALLE` de los avisos, una sola fuente de enlaces), «Marcar como revisado» (con nota opcional; independiente por persona, y reaparece si
+  empeora o a los 7 días) y «Notificar». Los botones los deciden `puede_marcar_revisado` y `puede_notificar`, que traen las consultas; la pantalla no
+  decide. `Insignia` suma el tipo `severidad` (Crítico, Atención, Informativo).
+- **Indicadores.** Periodo de 1 a 365 días de calendario en hora de Perú (30 por defecto); un periodo inválido lo rechaza el servicio
+  (`PERIODO_INVALIDO`) y se muestra su mensaje. Tarjetas de tareas terminadas, tiempo de ciclo, espera de supervisión, tasa de devolución, postulaciones
+  decididas y puntaje promedio por área; tablas por proyecto y por practicante con enlaces al detalle. Donde no hay muestras dice «Sin datos», nunca
+  cero; los días llevan un decimal con coma y las proporciones, el entero con la muestra («40 % (12 de 30)»).
+- **Filtro por proyecto (restaurado).** §5.6 dice «con selector de periodo ... y filtro por proyecto», así que no era un extra. Se había quitado en
+  `864777f` por una indicación equivocada y se restauró: selector «Proyecto» (por defecto «Todos los proyectos») que pasa `id_proyecto` a
+  `obtenerIndicadores`; las tarjetas, las tablas y el gráfico lo respetan (`practicantes_por_area` ya cuenta solo a los asignados al proyecto). Los
+  proyectos del selector son los que entrega `listarProyectos`: la pantalla no decide el alcance. Restaurado en `5a81b38`.
+- **Gráfico por área.** `GraficoPracticantesPorArea`: barras horizontales con Recharts, con colores solo en variables CSS de los tokens (`--link`,
+  `--text-2`, `--border`, `--surface`, `--surface-2`, `--text`), por lo que valen en tema claro y oscuro. Va con `aria-hidden`; la alternativa accesible es la tabla
+  «Practicantes por área» justo debajo. Sin datos no se dibuja y aparece «No hay practicantes por área para graficar».
+- **Excepción a la regla del PR aparte para instalar.** `CLAUDE.md` pide que quien instala una dependencia haga un PR pequeño solo para eso. Aquí la
+  instalación (`npm install --save-exact recharts@3.11.0`) fue un commit aparte (`301442a`) pero dentro de la rama del módulo, no un PR separado. Se
+  comprobó antes con `grep -i "chart" package.json` que no había otra librería de gráficos y que `package.json` solo cambió con la línea de
+  `recharts` (más `package-lock.json`).
+- **Sin cambios en `domain/` ni ampliaciones de consultas.**
+- **Pruebas.** 3.748 → 3.803 en 162 archivos (+55 y +5 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.6 no menciona los **atajos de periodo** de 7, 30, 90 y 365 días junto al campo de 1 a 365 días; se añadieron como extra.
+  2. **Recharts 3.11.0** es una dependencia nueva, con versión exacta; conviene anotarla donde la propuesta liste la pila tecnológica.
+  3. **Tipo de gráfico:** barras horizontales, oculto a los lectores de pantalla y con la tabla como alternativa. Si la propuesta fija otro tipo, hay que
+     alinearlos.
+  4. **Excepción a la regla del PR aparte** para la instalación (ver arriba).
+- **Pendientes anotados para la Fase 8.** El aviso del build por chunks de más de 500 kB, que `recharts` agranda, y la comprobación visual del gráfico en
+  tema claro y oscuro (en jsdom Recharts no dibuja las barras). Quedan en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.7 (Historial).
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.7 (Historial de actividad), Administrador
+
+- **Commit:** `18b381b` (el módulo completo, en un solo commit). Rama `feat/fase5-historial`. Mismo patrón de 5.1 a 5.6: `useConsulta`, adaptador en
+  `src/app/adaptadores/historial.ts` y página en `src/paneles/administrador/historial/`.
+- **Qué es el módulo.** El registro de auditoría (§5.7), vista global **solo del Administrador**. La actividad de un proyecto, una tarea o un perfil
+  sigue viéndose en las líneas de tiempo de cada uno (Supervisor y Practicante, Fases 6 y 7).
+- **URL.** `/administrador/historial` (la que ya tenía el menú).
+- **Solo lectura.** Los eventos son inmutables: ni la tabla ni el panel de detalle ofrecen editar ni borrar, y dos pruebas lo vigilan.
+- **Consulta.** Se usa `listarHistorial` tal como estaba (Fase 2, paso 11D): ya recibe los filtros de §5.7 (fechas, autor o «Sistema», categoría, tipo de
+  elemento, proyecto y texto). No se amplió ninguna consulta ni se tocó `domain/`. Las personas del filtro «Autor» salen de una segunda lectura sin filtros, para
+  que sigan ofreciéndose todas aunque la lista ya esté filtrada; los proyectos, de `listarProyectos`.
+- **Listado y detalle (§5.7).** Del más reciente al más antiguo: fecha y hora en hora de Perú, autor («Nombre (Rol)», «Sistema» o «Usuario desconocido»),
+  acción, elemento con enlace a su detalle (el nombre guardado en el evento, que sigue legible si el elemento ya no existe) y resumen. Un clic en la fila abre
+  el panel con el valor anterior y el nuevo de cada campo modificado y el motivo o la nota; el enlace del elemento no abre el panel.
+- **Nombres.** `ETIQUETA_ACCION` es un `Record` completo de las 63 acciones (una acción nueva obliga a nombrarla), y hay etiquetas para las 8 categorías, los
+  tipos de elemento y los campos registrados. `eventos.ts` exporta `etiquetaAutor` y `etiquetaEstado` para reutilizarlas.
+- **Lo que nunca se muestra.** Ni contraseñas ni inicios de sesión: el almacén no guarda ninguno y la pantalla solo presenta lo guardado. Una prueba revisa que
+  ningún campo ni valor del historial las mencione.
+- **Pruebas.** 3.803 → 3.823 en 164 archivos (+20 y +2 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.7 no define la ruta del módulo: va en `/administrador/historial`.
+  2. El resumen de un evento con varios campos es «N campos modificados» y el detalle da el desglose; §5.7 solo da el ejemplo de un cambio de estado.
+  3. El rango de fechas inválido («Desde» posterior a «Hasta») muestra el mensaje genérico de la consulta, «Revisa los datos ingresados.»; §5.7 no dice nada.
+  4. Los nombres legibles de los campos y de los estados salen de una tabla del adaptador; la propuesta no los lista.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`). La comprobación del detalle del evento en un navegador real, y tres pulidos del resumen: «Proyectos:
+  — → INV» de «Proyectos reasignados» (debería leerse sin el «—»), «2 campos modificados» de «Tarea tomada» y «Tarea enviada a supervisión» (podría mostrar el
+  campo principal) y el mensaje del rango de fechas inválido.
+- **Siguiente paso.** Módulo 5.8 (Configuración).
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.8 (Configuración), Administrador
+
+- **Commits:** `c814dca` (el módulo completo) y `59d3f76` (la fecha de la última verificación de la tarjeta de GitHub pasa a ser relativa a hoy). Rama
+  `feat/fase5-configuracion`. Mismo patrón de 5.1 a 5.7: `useConsulta`, adaptador en `src/app/adaptadores/configuracion.ts` y página en
+  `src/paneles/administrador/configuracion/`.
+- **URL.** `/administrador/configuracion` (la que ya tenía el menú).
+- **Servicios usados (Fase 2, sin ampliarlos ni tocar `domain/`).** `obtenerConfiguracion` (valor vigente, predeterminado y `es_predeterminado`),
+  `guardarConfiguracionSeccion`, `restaurarSeccionConfiguracion` y `restablecerDatosDemostracion`.
+- **Secciones y parámetros (§5.8).** Evaluación de postulaciones (banda de puntaje ambiguo y proporción de la nota), Prácticas (duración y aviso de fin) y
+  Seguimiento (los 10 umbrales, incluida la anticipación de «Fin de práctica»): 14 parámetros. Cada uno muestra su valor actual (la casilla), su unidad y
+  «Predeterminado: …». Los cambios valen hacia adelante y quedan en el Historial con su valor anterior y el nuevo (un evento por parámetro).
+- **La validación la decide el servicio.** La pantalla solo convierte el texto de cada casilla a número (una casilla vacía es `NaN` y el servicio responde
+  «Escribe un número.»; un decimal se envía tal cual y el servicio dice que debe ser entero). Los errores traen `campos` (`CLAVE` o `CLAVE.campo`) y se
+  muestran junto a la casilla del parámetro; un error del parámetro entero (la suma de la proporción, mínimo y máximo, crítico y atención) sale bajo su título.
+  Lo que no se asocia a ningún parámetro se muestra en un aviso de la sección. Al fallar, lo escrito se conserva.
+- **Restaurar por sección.** «Restaurar valores originales» pide confirmación y llama a `restaurarSeccionConfiguracion`. Queda deshabilitado si todos los
+  parámetros de la sección ya valen lo predeterminado (`es_predeterminado` de la consulta).
+- **Tarjeta de GitHub de ejemplo — decisiones de los autores.** (1) **Datos de ejemplo:** estado «Conectado», cuenta `codaini-demo` y última verificación,
+  todos de muestra; §5.8 solo pide «una tarjeta de ejemplo». (2) **Botones «Probar conexión» y «Reconectar»:** solo muestran el aviso «Acción simulada: en
+  el prototipo no hay conexión real con GitHub.»; no cambian la fecha ni guardan nada. (3) **La fecha de la última verificación es relativa a hoy** (plan §6:
+  sin fechas fijas del pasado): siempre hace 2 horas según el reloj del entorno, en hora de Perú. La clave de la conexión nunca se muestra. La tarjeta
+  lleva la marca «Solo prototipo».
+- **«Restablecer datos» (solo prototipo).** Con la marca «Solo prototipo» y confirmación destructiva. Llama a `restablecerDatosDemostracion`, aplica el
+  `{ usuario }` que devuelve (refresca la sesión o, si la persona ya no existe, la cierra) y vuelve al inicio del rol, para no dejar pantallas abiertas sobre
+  registros que ya no existen. La pantalla nunca toca el almacén. El sistema queda consistente: una sola escritura y la semilla nueva.
+- **`Insignia`.** Suma el tipo `integracion` (Conectado, Sin conexión) y la marca «Solo prototipo».
+- **Pruebas.** 3.823 → 3.844 en 166 archivos (+21 y +2 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.8 no define la ruta del módulo: va en `/administrador/configuracion`.
+  2. Los datos de la tarjeta de GitHub (Conectado, `codaini-demo`), el aviso «Acción simulada» de sus botones y la fecha de verificación relativa a hoy
+     (hace 2 horas) no están en §5.8, que solo dice «una tarjeta de ejemplo».
+  3. §5.8 dice que cada parámetro muestra su valor actual y el predeterminado, y se cumple; pero el rango permitido solo aparece como mensaje del servicio
+     al fallar, no como texto junto a la casilla.
+  4. «Restaurar valores originales» queda deshabilitado cuando la sección ya vale lo predeterminado; §5.8 no lo menciona.
+- **Pendiente anotado para la Fase 8.** Mostrar el rango permitido junto a cada casilla (por ejemplo «de 1 a 24 meses»); exige exportar los límites de los
+  umbrales de Seguimiento desde `domain/`. Queda en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 5.9 (Dashboard), que va al final de la Fase 5.
+
+## 2026-11-20 — [A+B] Fase 5, módulo 5.9 (Dashboard), Administrador
+
+- **Commits:** `f3f787c` (la pestaña inicial por la dirección en los módulos 5.1 a 5.5) y `0f2db6f` (el Dashboard). Rama `feat/fase5-dashboard`. El 5.9 es el
+  último módulo de la Fase 5 y cierra el panel del Administrador.
+- **Qué es el módulo.** La primera pantalla del Administrador (§5.9): no calcula nada propio, resume lo que ya existe. Lee `obtenerDashboardAdministrador`
+  (Fase 2, paso 11E) tal como estaba: no se amplió ninguna consulta ni se tocó `domain/`. Un adaptador `dashboard.ts` solo presenta.
+- **URL.** `/administrador/dashboard` (la que ya tenía el menú).
+- **Decisión 1 — la pestaña se fija por `?pestana=` (aprobada por los autores).** §5.9 pide que cada tarjeta enlace «al módulo con el filtro ya aplicado»,
+  y los listados de 5.1 a 5.5 guardaban su filtro en un `useState` local sin leer la dirección. Se tocó solo eso: el hook `usePestanaInicial` (en
+  `src/app/`) **lee** `?pestana=` al abrir la página; un valor ausente o desconocido abre la pestaña de siempre; después la página sigue guardando su filtro
+  en su estado (no escribe la dirección, a diferencia de Reportes). Cada `filtros.ts` exporta la lista de pestañas válidas (`PESTANAS_DE_*`). Las pruebas
+  existentes no cambiaron y hay una prueba por página (la pedida y el valor desconocido) en `pestanaEnLaDireccion.test.tsx`.
+- **Decisión 2 — las «demoradas» de supervisión quedan como texto, sin enlace propio (aprobada por los autores).** Tareas no tiene ningún filtro que
+  corresponda al plazo de «Supervisión demorada», y no se creó uno. La tarjeta «Esperando supervisión» enlaza a la pestaña «Esperando supervisión» y dice, en
+  texto, cuántas llevan el plazo de Configuración o más.
+- **Tarjetas.** La cifra principal enlaza a la pestaña principal (Pendientes, Activos, Activos, Esperando supervisión) y la secundaria, a la suya
+  (Requieren revisión, En pausa, Sin proyecto). Los enlaces se arman en `dashboard/enlaces.ts` con el tipo de pestañas de cada módulo, así que el
+  compilador rechaza una pestaña que no exista.
+- **Bloques.** Las cinco postulaciones pendientes de mayor puntaje (nombre con la marca de revisión manual, área y especialidad, puntaje y «Ver detalle»);
+  hasta cinco alertas no revisadas con sus acciones; practicantes por área (el gráfico del 5.6 más la tabla alternativa); las cinco tareas por revisar; las
+  próximas reuniones y el avance de los proyectos sin finalizar. Sin alertas o sin postulaciones pendientes, un mensaje lo dice; no hay feed de actividad.
+- **Reutilización.** La tarjeta de un insight y los diálogos de «Marcar como revisado» y «Notificar» salen de `TabInsights` a `src/app/insights/AccionesDeInsight.tsx`
+  y los comparten Reportes y el Dashboard (una sola fuente, y las pruebas de Reportes siguen pasando). El Dashboard usa una variante `compacta`. `proximaReunionTexto`
+  del adaptador de proyectos se exporta.
+- **Distribución.** A la izquierda, postulaciones, tareas por revisar y reuniones; a la derecha, las alertas; debajo, practicantes por área y avance. En
+  pantallas angostas, una columna. Se ajustó por indicación de los autores tras verlo en el navegador (los bloques ocupaban demasiado y quedaba un hueco).
+- **Pruebas.** 3.844 → 3.868 en 169 archivos (+24 y +3 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §5.9 dice «enlace al módulo con el filtro ya aplicado» sin decir cómo: se fija con `?pestana=` en los listados de Postulaciones, Practicantes,
+     Proyectos y Tareas, que antes no lo leían (decisión 1).
+  2. Las «demoradas» de la tarjeta de tareas no tienen enlace propio (decisión 2).
+  3. La cifra secundaria de las tarjetas de postulaciones, proyectos y practicantes también es un enlace; §5.9 habla de «un enlace» por tarjeta.
+  4. Las alertas no muestran cuántas quedaron fuera de las cinco, porque §5.9 no lo pide.
+  5. La ruta `/administrador/dashboard` y la distribución en dos columnas no están definidas en §5.9.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`). La comprobación manual en un navegador real de los módulos 5.1 a 5.9, y decidir si se
+  muestra cuántas alertas quedan fuera de las cinco.
+- **Cierre de la Fase 5.** Con el 5.9 el panel del Administrador queda terminado, con la salvedad de los pendientes de la Fase 8 y de la comprobación manual
+  de 5.1 a 5.9. Falta el cierre de la fase: el PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-5-completa`.
+- **Siguiente paso.** Cierre de la Fase 5 y, después, la Fase 6, módulo 6.1.
+
+## 2026-11-20 — [A+B] Fase 6, módulo 6.1 (Mis proyectos), Supervisor
+
+- **Commits:** `179e3a6` (el módulo) y `f07aa48` (el destino de los avisos de proyecto del Supervisor). Rama `feat/fase6-supervisor`. Regla de la fase:
+  se reutiliza lo construido para el Administrador con el alcance filtrado; el código nuevo es solo lo que la propuesta marca como pantalla nueva (las
+  tarjetas de proyecto).
+- **Qué es el módulo.** El listado de proyectos del Supervisor (§9.1.1) y su detalle. No se amplió ninguna consulta ni se tocó `domain/`: `listarProyectos`
+  ya entrega solo los proyectos que tiene a cargo (sin ninguno, una lista vacía) y `obtenerProyecto`, `obtenerEquipoProyecto` y `obtenerTableroProyecto` ya
+  decidían por rol qué botones llegan.
+- **Listado.** `PaginaMisProyectos` en `src/paneles/supervisor/proyectos/`, con tarjetas (se reutiliza `TarjetaProyecto` de `compartido/`), pestañas Activos,
+  En pausa, Finalizados y Todos con los contadores de la consulta (abre en «Activos»; usa `filtrarProyectos` del Administrador) y búsqueda por nombre; 2 o 3
+  tarjetas por fila según el ancho. Cada tarjeta, por `aTarjetaDeProyecto`: nombre, código y estado; barra de avance; practicantes activos o «Sin practicantes
+  asignados» (sin botón de acción: el Supervisor no puede resolverlo); «Esperando tu supervisión», resaltada en ámbar solo si hay alguna; y próxima
+  reunión o «Sin definir». Las tareas vencidas no llegan al modelo de la tarjeta. Sin columna ni filtro de supervisor y sin «Nuevo proyecto».
+- **Detalle compartido.** El Supervisor usa `PaginaDetalleProyecto` y `PaginaDetalleTareaDeProyecto` del Administrador bajo su prefijo
+  (`/supervisor/proyectos/:id` y `…/tareas/:idTarea`). Para ello, tres puntos que tenían `/administrador` fijo (volver al listado, abrir una tarea desde el tablero
+  y volver al tablero) leen el rol de la sesión: `rutas.ts` suma `rutaDeProyectos(rol)` y `rutaDeDetalleDeProyecto` y `rutaDeDetalleDeTarea` aceptan el rol, con el
+  Administrador por defecto, de modo que las pruebas del Administrador no cambiaron. Qué botones ve lo deciden las consultas: puede definir o cambiar la
+  reunión, cambiar la rama base y gestionar enlaces; no ve crear, pausar, reanudar, finalizar, reactivar, cambiar de supervisor ni asignar o quitar practicantes.
+- **Proyectos ajenos.** Ningún dato llega a la pantalla: el listado solo trae los suyos y la dirección de uno ajeno responde con un error, sin nombre, código
+  ni pestañas (hay pruebas de ambos casos).
+- **Avisos (`f07aa48`).** `RUTA_DE_DETALLE.SUPERVISOR` suma `PROYECTO`: los avisos de proyecto del Supervisor llevan a `/supervisor/proyectos/:id` y no al listado.
+  Solo cambia el destino del enlace, no ninguna regla; los avisos de tarea y de persona siguen yendo a la página de su módulo. La expectativa de «Supervisor,
+  proyecto» en `notificacion.test.ts` cambió a propósito.
+- **Pruebas.** 3.868 → 3.897 en 172 archivos (+29 y +3 archivos de prueba; 27 en `179e3a6` y 2 en `f07aa48`). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin
+  errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.1 no define las direcciones del Supervisor: el listado va en `/supervisor/proyectos`, el detalle en `/supervisor/proyectos/:id` y la tarea en
+     `/supervisor/proyectos/:id/tareas/:idTarea`.
+  2. Un proyecto sin tareas muestra «Sin tareas» en la tarjeta, en vez de una barra o un 0 %; §9.1.1 no lo dice.
+  3. El botón del detalle que abre el formulario del Supervisor se llama «Editar proyecto» (es el del Administrador) y solo ofrece reunión y rama base;
+     §9.1.1 habla de definir la reunión y cambiar la rama base como acciones separadas, y de «no editar nombre, código, descripción, fechas ni repositorio».
+  4. Los avisos de proyecto del Supervisor llevan al detalle del proyecto; §9.1.1 no define el destino (decisión de los autores).
+- **Prueba manual pendiente.** El 6.1 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
+- **Siguiente paso.** Módulo 6.2 (Tareas del Supervisor).
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.2 (Tareas), Supervisor
+
+- **Commit:** `424779a` (el módulo completo, con los dos ajustes que pidieron los autores antes del commit). Rama `feat/fase6-tareas`. Regla de la fase: se reutiliza
+  lo construido para el Administrador con el alcance filtrado.
+- **Qué es el módulo.** La misma vista transversal del 5.5, filtrada a los proyectos del Supervisor (§9.1.3); su cola de revisión es la pestaña «Esperando
+  supervisión». No se amplió ninguna consulta ni se tocó `domain/`: `listarTareas` y `obtenerTarea` ya entregan solo las tareas de sus proyectos, y
+  `proyectos_para_crear` lo decide `puede('CREAR_TAREA')`.
+- **Reutilización.** `PaginaTareas` y `PaginaDetalleTarea` del Administrador sirven también al Supervisor bajo `/supervisor/tareas` y `/supervisor/tareas/:idTarea`: las
+  direcciones (enlace «Ver detalle», clic de la fila y «Volver al listado») leen el rol de la sesión (`rutaDeTareas(rol)`, `rutaDeDetalleDeTareaGlobal(id, rol)`),
+  con el Administrador por defecto, así que las pruebas del Administrador no cambiaron.
+- **Pestaña inicial.** `pestanaInicialDeTareas(rol, contadores)` (pura, en `filtros.ts`): el Administrador abre en «Todas»; el Supervisor, en «Esperando
+  supervisión» si tiene tareas ahí y, si no, en «Todas». Una pestaña pedida en `?pestana=` gana. Para ello `usePestanaInicial` y `pestanaDeLaDireccion` admiten
+  `null` como predeterminada («la decide la página»).
+- **Esqueleto de carga (ajuste de los autores).** Mientras llegan los contadores y nadie eligió pestaña, la página no dibuja las pestañas ni los filtros: solo el
+  esqueleto de carga; las pestañas aparecen ya con la inicial elegida y nunca se ve «Todas» de paso. Vale para todos los roles. Si la consulta falla, se
+  muestra el error (la condición excluye el caso de error) y no un esqueleto eterno.
+- **«Días esperando».** En la pestaña «Esperando supervisión» y solo para el Supervisor, se agrega la columna, con `textoDiasEsperando` («1 día», «N días»). El dato ya
+  llegaba en cada fila (`dias_esperando`). El Administrador no la ve, porque §5.5 no la pide.
+- **Pestaña vacía y ámbar.** «No tienes tareas esperando tu supervisión» para el Supervisor; el contador de la pestaña se resalta en ámbar solo si tiene tareas.
+- **Aprobar y devolver (§6.7).** Solo desde el detalle; las filas no tienen botones. Con el proyecto en pausa siguen disponibles (lo dicta la regla de `domain/`;
+  hay una prueba).
+- **Ninguna tarea ajena.** Ni el listado ni los filtros de proyecto y responsable traen datos de otros proyectos, y la dirección del detalle de una tarea ajena
+  responde con un error sin título ni botones. «Nueva tarea» solo ofrece sus proyectos.
+- **Avisos (ajuste de los autores).** `RUTA_DE_DETALLE.SUPERVISOR` suma `TAREA`: los avisos de tarea del Supervisor llevan a `/supervisor/tareas/:idTarea`, igual que los de
+  proyecto del 6.1. Solo cambia el destino del enlace. La expectativa de «Supervisor, tarea» en `notificacion.test.ts` cambió a propósito.
+- **Pruebas.** 3.897 → 3.921 en 174 archivos (+24 y +2 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en
+  `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.3 no define las direcciones del Supervisor: el listado va en `/supervisor/tareas` y el detalle en `/supervisor/tareas/:idTarea`.
+  2. La columna «Días esperando» se escribe «N días» («1 día» en singular); §9.1.3 solo nombra la columna.
+  3. El Administrador no ve «Días esperando»: §5.5 no la pide y §9.1.3 la agrega solo para el Supervisor.
+  4. Los avisos de tarea del Supervisor llevan al detalle de la tarea; §9.1.3 no define el destino (decisión de los autores).
+  Queda resuelta la que decía que la pestaña «Todas» se veía un instante antes de «Esperando supervisión»: con el esqueleto de carga ya no ocurre.
+- **Prueba manual pendiente.** El 6.2 no se ha recorrido en un navegador real; la lista de comprobaciones, incluido provocar un error de la consulta de la
+  pestaña inicial (que en las pruebas no se pudo reproducir), está en `PROGRESO.md` (Pendientes).
+- **Pendiente de los autores.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente (`PROGRESO.md`).
+- **Siguiente paso.** Módulo 6.3 (Practicantes a cargo).
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.3 (Practicantes a cargo), Supervisor
+
+- **Commit:** `100efb3` (el módulo completo, con el destino de los avisos de persona). Rama `feat/fase6-practicantes`. Regla de la fase: se reutiliza lo construido para
+  el Administrador con el alcance filtrado; aquí es pantalla nueva donde la propuesta lo marca (§9.1.2).
+- **Qué es el módulo.** La vista transversal de las personas de los proyectos del Supervisor. No se amplió ninguna consulta ni se tocó `domain/`: `listarPracticantesACargo` y
+  `obtenerPracticanteACargo` (Fase 2, paso 11) ya entregan una fila por persona, solo lo de sus proyectos, la especialidad sin el área técnica, y rechazan a quien no es
+  de sus proyectos (`FUERA_DE_ALCANCE`). No se reutilizó el listado del 5.2 porque sus columnas, pestañas y consulta son otras.
+- **Listado.** `PaginaPracticantesACargo` en `src/paneles/supervisor/practicantes/`: tabla con pestañas Activos y Anteriores con contadores (abre en «Activos»), columnas
+  practicante (nombre y correo), especialidad, proyectos, carga, esperando mi revisión, última actividad y detalle; filtro por proyecto (solo los suyos, salen de las propias
+  filas) y búsqueda por nombre o correo (sin tildes ni mayúsculas), en `filtros.ts`. Una persona en dos proyectos suyos es una sola fila con ambos. Quién es activo y quién
+  anterior lo decide la consulta (`situacion`). Sin ninguno, «Aún no tienes practicantes asignados en tus proyectos».
+- **Detalle.** `PaginaDetallePracticanteACargo`, de solo lectura y sin ningún botón: contacto (celular, Discord y GitHub), especialidad, disponibilidad horaria, fecha de fin de
+  práctica, proyectos con alta y baja, tareas actuales y completadas y línea de tiempo, todo recortado a sus proyectos. No muestra el área técnica ni la postulación de origen.
+- **Componente compartido.** La lista de tareas del detalle del Administrador pasó a `ListaDeTareasDePracticante` (`src/app/practicantes/`) y la usan las dos pantallas;
+  el comportamiento del Administrador no cambió y sus pruebas siguen pasando. `Insignia` suma «Anterior» (tipo `practicante`).
+- **Avisos.** `RUTA_DE_DETALLE.SUPERVISOR` suma `USUARIO`: los avisos de persona del Supervisor llevan a `/supervisor/practicantes/:idPracticante` y no al listado (decisión de los
+  autores; solo cambia el destino del enlace). Los avisos de la propia cuenta siguen yendo a Mi perfil, porque esa regla se evalúa antes. La expectativa de «Supervisor, persona»
+  en `notificacion.test.ts` cambió a propósito.
+- **Datos ajenos.** Ni el listado, ni el filtro, ni las tareas traen datos de personas o proyectos de otros supervisores, y la dirección del detalle de un practicante ajeno
+  responde con un error sin nombre, correo ni datos (hay pruebas de todo ello).
+- **Pruebas.** 3.921 → 3.955 en 178 archivos (+34 y +4 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en
+  `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.2 no define las direcciones del Supervisor: el listado va en `/supervisor/practicantes` y el detalle en `/supervisor/practicantes/:idPracticante`.
+  2. En «Anteriores» se agrega la columna «Fecha de baja»: §9.1.2 dice «con fecha de baja» pero no la lista entre las columnas.
+  3. La columna «Proyectos» muestra aquellos en los que la persona participa ahora y, si ya salió de todos, aquellos en los que estuvo.
+  4. El detalle no muestra «Cuenta creada» ni las fechas de ingreso: la consulta del Supervisor no las entrega y §9.1.2 no las pide.
+  5. La fecha de fin se rotula «Fecha de fin de práctica» y no lleva el «Faltan N días» que sí ve el Administrador, porque la consulta del Supervisor solo trae la fecha.
+- **Prueba manual pendiente.** El 6.3 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
+- **Pendientes que se conservan.** Para el 6.4: el «Ver detalle» de un insight debe usar la ruta del Supervisor según el rol (`rutaDelElemento` y la tarjeta compartida de insights usan hoy
+  solo la del Administrador). Y el cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores. Ambos constan en `PROGRESO.md`.
+- **Siguiente paso.** Módulo 6.4 (Reportes del Supervisor).
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.4 (Reportes), Supervisor
+
+- **Commit:** `8194b00` (el módulo completo). Rama `feat/fase6-reportes`, sobre `55b212b` (que ya traía el 6.3). Regla de la fase: se reutiliza el módulo del Administrador (5.6) con el
+  alcance filtrado; solo es código nuevo donde la propuesta marca algo distinto (§9.1.4).
+- **Qué es el módulo.** Las mismas dos pestañas de Reportes, con datos solo de los proyectos del Supervisor. No se amplió ninguna consulta ni se tocó `domain/`: `listarInsights`
+  ya aplica solo sus 5 reglas (`REGLAS_INSIGHT_VISIBLES`), recorta los proyectos a los suyos y calcula «revisado» por persona; `obtenerIndicadores` ya devuelve la variante
+  `SUPERVISOR`, sin postulaciones ni área técnica; y «Notificar» lo decide `puede('NOTIFICAR_DESDE_INSIGHT')` (solo «Practicante inactivo» para el Supervisor).
+- **Insights.** `TabInsights` recibe el rol: el filtro de tipo ofrece solo las reglas de ese rol, el mensaje vacío del Supervisor es «No hay alertas en tus proyectos» y los enlaces
+  se arman con el rol. «Revisado» es independiente del Administrador (una prueba lo comprueba). La supervisión demorada lleva directo a la tarea en su cola.
+- **Indicadores.** `TabIndicadores` acepta las dos variantes. Para el Supervisor: tres tarjetas (tareas terminadas, tiempo de ciclo y tasa de devolución), sin «Espera de
+  supervisión», «Postulaciones decididas» ni «Puntaje promedio por área», y sin el gráfico ni la tabla de practicantes por área. `aIndicadores` recibe `IndicadoresVista` y deja
+  `null` en postulaciones, puntaje y área para el Supervisor; `IndicadoresParaVista` suma el campo `rol`. El periodo (30 días por defecto) y el filtro de proyecto (los de
+  `listarProyectos`, solo los suyos) son los mismos.
+- **Decisión: enlaces por rol (resuelve la nota pendiente de los «Ver detalle»).** `rutaDelElemento(tipo, id, rol)` (con el Administrador por defecto) usa `RUTA_DE_DETALLE[rol]`, la misma
+  tabla de los avisos: una sola fuente de enlaces. `aInsights(listado, rol)` y `aIndicadores` la usan, de modo que el «Ver detalle» de un insight de persona, de proyecto y de tarea y los
+  enlaces de las tablas llevan a `/supervisor/practicantes`, `/supervisor/proyectos` y `/supervisor/tareas`, y no a las páginas del Administrador. `rutaDeReportes(rol)` arma la dirección
+  del módulo (`/supervisor/reportes`). La tarjeta compartida de insights (`src/app/insights/`) no cambió: sus enlaces ya salían del adaptador. El tipo de elemento sin detalle en el
+  panel del Supervisor (por ejemplo, una postulación) no tiene enlace.
+- **Rama.** Al empezar, la rama no incluía el 6.3 (estaba en `feat/fase6-practicantes`, aún sin fusionar); se esperó a que `development` lo trajera (`55b212b`) porque el 6.4 depende del
+  destino `USUARIO` del Supervisor y de la página de Practicantes a cargo.
+- **Pruebas.** 3.955 → 3.973 en 179 archivos (+18 y +1 archivo de prueba: 14 de Reportes del Supervisor y 4 del adaptador con rol). `tsc -b`, Prettier y `npm run build` correctos; ESLint
+  sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`. Una línea de una
+  prueba existente del adaptador cambió (`puntajePorArea ?? []`) por el nuevo tipo; las pruebas de Reportes del Administrador no cambiaron.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.4 no define la dirección del módulo: va en `/supervisor/reportes`.
+  2. Las tablas de Indicadores del Supervisor tienen las mismas columnas que las del Administrador, incluida «Espera de supervisión» en la tabla por proyecto, porque §9.1.4 solo
+     nombra «tabla por proyecto y tabla por practicante» sin cambiarlas; lo único que se quitó es la tarjeta general de esa métrica.
+  3. El filtro de tipo de insight toma sus reglas de `REGLAS_INSIGHT_VISIBLES` (la constante de `domain/`), no de una lista de la pantalla.
+- **Prueba manual pendiente.** El 6.4 no se ha recorrido en un navegador real; la lista de comprobaciones está en `PROGRESO.md` (Pendientes).
+- **Pendiente que se conserva.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores (`PROGRESO.md`).
+- **Siguiente paso.** Módulo 6.5 (Dashboard del Supervisor), que va al final de la Fase 6.
+
+## 2026-11-21 — [A+B] Fase 6, módulo 6.5 (Dashboard), Supervisor
+
+- **Commit:** `7ece550` (el módulo completo). Rama `feat/fase6-dashboard`, sobre `9951a9a` (con el 6.1 al 6.4). Es el último módulo de la Fase 6. Se siguió el protocolo de proponer
+  el diseño y esperar la aprobación de los autores antes de implementar.
+- **Qué es el módulo.** La primera pantalla del Supervisor (§9.1.5): no calcula nada propio, resume lo que ya existe en los otros módulos, solo de sus proyectos. Usa
+  `obtenerDashboardSupervisor` (Fase 2, paso 11E) tal como estaba: no se amplió ninguna consulta ni se tocó `domain/`; un adaptador `aDashboardSupervisor` solo presenta.
+- **Ruta y distribución.** `/supervisor/dashboard` (la que ya tenía el menú). Cuatro tarjetas arriba; `Por revisar` **a todo el ancho** (con filas de una línea de cinco datos no cabe en
+  media pantalla, así que se cambió la propuesta inicial de ponerlo a la izquierda); debajo, dos columnas del mismo ancho: **Alertas a la izquierda** y, **apiladas a la derecha**,
+  Próximas reuniones y Avance de mis proyectos. En pantallas angostas, una columna.
+- **Tarjetas.** Compactas (etiqueta, cifra y cifra secundaria en tres líneas cortas, poco relleno, la misma forma con o sin tono), en rejilla de 4 en pantalla ancha, 2 en tablet y 1 en
+  móvil. La de «Tareas esperando mi supervisión» se pinta en ámbar solo si hay alguna, y la de «Tareas vencidas» en rojo solo si hay alguna; las demás nunca. Los colores salen de los
+  tokens (`state-warning`, `state-danger`), sin colores a mano.
+- **Por revisar.** Las cinco tareas que más llevan esperando, en una lista compacta: una fila de una línea por tarea (ID, título como enlace al detalle, proyecto, responsable o «Sin asignar» y
+  días esperando), sin tarjeta por fila. El enlace lleva a `/supervisor/tareas/:id`, donde decide.
+- **Alertas.** Hasta cinco, las mismas de Reportes, con la tarjeta compartida de insights en su variante compacta y sus acciones, con los enlaces de `aInsights(…, 'SUPERVISOR')`. Se agrega el
+  enlace **«Ver todas en Reportes»** (`rutaDeReportes('SUPERVISOR')`), porque no se indica cuántas quedaron fuera de las cinco (decisión de los autores).
+- **Estados vacíos.** «No tienes tareas esperando tu supervisión» y «No hay alertas en tus proyectos» salen como una línea baja (`Vacio compacta`) para no cambiar la altura del conjunto. Sin proyectos,
+  un solo mensaje («El Administrador aún no te ha asignado proyectos») y ninguna tarjeta. Con solo proyectos finalizados se muestran las tarjetas, con la de proyectos activos en cero.
+- **Componentes y adaptador compartidos.** `Seccion`, `Tarjeta`, `PorRevisar`, `Reuniones` y `Avance` (más `EnlaceDeTarjeta` y `Vacio`) pasan de `PaginaDashboard` del Administrador a
+  `src/app/dashboard/BloquesDeDashboard.tsx`, con la opción `compacta` que solo usa el Supervisor; y `aPorRevisar`, `aReuniones` y `aAvances` salen de `aDashboard` al adaptador
+  (`src/app/adaptadores/dashboard.ts`) con el rol para los enlaces. **El dashboard del Administrador (5.9) queda igual en comportamiento**: sus pruebas no cambiaron. El único cambio de
+  marcado es que el título de cada sección va dentro de un `div` flex (para poder poner un enlace a la derecha), sin efecto visual.
+- **Dos cambios aditivos de filtros por dirección** (aprobados por los autores, con la condición de que un valor inválido se ignore, el filtro que llega se vea activo y se pueda quitar, y sin
+  parámetros todo se comporte como hoy):
+  - **Tareas** (5.5 y 6.2) lee `?vencidas=1` y `?sin_asignar=1` (`filtrosDeLaDireccion`, en `filtros.ts`): solo vale el valor `1`; la casilla correspondiente queda marcada y se puede desmarcar.
+  - **Mis proyectos** (6.1) lee `?pestana=` (con `usePestanaInicial`): una pestaña desconocida abre «Activos»; la pestaña queda activa y se puede cambiar.
+  Los enlaces de las tarjetas se arman en `src/paneles/supervisor/dashboard/enlaces.ts`; `conPestana` del Administrador se exporta para reutilizarlo.
+- **Revisión visual.** La revisión visual del 6.5 (anchos, modo claro y oscuro) la hizo la autora a ojo, porque el agente no puede abrir el navegador. Las pruebas de jsdom cubren la estructura
+  (rejilla, tarjetas compactas, filas de una línea, ámbar y rojo condicionales), no el aspecto.
+- **Pruebas.** 3.973 → 4.012 en 183 archivos (+39 y +4 archivos de prueba). `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío.
+  No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.1.5 no define la ruta del módulo (`/supervisor/dashboard`) ni la distribución en columnas descrita arriba.
+  2. §9.1.5 pide que las tarjetas enlacen «al módulo con el filtro ya aplicado» sin decir cómo: los filtros se fijan con parámetros de la dirección (`?pestana=`, `?vencidas=1`, `?sin_asignar=1`).
+  3. «Sin tareas en progreso» y «con N días o más de espera» son texto, sin enlace propio, porque ningún módulo tiene un filtro para ellos (mismo criterio que el 5.9).
+  4. §9.1.5 dice «más de 3 días»; la consulta cuenta las tareas que llevan el plazo de «Supervisión demorada» o más, y la tarjeta lo dice como «con N días o más de espera».
+  5. El enlace «Ver todas en Reportes» del bloque de alertas se añadió (§9.1.5 no lo pide).
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`). El pulido de las tarjetas con mucho espacio, que no se cambiaron: la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra
+  de 3xl), las tarjetas generales de Indicadores de Reportes (Administrador y Supervisor), las tarjetas de insight de Reportes (la variante compacta solo la usan los dashboards) y `TarjetaProyecto` de
+  «Mis proyectos» (espacios `mt-4`).
+- **Cierre de la Fase 6.** Con el 6.5 el panel del Supervisor queda terminado (6.1 a 6.5), con la salvedad de los pendientes de la Fase 8 y de las pruebas manuales de 6.1 a 6.4. Falta su cierre: el PR
+  a `development` y, después, a `main` con la etiqueta `fase-6-completa`.
+- **Pendiente que se conserva.** El cierre en `main` de las Fases 3, 4 y 5, con sus etiquetas, sigue pendiente de los autores (`PROGRESO.md`); la Fase 6 también se cerrará en `main`.
+- **Siguiente paso.** Fase 7, módulo 7.1 (Mis proyectos del Practicante).
+
+## 2026-11-21 — [A+B] Fase 7, módulo 7.1 (Mis proyectos), Practicante
+
+- **Commit:** `96a2e8f` (el módulo completo, con el rediseño a tarjetas y el ajuste del tablero, todo antes del commit). Rama `feat/fase7-proyectos`, sobre `7caff1a` (con las Fases 5 y 6). Se
+  siguió el protocolo de proponer el diseño y esperar la aprobación de los autores antes de implementar.
+- **Qué es el módulo.** La puerta de entrada del Practicante a su trabajo (§9.2.1): sus proyectos en tarjetas, el detalle de cada uno con Resumen, Tablero y Equipo, y un resumen mínimo de los que
+  ya no son vigentes. Usa las consultas que ya existían, que solo entregan lo suyo: no se amplió ninguna ni se tocó `domain/`.
+- **Rutas del Practicante.** `/practicante/proyectos` (listado), `/practicante/proyectos/:idProyecto` (detalle, con `?pestana=`: una desconocida abre «Resumen»),
+  `/practicante/proyectos/:idProyecto/anterior` (resumen mínimo) y `/practicante/proyectos/tareas/:idTarea` (detalle de una tarea).
+  - **Por qué la ruta de la tarea cuelga de «Mis proyectos».** No había ninguna ruta de detalle de tarea para el Practicante, y los avisos solo conocen el id de la tarea, no el del proyecto: el
+    destino del tablero y el de los avisos tenía que poder armarse solo con ese id (`rutaDeDetalleDeTarea` tiene una rama para el Practicante). Se eligió `/practicante/proyectos/tareas/:id` y no
+    `/practicante/tareas/:id` porque así el título y el menú activo siguen siendo los de «Mis proyectos» (el Practicante no tiene módulo de Tareas, §9.2) y se cumple la regla que ya vigila
+    `notificacion.test.ts`: los detalles cuelgan de una página del menú. El segmento fijo `tareas` gana a `:idProyecto` (React Router da prioridad a los segmentos estáticos). Reutiliza el
+    `DetalleDeTarea` compartido (los botones los decide la consulta; en una tarea ajena es de solo lectura); «Volver» regresa a donde estaba y, si se abrió la dirección directamente, a «Mis proyectos».
+- **Redirecciones por dirección** (aprobadas por los autores, con pruebas): `/:id` de un proyecto que ya no es vigente redirige a `/anterior`; `/anterior` de uno vigente redirige a `/:id`; un proyecto
+  ajeno muestra solo «No se encontró el proyecto.» y ningún dato, por las dos direcciones. Quién es vigente, anterior o ajeno lo decide `listarMisProyectos` (`claseDeProyecto`), no la pantalla.
+- **Avisos del Practicante** (decisión de los autores; solo cambia el destino del enlace). `RUTA_DE_DETALLE.PRACTICANTE` suma `PROYECTO` (`/practicante/proyectos/:id`) y `TAREA`
+  (`/practicante/proyectos/tareas/:id`, el mismo destino del clic en el tablero), y `rutaDeNotificacion` lleva un proyecto que la consulta marca como `RESUMEN_PROYECTO_ANTERIOR` (finalizado o «Ya no
+  participas») a `/practicante/proyectos/:id/anterior`. **Tests existentes ajustados a propósito**, porque dependían del destino anterior (el listado `/practicante/proyectos`): `CampanaConectada.test.tsx`,
+  `PaginaNotificaciones.test.tsx` y `useNotificaciones.test.tsx` (en `src/app/layout/`) y `notificacion.test.ts` (las expectativas de proyecto, tarea y proyecto anterior del Practicante).
+- **Tablero con columnas de la misma altura y scroll propio** (ajuste de los autores; `src/compartido/TableroKanban.tsx`, el mismo en Administrador, Supervisor y Practicante; sin tocar reglas ni
+  consultas). En pantalla ancha (xl) las cuatro columnas miden lo mismo, tomado de la ventana (`max(22rem, 100dvh − 21rem)`), y solo scrollea la lista de tarjetas de cada columna (`overflow-y-auto`); el
+  encabezado (nombre y contador) queda fijo y «Ver todas las terminadas» pasa a un pie fijo de «Terminada». **Tablet (md):** dos columnas por fila con la misma altura dentro de la fila y la lista limitada a
+  26 rem con su scroll. **Móvil (390 px):** las columnas se apilan y fluyen **sin scroll propio**, porque un scroll dentro de otro scroll atrapa el dedo y se usa peor que dejar correr la página. La barra de
+  scroll es fina y con el color del borde del tema; el relleno de la lista deja sitio al anillo de foco; los diálogos son portales y el overflow no los corta. Las pruebas existentes del tablero no cambiaron.
+- **Componentes reutilizables.** `src/compartido/TarjetaDeDatos.tsx` (`TarjetaDeDatos` y `FilasDeDatos`): tarjeta con título corto, borde fino, esquinas redondeadas y filas «etiqueta → valor» separadas por líneas
+  finas, con el estilo de las secciones del detalle de tarea y de `TarjetaProyecto`, y solo variables del tema. `src/compartido/AvatarIniciales.tsx`: círculo con las iniciales (no había ningún avatar).
+  `TarjetaProyecto` suma `compacta` (menos relleno, filas con líneas finas) y `tipoEstado`; `Insignia` suma el tipo `participacion` (`FINALIZADO`, `YA_NO_PARTICIPAS`). `TableroDelProyecto` ofrece «Solo mis tareas»
+  solo al Practicante.
+- **Detalle del proyecto.** Encabezado en una tarjeta propia, visible en las tres pestañas (nombre, código, estado, avance en barra grande y filas de supervisor, reunión, rama base y repositorio); Resumen en
+  seis tarjetas con título, dos columnas en pantalla ancha con alturas parejas; Equipo con el supervisor en una tarjeta destacada y una tarjeta pequeña por compañero (avatar, nombre, especialidad, carga en una insignia
+  y Discord y GitHub). El encabezado y el Resumen repiten a propósito el avance y el repositorio (los autores pidieron ambos). La consulta del Equipo excluye al propio practicante, así que no hay tarjeta «tú»:
+  mostrarla exigiría ampliar `obtenerEquipoProyecto` de forma aditiva y no se hizo.
+- **Pruebas.** 4.012 → 4.098 en 191 archivos (+86 y +8 archivos de prueba); el recuento de archivos coincide con `npx vitest list`. `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso
+  conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (para que los autores las actualicen a mano).**
+  1. §9.2.1 no define las rutas del Practicante: `/practicante/proyectos`, `/:id`, `/:id/anterior` y `/practicante/proyectos/tareas/:idTarea`.
+  2. Con proyectos anteriores pero ninguno vigente, el listado dice «No tienes proyectos activos.» sobre la sección «Anteriores»; el mensaje de vacío total solo sale si no hay ninguno de los dos.
+  3. El enlace del resumen mínimo a Mi historial es `/practicante/historial?proyecto=<id>`; Mi historial (7.2) tendrá que leer ese parámetro.
+  4. «Ya no participas» se presenta como etiqueta de participación (tipo `participacion` de `Insignia`), no como estado del proyecto.
+  5. La ruta del detalle de tarea del Practicante, `/practicante/proyectos/tareas/:idTarea`, tampoco está definida en `docs/`.
+  6. «Disponibles para tomar» muestra el número que entrega la consulta aunque el proyecto esté en pausa (donde no se pueden tomar); solo el aviso del tablero lo dice.
+- **Revisión visual.** La revisión visual del 7.1 (listado, detalle, equipo, tablero, modo claro y oscuro, 390 y 1280 px) la hizo la autora a ojo, porque el agente no puede abrir el navegador. Las pruebas de
+  jsdom cubren la estructura y las clases, no el aspecto.
+- **Pendientes anotados** (en `PROGRESO.md`). Para el 7.2: leer `?proyecto=<id>` en `/practicante/historial`. Para la Fase 8: el descuento de 21 rem de la altura del tablero en pantalla ancha (si la página scrollea un
+  poco con las notas de pausa o las acciones del Administrador, se ajusta ese único número) y las tarjetas con mucho espacio que siguen vigentes (métrica del dashboard del Administrador, tarjetas de Indicadores,
+  tarjetas de insight y `TarjetaProyecto` en Mis proyectos del Supervisor). Se conserva el pendiente del cierre en `main` de las Fases 3, 4, 5 y 6, con sus etiquetas.
+- **Siguiente paso.** Módulo 7.2 (Mi historial del Practicante).
+
+## 2026-11-21 — [A+B] Fase 7, módulo 7.2 (Mi historial), Practicante, y ajuste de distribución del 7.1
+
+- **Commits:** `c43d69c` (el módulo 7.2 completo) y `ded0577` (el ajuste de distribución del 7.1, aparte del módulo, sobre `7f21bbe`, el merge del PR #45). Rama `feat/fase7-historial`. Se siguió el
+  protocolo de proponer el diseño y esperar la aprobación de los autores antes de implementar.
+- **Qué es el módulo.** La vista de solo lectura de lo que el Practicante ya terminó (§9.2.2): las tareas que terminó, de todos sus proyectos (vigentes, finalizados o de los que salió), de la más reciente
+  a la más antigua. Usa `listarMiHistorial`, que ya existía y solo entrega lo suyo (excluye las liberadas; una reabierta sale mientras está en progreso y vuelve al terminarse): no se amplió ninguna consulta ni se
+  tocó `domain/`. La pantalla no lleva reglas de negocio; el adaptador `src/app/adaptadores/miHistorial.ts` solo presenta y filtra.
+- **Ruta y filtro por dirección.** `/practicante/historial` (la que ya tenía el menú) acepta `?proyecto=<id>`, el parámetro al que enlaza el resumen mínimo de un proyecto anterior (7.1). La pantalla pide
+  **siempre el historial completo** y el filtro se aplica en memoria (no se pasa `id_proyecto` a la consulta): el filtro solo vale si el id está en los proyectos que entrega la consulta, que son los suyos.
+  Un valor **inválido, inexistente, vacío o de un proyecto ajeno se ignora sin mensaje y se limpia de la dirección con `replace`** (conservando los demás parámetros), y nunca llegan datos ajenos a la
+  pantalla: ni siquiera se consulta por ese id (con pruebas de los cuatro casos). Elegir o quitar el filtro también cambia la dirección con `replace`, así que recargar o compartir el enlace conserva el estado
+  y no se llena el historial del navegador de entradas.
+- **«Volver» conserva el filtro.** Un clic en la fila (o en «Ver detalle») abre el detalle de la tarea del 7.1, en solo lectura. Como el filtro está en la dirección y su cambio es con `replace`, «Volver» del detalle
+  (que regresa a donde estaba) llega a `/practicante/historial?proyecto=<id>` con el selector y la etiqueta puestos (con prueba).
+- **La tabla.** `TablaCompacta` con las columnas de §9.2.2: ID, Título, Proyecto, Fecha de término (con `diaVisiblePeru`, el día cortado en hora de Perú), Veces devuelta, Pull Request (la etiqueta
+  que ya viene filtrada por la regla de visibilidad, §7.3) y «Ver detalle»; sin botones de acción. **En 390 px** scrollea **horizontalmente dentro de su contenedor con borde** (el comportamiento de las
+  demás tablas del sistema) y la página no scrollea de lado; se descartó mostrar tarjetas por fila en móvil porque exige un componente nuevo que ninguna otra tabla tiene y §9.2.2 pide una tabla.
+- **Filtros y estados vacíos.** Los filtros van en una `TarjetaDeDatos` compacta («Filtros», con el conteo «N tareas terminadas», o «N de M» si hay filtros): búsqueda por título o ID sin distinguir tildes,
+  selector «Proyecto» con los proyectos vigentes **y anteriores** del Practicante (solo los suyos) y, con un filtro puesto, la etiqueta «Proyecto: XXX ✕» para quitarlo. Sin pestañas ni selector de periodo (§9.2.2).
+  Vacíos: «Aún no has terminado tareas» (sin tareas ni proyectos; no se dibujan los filtros), «No has terminado tareas en este proyecto» con «Quitar filtro», y «Ninguna tarea coincide con la búsqueda».
+- **Pulidos del Historial de la Fase 8 que el 7.2 no hereda.** Los tres pendientes del Historial anotados (los resúmenes «Proyectos: — → INV» y «2 campos modificados», y el mensaje del rango de fechas inválido)
+  son del Historial de actividad del Administrador (§5.7). Mi historial es una tabla de tareas, sin resúmenes de eventos ni filtro de fechas. El riesgo análogo, un filtro inválido con un mensaje genérico, se
+  evita ignorándolo en silencio.
+- **Ajuste `ded0577` del 7.1 (solo distribución; sin cambiar colores, bordes, tokens, reglas ni consultas).** (1) El Resumen del detalle del proyecto del Practicante son **dos columnas independientes**
+  (`grid items-start lg:grid-cols-2`, cada columna un `flex flex-col`): cada tarjeta mide lo que mide su contenido y ya no se estira a la altura de la vecina; una columna en móvil. Se evitó `items-stretch` y
+  no se tocó `TarjetaDeDatos` (que lleva `h-full`, inocuo dentro de una columna de altura automática). (2) Orden: Descripción, Enlaces y repositorio y Mis tareas a un lado; Fechas y datos del proyecto,
+  Avance y Mi actividad al otro, para que las dos columnas midan parecido (no se pudo medir en un navegador); en móvil se apilan en ese orden. (3) La cuadrícula de compañeros del Equipo también va con
+  `items-start`. (4) «Límite» de Mis tareas usa `diaVisible` («18 nov 2026»), el mismo formateador de las demás fechas del Resumen; `diaVisible` se exporta desde `src/app/adaptadores/index.ts`.
+  Un test existente dependía de la estructura (`DisenoDeMiProyecto.test.tsx` exigía `items-stretch`, `h-full` y las tarjetas hijas directas de la rejilla): se reescribió y se añadieron dos (el reparto por
+  columna y el formato de las fechas). Quedaron fuera, a propósito, el formato `dd/MM/yyyy` de `TableroKanban` (compartido con los otros paneles) y la fecha sin formato de `ListaDeTareasDePracticante`.
+- **Pruebas.** 4.098 → 4.100 en 191 archivos con el ajuste (+2) y 4.100 → 4.131 en 193 archivos con el 7.2 (+31 pruebas y +2 archivos: el adaptador y la página); el recuento de archivos coincide con
+  `npx vitest list`. `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`; `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó
+  con `--testTimeout=60000 --maxWorkers=3`.
+- **Divergencias con `docs/` (aceptadas por los autores; para que las actualicen a mano).**
+  1. §9.2.2 no define la ruta de Mi historial: va en `/practicante/historial`, la del menú.
+  2. El detalle de la tarea abierta desde Mi historial vive bajo `/practicante/proyectos/tareas/:idTarea` (decisión del 7.1), no bajo Mi historial.
+  3. El enlace del resumen mínimo de un proyecto anterior a Mi historial es `/practicante/historial?proyecto=<id>`.
+  4. Los filtros de proyecto y búsqueda se aplican en memoria, no en la consulta (el patrón del resto del sistema); la consulta, que admite `id_proyecto`, no se usa con él.
+- **Revisión visual.** La revisión visual del 7.2 (1280 y 390 px, modo claro y oscuro, el scroll horizontal de la tabla y la tarjeta de filtros) la hizo la autora a ojo, porque el agente no puede abrir el
+  navegador. Las pruebas de jsdom cubren la estructura, las clases y el comportamiento, no el aspecto.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`): (a) el menú resalta «Mis proyectos» al ver el detalle de una tarea abierta desde Mi historial (consecuencia de que el detalle de tarea cuelgue de
+  Mis proyectos; no se cambió); (b) el contraste de las tarjetas en modo oscuro (borde y fondo casi iguales a los de la página) es de todo el sistema y se resolverá una sola vez con los tokens del tema,
+  por eso este módulo y el 7.1 no tocaron colores ni bordes; (c) el formato de fecha de `TableroKanban` (`dd/MM/yyyy`) y de `ListaDeTareasDePracticante`, distintos del de `diaVisible`. Se conserva el
+  pendiente del cierre en `main` de las Fases 3, 4, 5 y 6, con sus etiquetas.
+- **Siguiente paso.** Módulo 7.3 (Inicio del Practicante).
+
+## 2026-11-21 — [A+B] Fase 7, módulo 7.3 (Inicio), Practicante, y cierre de la Fase 7
+
+- **Commit:** `75c8139` (el módulo 7.3 completo, con la migración de las cuatro pruebas y la eliminación de la página de desarrollo). Rama `feat/fase7-inicio`, sobre `46a8185` (el merge del PR #46, que trajo el 7.2).
+  Se siguió el protocolo de proponer el diseño y esperar la aprobación de los autores antes de implementar. **Con este módulo termina la Fase 7** (7.1 a 7.3).
+- **Qué es el módulo.** La primera pantalla del Practicante (§9.2.3): resume lo que ya existe en Mis proyectos y en las tareas, sin calcular nada propio. Usa `obtenerInicioPracticante`, que ya existía y solo
+  entrega lo suyo (las tarjetas, las tareas en curso en el orden de §9.2.3, los Pull Requests por atender por `estado_pr` y las reuniones de los proyectos vigentes): no se amplió ninguna consulta ni se tocó
+  `domain/`. El adaptador `src/app/adaptadores/inicioPracticante.ts` (`aInicioPracticante`) solo presenta: conserva los números y el orden de la consulta, arma las rutas del Practicante y da todas las
+  fechas con `diaVisible`.
+- **Ruta y título.** `/practicante/inicio` (la que ya tenía el menú y a la que lleva `rutaPorRol` tras entrar) con el título «Inicio». El Supervisor usa «Dashboard»; el del Practicante se llama como su ítem del menú.
+- **Las cuatro tarjetas, sin filtro.** Mis tareas en progreso, Devueltas con observaciones, Esperando supervisión y Disponibles para tomar son tarjetas compactas (`Tarjeta` compacta de los bloques compartidos) y
+  las cuatro enlazan a `/practicante/proyectos` **sin filtro** (`src/paneles/practicante/inicio/enlaces.ts`). **Por qué:** el Practicante no tiene un módulo de Tareas y Mis proyectos no lee filtros; un filtro
+  por tarjeta exigiría cambios aditivos en el detalle del 7.1 (por ejemplo, abrir el tablero con «Solo mis tareas») y el id del proyecto, que las tarjetas de la consulta del Inicio no traen. Los autores aprobaron
+  la alternativa sin filtro y quedó anotado para la Fase 8. Solo «Devueltas» se pinta, en rojo, y solo si hay alguna; las otras son neutras (§9.2.3). «Disponibles para tomar» no cuenta los proyectos en pausa.
+- **Los bloques.** «Mis tareas en curso» es una `TablaCompacta` (ID, título, proyecto, fecha límite en rojo si venció, «Devuelta con observaciones» y «Ver detalle»; un clic en la fila abre
+  `/practicante/proyectos/tareas/:id`), con scroll horizontal interno a 390 px. «Pull Requests por atender» es una lista con el título como enlace al detalle y las `Insignia` de la tarea y del PR (la tarea puede estar
+  Esperando supervisión o Terminada: la consulta mira el PR, no el Kanban). «Próximas reuniones» reutiliza `Reuniones` con enlaces a Mis proyectos. Los dos últimos van lado a lado con `items-start` (cada uno con la
+  altura de su contenido) y en una columna en móvil. Sin botones de acción: solo enlaces y filas que navegan. Sin tareas en curso, «No tienes tareas en progreso» y, si hay Disponibles, «Ver tareas disponibles»;
+  sin PR por atender, «No tienes Pull Requests pendientes». Sin ningún proyecto vigente (incluido quien solo sigue en uno finalizado): «Aún no tienes proyectos asignados», sin tarjetas en cero.
+- **Bloques nuevos, sin tocar los compartidos.** `MisTareasEnCurso` y `PullRequestsPorAtender` viven en `src/app/dashboard/BloquesDelPracticante.tsx`; `BloquesDeDashboard.tsx` no se modificó (`Tarjeta`, `Seccion`,
+  `Vacio` y `Reuniones` se usan tal como están), así que los dashboards del Administrador y del Supervisor no cambian ni sus pruebas.
+- **Se elimina la página de desarrollo temporal de la Fase 4** (`src/app/desarrollo/PaginaDesarrollo.tsx` y su prueba, y la ruta `/<panel>/desarrollo` en `src/app/rutas.tsx`). El plan (§7.3, «Listo cuando») lo
+  exigía y `DECISIONES` ya la marcaba «temporal hasta la Fase 7». Antes de borrar se buscaron todas las referencias: solo el import y la ruta de `rutas.tsx`; las demás menciones de `PROGRESO.md` y
+  `DECISIONES.md` son registro histórico y no se tocaron. **Migración previa de la cobertura de integración.** De las 15 pruebas de la página, las de tablero, selector, «Solo mis tareas», «Ver todas las terminadas»,
+  el aviso del responsable inactivo y la tarea inexistente ya tenían equivalentes en los módulos (`TableroKanban`, `TableroDelProyecto`, `ListadoTerminadas`, `DetalleTarea`, `tareas.test.ts`,
+  `PaginaDetalleTareaDeProyecto`). Cuatro acciones **no** tenían prueba con clics reales sobre la pantalla y el almacén fuera de esa página, y se migraron, pasando antes de borrar nada, a su panel:
+  «Tomar tarea» y «Crear nuevo Pull Request» (con la rama base del proyecto) en `src/paneles/practicante/proyectos/AccionesDeTareaPracticante.test.tsx` (con `PaginaDetalleTareaPracticante`), y «Cerrar Pull Request»
+  (con motivo) y «Editar» el título en `src/paneles/supervisor/proyectos/AccionesDeTareaSupervisor.test.tsx` (con `PaginaDetalleTareaDeProyecto`). **«Liberar» y «Enviar a supervisión» no estaban cubiertas por ese test
+  y no se añadieron** (alcance acordado con los autores); siguen con pruebas de servicio y de los botones y modales, y quedan como posible mejora de la Fase 8.
+- **Pruebas.** 4.131 → 4.152 en 196 archivos (de 193): **+32 pruebas y +2 archivos del 7.3** (adaptador y página), **+4 pruebas y +2 archivos de la migración** y **−15 pruebas y −1 archivo de la eliminación**
+  (32 + 4 − 15 = +21; 2 + 2 − 1 = +3). El recuento de archivos coincide con `npx vitest list`. `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
+  `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`. Hay prueba de alcance: ninguna tarea de otro practicante ni de un proyecto ajeno aparece en el Inicio.
+- **Divergencias con `docs/` (aceptadas por los autores; para que las actualicen a mano).**
+  1. §9.2.3 no define la ruta del Inicio: va en `/practicante/inicio`, la del menú.
+  2. Las tarjetas enlazan sin filtro a Mis proyectos, porque el Practicante no tiene módulo de Tareas y un filtro exigiría cambios en el 7.1.
+  3. «Disponibles para tomar» no cuenta los proyectos en pausa (§9.2.3), pero la tarjeta de Mis proyectos del 7.1 muestra el número que entrega la consulta aunque el proyecto esté en pausa.
+  4. El título de la pantalla es «Inicio» (el del ítem del menú), y el del Supervisor es «Dashboard».
+- **Revisión visual.** La revisión visual del 7.3 (1280 y 390 px, modo claro y oscuro, tarjetas parejas con y sin rojo, el scroll horizontal de la tabla y los dos bloques inferiores) la hizo la autora a ojo, porque el
+  agente no puede abrir el navegador. Las pruebas de jsdom cubren la estructura, las clases y el comportamiento, no el aspecto.
+- **Cierre de la Fase 7.** Los tres módulos del panel del Practicante (7.1 Mis proyectos, 7.2 Mi historial y 7.3 Inicio) están terminados en la rama, con la página de desarrollo temporal retirada. Falta su cierre en
+  `main` con la etiqueta `fase-7-completa`. Las Fases 3, 4, 5, 6 y 7 quedan pendientes de cierre en `main`.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`): los enlaces de las tarjetas del Inicio sin filtro (afinarlos exige un filtro en el detalle de Mis proyectos y el id del proyecto en la consulta del
+  Inicio); la inconsistencia de «Disponibles para tomar» con proyectos en pausa entre el Inicio y Mis proyectos; el menú que resalta «Mis proyectos» al ver una tarea abierta desde Mi historial; el contraste de las
+  tarjetas en modo oscuro, de todo el sistema (se resolverá una sola vez con los tokens del tema); los formatos de fecha de `TableroKanban` y `ListaDeTareasDePracticante`, distintos de `diaVisible`; el `21rem` de
+  la altura del tablero en pantalla ancha; las tarjetas con mucho espacio; y, como posible mejora, las pruebas de integración de «Liberar» y «Enviar a supervisión».
+- **Siguiente paso.** Fase 8 (pulido, pruebas de punta a punta y entrega).

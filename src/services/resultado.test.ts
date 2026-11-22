@@ -66,6 +66,9 @@ describe('mensajes de los códigos de domain/', () => {
       'NO_ENCONTRADO',
       'DATOS_INVALIDOS',
       'ERROR_INESPERADO',
+
+      'CREDENCIALES_INVALIDAS',
+
       'SIN_CAMBIOS',
       'RAMA_INEXISTENTE',
       'POSTULACION_YA_EVALUADA',

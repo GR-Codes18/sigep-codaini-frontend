@@ -17,7 +17,7 @@ import { GITHUB_SIMULADO, type PuertoGitHub } from './github';
  * `restablecerDatosDemostracion`).
  */
 export interface AlmacenServicio {
-  getState: () => Pick<EstadoAlmacen, 'transaccion' | 'restablecer'>;
+  getState: () => Pick<EstadoAlmacen, 'datos' | 'transaccion' | 'restablecer'>;
 }
 
 export interface Entorno {

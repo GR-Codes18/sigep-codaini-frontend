@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { proyecto, usuario } from '@/domain/pruebas/fabricas';
+import { exito, fallo } from '@/services';
 import { DetalleTarea, type TareaDetalle } from './DetalleTarea';
-import { accionesDeTarea } from '@/app/ejemplos/accionesDeTarea';
 
 const tarea: TareaDetalle = {
-  id: 'PL2D-003',
+  id: 'tar-pl2d-003',
+  idLegible: 'PL2D-003',
   numero: 3,
   titulo: 'Tablero Kanban',
   descripcion: 'Cuatro columnas',
@@ -14,9 +14,10 @@ const tarea: TareaDetalle = {
   idProyecto: 'pl2d',
   proyecto: 'Plataforma 2D',
   idPracticante: 'demo-practicante',
-  fechaLimite: new Date(2026, 10, 30),
+  fechaLimite: '2026-11-30',
   requiereSupervision: true,
   requierePr: true,
+  estadoPr: null,
 };
 
 describe('DetalleTarea', () => {
@@ -40,6 +41,129 @@ describe('DetalleTarea', () => {
     expect(screen.queryByRole('button', { name: 'Devolver' })).not.toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Aprobar' }));
     expect(onEjecutar).toHaveBeenCalledWith('aprobar');
+  });
+
+  it('muestra una acción deshabilitada con aviso y no la ejecuta', async () => {
+    const user = userEvent.setup();
+    const onEjecutar = vi.fn().mockResolvedValue(undefined);
+    render(
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          {
+            clave: 'no_requiere_pr',
+            etiqueta: 'No requiere PR',
+            deshabilitada: true,
+            avisoDeshabilitacion: 'Disponible cuando se conecte el servicio de tareas.',
+          },
+        ]}
+        eventos={[]}
+        onEjecutar={onEjecutar}
+      />,
+    );
+    const boton = screen.getByRole('button', { name: 'No requiere PR' });
+    expect(boton).toBeDisabled();
+    expect(screen.getByText('Disponible cuando se conecte el servicio de tareas.')).toBeVisible();
+    await user.click(boton);
+    expect(onEjecutar).not.toHaveBeenCalled();
+  });
+
+  it('muestra la etiqueta Pendiente sin enlace: la consulta no trae la URL de un PR anterior', () => {
+    render(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'TERMINADA', estadoPr: 'PENDIENTE' }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.getByText('Pendiente')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  it('muestra el enlace y las ramas del PR cuando llegan', () => {
+    render(
+      <DetalleTarea
+        tarea={{
+          ...tarea,
+          estado: 'TERMINADA',
+          estadoPr: 'CREADO',
+          urlPr: 'https://github.com/codaini/pl2d/pull/12',
+          ramaOrigen: 'feat/pl2d-003',
+          ramaBase: 'main',
+        }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.getByRole('link')).toHaveAttribute(
+      'href',
+      'https://github.com/codaini/pl2d/pull/12',
+    );
+    expect(screen.getByText('(feat/pl2d-003 → main)')).toBeInTheDocument();
+  });
+
+  it('no muestra la etiqueta del PR si la consulta no la entrega', () => {
+    render(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'EN_PROGRESO', estadoPr: null }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.queryByText('Pendiente')).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [['CUENTA_INACTIVA'], 'La cuenta del responsable está inactiva.'],
+    [['CUENTA_NO_ENCONTRADA'], 'No se encontró la cuenta del responsable.'],
+    [
+      ['SIN_ASIGNACION_VIGENTE'],
+      'El responsable ya no tiene una asignación vigente en este proyecto.',
+    ],
+  ] as const)('avisa que hay que revisar al responsable (%j)', (motivos, texto) => {
+    render(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'EN_PROGRESO', atencionResponsable: [...motivos] }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    const aviso = screen.getByRole('status');
+    expect(aviso).toHaveTextContent('Revisar el responsable de la tarea');
+    expect(aviso).toHaveTextContent(texto);
+    expect(aviso).toHaveTextContent('puede liberar la tarea con un motivo');
+  });
+
+  it('con varios motivos los dice todos, y sin motivos no hay aviso', () => {
+    const { rerender } = render(
+      <DetalleTarea
+        tarea={{
+          ...tarea,
+          estado: 'EN_PROGRESO',
+          atencionResponsable: ['CUENTA_INACTIVA', 'SIN_ASIGNACION_VIGENTE'],
+        }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    const aviso = screen.getByRole('status');
+    expect(aviso).toHaveTextContent('La cuenta del responsable está inactiva.');
+    expect(aviso).toHaveTextContent('ya no tiene una asignación vigente');
+
+    rerender(
+      <DetalleTarea
+        tarea={{ ...tarea, estado: 'EN_PROGRESO' }}
+        acciones={[]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('una acción con nota obligatoria abre el modal y envía la nota', async () => {
@@ -67,30 +191,27 @@ describe('DetalleTarea', () => {
   });
 
   it.each([
-    {
-      accion: 'devolver',
-      etiqueta: 'Devolver',
-      campo: 'Nota',
-      tarea: { ...tarea, estado: 'ESPERANDO_SUPERVISION' as const },
-    },
-    {
-      accion: 'liberar',
-      etiqueta: 'Liberar',
-      campo: 'Motivo',
-      tarea: { ...tarea, estado: 'EN_PROGRESO' as const },
-    },
-  ])('$etiqueta como supervisor exige $campo antes de ejecutar', async (caso) => {
+    { clave: 'devolver', etiqueta: 'Devolver', campo: 'Nota' },
+    { clave: 'liberar', etiqueta: 'Liberar', campo: 'Motivo' },
+  ])('$etiqueta exige $campo antes de ejecutar el servicio', async (caso) => {
     const user = userEvent.setup();
     const onEjecutar = vi.fn().mockResolvedValue(undefined);
-    const supervisor = usuario('SUPERVISOR');
-    const acciones = accionesDeTarea(caso.tarea, {
-      usuario: supervisor,
-      proyecto: proyecto({ id: 'pl2d', id_supervisor: supervisor.id }),
-      asignaciones: [],
-    });
+    const ejecutarServicio = vi.fn(async () => exito(null));
 
     render(
-      <DetalleTarea tarea={caso.tarea} acciones={acciones} eventos={[]} onEjecutar={onEjecutar} />,
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          {
+            clave: caso.clave,
+            etiqueta: caso.etiqueta,
+            pedirMotivo: { etiqueta: caso.campo, obligatorio: true },
+            ejecutar: ejecutarServicio,
+          },
+        ]}
+        eventos={[]}
+        onEjecutar={onEjecutar}
+      />,
     );
     await user.click(screen.getByRole('button', { name: caso.etiqueta }));
 
@@ -98,10 +219,41 @@ describe('DetalleTarea', () => {
     const confirmar = within(dialogo).getByRole('button', { name: caso.etiqueta });
     expect(confirmar).toBeDisabled();
     await user.click(confirmar);
-    expect(onEjecutar).not.toHaveBeenCalled();
+    expect(ejecutarServicio).not.toHaveBeenCalled();
 
     await user.type(within(dialogo).getByLabelText(caso.campo), 'Revisar el trabajo');
     await user.click(confirmar);
-    await waitFor(() => expect(onEjecutar).toHaveBeenCalledWith(caso.accion, 'Revisar el trabajo'));
+    await waitFor(() => expect(ejecutarServicio).toHaveBeenCalledWith('Revisar el trabajo'));
+    expect(onEjecutar).not.toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('mantiene abierto el modal y muestra el error controlado del servicio', async () => {
+    const user = userEvent.setup();
+    const ejecutarServicio = vi.fn(async () => fallo('TAREA_YA_TIENE_PR'));
+    render(
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          {
+            clave: 'no_requiere_pr',
+            etiqueta: 'No requiere PR',
+            pedirMotivo: { etiqueta: 'Motivo', obligatorio: true },
+            ejecutar: ejecutarServicio,
+          },
+        ]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: 'No requiere PR' }));
+    const dialogo = screen.getByRole('dialog');
+    await user.type(within(dialogo).getByLabelText('Motivo'), 'Ya tiene PR');
+    await user.click(within(dialogo).getByRole('button', { name: 'No requiere PR' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'La tarea ya tiene o tuvo un Pull Request: no se puede hacer este cambio.',
+    );
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });

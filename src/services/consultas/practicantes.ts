@@ -14,9 +14,12 @@ import type { DatosAlmacen } from '@/data';
 import {
   cargaDePracticante,
   hoyEn,
+  finalizarPractica as reglaFinalizarPractica,
   ordenarTerminadas,
   proyectosDeCarga,
   puede,
+  puedeAsignarPracticante,
+  reactivarPractica as reglaReactivarPractica,
   situacionFinPractica,
   situacionPracticante,
   ultimaActividadDeUsuario,
@@ -181,7 +184,18 @@ export interface ParticipacionEnProyectoDePracticante {
   fecha_baja: Fecha | null;
 }
 
+/** Lo que el Administrador puede hacer ahora con un practicante (§5.2). */
+export type AccionPracticante =
+  'EDITAR_DATOS' | 'RESTABLECER_CONTRASENA' | 'FINALIZAR' | 'REACTIVAR';
+
 export interface PracticanteDetalle {
+  /**
+   * Las acciones disponibles, decididas por `domain/` (`puede()` y las reglas de ciclo de vida): la pantalla solo las
+   * ofrece. «Finalizar» solo con la práctica activa; «Reactivar» solo con la práctica finalizada.
+   */
+  acciones: AccionPracticante[];
+  /** Tareas en progreso que se liberarían al finalizar la práctica; 0 si no se puede finalizar (§5.2). */
+  tareas_a_liberar: number;
   /** Datos personales: el Administrador solo los lee, los edita cada persona (§5.2). */
   datos_personales: {
     id: Id;
@@ -284,10 +298,31 @@ export function obtenerPracticante(
         : [aTareaConProyecto(datos, actor.valor, proyecto, tarea, hoy)];
     };
 
+    // Sin texto, las reglas de ciclo de vida solo dicen si la acción es posible y qué efectos tendría.
+    const finalizar = reglaFinalizarPractica(
+      actor.valor,
+      usuario,
+      { proyectos: datos.proyectos, asignaciones: datos.asignaciones, tareas: datos.tareas },
+      marca.ahora,
+    );
+    const reactivar = reglaReactivarPractica(actor.valor, usuario);
+    const editar = puede(actor.valor, 'EDITAR_DATOS_PRACTICA', { usuario_objetivo: usuario });
+    const restablecer = puede(actor.valor, 'RESTABLECER_CONTRASENA', { usuario_objetivo: usuario });
+    const acciones: AccionPracticante[] = [
+      ...(editar.permitido ? (['EDITAR_DATOS'] as const) : []),
+      ...(restablecer.permitido && usuario.estado === 'ACTIVO'
+        ? (['RESTABLECER_CONTRASENA'] as const)
+        : []),
+      ...(finalizar.ok ? (['FINALIZAR'] as const) : []),
+      ...(reactivar.ok ? (['REACTIVAR'] as const) : []),
+    ];
+
     const postulante = datos.postulantes.find((p) => p.id === detalle.id_postulante);
     return {
       ok: true,
       valor: {
+        acciones,
+        tareas_a_liberar: finalizar.ok ? finalizar.efectos.tareas_a_liberar.length : 0,
         datos_personales: {
           id: usuario.id,
           nombre: usuario.nombre,
@@ -326,6 +361,48 @@ export function obtenerPracticante(
         ),
         postulacion_origen:
           postulante === undefined ? null : { id: postulante.id, nombre: postulante.nombre },
+      },
+    };
+  });
+}
+
+export interface ProyectosAsignables {
+  /** Los proyectos a los que se puede asignar a esa persona ahora, por nombre. */
+  proyectos: ProyectoResumen[];
+}
+
+/**
+ * El Administrador elige a qué proyecto asignar a un practicante (§5.2, atajo de «Sin proyecto»): solo los que
+ * `puedeAsignarPracticante` acepta (no finalizados, y donde no tiene ya una asignación vigente). Si el practicante no
+ * existe, `NO_ENCONTRADO`; si su práctica está finalizada, la lista viene vacía.
+ */
+export function listarProyectosAsignables(
+  entrada: EntradaConPracticante,
+  entorno: Entorno = ENTORNO,
+): Promise<Resultado<ProyectosAsignables>> {
+  return ejecutarConsulta(entorno, ({ datos }) => {
+    const valida = validarEntrada(esquemaEntradaPracticante, entrada);
+    if (!valida.ok) return valida;
+    const actor = cargarActorActivo(datos, valida.valor.idActor);
+    if (!actor.ok) return actor;
+    const modulo = exigirPermisoDeModulo(actor.valor, 'VER_DIRECTORIO_PRACTICANTES');
+    if (!modulo.ok) return modulo;
+
+    const encontrado = practicantesConCuenta(datos).find(
+      (p) => p.usuario.id === valida.valor.idPracticante,
+    );
+    if (encontrado === undefined) return fallo('NO_ENCONTRADO');
+
+    return {
+      ok: true,
+      valor: {
+        proyectos: datos.proyectos
+          .filter(
+            (p) =>
+              puedeAsignarPracticante(actor.valor, p, encontrado.usuario, datos.asignaciones).ok,
+          )
+          .map(resumenDeProyecto)
+          .sort(porNombre),
       },
     };
   });

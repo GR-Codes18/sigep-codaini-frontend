@@ -1,4 +1,5 @@
-import type { Rol, UsuarioSesion } from './tipos';
+import type { Rol } from '@/domain';
+import type { UsuarioSesion } from './tipos';
 
 /** Sesiones de las cuentas de demostración de la semilla. **Solo las importan los tests.** */
 const SESIONES: Record<Rol, UsuarioSesion> = {

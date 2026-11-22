@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { sesionDePrueba } from './sesionDePrueba';
 import { useAlmacenSesion } from './almacenSesion';
+import { accesoRapido, crearEntorno } from '@/services';
 
 describe('almacenSesion', () => {
+  const entorno = crearEntorno({ demoraMs: 0 });
+
   beforeEach(() => {
     localStorage.clear();
     useAlmacenSesion.setState({ usuario: null });
@@ -12,10 +15,16 @@ describe('almacenSesion', () => {
     expect(useAlmacenSesion.getState().usuario).toBeNull();
   });
 
-  it('abre y cierra sesión, y lo persiste', () => {
-    useAlmacenSesion.getState().abrirSesion(sesionDePrueba('SUPERVISOR'));
+  it('abre y cierra sesión, y lo persiste', async () => {
+    const resultado = await accesoRapido({ rol: 'SUPERVISOR' }, entorno);
+    if (!resultado.ok) throw new Error(resultado.mensaje);
+    useAlmacenSesion.getState().abrirSesion(resultado.valor);
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('SUPERVISOR');
-    expect(localStorage.getItem('sigep-sesion')).toContain('SUPERVISOR');
+    const guardado = JSON.parse(localStorage.getItem('sigep-sesion') ?? '{}') as {
+      state?: { usuario?: Record<string, unknown> };
+    };
+    expect(guardado.state?.usuario?.rol).toBe('SUPERVISOR');
+    expect(guardado.state?.usuario).not.toHaveProperty('contrasena');
 
     useAlmacenSesion.getState().cerrarSesion();
     expect(useAlmacenSesion.getState().usuario).toBeNull();
@@ -52,5 +61,6 @@ describe('almacenSesion', () => {
     localStorage.setItem('sigep-sesion', JSON.stringify({ state: { usuario }, version: 0 }));
     await useAlmacenSesion.persist.rehydrate();
     expect(useAlmacenSesion.getState().usuario?.rol).toBe('PRACTICANTE');
+    expect(useAlmacenSesion.getState().usuario).not.toHaveProperty('contrasena');
   });
 });

@@ -17,6 +17,7 @@ import {
   diasEsperando,
   devolucionVigente,
   hoyEn,
+  motivosDeAtencionDelResponsable,
   observacionDevolucionVigente,
   ordenarTareasEnCurso,
   ordenarTerminadas,
@@ -30,6 +31,7 @@ import {
   type Fecha,
   type FechaHora,
   type Id,
+  type MotivoAtencionResponsable,
   type Proyecto,
   type Tarea,
   type Usuario,
@@ -68,6 +70,12 @@ export interface ListadoTareas {
   tareas: TareaListado[];
   /** Para las pestañas: Todas, Disponibles, En progreso, Esperando supervisión y Terminadas. */
   contadores: Record<EstadoTarea | 'TODAS', number>;
+  /**
+   * Los proyectos donde quien consulta puede crear una tarea (§5.5, «eligiendo el proyecto»): los decide
+   * `puede('CREAR_TAREA')` con cada proyecto (el Administrador, los no finalizados; el Supervisor, los suyos no
+   * finalizados; el Practicante, ninguno). Por código de proyecto.
+   */
+  proyectos_para_crear: ProyectoResumen[];
 }
 
 /** Una fila del listado de tareas: la tarjeta con su proyecto y los días que lleva esperando supervisión. */
@@ -116,7 +124,11 @@ export function listarTareas(
     for (const estado of ESTADOS_TAREA) {
       contadores[estado] = tareas.filter((t) => t.estado === estado).length;
     }
-    return { ok: true, valor: { tareas, contadores } };
+    const proyectos_para_crear = datos.proyectos
+      .filter((proyecto) => puede(actor.valor, 'CREAR_TAREA', { proyecto }).permitido)
+      .map(resumenDeProyecto)
+      .sort((a, b) => a.codigo.localeCompare(b.codigo));
+    return { ok: true, valor: { tareas, contadores, proyectos_para_crear } };
   });
 }
 
@@ -143,7 +155,11 @@ export interface TareaDetalleVista {
   fecha_limite: Fecha;
   vencida: boolean;
   fecha_termino: FechaHora | null;
-  proyecto: ProyectoResumen & { estado: 'ACTIVO' | 'EN_PAUSA' | 'FINALIZADO' };
+  /** `rama_base` es la del proyecto: el modal de «Crear Pull Request» la muestra fija (§7.2). */
+  proyecto: ProyectoResumen & {
+    estado: 'ACTIVO' | 'EN_PAUSA' | 'FINALIZADO';
+    rama_base: string;
+  };
   responsable: PersonaResumen | null;
   es_mia: boolean;
   requiere_supervision: boolean;
@@ -154,6 +170,12 @@ export interface TareaDetalleVista {
   devuelta: boolean;
   /** Nota de la devolución vigente; `null` si no hay marca o si el Practicante no la puede ver. */
   observacion: string | null;
+  /**
+   * Por qué el responsable ya no puede seguir con la tarea (D6-A): cuenta inactiva o inexistente, o sin
+   * asignación vigente al proyecto. Solo la reciben el Administrador y el Supervisor, que son quienes la liberan;
+   * para el Practicante es `[]`: no se entera del estado de la cuenta de un compañero.
+   */
+  atencion_responsable: MotivoAtencionResponsable[];
   dias_esperando: number | null;
   /** Lo que `quien consulta` puede hacer ahora (vacío = solo lectura). */
   acciones: AccionDisponible[];
@@ -187,6 +209,14 @@ export function obtenerTarea(
       : null;
     const acciones = accionesDeTarea(tarea, yo, { proyecto, asignaciones });
     const pr = fila.etiqueta_pr_visible;
+    const atencionResponsable =
+      yo.rol === 'PRACTICANTE'
+        ? []
+        : motivosDeAtencionDelResponsable(
+            tarea,
+            datos.usuarios.find((u) => u.id === tarea.id_practicante),
+            datos.asignaciones.filter((a) => a.id_practicante === tarea.id_practicante),
+          );
 
     return {
       ok: true,
@@ -200,7 +230,7 @@ export function obtenerTarea(
         fecha_limite: tarea.fecha_limite,
         vencida: fila.vencida,
         fecha_termino: tarea.fecha_termino,
-        proyecto: { ...fila.proyecto, estado: proyecto.estado },
+        proyecto: { ...fila.proyecto, estado: proyecto.estado, rama_base: proyecto.rama_base },
         responsable:
           tarea.id_practicante === null ? null : personaDe(datos.usuarios, tarea.id_practicante),
         es_mia: fila.es_mia,
@@ -217,6 +247,7 @@ export function obtenerTarea(
               },
         devuelta: fila.devuelta,
         observacion,
+        atencion_responsable: atencionResponsable,
         dias_esperando: diasEsperando(tarea, datos.historial, marca.ahora),
         acciones,
         solo_lectura: acciones.length === 0,

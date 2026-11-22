@@ -10,7 +10,18 @@ const FAMILIA: Record<Familia, { caja: string; punto: string }> = {
   danger: { caja: 'bg-state-danger-bg text-state-danger-text', punto: 'bg-state-danger' },
 };
 
-export type TipoEstado = 'tarea' | 'postulacion' | 'proyecto' | 'pr' | 'marca';
+export type TipoEstado =
+  | 'tarea'
+  | 'postulacion'
+  | 'proyecto'
+  | 'pr'
+  | 'marca'
+  | 'catalogo'
+  | 'practicante'
+  | 'supervisor'
+  | 'severidad'
+  | 'integracion'
+  | 'participacion';
 
 const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Familia }>> = {
   tarea: {
@@ -36,7 +47,42 @@ const ESTADOS: Record<TipoEstado, Record<string, { etiqueta: string; familia: Fa
     FUSIONADO: { etiqueta: 'Fusionado', familia: 'success' },
     CERRADO: { etiqueta: 'Cerrado', familia: 'neutral' },
   },
+  // Áreas técnicas y especialidades del catálogo de evaluación: activas (verde) o inactivas (gris).
+  catalogo: {
+    ACTIVO: { etiqueta: 'Activa', familia: 'success' },
+    INACTIVO: { etiqueta: 'Inactiva', familia: 'neutral' },
+  },
+  // Los dos estados de un practicante (§5.2); «Sin proyecto» es una marca de un practicante activo.
+  practicante: {
+    ACTIVO: { etiqueta: 'Activo', familia: 'success' },
+    FINALIZADO: { etiqueta: 'Finalizado', familia: 'neutral' },
+    SIN_PROYECTO: { etiqueta: 'Sin proyecto', familia: 'warning' },
+    // Quien ya salió de todos los proyectos del Supervisor (§9.1.2).
+    ANTERIOR: { etiqueta: 'Anterior', familia: 'neutral' },
+  },
+  // La cuenta de un supervisor (§5.3): activa, o desactivada (no puede iniciar sesión).
+  supervisor: {
+    ACTIVO: { etiqueta: 'Activo', familia: 'success' },
+    INACTIVO: { etiqueta: 'Inactivo', familia: 'neutral' },
+  },
+  // La severidad de un insight de Reportes (§5.6).
+  severidad: {
+    CRITICO: { etiqueta: 'Crítico', familia: 'danger' },
+    ATENCION: { etiqueta: 'Atención', familia: 'warning' },
+    INFORMATIVO: { etiqueta: 'Informativo', familia: 'info' },
+  },
+  // La conexión con una integración (§5.8): conectada, o sin conexión.
+  integracion: {
+    CONECTADO: { etiqueta: 'Conectado', familia: 'success' },
+    NO_CONECTADO: { etiqueta: 'Sin conexión', familia: 'danger' },
+  },
+  // Cómo terminó mi paso por un proyecto que ya no es vigente (§9.2.1): finalizado, o salí de él.
+  participacion: {
+    FINALIZADO: { etiqueta: 'Finalizado', familia: 'neutral' },
+    YA_NO_PARTICIPAS: { etiqueta: 'Ya no participas', familia: 'neutral' },
+  },
   marca: {
+    SOLO_PROTOTIPO: { etiqueta: 'Solo prototipo', familia: 'warning' },
     DEVUELTA: { etiqueta: 'Devuelta con observaciones', familia: 'danger' },
     REVISION_MANUAL: { etiqueta: 'Requiere revisión manual', familia: 'warning' },
   },

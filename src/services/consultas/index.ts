@@ -8,6 +8,7 @@ export type {
 export {
   ACTIVIDAD_RECIENTE_MAXIMA,
   listarMisProyectos,
+  listarPracticantesAsignables,
   listarProyectos,
   listarTerminadasDeProyecto,
   obtenerEquipoProyecto,
@@ -31,6 +32,10 @@ export type {
   ProyectoAnterior,
   ProyectoDePracticante,
   ProyectoListado,
+  AccionProyecto,
+  CicloDeVidaProyecto,
+  PracticanteAsignable,
+  PracticantesAsignables,
   ReunionDeProyecto,
   ResumenProyecto,
   ResumenProyectoAnterior,
@@ -63,11 +68,14 @@ export type { ProyectoResumen, TareaConProyecto } from './comun';
 export {
   listarPracticantes,
   listarPracticantesACargo,
+  listarProyectosAsignables,
   obtenerPracticante,
   obtenerPracticanteACargo,
 } from './practicantes';
 export type {
+  AccionPracticante,
   CatalogoNombre,
+  ProyectosAsignables,
   EntradaConPracticante,
   FinDePractica,
   ListadoPracticantes,
@@ -82,6 +90,7 @@ export type {
 } from './practicantes';
 export { listarSupervisores, obtenerSupervisor } from './supervisores';
 export type {
+  AccionSupervisor,
   EntradaConSupervisor,
   ListadoSupervisores,
   ProyectoACargo,
@@ -124,6 +133,8 @@ export type {
   LineaDeTiempo,
   ListadoHistorial,
 } from './historial';
+export { obtenerMiPerfil } from './perfil';
+export type { MiPerfil, PracticaDelPerfil } from './perfil';
 export { listarNotificaciones } from './notificaciones';
 export type {
   DestinoDeNotificacion,

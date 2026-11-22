@@ -4,9 +4,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
 import { Label } from '@/compartido/ui/label';
+import { accesoRapido, iniciarSesion } from '@/services';
 import { useAlmacenSesion } from './almacenSesion';
 import { esquemaAcceso, type DatosAcceso } from './esquemaAcceso';
-import { accesoRapido, iniciarSesion } from '@/services';
 import type { Rol } from './tipos';
 
 const ACCESOS_RAPIDOS: { rol: Rol; etiqueta: string }[] = [
