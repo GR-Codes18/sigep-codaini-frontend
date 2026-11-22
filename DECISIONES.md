@@ -4572,3 +4572,49 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   por eso este módulo y el 7.1 no tocaron colores ni bordes; (c) el formato de fecha de `TableroKanban` (`dd/MM/yyyy`) y de `ListaDeTareasDePracticante`, distintos del de `diaVisible`. Se conserva el
   pendiente del cierre en `main` de las Fases 3, 4, 5 y 6, con sus etiquetas.
 - **Siguiente paso.** Módulo 7.3 (Inicio del Practicante).
+
+## 2026-11-21 — [A+B] Fase 7, módulo 7.3 (Inicio), Practicante, y cierre de la Fase 7
+
+- **Commit:** `75c8139` (el módulo 7.3 completo, con la migración de las cuatro pruebas y la eliminación de la página de desarrollo). Rama `feat/fase7-inicio`, sobre `46a8185` (el merge del PR #46, que trajo el 7.2).
+  Se siguió el protocolo de proponer el diseño y esperar la aprobación de los autores antes de implementar. **Con este módulo termina la Fase 7** (7.1 a 7.3).
+- **Qué es el módulo.** La primera pantalla del Practicante (§9.2.3): resume lo que ya existe en Mis proyectos y en las tareas, sin calcular nada propio. Usa `obtenerInicioPracticante`, que ya existía y solo
+  entrega lo suyo (las tarjetas, las tareas en curso en el orden de §9.2.3, los Pull Requests por atender por `estado_pr` y las reuniones de los proyectos vigentes): no se amplió ninguna consulta ni se tocó
+  `domain/`. El adaptador `src/app/adaptadores/inicioPracticante.ts` (`aInicioPracticante`) solo presenta: conserva los números y el orden de la consulta, arma las rutas del Practicante y da todas las
+  fechas con `diaVisible`.
+- **Ruta y título.** `/practicante/inicio` (la que ya tenía el menú y a la que lleva `rutaPorRol` tras entrar) con el título «Inicio». El Supervisor usa «Dashboard»; el del Practicante se llama como su ítem del menú.
+- **Las cuatro tarjetas, sin filtro.** Mis tareas en progreso, Devueltas con observaciones, Esperando supervisión y Disponibles para tomar son tarjetas compactas (`Tarjeta` compacta de los bloques compartidos) y
+  las cuatro enlazan a `/practicante/proyectos` **sin filtro** (`src/paneles/practicante/inicio/enlaces.ts`). **Por qué:** el Practicante no tiene un módulo de Tareas y Mis proyectos no lee filtros; un filtro
+  por tarjeta exigiría cambios aditivos en el detalle del 7.1 (por ejemplo, abrir el tablero con «Solo mis tareas») y el id del proyecto, que las tarjetas de la consulta del Inicio no traen. Los autores aprobaron
+  la alternativa sin filtro y quedó anotado para la Fase 8. Solo «Devueltas» se pinta, en rojo, y solo si hay alguna; las otras son neutras (§9.2.3). «Disponibles para tomar» no cuenta los proyectos en pausa.
+- **Los bloques.** «Mis tareas en curso» es una `TablaCompacta` (ID, título, proyecto, fecha límite en rojo si venció, «Devuelta con observaciones» y «Ver detalle»; un clic en la fila abre
+  `/practicante/proyectos/tareas/:id`), con scroll horizontal interno a 390 px. «Pull Requests por atender» es una lista con el título como enlace al detalle y las `Insignia` de la tarea y del PR (la tarea puede estar
+  Esperando supervisión o Terminada: la consulta mira el PR, no el Kanban). «Próximas reuniones» reutiliza `Reuniones` con enlaces a Mis proyectos. Los dos últimos van lado a lado con `items-start` (cada uno con la
+  altura de su contenido) y en una columna en móvil. Sin botones de acción: solo enlaces y filas que navegan. Sin tareas en curso, «No tienes tareas en progreso» y, si hay Disponibles, «Ver tareas disponibles»;
+  sin PR por atender, «No tienes Pull Requests pendientes». Sin ningún proyecto vigente (incluido quien solo sigue en uno finalizado): «Aún no tienes proyectos asignados», sin tarjetas en cero.
+- **Bloques nuevos, sin tocar los compartidos.** `MisTareasEnCurso` y `PullRequestsPorAtender` viven en `src/app/dashboard/BloquesDelPracticante.tsx`; `BloquesDeDashboard.tsx` no se modificó (`Tarjeta`, `Seccion`,
+  `Vacio` y `Reuniones` se usan tal como están), así que los dashboards del Administrador y del Supervisor no cambian ni sus pruebas.
+- **Se elimina la página de desarrollo temporal de la Fase 4** (`src/app/desarrollo/PaginaDesarrollo.tsx` y su prueba, y la ruta `/<panel>/desarrollo` en `src/app/rutas.tsx`). El plan (§7.3, «Listo cuando») lo
+  exigía y `DECISIONES` ya la marcaba «temporal hasta la Fase 7». Antes de borrar se buscaron todas las referencias: solo el import y la ruta de `rutas.tsx`; las demás menciones de `PROGRESO.md` y
+  `DECISIONES.md` son registro histórico y no se tocaron. **Migración previa de la cobertura de integración.** De las 15 pruebas de la página, las de tablero, selector, «Solo mis tareas», «Ver todas las terminadas»,
+  el aviso del responsable inactivo y la tarea inexistente ya tenían equivalentes en los módulos (`TableroKanban`, `TableroDelProyecto`, `ListadoTerminadas`, `DetalleTarea`, `tareas.test.ts`,
+  `PaginaDetalleTareaDeProyecto`). Cuatro acciones **no** tenían prueba con clics reales sobre la pantalla y el almacén fuera de esa página, y se migraron, pasando antes de borrar nada, a su panel:
+  «Tomar tarea» y «Crear nuevo Pull Request» (con la rama base del proyecto) en `src/paneles/practicante/proyectos/AccionesDeTareaPracticante.test.tsx` (con `PaginaDetalleTareaPracticante`), y «Cerrar Pull Request»
+  (con motivo) y «Editar» el título en `src/paneles/supervisor/proyectos/AccionesDeTareaSupervisor.test.tsx` (con `PaginaDetalleTareaDeProyecto`). **«Liberar» y «Enviar a supervisión» no estaban cubiertas por ese test
+  y no se añadieron** (alcance acordado con los autores); siguen con pruebas de servicio y de los botones y modales, y quedan como posible mejora de la Fase 8.
+- **Pruebas.** 4.131 → 4.152 en 196 archivos (de 193): **+32 pruebas y +2 archivos del 7.3** (adaptador y página), **+4 pruebas y +2 archivos de la migración** y **−15 pruebas y −1 archivo de la eliminación**
+  (32 + 4 − 15 = +21; 2 + 2 − 1 = +3). El recuento de archivos coincide con `npx vitest list`. `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
+  `git diff -- docs` vacío. No se hicieron pruebas de mutación. Se verificó con `--testTimeout=60000 --maxWorkers=3`. Hay prueba de alcance: ninguna tarea de otro practicante ni de un proyecto ajeno aparece en el Inicio.
+- **Divergencias con `docs/` (aceptadas por los autores; para que las actualicen a mano).**
+  1. §9.2.3 no define la ruta del Inicio: va en `/practicante/inicio`, la del menú.
+  2. Las tarjetas enlazan sin filtro a Mis proyectos, porque el Practicante no tiene módulo de Tareas y un filtro exigiría cambios en el 7.1.
+  3. «Disponibles para tomar» no cuenta los proyectos en pausa (§9.2.3), pero la tarjeta de Mis proyectos del 7.1 muestra el número que entrega la consulta aunque el proyecto esté en pausa.
+  4. El título de la pantalla es «Inicio» (el del ítem del menú), y el del Supervisor es «Dashboard».
+- **Revisión visual.** La revisión visual del 7.3 (1280 y 390 px, modo claro y oscuro, tarjetas parejas con y sin rojo, el scroll horizontal de la tabla y los dos bloques inferiores) la hizo la autora a ojo, porque el
+  agente no puede abrir el navegador. Las pruebas de jsdom cubren la estructura, las clases y el comportamiento, no el aspecto.
+- **Cierre de la Fase 7.** Los tres módulos del panel del Practicante (7.1 Mis proyectos, 7.2 Mi historial y 7.3 Inicio) están terminados en la rama, con la página de desarrollo temporal retirada. Falta su cierre en
+  `main` con la etiqueta `fase-7-completa`. Las Fases 3, 4, 5, 6 y 7 quedan pendientes de cierre en `main`.
+- **Pendientes anotados para la Fase 8** (en `PROGRESO.md`): los enlaces de las tarjetas del Inicio sin filtro (afinarlos exige un filtro en el detalle de Mis proyectos y el id del proyecto en la consulta del
+  Inicio); la inconsistencia de «Disponibles para tomar» con proyectos en pausa entre el Inicio y Mis proyectos; el menú que resalta «Mis proyectos» al ver una tarea abierta desde Mi historial; el contraste de las
+  tarjetas en modo oscuro, de todo el sistema (se resolverá una sola vez con los tokens del tema); los formatos de fecha de `TableroKanban` y `ListaDeTareasDePracticante`, distintos de `diaVisible`; el `21rem` de
+  la altura del tablero en pantalla ancha; las tarjetas con mucho espacio; y, como posible mejora, las pruebas de integración de «Liberar» y «Enviar a supervisión».
+- **Siguiente paso.** Fase 8 (pulido, pruebas de punta a punta y entrega).
