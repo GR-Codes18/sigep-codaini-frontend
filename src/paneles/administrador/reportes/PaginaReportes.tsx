@@ -1,5 +1,6 @@
 import { useSearchParams } from 'react-router';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { ENTORNO, type Entorno } from '@/services';
 import { PESTANA_INICIAL, PESTANAS_DE_REPORTES, type PestanaDeReportes } from './rutas';
@@ -30,8 +31,11 @@ export function PaginaReportes({ entorno = ENTORNO }: { entorno?: Entorno } = {}
   if (idUsuario === null) return null;
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Reportes</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Reportes"
+        subtitulo="Alertas automáticas e indicadores de rendimiento de los proyectos."
+      />
 
       <PestanasConContador
         valor={pestana}

@@ -1,3 +1,8 @@
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { PaginadorDeTabla } from '@/compartido/PaginadorDeTabla';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import {
@@ -13,7 +18,6 @@ import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import type { CategoriaEvento, TipoElemento } from '@/domain';
 import {
@@ -25,9 +29,6 @@ import {
   type FiltrosHistorial,
 } from '@/services';
 import { DetalleDeEvento } from './DetalleDeEvento';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 interface FiltrosEnPantalla {
   desde: string;
@@ -62,6 +63,9 @@ function aFiltrosDeConsulta(f: FiltrosEnPantalla): FiltrosHistorial {
   };
 }
 
+/** Filas por página de la tabla del Historial. */
+export const FILAS_POR_PAGINA = 25;
+
 const hayFiltros = (f: FiltrosEnPantalla) =>
   (Object.keys(FILTROS_INICIALES) as (keyof FiltrosEnPantalla)[]).some(
     (k) => f[k] !== FILTROS_INICIALES[k],
@@ -78,6 +82,7 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
   const idActor = sesion?.id ?? null;
   const [filtros, setFiltros] = useState<FiltrosEnPantalla>(FILTROS_INICIALES);
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [pagina, setPagina] = useState(0);
 
   const cargar = useCallback(
     () =>
@@ -151,7 +156,10 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
     [],
   );
 
-  const poner = (cambios: Partial<FiltrosEnPantalla>) => setFiltros((f) => ({ ...f, ...cambios }));
+  const poner = (cambios: Partial<FiltrosEnPantalla>) => {
+    setFiltros((f) => ({ ...f, ...cambios }));
+    setPagina(0);
+  };
   const elegida = vista?.filas.find((f) => f.id === abierto) ?? null;
 
   function contenido() {
@@ -174,7 +182,13 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
     return (
       <TablaCompacta
         columnas={columnas}
-        filas={vista.filas}
+        filas={vista.filas.slice(
+          Math.min(pagina, Math.max(0, Math.ceil(vista.filas.length / FILAS_POR_PAGINA) - 1)) *
+            FILAS_POR_PAGINA,
+          (Math.min(pagina, Math.max(0, Math.ceil(vista.filas.length / FILAS_POR_PAGINA) - 1)) +
+            1) *
+            FILAS_POR_PAGINA,
+        )}
         claveFila={(f) => f.id}
         onAbrir={(f) => setAbierto(f.id)}
         vacio={
@@ -189,49 +203,48 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
   if (idActor === null) return null;
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h1 className="text-text">Historial de actividad</h1>
-        <p className="text-sm text-text-2">
-          El registro de auditoría del sistema: los eventos no se editan ni se borran.
-        </p>
-      </div>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Historial de actividad"
+        subtitulo="El registro de auditoría del sistema: los eventos no se editan ni se borran."
+      />
 
-      <div
-        className="flex flex-wrap items-end gap-3"
-        role="search"
-        aria-label="Filtros del historial"
-      >
-        <BarraBusqueda
-          valor={filtros.texto}
-          onCambiar={(texto) => poner({ texto })}
-          placeholder="Buscar (por ejemplo, un ID de tarea)"
-        />
-        <div className="w-40 space-y-1">
-          <Label htmlFor="historial-desde">Desde</Label>
+      <BarraDeFiltros role="search" aria-label="Filtros del historial">
+        <CampoDeFormulario
+          htmlFor="filtro-busqueda"
+          etiqueta="Buscar"
+          className="min-w-48 flex-[2]"
+        >
+          <BarraBusqueda
+            id="filtro-busqueda"
+            className="max-w-none"
+            valor={filtros.texto}
+            onCambiar={(texto) => poner({ texto })}
+            placeholder="Buscar (por ejemplo, un ID de tarea)"
+          />
+        </CampoDeFormulario>
+        <CampoDeFormulario htmlFor="historial-desde" etiqueta="Desde" className="min-w-36 flex-1">
           <Input
             id="historial-desde"
             type="date"
             value={filtros.desde}
             onChange={(e) => poner({ desde: e.target.value })}
           />
-        </div>
-        <div className="w-40 space-y-1">
-          <Label htmlFor="historial-hasta">Hasta</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario htmlFor="historial-hasta" etiqueta="Hasta" className="min-w-36 flex-1">
           <Input
             id="historial-hasta"
             type="date"
             value={filtros.hasta}
             onChange={(e) => poner({ hasta: e.target.value })}
           />
-        </div>
-        <div className="w-44 space-y-1">
-          <Label htmlFor="historial-autor">Autor</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario htmlFor="historial-autor" etiqueta="Autor" className="min-w-36 flex-1">
           <select
             id="historial-autor"
             value={filtros.idAutor}
             onChange={(e) => poner({ idAutor: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos</option>
             <option value={FILTRO_AUTOR_SISTEMA}>Sistema</option>
@@ -241,14 +254,17 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-40 space-y-1">
-          <Label htmlFor="historial-categoria">Categoría</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="historial-categoria"
+          etiqueta="Categoría"
+          className="min-w-36 flex-1"
+        >
           <select
             id="historial-categoria"
             value={filtros.categoria}
             onChange={(e) => poner({ categoria: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todas</option>
             {CATEGORIAS_DE_HISTORIAL.map((c) => (
@@ -257,14 +273,17 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-48 space-y-1">
-          <Label htmlFor="historial-tipo">Tipo de elemento</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="historial-tipo"
+          etiqueta="Tipo de elemento"
+          className="min-w-36 flex-1"
+        >
           <select
             id="historial-tipo"
             value={filtros.tipoElemento}
             onChange={(e) => poner({ tipoElemento: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos</option>
             {TIPOS_ELEMENTO_DE_HISTORIAL.map((t) => (
@@ -273,14 +292,17 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-48 space-y-1">
-          <Label htmlFor="historial-proyecto">Proyecto</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="historial-proyecto"
+          etiqueta="Proyecto"
+          className="min-w-36 flex-1"
+        >
           <select
             id="historial-proyecto"
             value={filtros.idProyecto}
             onChange={(e) => poner({ idProyecto: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos</option>
             {(proyectos.valor?.proyectos ?? []).map((p) => (
@@ -289,19 +311,31 @@ export function PaginaHistorial({ entorno = ENTORNO }: { entorno?: Entorno } = {
               </option>
             ))}
           </select>
-        </div>
+        </CampoDeFormulario>
         {hayFiltros(filtros) && (
           <button
             type="button"
-            onClick={() => setFiltros(FILTROS_INICIALES)}
+            onClick={() => {
+              setFiltros(FILTROS_INICIALES);
+              setPagina(0);
+            }}
             className="h-8 text-sm text-link underline underline-offset-2"
           >
             Limpiar filtros
           </button>
         )}
-      </div>
+      </BarraDeFiltros>
 
       {contenido()}
+
+      {vista !== null && !consulta.error && (
+        <PaginadorDeTabla
+          pagina={pagina}
+          tamano={FILAS_POR_PAGINA}
+          total={vista.filas.length}
+          onCambiar={setPagina}
+        />
+      )}
 
       <DetalleDeEvento fila={elegida} onCerrar={() => setAbierto(null)} />
     </section>

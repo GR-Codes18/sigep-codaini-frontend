@@ -1,3 +1,4 @@
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import type { ProyectoACargoParaVista } from '@/app/adaptadores';
@@ -28,9 +29,6 @@ interface Props {
   onCerrar: () => void;
   entorno?: Entorno;
 }
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /**
  * «Reasignar proyectos» (§5.3): muestra los proyectos activos y en pausa del supervisor y pide elegir un nuevo supervisor
@@ -105,7 +103,7 @@ export function ReasignarProyectos({
                   id={id}
                   value={elegidos[p.proyecto.id] ?? ''}
                   disabled={guardando}
-                  className={CLASE_SELECT}
+                  className={CLASE_CAMPO}
                   onChange={(e) =>
                     setElegidos((actuales) => ({ ...actuales, [p.proyecto.id]: e.target.value }))
                   }

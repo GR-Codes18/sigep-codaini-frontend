@@ -1,11 +1,16 @@
 import { useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { aDetallePracticanteACargo } from '@/app/adaptadores';
 import { ListaDeTareasDePracticante } from '@/app/practicantes/ListaDeTareasDePracticante';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo } from '@/compartido/LineaTiempo';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { FilaDeLista, ListaDeFilas } from '@/compartido/ListaDeFilas';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, obtenerPracticanteACargo, type Entorno } from '@/services';
 import { RUTA_PRACTICANTES_A_CARGO } from './rutas';
@@ -14,19 +19,11 @@ function VolverAlListado() {
   return (
     <Link
       to={RUTA_PRACTICANTES_A_CARGO}
-      className="text-sm font-medium text-link underline underline-offset-2"
+      className="inline-flex items-center gap-1 text-sm font-medium text-link hover:underline"
     >
+      <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden="true" />
       Volver a practicantes a cargo
     </Link>
-  );
-}
-
-function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-text-2">{etiqueta}</dt>
-      <dd className="text-text">{children}</dd>
-    </div>
   );
 }
 
@@ -56,7 +53,7 @@ export function PaginaDetallePracticanteACargo({ entorno = ENTORNO }: { entorno?
 
   if (consulta.error) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAlListado />
         <p role="alert" className="text-sm text-danger-text">
           {consulta.error}
@@ -76,70 +73,79 @@ export function PaginaDetallePracticanteACargo({ entorno = ENTORNO }: { entorno?
   const detalle = aDetallePracticanteACargo(consulta.valor);
 
   return (
-    <article className="space-y-6">
-      <header className="space-y-2">
-        <VolverAlListado />
-        <h1 className="text-text">{detalle.nombre}</h1>
-        <Insignia
-          tipo="practicante"
-          estado={detalle.situacion === 'ACTIVO' ? 'ACTIVO' : 'ANTERIOR'}
-        />
-      </header>
-
-      <section aria-label="Datos de contacto" className="space-y-2">
-        <h2 className="text-text">Datos de contacto</h2>
-        <dl className="grid gap-3 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
-          <Dato etiqueta="Correo">{detalle.correo}</Dato>
-          <Dato etiqueta="Celular">{detalle.celular}</Dato>
-          <Dato etiqueta="Discord">{detalle.discord ?? '—'}</Dato>
-          <Dato etiqueta="GitHub">{detalle.cuentaGithub ?? '—'}</Dato>
-        </dl>
-      </section>
-
-      <section aria-label="Datos de la práctica" className="space-y-2">
-        <h2 className="text-text">Datos de la práctica</h2>
-        <dl className="grid gap-3 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
-          <Dato etiqueta="Especialidad">{detalle.especialidad}</Dato>
-          <Dato etiqueta="Disponibilidad horaria">{detalle.disponibilidadTexto ?? '—'}</Dato>
-          <Dato etiqueta="Fecha de fin de práctica">{detalle.fechaFinTexto}</Dato>
-        </dl>
-      </section>
-
-      <section aria-label="Proyectos" className="space-y-2">
-        <h2 className="text-text">Proyectos</h2>
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-          {detalle.proyectos.map((p, i) => (
-            <li
-              key={`${p.proyecto.id}-${i}`}
-              className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <span className="font-medium text-text">{p.proyecto.nombre}</span>
-                <span className="text-text-2">{p.proyecto.codigo}</span>
-              </div>
-              <p className="text-text-2 tabular-nums">
-                Alta: {p.altaTexto} · Baja: {p.bajaTexto ?? 'vigente'}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <ListaDeTareasDePracticante
-        titulo="Tareas actuales"
-        vacio="No tiene tareas en curso en tus proyectos."
-        tareas={detalle.tareasActuales}
-      />
-      <ListaDeTareasDePracticante
-        titulo="Tareas completadas"
-        vacio="Aún no tiene tareas completadas en tus proyectos."
-        tareas={detalle.tareasCompletadas}
+    <article className="space-y-3">
+      <CabeceraDeDetalle
+        volver={{ a: RUTA_PRACTICANTES_A_CARGO, etiqueta: 'Volver a practicantes a cargo' }}
+        titulo={detalle.nombre}
+        avatarDe={detalle.nombre}
+        insignias={
+          <Insignia
+            tipo="practicante"
+            estado={detalle.situacion === 'ACTIVO' ? 'ACTIVO' : 'ANTERIOR'}
+          />
+        }
+        metadatos={`${detalle.especialidad} · Fin de práctica: ${detalle.fechaFinTexto}`}
       />
 
-      <section aria-label="Línea de tiempo" className="space-y-3">
-        <h2 className="text-text">Línea de tiempo</h2>
-        <LineaTiempo eventos={detalle.eventos} />
-      </section>
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-5">
+        <div className="space-y-3 lg:col-span-2">
+          <PanelDeDatos titulo="Datos de contacto">
+            <ListaDeDefiniciones
+              disposicion="filas"
+              items={[
+                { etiqueta: 'Correo', valor: detalle.correo },
+                { etiqueta: 'Celular', valor: detalle.celular },
+                { etiqueta: 'Discord', valor: detalle.discord ?? '—' },
+                { etiqueta: 'GitHub', valor: detalle.cuentaGithub ?? '—' },
+              ]}
+            />
+          </PanelDeDatos>
+
+          <PanelDeDatos titulo="Datos de la práctica">
+            <ListaDeDefiniciones
+              disposicion="filas"
+              items={[
+                { etiqueta: 'Especialidad', valor: detalle.especialidad },
+                { etiqueta: 'Disponibilidad horaria', valor: detalle.disponibilidadTexto ?? '—' },
+                { etiqueta: 'Fecha de fin de práctica', valor: detalle.fechaFinTexto },
+              ]}
+            />
+          </PanelDeDatos>
+
+          <PanelDeDatos titulo="Línea de tiempo">
+            <LineaTiempo eventos={detalle.eventos} />
+          </PanelDeDatos>
+        </div>
+
+        <div className="space-y-3 lg:col-span-3">
+          <PanelDeDatos titulo="Proyectos">
+            <ListaDeFilas>
+              {detalle.proyectos.map((p, i) => (
+                <FilaDeLista key={`${p.proyecto.id}-${i}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-text">{p.proyecto.nombre}</span>
+                    <span className="text-text-2">{p.proyecto.codigo}</span>
+                  </div>
+                  <p className="text-xs text-text-2 tabular-nums">
+                    Alta: {p.altaTexto} · Baja: {p.bajaTexto ?? 'vigente'}
+                  </p>
+                </FilaDeLista>
+              ))}
+            </ListaDeFilas>
+          </PanelDeDatos>
+
+          <ListaDeTareasDePracticante
+            titulo="Tareas actuales"
+            vacio="No tiene tareas en curso en tus proyectos."
+            tareas={detalle.tareasActuales}
+          />
+          <ListaDeTareasDePracticante
+            titulo="Tareas completadas"
+            vacio="Aún no tiene tareas completadas en tus proyectos."
+            tareas={detalle.tareasCompletadas}
+          />
+        </div>
+      </div>
     </article>
   );
 }

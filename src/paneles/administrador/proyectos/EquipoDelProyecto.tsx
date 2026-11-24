@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import type { EquipoParaVista, MiembroParaVista } from '@/app/adaptadores';
 import { ModalConfirmacion } from '@/compartido/ModalConfirmacion';
+import { FilaDeLista, ListaDeFilas } from '@/compartido/ListaDeFilas';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Button } from '@/compartido/ui/button';
 import type { Id } from '@/domain';
 import { ENTORNO, quitarPracticante, type Entorno, type Resultado } from '@/services';
@@ -34,45 +36,38 @@ export function EquipoDelProyecto({ idActor, proyecto, equipo, entorno = ENTORNO
   const [quitando, setQuitando] = useState<MiembroParaVista | null>(null);
 
   return (
-    <div className="space-y-6">
-      {equipo.estadoProyecto === 'FINALIZADO' && (
-        <p
-          role="note"
-          className="rounded-xl border border-border bg-surface p-3 text-sm text-text-2"
-        >
-          Un proyecto finalizado no admite asignar ni quitar practicantes: si hace falta, se
-          reactiva primero.
-        </p>
-      )}
-
-      <section aria-label="Practicantes activos" className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-text">Practicantes activos</h2>
-          {equipo.puedeAsignar && (
+    <div className="space-y-3">
+      <PanelDeDatos
+        titulo="Practicantes activos"
+        nombre="Practicantes activos"
+        acciones={
+          equipo.puedeAsignar ? (
             <Button type="button" variant="outline" size="sm" onClick={() => setAsignando(true)}>
               Asignar practicantes
             </Button>
-          )}
-        </div>
-        {equipo.activos.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-            Este proyecto aún no tiene practicantes.
+          ) : undefined
+        }
+      >
+        {equipo.estadoProyecto === 'FINALIZADO' && (
+          <p role="note" className="text-xs text-text-2">
+            Un proyecto finalizado no admite asignar ni quitar practicantes: si hace falta, se
+            reactiva primero.
           </p>
+        )}
+        {equipo.activos.length === 0 ? (
+          <p className="text-sm text-text-2">Este proyecto aún no tiene practicantes.</p>
         ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+          <ListaDeFilas>
             {equipo.activos.map((m) => (
-              <li
-                key={m.id}
-                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-              >
-                <div>
+              <FilaDeLista key={m.id}>
+                <div className="min-w-0">
                   <p className="font-medium text-text">{m.nombre}</p>
                   <p className="text-xs text-text-2">
                     {m.correo} · {m.especialidad}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <p className="text-text-2 tabular-nums">
+                  <p className="text-xs text-text-2 tabular-nums">
                     {plural(m.carga, 'tarea en progreso', 'tareas en progreso')} · Desde{' '}
                     {m.altaTexto}
                   </p>
@@ -88,34 +83,28 @@ export function EquipoDelProyecto({ idActor, proyecto, equipo, entorno = ENTORNO
                     </Button>
                   )}
                 </div>
-              </li>
+              </FilaDeLista>
             ))}
-          </ul>
+          </ListaDeFilas>
         )}
-      </section>
+      </PanelDeDatos>
 
-      <section aria-label="Practicantes anteriores" className="space-y-2">
-        <h2 className="text-text">Practicantes anteriores</h2>
+      <PanelDeDatos titulo="Practicantes anteriores" nombre="Practicantes anteriores">
         {equipo.anteriores.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-            Aún no hay practicantes anteriores.
-          </p>
+          <p className="text-sm text-text-2">Aún no hay practicantes anteriores.</p>
         ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+          <ListaDeFilas>
             {equipo.anteriores.map((m, i) => (
-              <li
-                key={`${m.id}-${i}`}
-                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-              >
+              <FilaDeLista key={`${m.id}-${i}`}>
                 <span className="font-medium text-text">{m.nombre}</span>
-                <p className="text-text-2 tabular-nums">
+                <p className="text-xs text-text-2 tabular-nums">
                   Alta: {m.altaTexto} · Baja: {m.bajaTexto}
                 </p>
-              </li>
+              </FilaDeLista>
             ))}
-          </ul>
+          </ListaDeFilas>
         )}
-      </section>
+      </PanelDeDatos>
 
       {asignando && (
         <AsignarPracticantes

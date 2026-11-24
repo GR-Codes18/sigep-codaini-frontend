@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Link, Navigate, useParams, useSearchParams } from 'react-router';
 import {
   aEquipoPracticante,
@@ -12,10 +13,14 @@ import {
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { AvatarIniciales } from '@/compartido/AvatarIniciales';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { Insignia } from '@/compartido/Insignia';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { FilaDeLista, ListaDeFilas } from '@/compartido/ListaDeFilas';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { LineaTiempo } from '@/compartido/LineaTiempo';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
-import { FilasDeDatos, TarjetaDeDatos } from '@/compartido/TarjetaDeDatos';
+import { FilasDeDatos } from '@/compartido/TarjetaDeDatos';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { cn } from '@/compartido/utils';
 import {
@@ -43,8 +48,9 @@ export function VolverAMisProyectos() {
   return (
     <Link
       to={RUTA_MIS_PROYECTOS_PRACTICANTE}
-      className="text-sm font-medium text-link underline underline-offset-2"
+      className="inline-flex items-center gap-1 text-sm font-medium text-link hover:underline"
     >
+      <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden="true" />
       Volver a mis proyectos
     </Link>
   );
@@ -63,162 +69,130 @@ function EnlaceExterno({ url }: { url: string }) {
   );
 }
 
-/** La barra de avance del proyecto, con el porcentaje bien visible. */
+/** La barra de avance del proyecto, igual que la del Resumen del Administrador y del Supervisor. */
 function BarraDeAvance({ porcentaje, etiqueta }: { porcentaje: number; etiqueta: string }) {
   return (
-    <div className="flex items-center gap-3">
+    <div
+      role="progressbar"
+      aria-label={etiqueta}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-valuenow={porcentaje}
+      className="h-2 overflow-hidden rounded-full bg-surface-2"
+    >
       <div
-        role="progressbar"
-        aria-label={etiqueta}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={porcentaje}
-        className="h-2.5 flex-1 overflow-hidden rounded-full bg-surface-2"
-      >
-        <div className="h-full bg-primary" style={{ width: `${porcentaje}%` }} />
-      </div>
-      <span className="w-12 text-right text-lg font-semibold text-text tabular-nums">
-        {porcentaje} %
-      </span>
+        className="h-full rounded-full bg-primary"
+        style={{ width: `${Math.min(100, Math.max(0, porcentaje))}%` }}
+      />
     </div>
   );
 }
 
-/**
- * El encabezado del proyecto, en una tarjeta propia y visible en las tres pestañas: código, nombre y estado, el avance bien
- * visible y los datos secundarios en filas (supervisor, reunión, rama base y repositorio).
- */
-function EncabezadoDelProyecto({
-  nombre,
-  codigo,
-  estado,
-  resumen,
-}: {
-  nombre: string;
-  codigo: string;
-  estado: ResumenPracticanteParaVista['estado'];
-  resumen: ResumenPracticanteParaVista | null;
-}) {
-  return (
-    <section
-      aria-label="Encabezado del proyecto"
-      className="space-y-3 rounded-xl border border-border bg-surface p-3"
-    >
-      <div className="flex flex-wrap items-center gap-2">
-        <h1 className="text-text">{nombre}</h1>
-        <span className="text-sm text-text-2">{codigo}</span>
-        <Insignia tipo="proyecto" estado={estado} />
-      </div>
-      {resumen === null ? (
-        <div role="status" aria-label="Cargando los datos del proyecto" className="space-y-2">
-          <Skeleton className="h-6 w-full" />
-          <Skeleton className="h-16 w-full" />
-        </div>
-      ) : (
-        <>
-          <BarraDeAvance porcentaje={resumen.avance} etiqueta="Avance del proyecto" />
-          <FilasDeDatos
-            filas={[
-              { etiqueta: 'Supervisor', valor: resumen.supervisor },
-              {
-                etiqueta: 'Reunión semanal',
-                valor:
-                  resumen.proximaReunionTexto === 'Sin definir'
-                    ? resumen.reunionTexto
-                    : `${resumen.reunionTexto} · próxima ${resumen.proximaReunionTexto}`,
-              },
-              { etiqueta: 'Rama base', valor: resumen.ramaBase },
-              { etiqueta: 'Repositorio', valor: <EnlaceExterno url={resumen.repositorioUrl} /> },
-            ]}
-          />
-        </>
-      )}
-    </section>
-  );
-}
-
-const MENSAJE_VACIO = 'rounded-lg bg-surface-2 px-3 py-2 text-sm text-text-2';
+const MENSAJE_VACIO = 'text-sm text-text-2';
 
 /**
- * Resumen (solo lectura, sin ningún botón de edición): una tarjeta con título por tema. En pantalla ancha va en dos
- * columnas independientes, cada tarjeta con la altura de su contenido y repartidas para que las dos columnas midan
- * parecido; en móvil, en una sola.
+ * Resumen (solo lectura, sin ningún botón de edición), con el mismo aspecto que el del Administrador y el Supervisor:
+ * datos en rejilla, y debajo, en dos columnas independientes, Avance, Enlaces útiles y Mis tareas a la izquierda y Mi
+ * actividad a la derecha. Sin valores repetidos: el código y el estado van en la cabecera de la página.
  */
 function Resumen({ resumen }: { resumen: ResumenPracticanteParaVista }) {
   return (
-    <div className="grid items-start gap-3 lg:grid-cols-2">
-      <div className="flex min-w-0 flex-col gap-3">
-        <TarjetaDeDatos titulo="Descripción">
-          <p className="text-sm whitespace-pre-line text-text">{resumen.descripcion}</p>
-        </TarjetaDeDatos>
-        <TarjetaDeDatos titulo="Enlaces y repositorio">
-          <FilasDeDatos
-            filas={[
-              { etiqueta: 'Repositorio', valor: <EnlaceExterno url={resumen.repositorioUrl} /> },
-              { etiqueta: 'Rama base', valor: resumen.ramaBase },
-              ...resumen.enlaces.map((e) => ({
-                etiqueta: e.nombre,
-                valor: <EnlaceExterno url={e.url} />,
-              })),
-            ]}
-          />
-          {resumen.enlaces.length === 0 && (
-            <p className="text-xs text-text-2">Aún no hay enlaces útiles.</p>
-          )}
-        </TarjetaDeDatos>
-        <TarjetaDeDatos titulo="Mis tareas">
-          {resumen.misTareas.length === 0 ? (
-            <p className={MENSAJE_VACIO}>No tienes tareas abiertas en este proyecto.</p>
-          ) : (
-            <ul className="divide-y divide-border text-sm">
-              {resumen.misTareas.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-1.5 first:pt-0 last:pb-0"
-                >
-                  <span className="min-w-0 text-text">
-                    <span className="font-medium tabular-nums">{t.idLegible}</span> · {t.titulo}
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        'text-xs tabular-nums',
-                        t.vencida ? 'font-medium text-danger-text' : 'text-text-2',
-                      )}
-                    >
-                      Límite: {diaVisible(t.fechaLimite)}
-                      {t.vencida && ' (vencida)'}
+    <div className="space-y-3">
+      <PanelDeDatos titulo="Datos del proyecto">
+        <ListaDeDefiniciones
+          items={[
+            { etiqueta: 'Supervisor', valor: resumen.supervisor },
+            {
+              etiqueta: 'Reunión semanal',
+              valor: (
+                <>
+                  {resumen.reunionTexto}
+                  {resumen.proximaReunionTexto !== 'Sin definir' && (
+                    <span className="ml-2 text-text-2">
+                      (próxima: {resumen.proximaReunionTexto})
                     </span>
-                    <Insignia tipo="tarea" estado={t.estado} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </TarjetaDeDatos>
-      </div>
-      <div className="flex min-w-0 flex-col gap-3">
-        <TarjetaDeDatos titulo="Fechas y datos del proyecto">
-          <FilasDeDatos
-            filas={[
-              { etiqueta: 'Código', valor: resumen.codigo },
-              { etiqueta: 'Fecha de inicio', valor: resumen.fechaInicioTexto },
-              { etiqueta: 'Fecha de fin prevista', valor: resumen.fechaFinPrevistaTexto },
-              { etiqueta: 'Reunión semanal', valor: resumen.reunionTexto },
-              { etiqueta: 'Próxima reunión', valor: resumen.proximaReunionTexto },
-            ]}
-          />
-        </TarjetaDeDatos>
-        <TarjetaDeDatos titulo="Avance">
-          <BarraDeAvance porcentaje={resumen.avance} etiqueta="Avance del proyecto en el resumen" />
-          <p className="text-xs text-text-2 tabular-nums">{resumen.avanceTexto}</p>
-        </TarjetaDeDatos>
-        <TarjetaDeDatos titulo="Mi actividad">
+                  )}
+                </>
+              ),
+            },
+            { etiqueta: 'Rama base', valor: resumen.ramaBase },
+            { etiqueta: 'Fecha de inicio', valor: resumen.fechaInicioTexto },
+            { etiqueta: 'Fecha de fin prevista', valor: resumen.fechaFinPrevistaTexto },
+            { etiqueta: 'Repositorio', valor: <EnlaceExterno url={resumen.repositorioUrl} /> },
+          ]}
+        />
+        <div className="border-t border-border pt-3">
+          <p className="text-xs text-text-2">Descripción</p>
+          <p className="text-sm whitespace-pre-line text-text">{resumen.descripcion}</p>
+        </div>
+      </PanelDeDatos>
+
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-5">
+        <div className="space-y-3 lg:col-span-2">
+          <PanelDeDatos titulo="Avance">
+            <p className="text-sm text-text">Tareas terminadas: {resumen.avanceTexto}</p>
+            <BarraDeAvance porcentaje={resumen.avance} etiqueta="Avance del proyecto" />
+          </PanelDeDatos>
+
+          <PanelDeDatos titulo="Enlaces útiles">
+            {resumen.enlaces.length === 0 ? (
+              <p className="text-sm text-text-2">Aún no hay enlaces útiles.</p>
+            ) : (
+              <ListaDeFilas>
+                {resumen.enlaces.map((e) => (
+                  <FilaDeLista key={e.url}>
+                    <div className="min-w-0">
+                      <p className="font-medium text-text">{e.nombre}</p>
+                      <a
+                        href={e.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block truncate text-xs text-link underline underline-offset-2"
+                      >
+                        {e.url}
+                      </a>
+                    </div>
+                  </FilaDeLista>
+                ))}
+              </ListaDeFilas>
+            )}
+          </PanelDeDatos>
+
+          <PanelDeDatos titulo="Mis tareas">
+            {resumen.misTareas.length === 0 ? (
+              <p className={MENSAJE_VACIO}>No tienes tareas abiertas en este proyecto.</p>
+            ) : (
+              <ListaDeFilas>
+                {resumen.misTareas.map((t) => (
+                  <FilaDeLista key={t.id}>
+                    <span className="min-w-0 text-text">
+                      <span className="font-medium tabular-nums">{t.idLegible}</span> · {t.titulo}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span
+                        className={cn(
+                          'text-xs tabular-nums',
+                          t.vencida ? 'font-medium text-danger-text' : 'text-text-2',
+                        )}
+                      >
+                        Límite: {diaVisible(t.fechaLimite)}
+                        {t.vencida && ' (vencida)'}
+                      </span>
+                      <Insignia tipo="tarea" estado={t.estado} />
+                    </span>
+                  </FilaDeLista>
+                ))}
+              </ListaDeFilas>
+            )}
+          </PanelDeDatos>
+        </div>
+
+        <PanelDeDatos titulo="Mi actividad" className="lg:col-span-3">
           <LineaTiempo
             eventos={resumen.miActividad}
             vacio="Aún no tienes actividad en este proyecto."
           />
-        </TarjetaDeDatos>
+        </PanelDeDatos>
       </div>
     </div>
   );
@@ -263,7 +237,7 @@ function TarjetaDeCompanero({ c }: { c: FilaCompanero }) {
 function Equipo({ equipo }: { equipo: EquipoPracticanteParaVista }) {
   const s = equipo.supervisor;
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <section
         aria-label="Supervisor"
         className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-xl border border-l-4 border-border border-l-primary bg-surface p-3"
@@ -285,7 +259,7 @@ function Equipo({ equipo }: { equipo: EquipoPracticanteParaVista }) {
       </section>
 
       <section aria-label="Compañeros" className="space-y-2">
-        <h2 className="text-sm font-semibold text-text">Compañeros</h2>
+        <h2 className="text-base font-semibold text-text">Compañeros</h2>
         {equipo.companeros.length === 0 ? (
           <p className={MENSAJE_VACIO}>No tienes compañeros activos en este proyecto.</p>
         ) : (
@@ -355,7 +329,7 @@ export function PaginaDetalleProyectoPracticante({
 
   if (mios.error) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAMisProyectos />
         <p role="alert" className="text-sm text-danger-text">
           {mios.error}
@@ -367,7 +341,7 @@ export function PaginaDetalleProyectoPracticante({
   if (clase === 'ANTERIOR') return <Navigate to={rutaDeProyectoAnterior(idProyecto)} replace />;
   if (clase === 'AJENO' || cabecera === null) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAMisProyectos />
         <p role="alert" className="text-sm text-danger-text">
           No se encontró el proyecto.
@@ -416,13 +390,16 @@ export function PaginaDetalleProyectoPracticante({
   }
 
   return (
-    <article className="space-y-4">
-      <VolverAMisProyectos />
-      <EncabezadoDelProyecto
-        nombre={cabecera.nombre}
-        codigo={cabecera.codigo}
-        estado={cabecera.estado}
-        resumen={vistaResumen}
+    <article className="space-y-3">
+      <CabeceraDeDetalle
+        volver={{ a: RUTA_MIS_PROYECTOS_PRACTICANTE, etiqueta: 'Volver a mis proyectos' }}
+        titulo={cabecera.nombre}
+        insignias={
+          <>
+            <Insignia tipo="proyecto" estado={cabecera.estado} />
+            <span className="text-sm text-text-2">{cabecera.codigo}</span>
+          </>
+        }
       />
 
       <PestanasConContador

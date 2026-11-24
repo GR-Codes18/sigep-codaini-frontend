@@ -53,7 +53,9 @@ export function FormularioNombre({
       className="flex flex-wrap items-end gap-2"
     >
       <div className="min-w-56 flex-1 space-y-1.5">
-        <Label htmlFor={`nombre-${etiqueta}`}>{etiqueta}</Label>
+        <Label htmlFor={`nombre-${etiqueta}`} className="text-xs font-medium text-text-2">
+          {etiqueta}
+        </Label>
         <Input
           id={`nombre-${etiqueta}`}
           value={nombre}

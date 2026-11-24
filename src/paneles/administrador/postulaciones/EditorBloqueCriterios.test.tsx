@@ -58,7 +58,7 @@ describe('EditorBloqueCriterios', () => {
     it('una fila por criterio, también los desactivados, con su nombre, tipo, peso y marcas', () => {
       mostrar();
 
-      expect(screen.getAllByRole('listitem')).toHaveLength(3);
+      expect(screen.getAllByRole('row')).toHaveLength(4); // cabecera + 3 criterios
       expect(screen.getByLabelText('Nombre del criterio 1')).toHaveValue('Nivel académico');
       expect(screen.getByLabelText('Tipo del criterio 1')).toHaveValue('ACADEMICO');
       expect(screen.getByLabelText('Peso del criterio 1')).toHaveValue('30');
@@ -187,10 +187,10 @@ describe('EditorBloqueCriterios', () => {
       mostrar();
 
       await user.click(screen.getByRole('button', { name: 'Agregar criterio' }));
-      expect(screen.getAllByRole('listitem')).toHaveLength(4);
+      expect(screen.getAllByRole('row')).toHaveLength(5);
       await user.click(screen.getByRole('button', { name: 'Quitar' }));
 
-      expect(screen.getAllByRole('listitem')).toHaveLength(3);
+      expect(screen.getAllByRole('row')).toHaveLength(4);
     });
 
     it('agregar un criterio crea una fila vacía, activa y no obligatoria al final', async () => {
@@ -349,9 +349,9 @@ describe('EditorBloqueCriterios', () => {
       await user.click(screen.getByRole('button', { name: 'Guardar criterios' }));
 
       expect(await screen.findByRole('alert')).toBeInTheDocument();
-      const fila2 = screen.getByRole('listitem', { name: 'Criterio 2' });
+      const fila2 = screen.getByRole('row', { name: 'Criterio 2' });
       expect(fila2).toHaveTextContent('Ya hay un criterio con ese nombre en este bloque.');
-      expect(screen.getByRole('listitem', { name: 'Criterio 1' })).not.toHaveTextContent(
+      expect(screen.getByRole('row', { name: 'Criterio 1' })).not.toHaveTextContent(
         'Ya hay un criterio',
       );
       expect(screen.getByLabelText('Nombre del criterio 2')).toHaveAttribute(

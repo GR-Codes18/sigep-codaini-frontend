@@ -56,7 +56,7 @@ describe('AccionesDePostulacion', () => {
         within(grupo)
           .getAllByRole('button')
           .map((b) => b.textContent),
-      ).toEqual(['Aprobar', 'Rechazar']);
+      ).toEqual(['Rechazar', 'Aprobar']);
     });
 
     it('una rechazada: solo Reconsiderar', () => {

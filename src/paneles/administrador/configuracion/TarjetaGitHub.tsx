@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { fechaHoraPeru } from '@/app/adaptadores';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Insignia } from '@/compartido/Insignia';
 import { Button } from '@/compartido/ui/button';
 import { ENTORNO, type Entorno } from '@/services';
@@ -27,41 +29,29 @@ export function TarjetaGitHub({ entorno = ENTORNO }: { entorno?: Entorno } = {})
   );
 
   return (
-    <section
-      aria-labelledby="seccion-integraciones"
-      className="space-y-4 rounded-xl border border-border bg-surface p-4"
+    <PanelDeDatos
+      titulo="Integraciones"
+      acciones={<Insignia tipo="marca" estado="SOLO_PROTOTIPO" />}
     >
       <div className="flex flex-wrap items-center gap-2">
-        <h2 id="seccion-integraciones" className="text-text">
-          Integraciones
-        </h2>
-        <Insignia tipo="marca" estado="SOLO_PROTOTIPO" />
+        <h3 className="text-sm font-semibold text-text">GitHub</h3>
+        <Insignia tipo="integracion" estado={CONEXION_DE_EJEMPLO.estado} />
       </div>
-
-      <div className="space-y-3 rounded-lg border border-border p-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-sm font-semibold text-text">GitHub</h3>
-          <Insignia tipo="integracion" estado={CONEXION_DE_EJEMPLO.estado} />
-        </div>
-        <dl className="grid gap-1 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-text-2">Organización o cuenta conectada</dt>
-            <dd className="text-text">{CONEXION_DE_EJEMPLO.cuenta}</dd>
-          </div>
-          <div>
-            <dt className="text-text-2">Última verificación</dt>
-            <dd className="text-text">{ultimaVerificacion}</dd>
-          </div>
-        </dl>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="outline" onClick={() => toast.info(AVISO_SIMULADO)}>
-            Probar conexión
-          </Button>
-          <Button type="button" variant="outline" onClick={() => toast.info(AVISO_SIMULADO)}>
-            Reconectar
-          </Button>
-        </div>
+      <ListaDeDefiniciones
+        disposicion="filas"
+        items={[
+          { etiqueta: 'Organización o cuenta conectada', valor: CONEXION_DE_EJEMPLO.cuenta },
+          { etiqueta: 'Última verificación', valor: ultimaVerificacion },
+        ]}
+      />
+      <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
+        <Button type="button" variant="outline" onClick={() => toast.info(AVISO_SIMULADO)}>
+          Probar conexión
+        </Button>
+        <Button type="button" variant="outline" onClick={() => toast.info(AVISO_SIMULADO)}>
+          Reconectar
+        </Button>
       </div>
-    </section>
+    </PanelDeDatos>
   );
 }

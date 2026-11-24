@@ -5,11 +5,17 @@ import { useConsulta } from '@/app/useConsulta';
 import { usePestanaInicial } from '@/app/usePestanaInicial';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { Insignia } from '@/compartido/Insignia';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
+import { PieDeTabla } from '@/compartido/PieDeTabla';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
+import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
+import { cn } from '@/compartido/utils';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, listarPostulaciones, type Entorno } from '@/services';
 import { BarraPuntaje } from './BarraPuntaje';
@@ -26,9 +32,6 @@ import {
 } from './filtros';
 import { RUTA_CRITERIOS, rutaDeDetalleDePostulacion } from './rutas';
 
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
-
 /** Mensaje de un listado vacío cuando no hay filtros: cada pestaña dice lo suyo. */
 const VACIO_POR_PESTANA: Record<PestanaPostulaciones, string> = {
   PENDIENTES: 'No hay postulaciones pendientes',
@@ -43,16 +46,22 @@ const COLUMNAS: Columna<FilaPostulacion>[] = [
     clave: 'postulante',
     encabezado: 'Postulante',
     celda: (f) => (
-      <div className="py-1">
-        <p className="font-medium text-text">{f.nombre}</p>
-        <p className="text-xs text-text-2">{f.correo}</p>
+      <div>
+        <p className="leading-tight font-medium text-text">{f.nombre}</p>
+        <p className="text-xs leading-tight text-text-2">{f.correo}</p>
       </div>
     ),
   },
-  { clave: 'area', encabezado: 'Área técnica', celda: (f) => f.area?.nombre ?? '—' },
+  {
+    clave: 'area',
+    encabezado: 'Área técnica',
+    className: 'whitespace-nowrap',
+    celda: (f) => f.area?.nombre ?? '—',
+  },
   {
     clave: 'especialidad',
     encabezado: 'Especialidad',
+    className: 'whitespace-nowrap',
     celda: (f) => f.especialidad?.nombre ?? '—',
   },
   {
@@ -142,9 +151,9 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
     if (datos === null) {
       return (
         <div className="space-y-2" role="status" aria-label="Cargando postulaciones">
-          <Skeleton className="h-11 w-full" />
-          <Skeleton className="h-11 w-full" />
-          <Skeleton className="h-11 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
+          <Skeleton className="h-9 w-full" />
         </div>
       );
     }
@@ -175,16 +184,16 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
   const contadores = datos?.contadores;
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-text">Postulaciones</h1>
-        <Link
-          to={RUTA_CRITERIOS}
-          className="text-sm font-medium text-link underline underline-offset-2"
-        >
-          Criterios de evaluación
-        </Link>
-      </div>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Postulaciones"
+        subtitulo="Revisa la evaluación de la IA y decide qué postulaciones pasan a practicantes."
+        acciones={
+          <Button asChild variant="outline">
+            <Link to={RUTA_CRITERIOS}>Gestionar criterios</Link>
+          </Button>
+        }
+      />
 
       <PestanasConContador
         valor={filtros.pestana}
@@ -201,21 +210,45 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
           { valor: 'RECHAZADAS', etiqueta: 'Rechazadas', contador: contadores?.RECHAZADAS },
           { valor: 'TODAS', etiqueta: 'Todas', contador: contadores?.TODAS },
         ]}
+        acciones={
+          <CampoDeFormulario htmlFor="orden-postulaciones" etiqueta="Ordenar por" enLinea>
+            <select
+              id="orden-postulaciones"
+              value={filtros.orden}
+              onChange={(e) => cambiar({ orden: e.target.value as OrdenPostulaciones })}
+              className={cn(CLASE_CAMPO, 'w-40')}
+            >
+              <option value="PUNTAJE">Mayor puntaje</option>
+              <option value="FECHA">Más recientes</option>
+            </select>
+          </CampoDeFormulario>
+        }
       />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <BarraBusqueda
-          valor={filtros.busqueda}
-          onCambiar={(busqueda) => cambiar({ busqueda })}
-          placeholder="Buscar por nombre o correo"
-        />
-        <div className="w-44 space-y-1">
-          <Label htmlFor="filtro-area">Área técnica</Label>
+      <BarraDeFiltros>
+        <CampoDeFormulario
+          htmlFor="filtro-busqueda"
+          etiqueta="Buscar"
+          className="min-w-48 flex-[2]"
+        >
+          <BarraBusqueda
+            id="filtro-busqueda"
+            valor={filtros.busqueda}
+            onCambiar={(busqueda) => cambiar({ busqueda })}
+            placeholder="Buscar por nombre o correo"
+            className="max-w-none"
+          />
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="filtro-area"
+          etiqueta="Área técnica"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-area"
             value={filtros.idArea}
             onChange={(e) => cambiar({ idArea: e.target.value, idEspecialidad: '' })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todas</option>
             {opcionesDeArea(filas).map((a) => (
@@ -224,14 +257,17 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-44 space-y-1">
-          <Label htmlFor="filtro-especialidad">Especialidad</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="filtro-especialidad"
+          etiqueta="Especialidad"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-especialidad"
             value={filtros.idEspecialidad}
             onChange={(e) => cambiar({ idEspecialidad: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todas</option>
             {opcionesDeEspecialidad(filas, filtros.idArea).map((e) => (
@@ -240,9 +276,8 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-36 space-y-1">
-          <Label htmlFor="filtro-desde">Desde</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario htmlFor="filtro-desde" etiqueta="Desde" className="w-36">
           <Input
             id="filtro-desde"
             type="date"
@@ -250,9 +285,8 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
             max={filtros.hasta || undefined}
             onChange={(e) => cambiar({ desde: e.target.value })}
           />
-        </div>
-        <div className="w-36 space-y-1">
-          <Label htmlFor="filtro-hasta">Hasta</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario htmlFor="filtro-hasta" etiqueta="Hasta" className="w-36">
           <Input
             id="filtro-hasta"
             type="date"
@@ -260,22 +294,17 @@ export function PaginaPostulaciones({ entorno = ENTORNO }: { entorno?: Entorno }
             min={filtros.desde || undefined}
             onChange={(e) => cambiar({ hasta: e.target.value })}
           />
-        </div>
-        <div className="w-40 space-y-1">
-          <Label htmlFor="orden-postulaciones">Ordenar por</Label>
-          <select
-            id="orden-postulaciones"
-            value={filtros.orden}
-            onChange={(e) => cambiar({ orden: e.target.value as OrdenPostulaciones })}
-            className={CLASE_SELECT}
-          >
-            <option value="PUNTAJE">Mayor puntaje</option>
-            <option value="FECHA">Más recientes</option>
-          </select>
-        </div>
-      </div>
+        </CampoDeFormulario>
+      </BarraDeFiltros>
 
       {contenido()}
+
+      {datos !== null && !consulta.error && visibles.length > 0 && (
+        <PieDeTabla>
+          Mostrando {visibles.length} de {datos.contadores.TODAS} postulaciones. Un clic en una fila
+          abre su detalle.
+        </PieDeTabla>
+      )}
     </section>
   );
 }

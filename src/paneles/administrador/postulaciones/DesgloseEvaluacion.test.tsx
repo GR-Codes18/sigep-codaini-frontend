@@ -23,6 +23,31 @@ describe('DesgloseEvaluacion', () => {
     expect(within(especialidad).getByText('React')).toBeInTheDocument();
   });
 
+  it('con los pesos de la nota, cada bloque dice el suyo; sin ellos, no dice nada', () => {
+    const { rerender } = render(
+      <DesgloseEvaluacion
+        puntajeArea={60}
+        puntajeEspecialidad={100}
+        pesos={{ area: 40, especialidad: 60 }}
+        bloques={bloques}
+      />,
+    );
+    const area = screen.getByRole('region', { name: 'Criterios del área' });
+    const especialidad = screen.getByRole('region', { name: 'Criterios de la especialidad' });
+    expect(within(area).getByText(/Peso en la nota: 40 %/)).toBeInTheDocument();
+    expect(within(especialidad).getByText(/Peso en la nota: 60 %/)).toBeInTheDocument();
+
+    rerender(
+      <DesgloseEvaluacion
+        puntajeArea={60}
+        puntajeEspecialidad={100}
+        pesos={null}
+        bloques={bloques}
+      />,
+    );
+    expect(screen.queryByText(/Peso en la nota/)).not.toBeInTheDocument();
+  });
+
   it('cada criterio muestra su peso, si cumple, su puntaje y su observación', () => {
     render(<DesgloseEvaluacion puntajeArea={60} puntajeEspecialidad={100} bloques={bloques} />);
     const area = screen.getByRole('region', { name: 'Criterios del área' });

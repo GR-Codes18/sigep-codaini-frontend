@@ -9,6 +9,7 @@ import {
 } from '@/domain';
 import type { CriterioDeBloque } from '@/app/adaptadores';
 import { Button } from '@/compartido/ui/button';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { Input } from '@/compartido/ui/input';
 import type { Resultado } from '@/services';
 
@@ -76,9 +77,6 @@ const huella = (filas: readonly Fila[]): string =>
       f.activo,
     ]),
   );
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /**
  * El editor de un bloque de criterios (§5.1): crear, editar y activar o desactivar criterios, con «Suma actual: N/100» en
@@ -196,91 +194,117 @@ export function EditorBloqueCriterios({ bloque, criterios, onGuardar }: Props) {
           especialidad.
         </p>
       ) : (
-        <ul className="space-y-3">
-          {filas.map((f, i) => (
-            <li
-              key={f.clave}
-              className="space-y-1 rounded-md border border-border bg-surface p-3"
-              aria-label={`Criterio ${i + 1}`}
-            >
-              <div className="grid items-center gap-2 sm:grid-cols-[minmax(0,1fr)_10rem_5rem_auto_auto_auto]">
-                <Input
-                  aria-label={`Nombre del criterio ${i + 1}`}
-                  value={f.nombre}
-                  placeholder="Nombre del criterio"
-                  disabled={guardando}
-                  aria-invalid={erroresFila[i] ? true : undefined}
-                  onChange={(e) => cambiarFila(f.clave, { nombre: e.target.value })}
-                />
-                <select
-                  aria-label={`Tipo del criterio ${i + 1}`}
-                  value={f.tipo}
-                  disabled={guardando}
-                  className={CLASE_SELECT}
-                  onChange={(e) => cambiarFila(f.clave, { tipo: e.target.value as TipoCriterio })}
-                >
-                  {TIPOS_CRITERIO.map((tipo) => (
-                    <option key={tipo} value={tipo}>
-                      {ETIQUETA_TIPO[tipo]}
-                    </option>
-                  ))}
-                </select>
-                <Input
-                  aria-label={`Peso del criterio ${i + 1}`}
-                  inputMode="numeric"
-                  value={f.peso}
-                  placeholder="Peso"
-                  disabled={guardando}
-                  className="tabular-nums"
-                  aria-invalid={erroresFila[i] ? true : undefined}
-                  onChange={(e) => cambiarFila(f.clave, { peso: e.target.value })}
-                />
-                <label className="flex items-center gap-1.5 text-sm text-text">
-                  <input
-                    type="checkbox"
-                    aria-label={`Criterio ${i + 1} obligatorio`}
-                    checked={f.obligatorio}
-                    disabled={guardando}
-                    onChange={(e) => cambiarFila(f.clave, { obligatorio: e.target.checked })}
-                  />
-                  Obligatorio
-                </label>
-                <label className="flex items-center gap-1.5 text-sm text-text">
-                  <input
-                    type="checkbox"
-                    aria-label={`Criterio ${i + 1} activo`}
-                    checked={f.activo}
-                    disabled={guardando}
-                    onChange={(e) => cambiarFila(f.clave, { activo: e.target.checked })}
-                  />
-                  Activo
-                </label>
-                {f.id === undefined ? (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={guardando}
-                    onClick={() => quitar(f.clave)}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[40rem] border-collapse text-[13px]">
+            <thead className="bg-surface-2">
+              <tr>
+                {['Criterio', 'Tipo', 'Peso', 'Obligatorio', 'Activo'].map((encabezado) => (
+                  <th
+                    key={encabezado}
+                    scope="col"
+                    className="h-9 px-3 text-left text-xs font-semibold text-text-2"
                   >
-                    Quitar
-                  </Button>
-                ) : (
-                  <span aria-hidden="true" />
-                )}
-              </div>
-              {erroresFila[i] && <p className="text-xs text-danger-text">{erroresFila[i]}</p>}
-            </li>
-          ))}
-        </ul>
+                    {encabezado}
+                  </th>
+                ))}
+                <th scope="col" className="h-9 w-0 px-3">
+                  <span className="sr-only">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filas.map((f, i) => (
+                <tr
+                  key={f.clave}
+                  className="border-t border-border align-top"
+                  aria-label={`Criterio ${i + 1}`}
+                >
+                  <td className="px-3 py-2">
+                    <Input
+                      aria-label={`Nombre del criterio ${i + 1}`}
+                      value={f.nombre}
+                      placeholder="Nombre del criterio"
+                      disabled={guardando}
+                      aria-invalid={erroresFila[i] ? true : undefined}
+                      onChange={(e) => cambiarFila(f.clave, { nombre: e.target.value })}
+                    />
+                    {erroresFila[i] && (
+                      <p className="mt-1 text-xs text-danger-text">{erroresFila[i]}</p>
+                    )}
+                  </td>
+                  <td className="w-44 px-3 py-2">
+                    <select
+                      aria-label={`Tipo del criterio ${i + 1}`}
+                      value={f.tipo}
+                      disabled={guardando}
+                      className={CLASE_CAMPO}
+                      onChange={(e) =>
+                        cambiarFila(f.clave, { tipo: e.target.value as TipoCriterio })
+                      }
+                    >
+                      {TIPOS_CRITERIO.map((tipo) => (
+                        <option key={tipo} value={tipo}>
+                          {ETIQUETA_TIPO[tipo]}
+                        </option>
+                      ))}
+                    </select>
+                  </td>
+                  <td className="w-24 px-3 py-2">
+                    <Input
+                      aria-label={`Peso del criterio ${i + 1}`}
+                      inputMode="numeric"
+                      value={f.peso}
+                      placeholder="Peso"
+                      disabled={guardando}
+                      className="tabular-nums"
+                      aria-invalid={erroresFila[i] ? true : undefined}
+                      onChange={(e) => cambiarFila(f.clave, { peso: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`Criterio ${i + 1} obligatorio`}
+                      checked={f.obligatorio}
+                      disabled={guardando}
+                      onChange={(e) => cambiarFila(f.clave, { obligatorio: e.target.checked })}
+                    />
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`Criterio ${i + 1} activo`}
+                      checked={f.activo}
+                      disabled={guardando}
+                      onChange={(e) => cambiarFila(f.clave, { activo: e.target.checked })}
+                    />
+                  </td>
+                  <td className="px-3 py-2">
+                    {f.id === undefined && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={guardando}
+                        onClick={() => quitar(f.clave)}
+                      >
+                        Quitar
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
         <div aria-live="polite" role="status" className="text-sm">
           <p className="font-medium text-text tabular-nums">Suma actual: {suma}/100</p>
-          {!validacion.ok && <p className="text-text-2">{validacion.mensaje}</p>}
+          {!validacion.ok && <p className="text-xs text-text-2">{validacion.mensaje}</p>}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button type="button" variant="outline" disabled={guardando} onClick={agregar}>
             Agregar criterio
           </Button>

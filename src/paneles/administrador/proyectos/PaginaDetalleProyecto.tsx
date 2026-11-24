@@ -1,10 +1,14 @@
 import { useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Link, useParams, useSearchParams } from 'react-router';
 import { aEquipoProyecto, aResumenProyecto, type ResumenParaVista } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo } from '@/compartido/LineaTiempo';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, obtenerEquipoProyecto, obtenerProyecto, type Entorno } from '@/services';
@@ -24,19 +28,11 @@ function VolverAlListado() {
   return (
     <Link
       to={rutaDeProyectos(sesion?.rol)}
-      className="text-sm font-medium text-link underline underline-offset-2"
+      className="inline-flex items-center gap-1 text-sm font-medium text-link hover:underline"
     >
+      <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden="true" />
       Volver a proyectos
     </Link>
-  );
-}
-
-function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-text-2">{etiqueta}</dt>
-      <dd className="text-text">{children}</dd>
-    </div>
   );
 }
 
@@ -51,78 +47,104 @@ function Resumen({
 }) {
   const { proyecto } = resumen;
   return (
-    <div className="space-y-6">
-      <section aria-label="Datos del proyecto" className="space-y-2">
-        <h2 className="text-text">Datos del proyecto</h2>
-        <dl className="grid gap-3 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
-          <Dato etiqueta="Código">{proyecto.codigo}</Dato>
-          <Dato etiqueta="Supervisor">{proyecto.supervisor.nombre}</Dato>
-          <Dato etiqueta="Fecha de inicio">{proyecto.fechaInicioTexto}</Dato>
-          <Dato etiqueta="Fecha de fin prevista">{proyecto.fechaFinPrevistaTexto}</Dato>
-          {proyecto.fechaFinRealTexto !== null && (
-            <Dato etiqueta="Fecha de finalización">{proyecto.fechaFinRealTexto}</Dato>
-          )}
-          <Dato etiqueta="Reunión semanal">
-            {proyecto.reunionTexto}
-            {proyecto.proximaReunionTexto !== 'Sin definir' && (
-              <span className="ml-2 text-text-2">(próxima: {proyecto.proximaReunionTexto})</span>
-            )}
-          </Dato>
-          <Dato etiqueta="Repositorio">
-            <a
-              href={proyecto.repositorioUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium text-link underline underline-offset-2"
-            >
-              {proyecto.repositorioUrl}
-            </a>
-          </Dato>
-          <Dato etiqueta="Rama base">{proyecto.ramaBase}</Dato>
-          <div className="sm:col-span-2">
-            <dt className="text-text-2">Descripción</dt>
-            <dd className="text-text">{proyecto.descripcion}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section aria-label="Avance" className="space-y-2">
-        <h2 className="text-text">Avance</h2>
-        <div className="space-y-3 rounded-xl border border-border bg-surface p-4 text-sm">
-          <p className="text-text">
-            {resumen.avance === null
-              ? 'Aún no hay tareas.'
-              : `Tareas terminadas: ${resumen.avance.texto}`}
-          </p>
-          <ul className="flex flex-wrap gap-4" aria-label="Tareas por estado">
-            {resumen.tareasPorEstado.map(({ estado, cantidad }) => (
-              <li key={estado} className="flex items-center gap-2">
-                <Insignia tipo="tarea" estado={estado} />
-                <span className="text-text tabular-nums">{cantidad}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="text-text-2">
-            Tareas vencidas:{' '}
-            <span className={resumen.tareasVencidas > 0 ? 'text-danger-text' : undefined}>
-              {resumen.tareasVencidas}
-            </span>
-          </p>
+    <div className="space-y-3">
+      <PanelDeDatos titulo="Datos del proyecto">
+        <ListaDeDefiniciones
+          items={[
+            { etiqueta: 'Código', valor: proyecto.codigo },
+            { etiqueta: 'Supervisor', valor: proyecto.supervisor.nombre },
+            {
+              etiqueta: 'Reunión semanal',
+              valor: (
+                <>
+                  {proyecto.reunionTexto}
+                  {proyecto.proximaReunionTexto !== 'Sin definir' && (
+                    <span className="ml-2 text-text-2">
+                      (próxima: {proyecto.proximaReunionTexto})
+                    </span>
+                  )}
+                </>
+              ),
+            },
+            { etiqueta: 'Fecha de inicio', valor: proyecto.fechaInicioTexto },
+            { etiqueta: 'Fecha de fin prevista', valor: proyecto.fechaFinPrevistaTexto },
+            ...(proyecto.fechaFinRealTexto !== null
+              ? [{ etiqueta: 'Fecha de finalización', valor: proyecto.fechaFinRealTexto }]
+              : []),
+            { etiqueta: 'Rama base', valor: proyecto.ramaBase },
+            {
+              etiqueta: 'Repositorio',
+              valor: (
+                <a
+                  href={proyecto.repositorioUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-medium text-link underline underline-offset-2"
+                >
+                  {proyecto.repositorioUrl}
+                </a>
+              ),
+            },
+          ]}
+        />
+        <div className="border-t border-border pt-3">
+          <p className="text-xs text-text-2">Descripción</p>
+          <p className="text-sm text-text">{proyecto.descripcion}</p>
         </div>
-      </section>
+      </PanelDeDatos>
 
-      <SeccionEnlaces
-        idActor={idActor}
-        idProyecto={proyecto.id}
-        enlaces={resumen.enlaces}
-        puedeGestionar={resumen.acciones.includes('GESTIONAR_ENLACES')}
-        entorno={entorno}
-      />
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-5">
+        <div className="space-y-3 lg:col-span-2">
+          <PanelDeDatos titulo="Avance">
+            <p className="text-sm text-text">
+              {resumen.avance === null
+                ? 'Aún no hay tareas.'
+                : `Tareas terminadas: ${resumen.avance.texto}`}
+            </p>
+            {resumen.avance !== null && (
+              <div
+                role="progressbar"
+                aria-label="Avance del proyecto"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={resumen.avance.porcentaje}
+                className="h-2 overflow-hidden rounded-full bg-surface-2"
+              >
+                <div
+                  className="h-full rounded-full bg-primary"
+                  style={{ width: `${Math.min(100, Math.max(0, resumen.avance.porcentaje))}%` }}
+                />
+              </div>
+            )}
+            <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm" aria-label="Tareas por estado">
+              {resumen.tareasPorEstado.map(({ estado, cantidad }) => (
+                <li key={estado} className="flex items-center gap-2">
+                  <Insignia tipo="tarea" estado={estado} />
+                  <span className="text-text tabular-nums">{cantidad}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="border-t border-border pt-3 text-sm text-text-2">
+              Tareas vencidas:{' '}
+              <span className={resumen.tareasVencidas > 0 ? 'text-danger-text' : undefined}>
+                {resumen.tareasVencidas}
+              </span>
+            </p>
+          </PanelDeDatos>
 
-      <section aria-label="Actividad reciente" className="space-y-3">
-        <h2 className="text-text">Actividad reciente</h2>
-        <LineaTiempo eventos={resumen.actividadReciente} />
-      </section>
+          <SeccionEnlaces
+            idActor={idActor}
+            idProyecto={proyecto.id}
+            enlaces={resumen.enlaces}
+            puedeGestionar={resumen.acciones.includes('GESTIONAR_ENLACES')}
+            entorno={entorno}
+          />
+        </div>
+
+        <PanelDeDatos titulo="Actividad reciente" className="lg:col-span-3">
+          <LineaTiempo eventos={resumen.actividadReciente} />
+        </PanelDeDatos>
+      </div>
     </div>
   );
 }
@@ -167,7 +189,7 @@ export function PaginaDetalleProyecto({ entorno = ENTORNO }: { entorno?: Entorno
 
   if (resumen.error) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAlListado />
         <p role="alert" className="text-sm text-danger-text">
           {resumen.error}
@@ -223,23 +245,27 @@ export function PaginaDetalleProyecto({ entorno = ENTORNO }: { entorno?: Entorno
   }
 
   return (
-    <article className="space-y-6">
-      <header className="space-y-2">
-        <VolverAlListado />
-        <h1 className="text-text">{vista.proyecto.nombre}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Insignia tipo="proyecto" estado={vista.proyecto.estado} />
-          <span className="text-sm text-text-2">{vista.proyecto.codigo}</span>
-        </div>
-        <AccionesDeProyecto
-          idActor={idUsuario}
-          proyecto={vista.proyecto}
-          acciones={vista.acciones}
-          cicloDeVida={vista.cicloDeVida}
-          supervisoresDestino={vista.supervisoresDestino}
-          entorno={entorno}
-        />
-      </header>
+    <article className="space-y-3">
+      <CabeceraDeDetalle
+        volver={{ a: rutaDeProyectos(sesion?.rol), etiqueta: 'Volver a proyectos' }}
+        titulo={vista.proyecto.nombre}
+        insignias={
+          <>
+            <Insignia tipo="proyecto" estado={vista.proyecto.estado} />
+            <span className="text-sm text-text-2">{vista.proyecto.codigo}</span>
+          </>
+        }
+        acciones={
+          <AccionesDeProyecto
+            idActor={idUsuario}
+            proyecto={vista.proyecto}
+            acciones={vista.acciones}
+            cicloDeVida={vista.cicloDeVida}
+            supervisoresDestino={vista.supervisoresDestino}
+            entorno={entorno}
+          />
+        }
+      />
 
       <PestanasConContador
         valor={pestana}

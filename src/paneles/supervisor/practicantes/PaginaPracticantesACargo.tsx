@@ -1,3 +1,8 @@
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
+import { PieDeTabla } from '@/compartido/PieDeTabla';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { aPracticantesACargo, type FilaPracticanteACargo } from '@/app/adaptadores';
@@ -6,7 +11,6 @@ import { useSesionActiva } from '@/auth/useSesionActiva';
 import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
-import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, listarPracticantesACargo, type Entorno } from '@/services';
 import {
@@ -18,9 +22,6 @@ import {
   type PestanaACargo,
 } from './filtros';
 import { rutaDeDetalleDePracticanteACargo } from './rutas';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 const VACIO_POR_PESTANA: Record<PestanaACargo, string> = {
   ACTIVOS: 'No tienes practicantes activos',
@@ -165,8 +166,11 @@ export function PaginaPracticantesACargo({ entorno = ENTORNO }: { entorno?: Ento
 
   const contadores = datos?.contadores;
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Practicantes a cargo</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Practicantes a cargo"
+        subtitulo="Practicantes de tus proyectos, activos y anteriores."
+      />
 
       <PestanasConContador
         valor={filtros.pestana}
@@ -177,19 +181,30 @@ export function PaginaPracticantesACargo({ entorno = ENTORNO }: { entorno?: Ento
         ]}
       />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <BarraBusqueda
-          valor={filtros.busqueda}
-          onCambiar={(busqueda) => cambiar({ busqueda })}
-          placeholder="Buscar por nombre o correo"
-        />
-        <div className="w-52 space-y-1">
-          <Label htmlFor="filtro-proyecto-a-cargo">Proyecto</Label>
+      <BarraDeFiltros>
+        <CampoDeFormulario
+          htmlFor="filtro-busqueda"
+          etiqueta="Buscar"
+          className="min-w-48 flex-[2]"
+        >
+          <BarraBusqueda
+            id="filtro-busqueda"
+            className="max-w-none"
+            valor={filtros.busqueda}
+            onCambiar={(busqueda) => cambiar({ busqueda })}
+            placeholder="Buscar por nombre o correo"
+          />
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="filtro-proyecto-a-cargo"
+          etiqueta="Proyecto"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-proyecto-a-cargo"
             value={filtros.idProyecto}
             onChange={(e) => cambiar({ idProyecto: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos</option>
             {opcionesDeProyecto(datos?.filas ?? []).map((p) => (
@@ -198,10 +213,16 @@ export function PaginaPracticantesACargo({ entorno = ENTORNO }: { entorno?: Ento
               </option>
             ))}
           </select>
-        </div>
-      </div>
+        </CampoDeFormulario>
+      </BarraDeFiltros>
 
       {contenido()}
+
+      {datos !== null && !consulta.error && visibles.length > 0 && (
+        <PieDeTabla>
+          Mostrando {visibles.length} practicantes a cargo. Un clic en una fila abre su detalle.
+        </PieDeTabla>
+      )}
     </section>
   );
 }

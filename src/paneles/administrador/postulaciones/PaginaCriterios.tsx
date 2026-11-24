@@ -1,8 +1,8 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Link } from 'react-router';
 import { aCatalogo } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
 import { Button } from '@/compartido/ui/button';
 import { Skeleton } from '@/compartido/ui/skeleton';
@@ -88,7 +88,7 @@ export function PaginaCriterios({ entorno = ENTORNO }: { entorno?: Entorno } = {
       );
     }
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         {catalogo.areas.map((area) => (
           <SeccionDeArea key={area.id} area={area} acciones={acciones} />
         ))}
@@ -97,33 +97,27 @@ export function PaginaCriterios({ entorno = ENTORNO }: { entorno?: Entorno } = {
   }
 
   return (
-    <section className="space-y-4">
-      <div className="space-y-2">
-        <Link
-          to={RUTA_POSTULACIONES}
-          className="text-sm font-medium text-link underline underline-offset-2"
-        >
-          Volver a postulaciones
-        </Link>
-        <h1 className="text-text">Criterios de evaluación</h1>
-        <p className="max-w-3xl text-sm text-text-2">
-          Cada área y cada especialidad se evalúa con sus propios criterios, y los pesos de los
-          criterios activos de cada bloque deben sumar 100. Los criterios no se borran: se
-          desactivan. Cambiarlos no recalcula las evaluaciones anteriores.
-        </p>
-      </div>
+    <section className="space-y-3">
+      <CabeceraDeDetalle
+        volver={{ a: RUTA_POSTULACIONES, etiqueta: 'Volver a postulaciones' }}
+        titulo="Criterios de evaluación"
+        metadatos="Cada área y cada especialidad se evalúa con sus propios criterios, y los pesos de los criterios activos de cada bloque deben sumar 100. Los criterios no se borran: se desactivan. Cambiarlos no recalcula las evaluaciones anteriores."
+        acciones={
+          creandoArea ? undefined : (
+            <Button type="button" variant="outline" onClick={() => setCreandoArea(true)}>
+              Nueva área técnica
+            </Button>
+          )
+        }
+      />
 
-      {creandoArea ? (
+      {creandoArea && (
         <FormularioNombre
           etiqueta="Nombre de la nueva área técnica"
           etiquetaGuardar="Crear área"
           onGuardar={(nombre) => crearAreaTecnica({ idActor: idUsuario, nombre }, entorno)}
           onCancelar={() => setCreandoArea(false)}
         />
-      ) : (
-        <Button type="button" variant="outline" onClick={() => setCreandoArea(true)}>
-          Nueva área técnica
-        </Button>
       )}
 
       {contenido()}

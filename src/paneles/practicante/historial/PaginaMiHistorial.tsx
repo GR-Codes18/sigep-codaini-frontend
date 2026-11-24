@@ -1,3 +1,8 @@
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { PieDeTabla } from '@/compartido/PieDeTabla';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import {
@@ -12,16 +17,11 @@ import { BarraBusqueda } from '@/compartido/BarraBusqueda';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
 import { Insignia } from '@/compartido/Insignia';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
-import { TarjetaDeDatos } from '@/compartido/TarjetaDeDatos';
 import { Button } from '@/compartido/ui/button';
-import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { rutaDeDetalleDeTarea } from '@/paneles/administrador/proyectos/rutas';
 import { ENTORNO, listarMiHistorial, type Entorno } from '@/services';
 import { PARAMETRO_PROYECTO } from './rutas';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 const rutaDeLaTarea = (f: FilaMiHistorial) =>
   rutaDeDetalleDeTarea(f.proyecto.id, f.id, 'PRACTICANTE');
@@ -195,54 +195,65 @@ export function PaginaMiHistorial({ entorno = ENTORNO }: { entorno?: Entorno } =
         : `${total} ${total === 1 ? 'tarea terminada' : 'tareas terminadas'}`;
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Mi historial</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Mi historial"
+        subtitulo="Las tareas que has terminado, con su proyecto y su fecha."
+      />
 
       {datos !== null && datos.filas.length > 0 && (
-        <TarjetaDeDatos
-          titulo="Filtros"
-          accion={<span className="text-xs text-text-2 tabular-nums">{conteo}</span>}
-        >
-          <div className="flex flex-wrap items-end gap-3">
+        <BarraDeFiltros>
+          <CampoDeFormulario
+            htmlFor="filtro-busqueda"
+            etiqueta="Buscar"
+            className="min-w-48 flex-[2]"
+          >
             <BarraBusqueda
+              id="filtro-busqueda"
+              className="max-w-none"
               valor={busqueda}
               onCambiar={setBusqueda}
               placeholder="Buscar por título o ID"
             />
-            <div className="w-full space-y-1 sm:w-56">
-              <Label htmlFor="filtro-proyecto">Proyecto</Label>
-              <select
-                id="filtro-proyecto"
-                value={idProyecto ?? ''}
-                onChange={(e) => elegirProyecto(e.target.value)}
-                className={CLASE_SELECT}
+          </CampoDeFormulario>
+          <CampoDeFormulario
+            htmlFor="filtro-proyecto"
+            etiqueta="Proyecto"
+            className="w-full sm:w-56"
+          >
+            <select
+              id="filtro-proyecto"
+              value={idProyecto ?? ''}
+              onChange={(e) => elegirProyecto(e.target.value)}
+              className={CLASE_CAMPO}
+            >
+              <option value="">Todos</option>
+              {datos.proyectos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </CampoDeFormulario>
+          {proyectoFiltrado !== null && (
+            <span className="inline-flex h-8 items-center gap-1 rounded-md bg-surface-2 pr-1 pl-2.5 text-xs text-text">
+              Proyecto: {proyectoFiltrado.codigo}
+              <button
+                type="button"
+                onClick={() => elegirProyecto('')}
+                aria-label={`Quitar el filtro de proyecto ${proyectoFiltrado.codigo}`}
+                className="rounded px-1.5 py-0.5 text-text-2 hover:text-text focus-visible:ring-2 focus-visible:ring-focus"
               >
-                <option value="">Todos</option>
-                {datos.proyectos.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nombre}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {proyectoFiltrado !== null && (
-              <span className="inline-flex h-8 items-center gap-1 rounded-md bg-surface-2 pr-1 pl-2.5 text-xs text-text">
-                Proyecto: {proyectoFiltrado.codigo}
-                <button
-                  type="button"
-                  onClick={() => elegirProyecto('')}
-                  aria-label={`Quitar el filtro de proyecto ${proyectoFiltrado.codigo}`}
-                  className="rounded px-1.5 py-0.5 text-text-2 hover:text-text focus-visible:ring-2 focus-visible:ring-focus"
-                >
-                  ✕
-                </button>
-              </span>
-            )}
-          </div>
-        </TarjetaDeDatos>
+                ✕
+              </button>
+            </span>
+          )}
+        </BarraDeFiltros>
       )}
 
       {contenido()}
+
+      {datos !== null && datos.filas.length > 0 && <PieDeTabla>{conteo}</PieDeTabla>}
     </section>
   );
 }

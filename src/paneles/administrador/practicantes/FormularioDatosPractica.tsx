@@ -1,3 +1,5 @@
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -13,7 +15,6 @@ import {
   DialogTitle,
 } from '@/compartido/ui/dialog';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
 import { fechaFinPrevista, type Fecha, type Id } from '@/domain';
 import {
   editarDatosPractica,
@@ -36,9 +37,6 @@ interface Props {
   onCerrar: () => void;
   entorno?: Entorno;
 }
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 /** Forma del formulario; que las fechas existan en el calendario y el orden de ambas lo comprueba el servicio. */
@@ -177,14 +175,13 @@ export function FormularioDatosPractica({
           aria-label="Datos de la práctica"
           className="space-y-3"
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="practica-especialidad">Especialidad</Label>
+          <CampoDeFormulario htmlFor="practica-especialidad" etiqueta="Especialidad">
             <select
               id="practica-especialidad"
               value={idEspecialidad}
               disabled={guardando}
               aria-invalid={errores.idEspecialidad ? true : undefined}
-              className={CLASE_SELECT}
+              className={CLASE_CAMPO}
               onChange={(e) => setIdEspecialidad(e.target.value)}
             >
               {idEspecialidad === '' && <option value="">Elige una especialidad</option>}
@@ -202,10 +199,9 @@ export function FormularioDatosPractica({
               <p className="text-xs text-danger-text">{errores.idEspecialidad}</p>
             )}
             <p className="text-xs text-text-2">El área técnica sigue a la especialidad elegida.</p>
-          </div>
+          </CampoDeFormulario>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="practica-ingreso">Fecha de ingreso</Label>
+          <CampoDeFormulario htmlFor="practica-ingreso" etiqueta="Fecha de ingreso">
             <Input
               id="practica-ingreso"
               type="date"
@@ -217,10 +213,9 @@ export function FormularioDatosPractica({
             {errores.fechaIngreso && (
               <p className="text-xs text-danger-text">{errores.fechaIngreso}</p>
             )}
-          </div>
+          </CampoDeFormulario>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="practica-fin">Fecha de fin prevista</Label>
+          <CampoDeFormulario htmlFor="practica-fin" etiqueta="Fecha de fin prevista">
             <Input
               id="practica-fin"
               type="date"
@@ -239,7 +234,7 @@ export function FormularioDatosPractica({
                 cambiarla.
               </p>
             )}
-          </div>
+          </CampoDeFormulario>
 
           {errorGeneral && (
             <p role="alert" className="text-sm text-danger-text">

@@ -96,6 +96,11 @@ export interface EvaluacionParaVista {
   requiereRevision: boolean;
   fechaTexto: string;
   bloques: { AREA: CriterioParaVista[]; ESPECIALIDAD: CriterioParaVista[] };
+  /**
+   * El peso de cada bloque en la nota (en %) y la fórmula con números, solo si la proporción vigente reproduce la nota
+   * guardada. Si Configuración cambió después de evaluar, es `null`: no se afirma una fórmula que no cuadra.
+   */
+  pesos: { area: number; especialidad: number; formula: string } | null;
 }
 
 export interface DetalleParaVista {
@@ -106,6 +111,8 @@ export interface DetalleParaVista {
   /** «Sin área» / «Sin especialidad» si el catálogo ya no las tiene. */
   area: string;
   especialidad: string;
+  /** El instante de la postulación, ya como `Date`, para decir «hace N días». */
+  fecha: Date;
   fechaTexto: string;
   estado: EstadoPostulacion;
   cv: { nombre: string };
@@ -116,6 +123,28 @@ export interface DetalleParaVista {
   practicante: { id: string; nombre: string } | null;
   /** Lo que se puede decidir ahora; lo decide `domain/` y llega con la consulta. */
   decisiones: AccionDecisionPostulacion[];
+}
+
+/** «0,4» para 40: coma decimal, como se lee en español. */
+function comoFraccion(porcentaje: number): string {
+  return String(porcentaje / 100).replace('.', ',');
+}
+
+/** Los pesos del detalle, si con ellos sale la nota guardada (redondeo con las mitades hacia arriba, como `domain/`). */
+function pesosQueCuadran(
+  evaluacion: NonNullable<PostulacionDetalle['evaluacion']>,
+): EvaluacionParaVista['pesos'] {
+  const { proporcion: p } = evaluacion;
+  if (p === null) return null;
+  const nota = Math.round(
+    (p.area * evaluacion.puntaje_area + p.especialidad * evaluacion.puntaje_especialidad) / 100,
+  );
+  if (nota !== evaluacion.puntaje_total) return null;
+  return {
+    area: p.area,
+    especialidad: p.especialidad,
+    formula: `Nota final = ${comoFraccion(p.area)} × ${evaluacion.puntaje_area} + ${comoFraccion(p.especialidad)} × ${evaluacion.puntaje_especialidad} = ${evaluacion.puntaje_total}`,
+  };
 }
 
 /** El detalle de `obtenerPostulacion` al modelo de presentación (fechas con `parseISO`, sin reglas). */
@@ -139,6 +168,7 @@ export function aDetallePostulacion(detalle: PostulacionDetalle): DetalleParaVis
     celular: postulante.celular,
     area: postulante.area?.nombre ?? 'Sin área',
     especialidad: postulante.especialidad?.nombre ?? 'Sin especialidad',
+    fecha: parseISO(postulante.fecha_postulacion),
     fechaTexto: fechaHoraVisible(postulante.fecha_postulacion),
     estado: detalle.estado,
     cv: { nombre: postulante.cv.nombre },
@@ -152,6 +182,7 @@ export function aDetallePostulacion(detalle: PostulacionDetalle): DetalleParaVis
             justificacion: evaluacion.justificacion,
             requiereRevision: evaluacion.requiere_revision_manual,
             fechaTexto: fechaHoraVisible(evaluacion.fecha_evaluacion),
+            pesos: pesosQueCuadran(evaluacion),
             bloques: {
               AREA: criterios(evaluacion, 'AREA'),
               ESPECIALIDAD: criterios(evaluacion, 'ESPECIALIDAD'),

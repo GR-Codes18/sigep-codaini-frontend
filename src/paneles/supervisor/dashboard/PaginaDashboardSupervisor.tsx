@@ -17,6 +17,7 @@ import {
 } from '@/app/insights/AccionesDeInsight';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { rutaDeReportes } from '@/paneles/administrador/reportes/rutas';
@@ -50,8 +51,8 @@ export function PaginaDashboardSupervisor({ entorno = ENTORNO }: { entorno?: Ent
 
   if (consulta.error) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Dashboard</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Dashboard" />
         <p role="alert" className="text-sm text-danger-text">
           {consulta.error}
         </p>
@@ -60,8 +61,8 @@ export function PaginaDashboardSupervisor({ entorno = ENTORNO }: { entorno?: Ent
   }
   if (datos === null) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Dashboard</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Dashboard" />
         <div className="space-y-2" role="status" aria-label="Cargando el dashboard">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
@@ -71,8 +72,8 @@ export function PaginaDashboardSupervisor({ entorno = ENTORNO }: { entorno?: Ent
   }
   if (datos.vacio) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Dashboard</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Dashboard" />
         <EstadoVacio titulo="El Administrador aún no te ha asignado proyectos" />
       </section>
     );
@@ -80,8 +81,11 @@ export function PaginaDashboardSupervisor({ entorno = ENTORNO }: { entorno?: Ent
 
   const t = datos.tarjetas;
   return (
-    <section className="space-y-5">
-      <h1 className="text-text">Dashboard</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Dashboard"
+        subtitulo="Tu cola de revisión, las alertas de tus proyectos y sus reuniones."
+      />
 
       {/* 4 en pantalla ancha, 2 en tablet y 1 en móvil; compactas, con la misma altura con o sin ámbar o rojo. */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -137,7 +141,7 @@ export function PaginaDashboardSupervisor({ entorno = ENTORNO }: { entorno?: Ent
       />
 
       {/* Dos columnas del mismo ancho: las alertas a la izquierda y, a la derecha, reuniones y avance. */}
-      <div className="grid items-start gap-5 xl:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-2">
         <Seccion
           titulo="Alertas"
           accion={
@@ -152,7 +156,7 @@ export function PaginaDashboardSupervisor({ entorno = ENTORNO }: { entorno?: Ent
           {datos.alertas.length === 0 ? (
             <Vacio compacta titulo="No hay alertas en tus proyectos" />
           ) : (
-            <div className="space-y-2">
+            <div className="divide-y divide-border">
               {datos.alertas.map((i) => (
                 <TarjetaDeInsight key={i.clave} insight={i} onAccion={setAccion} compacta />
               ))}
@@ -160,7 +164,7 @@ export function PaginaDashboardSupervisor({ entorno = ENTORNO }: { entorno?: Ent
           )}
         </Seccion>
 
-        <div className="space-y-5">
+        <div className="space-y-3">
           <Reuniones compacta filas={datos.reuniones} />
           <Avance compacta titulo="Avance de mis proyectos" filas={datos.avances} />
         </div>

@@ -1,8 +1,9 @@
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { useState } from 'react';
 import { z } from 'zod';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
 import { Textarea } from '@/compartido/ui/textarea';
 import type { Tarea } from '@/domain';
 import { crearTarea, editarTarea, type Entorno, type Fallo, type Resultado } from '@/services';
@@ -151,14 +152,13 @@ export function FormularioTarea({
 
   return (
     <form onSubmit={enviar} noValidate className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="tarea-proyecto">Proyecto</Label>
+      <CampoDeFormulario htmlFor="tarea-proyecto" etiqueta="Proyecto">
         <select
           id="tarea-proyecto"
           value={datos.idProyecto}
           onChange={(e) => cambiar('idProyecto', e.target.value)}
           disabled={guardando || modo === 'editar'}
-          className="h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text disabled:opacity-50"
+          className={CLASE_CAMPO}
         >
           <option value="">Elige un proyecto</option>
           {proyectos.map((p) => (
@@ -168,10 +168,9 @@ export function FormularioTarea({
           ))}
         </select>
         {errores.idProyecto && <p className="text-xs text-danger-text">{errores.idProyecto}</p>}
-      </div>
+      </CampoDeFormulario>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="tarea-titulo">Título</Label>
+      <CampoDeFormulario htmlFor="tarea-titulo" etiqueta="Título">
         <Input
           id="tarea-titulo"
           value={datos.titulo}
@@ -180,10 +179,9 @@ export function FormularioTarea({
           aria-invalid={errores.titulo ? true : undefined}
         />
         {errores.titulo && <p className="text-xs text-danger-text">{errores.titulo}</p>}
-      </div>
+      </CampoDeFormulario>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="tarea-descripcion">Descripción</Label>
+      <CampoDeFormulario htmlFor="tarea-descripcion" etiqueta="Descripción">
         <Textarea
           id="tarea-descripcion"
           rows={4}
@@ -193,10 +191,9 @@ export function FormularioTarea({
           aria-invalid={errores.descripcion ? true : undefined}
         />
         {errores.descripcion && <p className="text-xs text-danger-text">{errores.descripcion}</p>}
-      </div>
+      </CampoDeFormulario>
 
-      <div className="space-y-1.5">
-        <Label htmlFor="tarea-fecha">Fecha límite</Label>
+      <CampoDeFormulario htmlFor="tarea-fecha" etiqueta="Fecha límite">
         <Input
           id="tarea-fecha"
           type="date"
@@ -206,7 +203,7 @@ export function FormularioTarea({
           aria-invalid={errores.fechaLimite ? true : undefined}
         />
         {errores.fechaLimite && <p className="text-xs text-danger-text">{errores.fechaLimite}</p>}
-      </div>
+      </CampoDeFormulario>
 
       {modo === 'crear' && (
         <div className="space-y-2">

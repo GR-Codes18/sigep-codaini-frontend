@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
 import { INICIO_POR_ROL } from '@/auth/rutasPorRol';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Insignia } from '@/compartido/Insignia';
 import { ModalConfirmacion } from '@/compartido/ModalConfirmacion';
 import { Button } from '@/compartido/ui/button';
@@ -19,23 +20,19 @@ export function RestablecerDatos({ idActor, entorno }: { idActor: Id; entorno: E
   const navegar = useNavigate();
 
   return (
-    <section
-      aria-labelledby="seccion-demostracion"
-      className="space-y-3 rounded-xl border border-border bg-surface p-4"
+    <PanelDeDatos
+      titulo="Datos de demostración"
+      acciones={<Insignia tipo="marca" estado="SOLO_PROTOTIPO" />}
     >
-      <div className="flex flex-wrap items-center gap-2">
-        <h2 id="seccion-demostracion" className="text-text">
-          Datos de demostración
-        </h2>
-        <Insignia tipo="marca" estado="SOLO_PROTOTIPO" />
-      </div>
       <p className="text-sm text-text-2">
         Restablece los datos de ejemplo a su estado original. Se pierde todo lo hecho desde
         entonces.
       </p>
-      <Button type="button" variant="destructive" onClick={() => setConfirmando(true)}>
-        Restablecer datos
-      </Button>
+      <div className="flex justify-end border-t border-border pt-3">
+        <Button type="button" variant="destructive" onClick={() => setConfirmando(true)}>
+          Restablecer datos
+        </Button>
+      </div>
 
       {confirmando && (
         <ModalConfirmacion
@@ -60,6 +57,6 @@ export function RestablecerDatos({ idActor, entorno }: { idActor: Id; entorno: E
           }}
         />
       )}
-    </section>
+    </PanelDeDatos>
   );
 }

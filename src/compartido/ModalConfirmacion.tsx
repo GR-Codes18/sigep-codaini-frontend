@@ -71,7 +71,7 @@ function Contenido({
 
       {pedirMotivo && (
         <div className="space-y-1.5">
-          <Label htmlFor="motivo-confirmacion">
+          <Label htmlFor="motivo-confirmacion" className="text-xs font-medium text-text-2">
             {pedirMotivo.etiqueta}
             {pedirMotivo.obligatorio ? '' : ' (opcional)'}
           </Label>

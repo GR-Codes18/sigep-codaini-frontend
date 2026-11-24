@@ -4,6 +4,7 @@ import { Reuniones, Tarjeta } from '@/app/dashboard/BloquesDeDashboard';
 import { MisTareasEnCurso, PullRequestsPorAtender } from '@/app/dashboard/BloquesDelPracticante';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, obtenerInicioPracticante, type Entorno } from '@/services';
@@ -35,8 +36,8 @@ export function PaginaInicioPracticante({ entorno = ENTORNO }: { entorno?: Entor
 
   if (consulta.error) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Inicio</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Inicio" />
         <p role="alert" className="text-sm text-danger-text">
           {consulta.error}
         </p>
@@ -45,8 +46,8 @@ export function PaginaInicioPracticante({ entorno = ENTORNO }: { entorno?: Entor
   }
   if (datos === null) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Inicio</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Inicio" />
         <div className="space-y-2" role="status" aria-label="Cargando el inicio">
           <Skeleton className="h-16 w-full" />
           <Skeleton className="h-16 w-full" />
@@ -56,8 +57,8 @@ export function PaginaInicioPracticante({ entorno = ENTORNO }: { entorno?: Entor
   }
   if (datos.vacio) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Inicio</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Inicio" />
         <EstadoVacio
           titulo="Aún no tienes proyectos asignados"
           descripcion="El Administrador te asignará uno."
@@ -68,8 +69,11 @@ export function PaginaInicioPracticante({ entorno = ENTORNO }: { entorno?: Entor
 
   const t = datos.tarjetas;
   return (
-    <section className="space-y-5">
-      <h1 className="text-text">Inicio</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Inicio"
+        subtitulo="Tus tareas en curso, los Pull Requests por atender y las próximas reuniones."
+      />
 
       {/* 4 en pantalla ancha, 2 en tablet y 1 en móvil; compactas, con la misma altura con o sin rojo. */}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -111,7 +115,7 @@ export function PaginaInicioPracticante({ entorno = ENTORNO }: { entorno?: Entor
       />
 
       {/* Cada bloque con la altura de su contenido; una columna en móvil. */}
-      <div className="grid items-start gap-5 lg:grid-cols-2">
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
         <PullRequestsPorAtender filas={datos.pullRequests} />
         <Reuniones compacta filas={datos.reuniones} />
       </div>

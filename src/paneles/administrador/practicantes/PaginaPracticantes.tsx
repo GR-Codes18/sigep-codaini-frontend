@@ -1,3 +1,8 @@
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
+import { PieDeTabla } from '@/compartido/PieDeTabla';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { aPracticantes, type FilaPracticante } from '@/app/adaptadores';
@@ -9,7 +14,6 @@ import { Insignia } from '@/compartido/Insignia';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
 import { Button } from '@/compartido/ui/button';
-import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, listarPracticantes, type Entorno } from '@/services';
 import {
@@ -24,9 +28,6 @@ import {
 } from './filtros';
 import { AsignarAProyecto } from './AsignarAProyecto';
 import { rutaDeDetalleDePracticante } from './rutas';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /** Mensaje de un listado vacío cuando no hay filtros: cada pestaña dice lo suyo. */
 const VACIO_POR_PESTANA: Record<PestanaPracticantes, string> = {
@@ -92,7 +93,7 @@ const COLUMNAS: Columna<FilaPracticante>[] = [
     encabezado: 'Estado',
     className: 'whitespace-nowrap',
     celda: (f) => (
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex items-center gap-1">
         <Insignia tipo="practicante" estado={f.estado} />
         {f.sinProyecto && <Insignia tipo="practicante" estado="SIN_PROYECTO" />}
       </div>
@@ -226,8 +227,11 @@ export function PaginaPracticantes({ entorno = ENTORNO }: { entorno?: Entorno } 
   const contadores = datos?.contadores;
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Practicantes</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Practicantes"
+        subtitulo="Cuentas de practicantes, su proyecto actual y el avance de su práctica."
+      />
 
       <PestanasConContador
         valor={filtros.pestana}
@@ -240,19 +244,30 @@ export function PaginaPracticantes({ entorno = ENTORNO }: { entorno?: Entorno } 
         ]}
       />
 
-      <div className="flex flex-wrap items-end gap-3">
-        <BarraBusqueda
-          valor={filtros.busqueda}
-          onCambiar={(busqueda) => cambiar({ busqueda })}
-          placeholder="Buscar por nombre o correo"
-        />
-        <div className="w-44 space-y-1">
-          <Label htmlFor="filtro-area">Área técnica</Label>
+      <BarraDeFiltros>
+        <CampoDeFormulario
+          htmlFor="filtro-busqueda"
+          etiqueta="Buscar"
+          className="min-w-48 flex-[2]"
+        >
+          <BarraBusqueda
+            id="filtro-busqueda"
+            className="max-w-none"
+            valor={filtros.busqueda}
+            onCambiar={(busqueda) => cambiar({ busqueda })}
+            placeholder="Buscar por nombre o correo"
+          />
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="filtro-area"
+          etiqueta="Área técnica"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-area"
             value={filtros.idArea}
             onChange={(e) => cambiar({ idArea: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todas</option>
             {opcionesDeArea(filas).map((a) => (
@@ -261,14 +276,17 @@ export function PaginaPracticantes({ entorno = ENTORNO }: { entorno?: Entorno } 
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-52 space-y-1">
-          <Label htmlFor="filtro-proyecto">Proyecto</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="filtro-proyecto"
+          etiqueta="Proyecto"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-proyecto"
             value={filtros.idProyecto}
             onChange={(e) => cambiar({ idProyecto: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos</option>
             {opcionesDeProyecto(filas).map((p) => (
@@ -277,10 +295,17 @@ export function PaginaPracticantes({ entorno = ENTORNO }: { entorno?: Entorno } 
               </option>
             ))}
           </select>
-        </div>
-      </div>
+        </CampoDeFormulario>
+      </BarraDeFiltros>
 
       {contenido()}
+
+      {datos !== null && !consulta.error && visibles.length > 0 && (
+        <PieDeTabla>
+          Mostrando {visibles.length} de {datos.contadores.TODOS} practicantes. Un clic en una fila
+          abre su detalle.
+        </PieDeTabla>
+      )}
 
       {asignando !== null && (
         <AsignarAProyecto

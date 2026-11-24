@@ -7,17 +7,17 @@ import {
   type PracticantesPorAreaParaVista,
 } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
 import { GraficoPracticantesPorArea } from './GraficoPracticantesPorArea';
-import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import type { Id } from '@/domain';
 import { ENTORNO, listarProyectos, obtenerIndicadores, type Entorno } from '@/services';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /** El periodo por defecto (§5.6) y los atajos que se ofrecen; el valor lo valida el servicio (de 1 a 365 días). */
 const DIAS_PREDETERMINADOS = 30;
@@ -122,9 +122,9 @@ const COLUMNAS_AREA: Columna<PracticantesPorAreaParaVista>[] = [
 
 function Tarjeta({ etiqueta, valor }: { etiqueta: string; valor: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="rounded-xl border border-border bg-surface p-3">
       <dt className="text-xs text-text-2">{etiqueta}</dt>
-      <dd className="mt-1 text-xl font-semibold text-text tabular-nums">{valor}</dd>
+      <dd className="mt-0.5 text-xl font-semibold text-text tabular-nums">{valor}</dd>
     </div>
   );
 }
@@ -190,12 +190,12 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
       );
     }
     return (
-      <div className="space-y-6">
-        <p className="text-sm text-text-2" aria-label="Periodo">
+      <div className="space-y-3">
+        <p className="text-xs text-text-2" aria-label="Periodo">
           {datos.periodoTexto}
         </p>
 
-        <section aria-label="Tarjetas generales" className="space-y-2">
+        <section aria-label="Tarjetas generales">
           <dl className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Tarjeta etiqueta="Tareas terminadas" valor={datos.tareasTerminadas} />
             <Tarjeta etiqueta="Tiempo promedio de ciclo" valor={datos.tiempoCiclo} />
@@ -208,7 +208,7 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
               <Tarjeta etiqueta="Postulaciones decididas" valor={datos.postulacionesDecididas} />
             )}
             {datos.puntajePorArea !== null && (
-              <div className="rounded-xl border border-border bg-surface p-4">
+              <div className="rounded-xl border border-border bg-surface p-3">
                 <dt className="text-xs text-text-2">Puntaje promedio por área</dt>
                 <dd>
                   <ul
@@ -230,47 +230,48 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
 
         {/* Sin el área técnica no hay gráfico ni tabla de practicantes por área (§9.1.4). */}
         {datos.practicantesPorArea !== null && (
-          <section aria-label="Practicantes por área" className="space-y-2">
-            <h2 className="text-text">Practicantes por área</h2>
+          <PanelDeDatos titulo="Practicantes por área" nombre="Practicantes por área">
             <GraficoPracticantesPorArea datos={datos.practicantesPorArea} />
-            <TablaCompacta
-              columnas={COLUMNAS_AREA}
-              filas={datos.practicantesPorArea}
-              claveFila={(f) => f.area}
-              vacio={{ titulo: 'No hay practicantes asignados a un área' }}
-            />
-          </section>
+            <div className="-mx-3 -mb-3">
+              <TablaCompacta
+                sinCaja
+                columnas={COLUMNAS_AREA}
+                filas={datos.practicantesPorArea}
+                claveFila={(f) => f.area}
+                vacio={{ titulo: 'No hay practicantes asignados a un área' }}
+              />
+            </div>
+          </PanelDeDatos>
         )}
 
-        <section aria-label="Indicadores por proyecto" className="space-y-2">
-          <h2 className="text-text">Por proyecto</h2>
+        <PanelDeDatos sinRelleno titulo="Por proyecto" nombre="Indicadores por proyecto">
           <TablaCompacta
+            sinCaja
             columnas={COLUMNAS_PROYECTO}
             filas={datos.porProyecto}
             claveFila={(f) => f.proyecto.id}
             vacio={{ titulo: 'No hay proyectos en este reporte' }}
           />
-        </section>
+        </PanelDeDatos>
 
-        <section aria-label="Indicadores por practicante" className="space-y-2">
-          <h2 className="text-text">Por practicante</h2>
+        <PanelDeDatos sinRelleno titulo="Por practicante" nombre="Indicadores por practicante">
           <TablaCompacta
+            sinCaja
             columnas={COLUMNAS_PRACTICANTE}
             filas={datos.porPracticante}
             claveFila={(f) => f.id}
             vacio={{ titulo: 'No hay practicantes en este periodo' }}
           />
-        </section>
+        </PanelDeDatos>
       </div>
     );
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <form onSubmit={aplicar} className="flex flex-wrap items-end gap-2" aria-label="Periodo">
-          <div className="w-36 space-y-1">
-            <Label htmlFor="periodo-dias">Periodo (días)</Label>
+    <section className="space-y-3">
+      <BarraDeFiltros>
+        <form onSubmit={aplicar} className="flex items-end gap-2" aria-label="Periodo">
+          <CampoDeFormulario htmlFor="periodo-dias" etiqueta="Periodo (días)" className="w-32">
             <Input
               id="periodo-dias"
               type="number"
@@ -278,12 +279,12 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
               value={texto}
               onChange={(e) => setTexto(e.target.value)}
             />
-          </div>
+          </CampoDeFormulario>
           <Button type="submit" variant="outline">
             Aplicar
           </Button>
         </form>
-        <div className="flex flex-wrap gap-1" role="group" aria-label="Periodos frecuentes">
+        <div className="flex flex-wrap gap-1 pb-0.5" role="group" aria-label="Periodos frecuentes">
           {ATAJOS_DE_PERIODO.map((d) => (
             <Button
               key={d}
@@ -297,13 +298,16 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
             </Button>
           ))}
         </div>
-        <div className="w-52 space-y-1">
-          <Label htmlFor="indicadores-proyecto">Proyecto</Label>
+        <CampoDeFormulario
+          htmlFor="indicadores-proyecto"
+          etiqueta="Proyecto"
+          className="min-w-44 flex-1"
+        >
           <select
             id="indicadores-proyecto"
             value={idProyecto}
             onChange={(e) => setIdProyecto(e.target.value)}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos los proyectos</option>
             {(proyectos.valor?.proyectos ?? []).map((pr) => (
@@ -312,8 +316,8 @@ export function TabIndicadores({ idActor, entorno = ENTORNO }: { idActor: Id; en
               </option>
             ))}
           </select>
-        </div>
-      </div>
+        </CampoDeFormulario>
+      </BarraDeFiltros>
 
       {contenido()}
     </section>

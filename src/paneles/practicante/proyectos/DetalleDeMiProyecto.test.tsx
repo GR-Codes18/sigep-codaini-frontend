@@ -106,35 +106,42 @@ describe('Detalle de mi proyecto (Practicante, §9.2.1)', () => {
       if (!r.ok || r.valor.vista !== 'PRACTICANTE') throw new Error('sin datos');
       await mostrar(`/practicante/proyectos/${VIGENTE}`);
 
-      // El encabezado del proyecto: avance bien visible y los datos secundarios en filas.
-      const encabezado = await screen.findByRole('region', { name: 'Encabezado del proyecto' });
-      await waitFor(() => expect(encabezado).toHaveTextContent(r.valor.proyecto.supervisor.nombre));
-      expect(encabezado).toHaveTextContent(r.valor.proyecto.rama_base);
+      // Un panel con título por tema, como en el Resumen del Administrador y del Supervisor.
+      const datos = await screen.findByRole('region', { name: 'Datos del proyecto' });
+      await waitFor(() => expect(datos).toHaveTextContent(r.valor.proyecto.supervisor.nombre));
+      expect(datos).toHaveTextContent(r.valor.proyecto.rama_base);
+      expect(datos).toHaveTextContent(r.valor.proyecto.descripcion);
+      expect(datos).toHaveTextContent('Reunión semanal');
+      expect(datos).toHaveTextContent('Fecha de inicio');
+      expect(datos).toHaveTextContent('Fecha de fin prevista');
       expect(
-        within(encabezado).getByRole('link', { name: r.valor.proyecto.repositorio_url }),
+        within(datos).getByRole('link', { name: r.valor.proyecto.repositorio_url }),
       ).toHaveAttribute('href', r.valor.proyecto.repositorio_url);
-      expect(encabezado).toHaveTextContent('Reunión semanal');
-      expect(screen.getByRole('progressbar', { name: 'Avance del proyecto' })).toBeInTheDocument();
-      // Una tarjeta con título por tema en el Resumen.
-      expect(await screen.findByRole('region', { name: 'Descripción' })).toHaveTextContent(
-        r.valor.proyecto.descripcion,
-      );
-      const fechas = screen.getByRole('region', { name: 'Fechas y datos del proyecto' });
-      expect(fechas).toHaveTextContent('Fecha de inicio');
-      expect(fechas).toHaveTextContent('Fecha de fin prevista');
-      expect(fechas).toHaveTextContent('Reunión semanal');
-      const enlaces = screen.getByRole('region', { name: 'Enlaces y repositorio' });
+      const avance = screen.getByRole('region', { name: 'Avance' });
       expect(
-        within(enlaces).getByRole('link', { name: r.valor.proyecto.repositorio_url }),
+        within(avance).getByRole('progressbar', { name: 'Avance del proyecto' }),
       ).toBeInTheDocument();
-      expect(screen.getByRole('region', { name: 'Avance' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'Enlaces útiles' })).toBeInTheDocument();
       expect(screen.getByRole('region', { name: 'Mis tareas' })).toBeInTheDocument();
       expect(screen.getByRole('region', { name: 'Mi actividad' })).toBeInTheDocument();
     });
 
+    it('no repite valores: una sola barra de avance y el repositorio solo en los datos', async () => {
+      const r = await obtenerProyecto({ idActor: PRACTICANTE, idProyecto: VIGENTE }, entorno);
+      if (!r.ok || r.valor.vista !== 'PRACTICANTE') throw new Error('sin datos');
+      await mostrar(`/practicante/proyectos/${VIGENTE}`);
+      await screen.findByRole('region', { name: 'Datos del proyecto' });
+
+      expect(screen.getAllByRole('progressbar', { name: /Avance/ })).toHaveLength(1);
+      expect(screen.getAllByText('Rama base')).toHaveLength(1);
+      expect(screen.getAllByRole('link', { name: r.valor.proyecto.repositorio_url })).toHaveLength(
+        1,
+      );
+    });
+
     it('no ofrece ningún botón de edición ni de gestión', async () => {
       await mostrar(`/practicante/proyectos/${VIGENTE}`);
-      await screen.findByRole('region', { name: 'Descripción' });
+      await screen.findByRole('region', { name: 'Datos del proyecto' });
 
       expect(
         screen.queryByRole('button', {

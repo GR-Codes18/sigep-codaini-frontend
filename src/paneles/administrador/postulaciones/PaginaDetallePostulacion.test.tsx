@@ -115,6 +115,19 @@ describe('PaginaDetallePostulacion', () => {
     );
   });
 
+  it('la evaluación dice el peso de cada bloque en la nota y la fórmula con números', async () => {
+    const evaluacion = datos().evaluaciones.find((e) => e.id_postulante === PENDIENTE)!;
+
+    await mostrar(PENDIENTE);
+
+    const bloque = screen.getByRole('region', { name: 'Evaluación de la IA' });
+    expect(within(bloque).getByText(/Peso en la nota: 40 %/)).toBeInTheDocument();
+    expect(within(bloque).getByText(/Peso en la nota: 60 %/)).toBeInTheDocument();
+    expect(within(bloque).getByText(/^Nota final = 0,4 × \d+ \+ 0,6 × \d+ = /)).toHaveTextContent(
+      `= ${evaluacion.puntaje_total}`,
+    );
+  });
+
   it('una postulación con la marca de revisión manual la muestra', async () => {
     const conMarca = datos().evaluaciones.find(
       (e) =>

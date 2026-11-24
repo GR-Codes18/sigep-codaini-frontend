@@ -1,3 +1,4 @@
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -32,9 +33,6 @@ import {
   type Resultado,
 } from '@/services';
 import { normalizarCodigoDeProyecto } from './codigo';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-50';
 
 const ETIQUETA_DIA: Record<DiaSemana, string> = {
   LUNES: 'Lunes',
@@ -182,7 +180,9 @@ function CampoDeFormulario({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{etiqueta}</Label>
+      <Label htmlFor={id} className="text-xs font-medium text-text-2">
+        {etiqueta}
+      </Label>
       {children}
       {ayuda && !error && <p className="text-xs text-text-2">{ayuda}</p>}
       {error && <p className="text-xs text-danger-text">{error}</p>}
@@ -450,7 +450,7 @@ export function FormularioProyecto(props: Props) {
                     value={valores.idSupervisor}
                     disabled={guardando}
                     aria-invalid={errores.idSupervisor ? true : undefined}
-                    className={CLASE_SELECT}
+                    className={CLASE_CAMPO}
                     onChange={(e) => cambiar('idSupervisor', e.target.value)}
                   >
                     <option value="">Elige un supervisor</option>
@@ -513,7 +513,7 @@ export function FormularioProyecto(props: Props) {
                     value={valores.dia}
                     disabled={guardando}
                     aria-invalid={errores.dia ? true : undefined}
-                    className={CLASE_SELECT}
+                    className={CLASE_CAMPO}
                     onChange={(e) => cambiar('dia', e.target.value)}
                   >
                     <option value="">Sin definir</option>

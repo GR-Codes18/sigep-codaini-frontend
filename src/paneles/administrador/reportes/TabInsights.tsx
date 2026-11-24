@@ -7,7 +7,9 @@ import {
 } from '@/app/insights/AccionesDeInsight';
 import { useConsulta } from '@/app/useConsulta';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
-import { Label } from '@/compartido/ui/label';
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import {
   REGLAS_INSIGHT_VISIBLES,
@@ -25,9 +27,6 @@ import {
   type EstadoDeInsights,
   type FiltrosInsights,
 } from './filtrosInsights';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /**
  * La pestaña «Insights» (§5.6): las alertas automáticas como tarjetas, por severidad y antigüedad, con filtros por
@@ -95,7 +94,7 @@ export function TabInsights({
       );
     }
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {visibles.map((i) => (
           <TarjetaDeInsight key={i.clave} insight={i} onAccion={setAccion} />
         ))}
@@ -104,15 +103,18 @@ export function TabInsights({
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40 space-y-1">
-          <Label htmlFor="filtro-severidad">Severidad</Label>
+    <section className="space-y-3">
+      <BarraDeFiltros>
+        <CampoDeFormulario
+          htmlFor="filtro-severidad"
+          etiqueta="Severidad"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-severidad"
             value={filtros.severidad}
             onChange={(e) => cambiar({ severidad: e.target.value as FiltrosInsights['severidad'] })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todas</option>
             {SEVERIDADES.map((s) => (
@@ -121,14 +123,13 @@ export function TabInsights({
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-56 space-y-1">
-          <Label htmlFor="filtro-tipo">Tipo</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario htmlFor="filtro-tipo" etiqueta="Tipo" className="min-w-36 flex-1">
           <select
             id="filtro-tipo"
             value={filtros.tipo}
             onChange={(e) => cambiar({ tipo: e.target.value as FiltrosInsights['tipo'] })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos</option>
             {/* Solo las reglas que le aplican a este rol: el Supervisor tiene 5 de las 7 (§9.1.4). */}
@@ -140,14 +141,17 @@ export function TabInsights({
               ),
             )}
           </select>
-        </div>
-        <div className="w-52 space-y-1">
-          <Label htmlFor="filtro-proyecto-insights">Proyecto</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="filtro-proyecto-insights"
+          etiqueta="Proyecto"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-proyecto-insights"
             value={filtros.idProyecto}
             onChange={(e) => cambiar({ idProyecto: e.target.value })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="">Todos</option>
             {opcionesDeProyecto(datos?.filas ?? []).map((p) => (
@@ -156,14 +160,17 @@ export function TabInsights({
               </option>
             ))}
           </select>
-        </div>
-        <div className="w-44 space-y-1">
-          <Label htmlFor="filtro-estado-insights">Estado</Label>
+        </CampoDeFormulario>
+        <CampoDeFormulario
+          htmlFor="filtro-estado-insights"
+          etiqueta="Estado"
+          className="min-w-36 flex-1"
+        >
           <select
             id="filtro-estado-insights"
             value={filtros.estado}
             onChange={(e) => cambiar({ estado: e.target.value as EstadoDeInsights })}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
           >
             <option value="ACTIVOS">Activos{datos ? ` (${datos.contadores.ACTIVOS})` : ''}</option>
             <option value="REVISADOS">
@@ -171,8 +178,8 @@ export function TabInsights({
             </option>
             <option value="TODOS">Todos{datos ? ` (${datos.contadores.TODOS})` : ''}</option>
           </select>
-        </div>
-      </div>
+        </CampoDeFormulario>
+      </BarraDeFiltros>
 
       {lista()}
 
