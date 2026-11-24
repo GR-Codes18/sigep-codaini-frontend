@@ -4618,3 +4618,72 @@ esos bloques se quedan. Con esto ya no hay divergencia entre el código y `docs/
   tarjetas en modo oscuro, de todo el sistema (se resolverá una sola vez con los tokens del tema); los formatos de fecha de `TableroKanban` y `ListaDeTareasDePracticante`, distintos de `diaVisible`; el `21rem` de
   la altura del tablero en pantalla ancha; las tarjetas con mucho espacio; y, como posible mejora, las pruebas de integración de «Liberar» y «Enviar a supervisión».
 - **Siguiente paso.** Fase 8 (pulido, pruebas de punta a punta y entrega).
+
+
+## 2026-11-23 — [A+B] Fase 8, módulos 8.1 (contraste en modo oscuro) y 8.3 (densidad y orden), todo el sistema
+
+**Commit `3a9e1eb`** en `feat/fase8-contraste`, sobre `199e238`. Cierra A1 (contraste en oscuro) y A2 (tarjetas con mucho espacio, salvo `TarjetaProyecto` de Mis proyectos del Supervisor); A3 (formato de fecha) y A4
+(el `21rem` del tablero) siguen abiertos, con lo medido anotado en `PROGRESO.md`. 4.192 pruebas en 207 archivos (+40 pruebas y +11 archivos desde el 7.3).
+
+### 8.1 — Contraste en modo oscuro
+
+- **Tokens oscuros:** `--bg #0B1016`, `--surface #1A222D`, `--surface-2 #232D3B` y `--border #425064` (antes `#0F141B`, `#181E27`, `#1F2733` y `#283241`). Razones de contraste: borde contra fondo 2,33, borde
+  contra superficie 1,96, superficie contra fondo 1,19 y superficie-2 contra superficie 1,15. El texto de la Fase 0 no empeora de forma relevante: el mínimo sigue sobre 4,5:1 (`text-2` sobre `surface-2`
+  baja de 5,93 a 5,48; las insignias, de 5,91 a 5,49). El modo claro no cambia.
+- **`--input`, token nuevo** (`#62728A` oscuro; `#E1E6EF` claro, igual que `--border`): el borde de los campos de formulario llega a 3:1 contra la superficie (3,28; WCAG 1.4.11) y 3,90 contra el fondo. Antes los
+  campos usaban `--border` mediante `--color-input`.
+- **Rellenos de `ui/`:** los rellenos de oscuro de campos y botones de contorno (`dark:bg-input/30`, `/50` y `/80`) pasan a `bg-border/N`. Con el `--input` más claro, esos rellenos bajaban `text-2` sobre el campo a 3,54.
+  Es el único cambio de componentes del 8.1; el resto son tokens. El modo claro queda idéntico porque allí `--input` y `--border` valen lo mismo.
+
+### 8.3 — Densidad y orden
+
+- **Patrón de cabecera y de detalle.** Los listados y las páginas de módulo usan `CabeceraDePagina` (título `text-xl`, subtítulo de una línea y las acciones a la derecha, debajo del título en móvil). Los detalles usan
+  `CabeceraDeDetalle`: enlace «← Volver» arriba; debajo, avatar con iniciales (cuando es una persona), título, insignias y una línea de metadatos; las acciones a la derecha. El cuerpo va en dos columnas desde `lg`
+  (columnas independientes, `items-start`) y en una sola en tablet y móvil. Orden de un listado: cabecera, pestañas con contador, una sola tarjeta de filtros (`BarraDeFiltros`), tabla en su contenedor y pie de una línea.
+- **Una caja por bloque.** `PanelDeDatos` es la caja con su título dentro (`text-base font-semibold`) y `p-3`; no hay cajas anidadas: lo de dentro se separa con espacio o con líneas finas (`ListaDeFilas`,
+  `ListaDeDefiniciones` en filas o en rejilla de 1, 2 y 3 columnas). Las tablas van dentro de un panel sin relleno (`TablaCompacta` con `sinCaja`).
+- **Estilo único de campo.** `CLASE_CAMPO` (`src/compartido/estiloCampo.ts`) lo usan `ui/input` y los `<select>` nativos; los campos llevan su etiqueta pequeña encima con `CampoDeFormulario`. Se eliminaron las
+  copias de la clase antigua en las pantallas y los diálogos. `ui/select` (el de Radix) no se unificó: ninguna pantalla de formulario lo usa.
+- **Paginación del Historial de actividad en la pantalla**, no en el servicio: 25 filas por página, con «Anterior», «Siguiente» y «Mostrando 1–25 de N» al pie (`PaginadorDeTabla`). Cambiar un filtro vuelve a la
+  primera página. No se tocó `domain/` ni se amplió la consulta.
+- **Pesos del detalle de postulación y su limitación.** `obtenerPostulacion` entrega ahora `EvaluacionDetalle.proporcion` (la proporción vigente de Configuración), de forma aditiva y sin tocar `domain/`. Cada bloque dice
+  «Peso en la nota: 40 %» y la fórmula sale con números («Nota final = 0,4 × 55 + 0,6 × 35 = 43»). **Limitación:** la evaluación guardada no persiste la proporción con que se calculó, solo existe la vigente; por eso el
+  adaptador muestra los pesos solo si la proporción vigente reproduce la nota guardada (redondeo con las mitades hacia arriba). Si Configuración cambió después de evaluar, muestra la fórmula en texto y no afirma números
+  que no cuadren. Para guardar la proporción por evaluación habría que ampliar el modelo de datos.
+- **Jerarquía de los botones del detalle de tarea.** Solo cambia la variante: la primera acción del flujo que esté disponible (tomar, aprobar, crear PR, enviar, terminar o reabrir) va en primario; las demás, en
+  contorno; las destructivas, en contorno rojo. Qué acciones hay y cuándo salen lo siguen decidiendo la consulta y `domain/`. Lo mismo en las decisiones de una postulación: Rechazar en contorno rojo y Aprobar, en
+  primario, a la derecha (el orden de los botones en el DOM, y de tabulación, es ahora Rechazar y luego Aprobar).
+- **Alertas.** La tarjeta de insight es una fila plana dentro de los dashboards (que ya son una caja) y conserva su caja en Reportes. Las tarjetas de métrica pasan a `p-3` en los tres dashboards.
+- **Resumen del proyecto del Practicante** con el mismo aspecto que el del Administrador y el Supervisor (datos en rejilla, Avance, Enlaces útiles y Actividad reciente en paneles, sin valores repetidos); se reescribieron
+  las pruebas de diseño del 7.1 que fijaban las tarjetas anteriores.
+- **Criterios de evaluación.** Una sola tabla por bloque (Criterio, Tipo, Peso, Obligatorio y Activo), con cada área y especialidad en un panel plegable con su suma «N/100» en el título; «Suma actual» a la izquierda y los
+  botones a la derecha en el pie.
+- **Foco.** El aro de foco de las pestañas va por dentro (`ring-inset`): la lista con scroll horizontal lo recortaba.
+- **El paso de revisión visual se hizo con capturas.** A diferencia de los módulos 5 a 7 (revisados a ojo por las autoras porque el agente no podía abrir el navegador), el 8.1 y el 8.3 se iteraron con capturas de
+  Playwright (`playwright-core` 1.64.1) y el Chrome ya instalado, ejecutados desde una carpeta temporal fuera del repo, sin añadir dependencias ni tocar `package.json` ni `package-lock.json`. Se revisaron claro y
+  oscuro a 1280, 768 y 390 px, con estados vacíos, de error y de carga, y el hover y el foco de los controles principales. Las capturas no se guardan en el repo y no sustituyen la revisión en un monitor real.
+  Las vistas de 390 px se tomaron con la barra lateral oculta solo en la captura, porque el esqueleto de la aplicación no tiene modo móvil.
+
+### Divergencias con `docs/` (aceptadas por los autores; para que las actualicen a mano)
+
+1. **Tokens oscuros** (Especificación visual §2, líneas 19 a 22, y §8, línea 128): `--bg` `#0F141B` → `#0B1016`; `--surface` `#181E27` → `#1A222D`; `--surface-2` `#1F2733` → `#232D3B`; `--border` `#283241` →
+   `#425064`. **`--input`** es nuevo (`#E1E6EF` claro, `#62728A` oscuro) y debe añadirse a la tabla de §2 y al bloque de §8. §2, línea 27: `--on-primary` oscuro sigue en `#0F141B` y ya no coincide con `--bg`. §2, línea
+   35: la nota de «derivados» debe incluir `--bg`, `--surface` y `--input`. Otros documentos pueden repetir esos hex; no se revisaron.
+2. **Espaciados y tamaños** (§4 y §5, que definían H1 de 24 px y filas de ~44 px): título de página `text-xl` (20 px); separación entre bloques `space-y-3`; panel o tarjeta `p-3` (`p-4` solo en diálogos de formulario);
+   campos y botones `h-9` en móvil y `sm:h-8` en escritorio; filas de tabla de unos 36 px con una línea y 48 px con dos (celdas `py-2`, cabecera `h-9`); títulos de sección dentro de la tarjeta en `text-base
+   font-semibold`; datos clave/valor en 3 columnas en escritorio, 2 en tablet y 1 en móvil.
+3. **`shadcn` modificado.** `ui/button` (tamaño por defecto `h-9 sm:h-8`), `ui/input` (usa `CLASE_CAMPO`), `ui/select` y `ui/textarea` (rellenos de oscuro con `bg-border/N`) ya no son lo que genera `shadcn`.
+   **Advertencia: un `shadcn add` o `shadcn init` los sobrescribiría y habría que repetir esos cambios** (están en el commit `3a9e1eb`).
+4. **Servicio ampliado de forma aditiva:** `EvaluacionDetalle.proporcion` en `obtenerPostulacion`; y el paginador del Historial, que vive en la pantalla.
+
+### Límites conocidos (para la Fase 8 y el README)
+
+- **Barra lateral fija de 240 px, sin colapsar en móvil.** En 390 px el contenido queda con unos 150 px. Es el último módulo opcional de la Fase 8; si no hay tiempo, queda como limitación conocida.
+- `ui/select` de Radix no unificado con el estilo único de campo.
+- Hover y foco con teclado del **botón de tema** y del **menú de usuario**: sin comprobar.
+- **Dashboards entre 1024 y 1279 px de ancho:** sin capturar.
+- **Estados de carga a 390 px:** sin capturar.
+- **Modal «Restaurar valores originales»** de Configuración: sin capturar (el botón está deshabilitado con todo predeterminado).
+- **Proyecto anterior del Practicante:** solo comprobado con pruebas; el Practicante demo no tiene proyectos anteriores y solo se capturó su estado de error.
+- `TarjetaProyecto` de Mis proyectos del Supervisor sin la variante `compacta`; formatos de fecha de `TableroKanban` y `ListaDeTareasDePracticante` sin unificar (A3); el `21rem` del tablero sin medir con las notas
+  de pausa y finalizado (con 1280 × 900 px no hizo falta ajustarlo, A4).

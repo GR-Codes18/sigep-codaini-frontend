@@ -266,16 +266,19 @@
   integración sin cobertura en otro sitio (Tomar tarea, Crear nuevo Pull Request, Cerrar Pull Request y Editar) a `AccionesDeTareaPracticante.test.tsx` y `AccionesDeTareaSupervisor.test.tsx`.
   «Liberar» y «Enviar a supervisión» no las cubría ese test y no se añadieron. La revisión visual del 7.3 la hizo la autora a ojo, porque el agente no puede abrir el navegador.
 - **Cierre de la Fase 7 (módulos 7.1 a 7.3): terminada** en la rama (2026-11-21); falta su cierre en `main` con la etiqueta `fase-7-completa`.
+- **Fase 8, módulos 8.1 (contraste en modo oscuro) y 8.3 (densidad y orden): terminados** en `feat/fase8-contraste` (2026-11-23, `3a9e1eb`, sobre `199e238`). Tokens oscuros nuevos y `--input`; cabecera,
+  filtros, paneles, tablas, formularios y diálogos con los mismos componentes compartidos en las 36 pantallas de los tres paneles. Detalle en «Fase 8 — pulido: contraste y densidad».
 - **Verificación (en `75c8139`):** 4.152 pruebas en 196 archivos; `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con el aviso conocido en `button.tsx`;
   `git diff -- docs` vacío. Detalle en «Estado de pruebas».
 - **Pendiente de los autores (cierres de fase):** el cierre en `main` de las **Fases 3, 4 y 5**: PR de `development` a `main`, etiquetas `fase-3-completa`,
   `fase-4-completa` y `fase-5-completa`, y registrar sus filas en «Cierres de fase» (hoy solo constan las Fases 0, 1 y 2). **Las Fases 6 y 7 también se cerrarán en `main`**
   con sus etiquetas `fase-6-completa` y `fase-7-completa`.
-- **Actualizado:** 2026-11-21, tras el módulo 7.3 y el cierre de la Fase 7.
-- **Siguiente paso:** Fase 8 (pulido, pruebas de punta a punta y entrega). Lista de pendientes acumulada en «Pendientes»: comprobación manual en un navegador real de los módulos 5.1 a 7.3
-  (la hizo a ojo la autora en parte; el agente no puede abrir el navegador); contraste de las tarjetas en modo oscuro, de todo el sistema; menú que resalta «Mis proyectos» desde Mi
-  historial; formatos de fecha de `TableroKanban` y `ListaDeTareasDePracticante`; el `21rem` de la altura del tablero; tarjetas con mucho espacio; enlaces de las tarjetas del Inicio sin
-  filtro; «Disponibles para tomar» con proyectos en pausa; pulidos del Historial de actividad y de Configuración; chunks de más de 500 kB; y el cierre en `main` de las Fases 3 a 7.
+- **Actualizado:** 2026-11-23, tras los módulos 8.1 y 8.3 de la Fase 8.
+- **Siguiente paso:** resto de la Fase 8 (pulido, pruebas de punta a punta y entrega). Hecho en la rama: contraste en modo oscuro (8.1) y densidad y orden de todas las pantallas (8.3). Lista de pendientes en
+  «Pendientes»: comprobación manual en un navegador real (las capturas de Chrome no sustituyen un monitor real); barra lateral colapsable en móvil (módulo opcional); formatos de fecha de `TableroKanban` y
+  `ListaDeTareasDePracticante`; el `21rem` del tablero con las notas de pausa y finalizado; `TarjetaProyecto` compacta en Mis proyectos del Supervisor; menú que resalta «Mis proyectos» desde Mi historial;
+  enlaces de las tarjetas del Inicio sin filtro; «Disponibles para tomar» con proyectos en pausa; pulidos del Historial de actividad y de Configuración; chunks de más de 500 kB; y el cierre en `main` de las
+  Fases 3 a 7.
 
 ### Cierres de fase
 
@@ -796,6 +799,39 @@ desarrollo (`PaginaDesarrollo.test.tsx`). No se hicieron pruebas de mutación. A
 4.098 pruebas en 191 archivos; el módulo 7.1 sumó 86 y 8 archivos de prueba (adaptador de Mis proyectos, listado, detalle, resumen anterior y tarea, diseño en tarjetas, `TarjetaDeDatos` y
 `AvatarIniciales`, tarjeta compacta y altura del tablero; más las de los avisos en `notificacion.test.ts`). Antes, en `7ece550` (base del 7.1): 4.012 pruebas en 183 archivos.
 
+### Fase 8 — pulido: contraste y densidad
+
+| Fecha | Módulo | Qué se hizo | Commit |
+|---|---|---|---|
+| 2026-11-23 | 8.1 Contraste en modo oscuro | `--bg #0B1016`, `--surface #1A222D`, `--surface-2 #232D3B`, `--border #425064` y token nuevo `--input` (`#62728A` oscuro, `#E1E6EF` claro) para el borde de los campos (3,28:1 contra la superficie); los rellenos de campos y botones de contorno pasan de `bg-input/N` a `bg-border/N` | `3a9e1eb` |
+| 2026-11-23 | 8.3 Densidad y orden | Estándar de cabecera, filtros, paneles, tablas, formularios y diálogos en todas las pantallas de los tres paneles; Historial de actividad paginado; pesos de cada bloque en el detalle de postulación; jerarquía de botones del detalle de tarea | `3a9e1eb` |
+
+**Componentes compartidos nuevos** (en `src/compartido/`, cada uno con su prueba): `CabeceraDePagina`, `CabeceraDeDetalle`, `BarraDeFiltros`, `CampoDeFormulario`, `PanelDeDatos`, `ListaDeDefiniciones`,
+`ListaDeFilas` (con `FilaDeLista`), `PieDeTabla` y `PaginadorDeTabla`; más `estiloCampo.ts` (`CLASE_CAMPO`, el único estilo de campo). **Ampliados:** `TablaCompacta` (`sinCaja`), `PestanasConContador` (control a
+la derecha), `BarraBusqueda` (`id`, `className`), `EstadoVacio` (`plano`), `DetalleTarea` y `TarjetaDeInsight` (fila plana en los dashboards). **Servicio, aditivo:** `EvaluacionDetalle.proporcion` en
+`obtenerPostulacion`. No se tocó `domain/`.
+
+**Revisión visual con capturas.** A diferencia de los módulos anteriores, la revisión del 8.1 y del 8.3 se hizo con capturas reales: **Playwright (`playwright-core` 1.64.1) con el Chrome ya instalado, ejecutado fuera
+del repo** (en una carpeta temporal de la sesión), sin añadir dependencias ni tocar `package.json`, `package-lock.json` ni ningún archivo del repo. Unas 440 capturas finales en claro y oscuro, a 1280, 768 y 390 px,
+con estados vacíos, de error y de carga, y el hover y el foco de los controles principales. Las vistas de 390 px se tomaron **con la barra lateral oculta solo en la captura** (ver los límites). Las capturas no
+están en el repo.
+
+**Estado de pruebas (2026-11-23, en `3a9e1eb`):** 4192 pruebas en 207 archivos, todas aprobadas (`npx vitest run --maxWorkers=3`; el recuento de archivos coincide con `npx vitest list`, 207).
+Desde las 4.152 pruebas en 196 archivos del 7.3: **+40 pruebas y +11 archivos** (pruebas nuevas de los componentes compartidos, `TablaCompacta`, `PestanasConContador` y `PaginadorDeTabla`;
+del servicio y del adaptador de postulaciones; de `DesgloseEvaluacion`, el detalle de postulación, `DetalleTarea` y la paginación del Historial). Se ajustaron pruebas que dependían de la estructura anterior:
+`AccionesDePostulacion` (orden de Rechazar y Aprobar), `EditorBloqueCriterios` (filas de tabla en lugar de elementos de lista), `DetalleDeMiProyecto` y `DisenoDeMiProyecto` (Resumen rediseñado),
+`PaginaMiHistorial` (los filtros ya no van en una tarjeta propia) y `PaginaHistorial` (25 filas por página). No se hicieron pruebas de mutación. `tsc -b`, Prettier y `npm run build` correctos; ESLint sin errores, con
+el aviso conocido en `button.tsx`; `git diff -- docs` vacío.
+
+**Pendiente de actualizar a mano en `docs/` (los autores; el agente no edita `docs/`).**
+- *Especificación visual* §2, líneas 19 a 22 (columna oscura): `--bg` `#0F141B` → `#0B1016`; `--surface` `#181E27` → `#1A222D`; `--surface-2` `#1F2733` → `#232D3B`; `--border` `#283241` → `#425064`.
+- §2, línea 27: `--on-primary` oscuro sigue en `#0F141B` y ya no coincide con `--bg`; y añadir el token `--input` (`#E1E6EF` claro, `#62728A` oscuro) a la tabla de tokens.
+- §2, línea 35: la nota que dice que solo `--surface-2` y `--border` oscuros son derivados debe incluir también `--bg`, `--surface` y `--input`.
+- §8, línea 128: el bloque oscuro repite esos cuatro valores y necesita `--input`.
+- §4 y §5 (tamaños): título de página `text-xl` (20 px) en lugar del H1 de 24 px; filas de tabla de unos 36 px (una línea) y 48 px (dos líneas) en lugar de ~44 px; campos y botones de 36 px en móvil y 32 px en escritorio;
+  espaciado entre bloques `space-y-3`; relleno de panel `p-3` (`p-4` en diálogos); títulos de sección dentro de la tarjeta en `text-base font-semibold`.
+- Otros documentos de `docs/` pueden repetir esos hex; no se revisaron.
+
 ## Pendientes
 
 ### Fase 1 (`domain/`)
@@ -1170,15 +1206,21 @@ desarrollo (`PaginaDesarrollo.test.tsx`). No se hicieron pruebas de mutación. A
       pruebas de jsdom cubren la estructura y el comportamiento, no el aspecto.
 - [ ] Fase 8 (tablero, módulo 7.1): la altura del tablero en pantalla ancha se calcula como `max(22rem, 100dvh − 21rem)` en `TableroKanban`. Si la página scrollea un poco con las notas de pausa o
       finalizado, o con las acciones del Administrador, hay que ajustar ese único número (el 21 es una estimación del encabezado, las pestañas y los márgenes; no se pudo medir en un navegador).
-- [ ] Fase 8 (tarjetas con mucho espacio, vigentes tras el 7.1): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl), las tarjetas generales de Indicadores de Reportes
+      **Medido en las capturas del 8.3 (A4):** con una ventana de 1280 × 900 px, la pestaña Tablero del Administrador (el encabezado más alto, con las acciones en su propia fila), del Supervisor y del
+      Practicante mide exactamente 900 px: la página no scrollea y el `21rem` alcanza. **No hace falta ajustarlo con esa altura.** Queda sin medir con las notas de pausa y finalizado, ni con otras alturas de ventana; por eso sigue abierto.
+- [x] Fase 8 (tarjetas con mucho espacio, vigentes tras el 7.1): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl), las tarjetas generales de Indicadores de Reportes
       (Administrador y Supervisor) y las tarjetas de insight de Reportes siguen sin variante compacta. `TarjetaProyecto` ya tiene `compacta` (la usa Mis proyectos del Practicante), pero Mis proyectos del
       Supervisor (6.1) sigue con la estándar (`p-4`, espacios `mt-4`): se puede adoptar la compacta.
+      **Resuelto en `3a9e1eb` (8.3, A2):** tarjetas de métrica del dashboard del Administrador, tarjetas de Indicadores y de insight de Reportes con `p-3`. **Excepción:** `TarjetaProyecto` de Mis proyectos del
+      Supervisor sigue sin la variante `compacta` (ver el pendiente siguiente).
 - [ ] Fase 8 (menú, observación del 7.2): al abrir el detalle de una tarea desde Mi historial (`/practicante/proyectos/tareas/:id`), el menú resalta «Mis proyectos» y no «Mi historial». Es
       consecuencia de que el detalle de tarea del Practicante cuelgue de Mis proyectos (decisión del 7.1); no se cambió.
-- [ ] Fase 8 (contraste en modo oscuro, de todo el sistema): el borde y el fondo de las tarjetas (`TarjetaDeDatos`, `TarjetaProyecto`, tablas y demás) quedan casi iguales a los de la página en
+- [x] Fase 8 (contraste en modo oscuro, de todo el sistema): el borde y el fondo de las tarjetas (`TarjetaDeDatos`, `TarjetaProyecto`, tablas y demás) quedan casi iguales a los de la página en
       modo oscuro. Se resolverá **una sola vez, con los tokens del tema**, y no pantalla por pantalla; por eso ni el 7.1 ni el 7.2 cambiaron colores, bordes ni tokens.
+      **Resuelto en `3a9e1eb` (8.1, A1):** nuevos tokens oscuros y `--input`, solo con tokens (más el cambio de `bg-input/N` a `bg-border/N` en los rellenos de los componentes de `ui/`).
 - [ ] Fase 8 (formato de fecha): `TableroKanban` («Límite dd/MM/yyyy») y `ListaDeTareasDePracticante` (la fecha límite sin formato, «2026-11-18») usan un formato distinto del de `diaVisible`
       («9 oct 2026»), que es el del Resumen del proyecto del Practicante y de Mi historial. El ajuste `ded0577` solo unificó el Resumen.
+      **Sigue pendiente tras el 8.3 (A3):** el detalle de tarea usa `dd/MM/yyyy`, el tablero «Límite dd/MM/yyyy» y `ListaDeTareasDePracticante` la fecha sin formato; no se unificaron.
 - [ ] Revisión en un navegador real del 7.3 (Inicio a 1280 y 390 px en los dos temas, tarjetas parejas con y sin rojo, scroll horizontal de la tabla de tareas en curso, bloques inferiores con
       `items-start`): la hizo la autora a ojo; las pruebas de jsdom cubren la estructura y el comportamiento, no el aspecto.
 - [ ] Fase 8 (Inicio del Practicante, módulo 7.3): las cuatro tarjetas enlazan **sin filtro** a `/practicante/proyectos`. Afinarlas exige un filtro en el detalle de Mis proyectos (por ejemplo, abrir el
@@ -1187,14 +1229,29 @@ desarrollo (`PaginaDesarrollo.test.tsx`). No se hicieron pruebas de mutación. A
       aunque el proyecto esté en pausa. Decidir si Mis proyectos también lo oculta o lo marca.
 - [ ] Posible mejora (Fase 8): «Liberar» y «Enviar a supervisión» siguen **sin prueba de integración con clics reales** sobre la pantalla y el almacén. La página de desarrollo que se eliminó en el 7.3
       tampoco las cubría; sí tienen pruebas de servicio (`transiciones.test.ts`, `flujo.test.ts`) y de los botones y modales del detalle (`DetalleTarea.test.tsx`).
+- [ ] Fase 8 (tarjetas, resto del 8.3): `TarjetaProyecto` de Mis proyectos del Supervisor (6.1) sigue con la variante estándar; adoptar `compacta`, como ya hace Mis proyectos del Practicante.
+- [ ] Fase 8 (límites conocidos del 8.1 y el 8.3; para la Fase 8 y el README):
+      - **Barra lateral fija de 240 px, sin colapsar en móvil.** En 390 px el contenido queda con unos 150 px. Es el último módulo opcional de la Fase 8; si no hay tiempo, queda como limitación conocida. Las capturas
+        de 390 px se tomaron ocultando la barra solo en la captura.
+      - `ui/select` de Radix no se unificó con `CLASE_CAMPO` (no lo usa ninguna pantalla de formulario).
+      - Hover y foco con teclado del **botón de tema** y del **menú de usuario**: sin comprobar. Los demás controles principales sí (menú lateral, pestañas, búsqueda y filtros, filas de tabla, botones de
+        cabecera, enlace «Volver», campana, tarjetas de proyecto).
+      - **Dashboards entre 1024 y 1279 px de ancho:** sin capturar (solo 1280, 768 y 390).
+      - **Estados de carga a 390 px:** sin capturar (con la barra oculta el script no puede navegar dentro de la app para atraparlos). Sí están a 1280 y 768 px.
+      - **Modal «Restaurar valores originales»** de Configuración: sin capturar, porque el botón está deshabilitado mientras todo es predeterminado.
+      - **Proyecto anterior del Practicante:** solo comprobado con pruebas, no con captura (el Practicante demo no tiene proyectos anteriores; solo se capturó su estado de error).
+      - No se capturó el estado vacío de Mis proyectos del Supervisor (no se puede provocar con una búsqueda).
+      - Las capturas son de Chrome con Playwright, no de un monitor real: la revisión a ojo de las autoras sigue siendo necesaria.
+- [ ] Fase 8 (`shadcn`): `ui/button`, `ui/input`, `ui/select` y `ui/textarea` se modificaron respecto de lo que genera `shadcn`; un `shadcn add` o `shadcn init` los sobrescribiría. Ver «DECISIONES.md».
 - [ ] Cierre de las Fases 3, 4 y 5 en `main` (autores): PR de `development` a `main` con las etiquetas `fase-3-completa`, `fase-4-completa` y
       `fase-5-completa`, y sus filas en «Cierres de fase».
 - [ ] Cierre de la Fase 6 en `main` (autores): PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-6-completa`, y su fila en
       «Cierres de fase».
 - [ ] Cierre de la Fase 7 en `main` (autores): PR de la rama a `development` y, después, de `development` a `main` con la etiqueta `fase-7-completa`, y su fila en «Cierres de fase».
-- [ ] Fase 8 (pulido de tarjetas con mucho espacio, detectado en el 6.5; no se cambiaron): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl); las
+- [x] Fase 8 (pulido de tarjetas con mucho espacio, detectado en el 6.5; no se cambiaron): la tarjeta de métrica del dashboard del Administrador (`p-4`, cifra de 3xl); las
       tarjetas generales de Indicadores de Reportes (Administrador y Supervisor); las tarjetas de insight de Reportes (la variante compacta solo la usan los dashboards);
       y `TarjetaProyecto` de «Mis proyectos» (espacios `mt-4`). El Dashboard del Supervisor ya usa la variante compacta de `Tarjeta` (`BloquesDeDashboard`) como referencia.
+      **Resuelto en `3a9e1eb` (8.3, A2)**, salvo `TarjetaProyecto` de Mis proyectos del Supervisor (sin `compacta`; la rejilla pasó a 1 y 2 columnas).
 - [x] Módulo 6.4 (Reportes, Supervisor): el «Ver detalle» de un insight que habla de una persona (practicante inactivo, carga desbalanceada, fin de práctica) debe
       llevar a `/supervisor/practicantes/:idPracticante` (y el de un proyecto o una tarea, a su ruta del Supervisor). `rutaDelElemento` y la tarjeta compartida de
       insights (`src/app/insights/`) usaban solo la ruta del Administrador (`RUTA_DE_DETALLE.ADMINISTRADOR`). **Resuelto en `8194b00`:** `rutaDelElemento(tipo, id, rol)` y
