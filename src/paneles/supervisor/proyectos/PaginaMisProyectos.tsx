@@ -1,3 +1,6 @@
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
 import { useCallback, useMemo, useState } from 'react';
 import { aProyectos, aTarjetaDeProyecto } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
@@ -68,11 +71,7 @@ export function PaginaMisProyectos({ entorno = ENTORNO }: { entorno?: Entorno } 
     }
     if (datos === null) {
       return (
-        <div
-          className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
-          role="status"
-          aria-label="Cargando proyectos"
-        >
+        <div className="grid gap-3 sm:grid-cols-2" role="status" aria-label="Cargando proyectos">
           <Skeleton className="h-44 w-full" />
           <Skeleton className="h-44 w-full" />
         </div>
@@ -94,7 +93,7 @@ export function PaginaMisProyectos({ entorno = ENTORNO }: { entorno?: Entorno } 
       );
     }
     return (
-      <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid gap-3 sm:grid-cols-2">
         {visibles.map((fila) => {
           const t = aTarjetaDeProyecto(fila);
           return (
@@ -116,8 +115,11 @@ export function PaginaMisProyectos({ entorno = ENTORNO }: { entorno?: Entorno } 
 
   const contadores = datos?.contadores;
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Mis proyectos</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Mis proyectos"
+        subtitulo="Los proyectos que supervisas, con su avance y su equipo."
+      />
 
       <PestanasConContador
         valor={filtros.pestana}
@@ -130,11 +132,21 @@ export function PaginaMisProyectos({ entorno = ENTORNO }: { entorno?: Entorno } 
         ]}
       />
 
-      <BarraBusqueda
-        valor={filtros.busqueda}
-        onCambiar={(busqueda) => setFiltros((f) => ({ ...f, busqueda }))}
-        placeholder="Buscar por nombre"
-      />
+      <BarraDeFiltros>
+        <CampoDeFormulario
+          htmlFor="filtro-busqueda"
+          etiqueta="Buscar"
+          className="min-w-48 flex-[2]"
+        >
+          <BarraBusqueda
+            id="filtro-busqueda"
+            className="max-w-none"
+            valor={filtros.busqueda}
+            onCambiar={(busqueda) => setFiltros((f) => ({ ...f, busqueda }))}
+            placeholder="Buscar por nombre"
+          />
+        </CampoDeFormulario>
+      </BarraDeFiltros>
 
       {contenido()}
     </section>

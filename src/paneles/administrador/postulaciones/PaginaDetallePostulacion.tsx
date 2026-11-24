@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FileText } from 'lucide-react';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { es } from 'date-fns/locale';
+import { ArrowLeft, FileText } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { aDetallePostulacion } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo } from '@/compartido/LineaTiempo';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Button } from '@/compartido/ui/button';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import type { Id } from '@/domain';
 import { ENTORNO, evaluarPostulacion, obtenerPostulacion, type Entorno } from '@/services';
 import { AccionesDePostulacion } from './AccionesDePostulacion';
-import { BarraPuntaje } from './BarraPuntaje';
 import { DesgloseEvaluacion } from './DesgloseEvaluacion';
 import { RUTA_POSTULACIONES } from './rutas';
 
@@ -23,6 +27,10 @@ export const AVISO_USO_DEL_CV =
 export const NOTA_PUNTAJE_ES_AYUDA =
   'El puntaje es una ayuda para decidir: la decisión es siempre del Administrador.';
 
+/** Cómo se llega a la nota final (la proporción vigente está en Configuración). */
+const FORMULA_DE_LA_NOTA =
+  'Nota final = proporción del área × puntaje del área + proporción de la especialidad × puntaje de la especialidad, redondeada.';
+
 /** El estado del análisis de la IA de una postulación que no tenía evaluación. */
 type EstadoAnalisis = { id: Id; fase: 'ANALIZANDO' } | { id: Id; fase: 'ERROR'; mensaje: string };
 
@@ -30,8 +38,9 @@ function VolverAlListado() {
   return (
     <Link
       to={RUTA_POSTULACIONES}
-      className="text-sm font-medium text-link underline underline-offset-2"
+      className="inline-flex items-center gap-1 text-sm font-medium text-link hover:underline"
     >
+      <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden="true" />
       Volver a postulaciones
     </Link>
   );
@@ -77,7 +86,7 @@ export function PaginaDetallePostulacion({ entorno = ENTORNO }: { entorno?: Ento
 
   if (consulta.error) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAlListado />
         <p role="alert" className="text-sm text-danger-text">
           {consulta.error}
@@ -96,126 +105,139 @@ export function PaginaDetallePostulacion({ entorno = ENTORNO }: { entorno?: Ento
 
   const detalle = aDetallePostulacion(consulta.valor);
   const { evaluacion } = detalle;
+  const hace = formatDistanceToNowStrict(detalle.fecha, { addSuffix: true, locale: es });
 
   return (
-    <article className="space-y-6">
-      <header className="space-y-2">
-        <VolverAlListado />
-        <h1 className="text-text">{detalle.nombre}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Insignia tipo="postulacion" estado={detalle.estado} />
-          {evaluacion?.requiereRevision && <Insignia tipo="marca" estado="REVISION_MANUAL" />}
-        </div>
-        {detalle.practicante && (
-          <p className="text-sm text-text-2">
-            Se creó la cuenta de practicante de <strong>{detalle.practicante.nombre}</strong>.
-          </p>
-        )}
-        <AccionesDePostulacion
-          idActor={idUsuario}
-          postulacion={{ id: detalle.id, nombre: detalle.nombre, correo: detalle.correo }}
-          decisiones={detalle.decisiones}
-          entorno={entorno}
-        />
-      </header>
-
-      <section aria-label="Datos del postulante" className="space-y-2">
-        <h2 className="text-text">Datos del postulante</h2>
-        <dl className="grid gap-3 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
-          <div>
-            <dt className="text-text-2">Correo</dt>
-            <dd className="text-text">{detalle.correo}</dd>
-          </div>
-          <div>
-            <dt className="text-text-2">Celular</dt>
-            <dd className="text-text">{detalle.celular}</dd>
-          </div>
-          <div>
-            <dt className="text-text-2">Área técnica</dt>
-            <dd className="text-text">{detalle.area}</dd>
-          </div>
-          <div>
-            <dt className="text-text-2">Especialidad</dt>
-            <dd className="text-text">{detalle.especialidad}</dd>
-          </div>
-          <div>
-            <dt className="text-text-2">Fecha de postulación</dt>
-            <dd className="text-text tabular-nums">{detalle.fechaTexto}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section aria-label="Currículum" className="space-y-2">
-        <h2 className="text-text">Currículum</h2>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-4">
-          <div className="flex items-center gap-3">
-            <FileText className="size-5 text-text-2" strokeWidth={1.5} aria-hidden="true" />
-            <div>
-              <p className="text-sm font-medium text-text">{detalle.cv.nombre}</p>
-              <p className="text-xs text-text-2">
-                El prototipo no incluye el documento: aquí iría la vista previa del CV.
-              </p>
-            </div>
-          </div>
-          <Button type="button" variant="outline" disabled>
-            Descargar
-          </Button>
-        </div>
-        <p className="text-xs text-text-2">{AVISO_USO_DEL_CV}</p>
-      </section>
-
-      <section aria-label="Evaluación de la IA" className="space-y-3">
-        <h2 className="text-text">Evaluación de la IA</h2>
-        {evaluacion === null ? (
-          analisis?.id === detalle.id && analisis.fase === 'ERROR' ? (
-            <p
-              role="alert"
-              className="rounded-xl border border-border bg-surface p-4 text-sm text-danger-text"
-            >
-              No se pudo evaluar: {analisis.mensaje} Puedes decidir igualmente.
-            </p>
-          ) : analisis?.id === detalle.id ? (
-            <p
-              role="status"
-              className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2"
-            >
-              Analizando…
-            </p>
-          ) : (
-            <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-              Esta postulación todavía no tiene evaluación.
-            </p>
-          )
-        ) : (
+    <article className="space-y-3">
+      <CabeceraDeDetalle
+        volver={{ a: RUTA_POSTULACIONES, etiqueta: 'Volver a postulaciones' }}
+        titulo={detalle.nombre}
+        avatarDe={detalle.nombre}
+        insignias={
           <>
-            <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
-              <div className="flex flex-wrap items-center gap-4">
+            <Insignia tipo="postulacion" estado={detalle.estado} />
+            {evaluacion?.requiereRevision && <Insignia tipo="marca" estado="REVISION_MANUAL" />}
+          </>
+        }
+        metadatos={`${detalle.area} · ${detalle.especialidad} · ${detalle.fechaTexto} · ${hace}`}
+        acciones={
+          <AccionesDePostulacion
+            idActor={idUsuario}
+            postulacion={{ id: detalle.id, nombre: detalle.nombre, correo: detalle.correo }}
+            decisiones={detalle.decisiones}
+            entorno={entorno}
+          />
+        }
+      />
+
+      {detalle.practicante && (
+        <p className="text-xs text-text-2">
+          Se creó la cuenta de practicante de <strong>{detalle.practicante.nombre}</strong>.
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-5">
+        <div className="space-y-3 lg:col-span-2">
+          <PanelDeDatos titulo="Datos del postulante">
+            <ListaDeDefiniciones
+              disposicion="filas"
+              items={[
+                { etiqueta: 'Correo', valor: detalle.correo },
+                { etiqueta: 'Celular', valor: detalle.celular },
+                { etiqueta: 'Área técnica', valor: detalle.area },
+                { etiqueta: 'Especialidad', valor: detalle.especialidad },
+                {
+                  etiqueta: 'Fecha de postulación',
+                  valor: <span className="tabular-nums">{detalle.fechaTexto}</span>,
+                },
+              ]}
+            />
+          </PanelDeDatos>
+
+          <PanelDeDatos titulo="Currículum">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <FileText
+                  className="size-5 shrink-0 text-text-2"
+                  strokeWidth={1.5}
+                  aria-hidden="true"
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-text">{detalle.cv.nombre}</p>
+                  <p className="text-xs text-text-2">
+                    El prototipo no incluye el documento: aquí iría la vista previa del CV.
+                  </p>
+                </div>
+              </div>
+              <Button type="button" variant="outline" disabled>
+                Descargar
+              </Button>
+            </div>
+            <p className="text-xs text-text-2">{AVISO_USO_DEL_CV}</p>
+          </PanelDeDatos>
+
+          <PanelDeDatos titulo="Historial de la postulación">
+            <LineaTiempo eventos={detalle.eventos} />
+          </PanelDeDatos>
+        </div>
+
+        <PanelDeDatos titulo="Evaluación de la IA" className="lg:col-span-3">
+          {evaluacion === null ? (
+            analisis?.id === detalle.id && analisis.fase === 'ERROR' ? (
+              <p role="alert" className="text-sm text-danger-text">
+                No se pudo evaluar: {analisis.mensaje} Puedes decidir igualmente.
+              </p>
+            ) : analisis?.id === detalle.id ? (
+              <p role="status" className="text-sm text-text-2">
+                Analizando…
+              </p>
+            ) : (
+              <p className="text-sm text-text-2">Esta postulación todavía no tiene evaluación.</p>
+            )
+          ) : (
+            <>
+              <div className="space-y-2">
                 <div>
                   <p className="text-xs text-text-2">Puntaje final</p>
-                  <p className="text-2xl font-semibold text-text tabular-nums">
+                  <p className="text-3xl font-semibold text-text tabular-nums">
                     {evaluacion.puntajeTotal}
                     <span className="text-sm font-normal text-text-2">/100</span>
                   </p>
                 </div>
-                <BarraPuntaje puntaje={evaluacion.puntajeTotal} />
+                <div
+                  role="progressbar"
+                  aria-label="Puntaje de la IA"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={evaluacion.puntajeTotal}
+                  className="h-2 overflow-hidden rounded-full bg-surface-2"
+                >
+                  <div
+                    className="h-full rounded-full bg-primary"
+                    style={{ width: `${Math.min(100, Math.max(0, evaluacion.puntajeTotal))}%` }}
+                  />
+                </div>
               </div>
               <p className="text-sm text-text">{evaluacion.justificacion}</p>
-              <p className="text-xs text-text-2">Evaluada el {evaluacion.fechaTexto}.</p>
-              <p className="text-xs text-text-2">{NOTA_PUNTAJE_ES_AYUDA}</p>
-            </div>
-            <DesgloseEvaluacion
-              puntajeArea={evaluacion.puntajeArea}
-              puntajeEspecialidad={evaluacion.puntajeEspecialidad}
-              bloques={evaluacion.bloques}
-            />
-          </>
-        )}
-      </section>
-
-      <section aria-label="Historial de la postulación" className="space-y-3">
-        <h2 className="text-text">Historial de la postulación</h2>
-        <LineaTiempo eventos={detalle.eventos} />
-      </section>
+              <p className="text-xs text-text-2">
+                {evaluacion.pesos?.formula ?? FORMULA_DE_LA_NOTA}
+              </p>
+              <div className="border-t border-border pt-3">
+                <DesgloseEvaluacion
+                  puntajeArea={evaluacion.puntajeArea}
+                  puntajeEspecialidad={evaluacion.puntajeEspecialidad}
+                  pesos={evaluacion.pesos}
+                  bloques={evaluacion.bloques}
+                />
+              </div>
+              <div className="space-y-1 border-t border-border pt-3">
+                <p className="text-xs text-text-2">Evaluada el {evaluacion.fechaTexto}.</p>
+                <p className="text-xs text-text-2">{NOTA_PUNTAJE_ES_AYUDA}</p>
+              </div>
+            </>
+          )}
+        </PanelDeDatos>
+      </div>
     </article>
   );
 }

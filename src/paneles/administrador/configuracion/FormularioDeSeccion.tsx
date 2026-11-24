@@ -7,6 +7,7 @@ import {
   type SeccionParaVista,
 } from '@/app/adaptadores';
 import { ModalConfirmacion } from '@/compartido/ModalConfirmacion';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
 import { Label } from '@/compartido/ui/label';
@@ -82,19 +83,11 @@ export function FormularioDeSeccion({
   }
 
   return (
-    <section
-      aria-labelledby={`seccion-${seccion.seccion}`}
-      className="space-y-4 rounded-xl border border-border bg-surface p-4"
-    >
-      <div>
-        <h2 id={`seccion-${seccion.seccion}`} className="text-text">
-          {seccion.titulo}
-        </h2>
-        <p className="text-sm text-text-2">{seccion.descripcion}</p>
-      </div>
+    <PanelDeDatos titulo={seccion.titulo}>
+      <p className="-mt-2 text-xs text-text-2">{seccion.descripcion}</p>
 
-      <form onSubmit={guardar} className="space-y-4" aria-label={seccion.titulo}>
-        <div className="grid gap-4 md:grid-cols-2">
+      <form onSubmit={guardar} className="space-y-3" aria-label={seccion.titulo}>
+        <div className="grid gap-x-6 gap-y-3 md:grid-cols-2">
           {seccion.parametros.map((p) => {
             const err = errores.porClave[p.clave];
             return (
@@ -128,7 +121,17 @@ export function FormularioDeSeccion({
                       </div>
                     );
                   })}
-                  {p.unidad && <span className="pt-7 text-sm text-text-2">{p.unidad}</span>}
+                  {p.unidad && (
+                    <span
+                      className={
+                        p.campos.length > 1
+                          ? 'pt-7 text-sm text-text-2'
+                          : 'pt-1.5 text-sm text-text-2'
+                      }
+                    >
+                      {p.unidad}
+                    </span>
+                  )}
                 </div>
                 {err?.general && (
                   <p role="alert" className="text-xs text-danger-text">
@@ -149,10 +152,7 @@ export function FormularioDeSeccion({
           </p>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="submit" disabled={guardando}>
-            {guardando ? 'Guardando…' : 'Guardar'}
-          </Button>
+        <div className="flex flex-wrap justify-end gap-2 border-t border-border pt-3">
           <Button
             type="button"
             variant="outline"
@@ -160,6 +160,9 @@ export function FormularioDeSeccion({
             onClick={() => setRestaurando(true)}
           >
             Restaurar valores originales
+          </Button>
+          <Button type="submit" disabled={guardando}>
+            {guardando ? 'Guardando…' : 'Guardar'}
           </Button>
         </div>
       </form>
@@ -181,6 +184,6 @@ export function FormularioDeSeccion({
           }}
         />
       )}
-    </section>
+    </PanelDeDatos>
   );
 }

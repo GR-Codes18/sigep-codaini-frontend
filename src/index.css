@@ -19,6 +19,7 @@
   --surface: #ffffff;
   --surface-2: #f0f3f8;
   --border: #e1e6ef;
+  --input: #e1e6ef;
   --text: #0a192f;
   --text-2: #5b6785;
   --primary: #58c481;
@@ -53,10 +54,13 @@
 }
 
 [data-theme='dark'] {
-  --bg: #0f141b;
-  --surface: #181e27;
-  --surface-2: #1f2733;
-  --border: #283241;
+  /* Contraste en oscuro (Fase 8, módulo 8.1): capas y bordes más separados. */
+  --bg: #0b1016;
+  --surface: #1a222d;
+  --surface-2: #232d3b;
+  --border: #425064;
+  /* Borde de los campos: llega a 3:1 contra la superficie (WCAG 1.4.11). */
+  --input: #62728a;
   --text: #e6e9ef;
   --text-2: #9ba3b2;
   --primary: #58c481;
@@ -153,7 +157,7 @@
   --color-accent-foreground: var(--text);
   --color-destructive: var(--danger-text);
   --color-border: var(--border);
-  --color-input: var(--border);
+  --color-input: var(--input);
   --color-ring: var(--focus);
   --color-sidebar: var(--surface);
   --color-sidebar-foreground: var(--text);

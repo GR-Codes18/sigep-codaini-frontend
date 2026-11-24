@@ -1,32 +1,32 @@
 import { Link } from 'react-router';
 import type { FilaAvance, FilaPorRevisar, FilaReunion } from '@/app/adaptadores';
-import { EstadoVacio } from '@/compartido/EstadoVacio';
+import { FilaDeLista, ListaDeFilas } from '@/compartido/ListaDeFilas';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { cn } from '@/compartido/utils';
 
 /**
- * Los bloques que comparten los dashboards del Administrador (§5.9) y del Supervisor (§9.1.5). Solo presentan lo que la
- * consulta entrega. Con `compacta` ocupan menos espacio (el del Supervisor): el del Administrador no la usa y se ve igual
- * que antes.
+ * Los bloques que comparten los dashboards del Administrador (§5.9), del Supervisor (§9.1.5) y el Inicio del Practicante
+ * (§9.2.3). Solo presentan lo que la consulta entrega. Cada bloque es una sola caja con su título dentro (Fase 8,
+ * módulo 8.3); las listas van separadas por línea fina, sin cajas anidadas.
  */
 
 export function Seccion({
   titulo,
   accion,
+  sinRelleno,
   children,
 }: {
   titulo: string;
   /** Un enlace o botón a la derecha del título (por ejemplo, «Ver todas en Reportes»). */
   accion?: React.ReactNode;
+  /** Para una tabla que llega a los bordes de la caja. */
+  sinRelleno?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section aria-label={titulo} className="space-y-2">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-text">{titulo}</h2>
-        {accion}
-      </div>
+    <PanelDeDatos titulo={titulo} nombre={titulo} acciones={accion} sinRelleno={sinRelleno}>
       {children}
-    </section>
+    </PanelDeDatos>
   );
 }
 
@@ -38,22 +38,18 @@ export function EnlaceDeTarjeta({ a, children }: { a: string; children: React.Re
   );
 }
 
-/**
- * Un bloque sin nada que mostrar. Compacto es una sola línea baja, para que un bloque vacío no cambie mucho la altura del
- * conjunto.
- */
+/** Un bloque sin nada que mostrar: una línea de texto dentro de su caja, sin otra caja encima. */
 export function Vacio({
   titulo,
   descripcion,
-  compacta = false,
 }: {
   titulo: string;
   descripcion?: string;
+  /** Se conserva por compatibilidad: todos los vacíos son una línea. */
   compacta?: boolean;
 }) {
-  if (!compacta) return <EstadoVacio titulo={titulo} descripcion={descripcion} />;
   return (
-    <p className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text-2">
+    <p className="text-sm text-text-2">
       {titulo}
       {descripcion && <span className="block text-xs">{descripcion}</span>}
     </p>
@@ -77,8 +73,8 @@ const CLASES_DE_TONO: Record<TonoDeTarjeta, { caja: string; cifra: string; texto
 };
 
 /**
- * Una tarjeta de métrica: la cifra principal enlaza a su módulo con el filtro ya aplicado. La compacta pone la etiqueta, la
- * cifra y la cifra secundaria en tres líneas cortas, con poco relleno y sin crecer con el contenido.
+ * Una tarjeta de métrica: la cifra principal enlaza a su módulo con el filtro ya aplicado. Pone la etiqueta, la cifra y la
+ * cifra secundaria en tres líneas cortas, con `p-3` y sin crecer con el contenido.
  */
 export function Tarjeta({
   titulo,
@@ -86,38 +82,27 @@ export function Tarjeta({
   enlace,
   secundario,
   tono,
-  compacta = false,
 }: {
   titulo: string;
   valor: number;
   enlace: string;
   secundario: React.ReactNode;
   tono?: TonoDeTarjeta;
+  /** Se conserva por compatibilidad: todas las tarjetas son compactas. */
   compacta?: boolean;
 }) {
   const clases = tono === undefined ? null : CLASES_DE_TONO[tono];
   return (
     <article
       aria-label={titulo}
-      className={cn(
-        'rounded-xl border bg-surface',
-        clases?.caja ?? 'border-border',
-        compacta ? 'px-3 py-2' : 'space-y-1 p-4',
-      )}
+      className={cn('rounded-xl border bg-surface px-3 py-2', clases?.caja ?? 'border-border')}
     >
-      <h2
-        className={cn(
-          'font-medium',
-          compacta ? 'truncate text-xs' : 'text-sm',
-          clases?.texto ?? 'text-text-2',
-        )}
-      >
+      <h2 className={cn('truncate text-xs font-medium', clases?.texto ?? 'text-text-2')}>
         {titulo}
       </h2>
       <p
         className={cn(
-          'font-semibold tabular-nums',
-          compacta ? 'text-2xl leading-tight' : 'text-3xl',
+          'text-2xl leading-tight font-semibold tabular-nums',
           clases?.cifra ?? 'text-text',
         )}
       >
@@ -129,9 +114,7 @@ export function Tarjeta({
           {valor}
         </Link>
       </p>
-      <p className={cn(compacta ? 'truncate text-xs' : 'text-sm', clases?.texto ?? 'text-text-2')}>
-        {secundario}
-      </p>
+      <p className={cn('truncate text-xs', clases?.texto ?? 'text-text-2')}>{secundario}</p>
     </article>
   );
 }
@@ -148,8 +131,8 @@ function EnlaceODato({ ruta, children }: { ruta: string | null; children: React.
 
 /**
  * La cola de revisión: las tareas que más llevan esperando supervisión. Con `compacta`, cada tarea es una sola fila (ID,
- * título, proyecto, responsable y días esperando) con el título como enlace al detalle, donde se decide; sin tarjeta por
- * fila. Sin ella, la presentación de siempre del Administrador.
+ * título, proyecto, responsable y días esperando) con el título como enlace al detalle, donde se decide. Sin ella, dos
+ * líneas por tarea.
  */
 export function PorRevisar({
   filas,
@@ -163,13 +146,13 @@ export function PorRevisar({
   return (
     <Seccion titulo="Por revisar">
       {filas.length === 0 ? (
-        <Vacio titulo={vacio} compacta={compacta} />
+        <Vacio titulo={vacio} />
       ) : compacta ? (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ul className="divide-y divide-border">
           {filas.map((t) => (
             <li
               key={t.id}
-              className="grid gap-x-3 gap-y-0.5 px-3 py-1.5 text-sm md:grid-cols-[5.5rem_minmax(0,1fr)_12rem_10rem_6.5rem] md:items-center"
+              className="grid gap-x-3 gap-y-0.5 py-2 text-sm first:pt-0 last:pb-0 lg:grid-cols-[5.5rem_minmax(0,1fr)_12rem_10rem_6.5rem] lg:items-center"
             >
               <span className="font-medium text-text tabular-nums">{t.idLegible}</span>
               <span className="min-w-0 truncate">
@@ -177,15 +160,15 @@ export function PorRevisar({
               </span>
               <span className="truncate text-text-2">{t.proyecto.nombre}</span>
               <span className="truncate text-text-2">{t.responsable ?? 'Sin asignar'}</span>
-              <span className="text-xs text-text-2 md:text-right">{t.esperaTexto}</span>
+              <span className="text-xs text-text-2 lg:text-right">{t.esperaTexto}</span>
             </li>
           ))}
         </ul>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ListaDeFilas>
           {filas.map((t) => (
-            <li key={t.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
-              <div>
+            <FilaDeLista key={t.id}>
+              <div className="min-w-0">
                 <EnlaceODato ruta={t.rutaDetalle}>{t.titulo}</EnlaceODato>
                 <p className="text-xs text-text-2">
                   {t.idLegible} · {t.proyecto.nombre}
@@ -193,44 +176,32 @@ export function PorRevisar({
                 </p>
               </div>
               <span className="text-xs text-text-2">{t.esperaTexto}</span>
-            </li>
+            </FilaDeLista>
           ))}
-        </ul>
+        </ListaDeFilas>
       )}
     </Seccion>
   );
 }
 
 /** La reunión semanal de cada proyecto sin finalizar. */
-export function Reuniones({
-  filas,
-  compacta = false,
-}: {
-  filas: FilaReunion[];
-  compacta?: boolean;
-}) {
+export function Reuniones({ filas }: { filas: FilaReunion[]; compacta?: boolean }) {
   return (
     <Seccion titulo="Próximas reuniones">
       {filas.length === 0 ? (
-        <Vacio titulo="No hay proyectos sin finalizar" compacta={compacta} />
+        <Vacio titulo="No hay proyectos sin finalizar" />
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ListaDeFilas>
           {filas.map((r) => (
-            <li
-              key={r.proyecto.id}
-              className={cn(
-                'flex flex-wrap items-center justify-between gap-x-2',
-                compacta ? 'px-3 py-1.5' : 'gap-y-2 px-4 py-2',
-              )}
-            >
+            <FilaDeLista key={r.proyecto.id}>
               <div className="min-w-0">
                 <EnlaceODato ruta={r.rutaProyecto}>{r.proyecto.nombre}</EnlaceODato>
                 <p className="text-xs text-text-2">Reunión semanal: {r.reunionTexto}</p>
               </div>
               <span className="text-xs text-text tabular-nums">{r.proximaTexto}</span>
-            </li>
+            </FilaDeLista>
           ))}
-        </ul>
+        </ListaDeFilas>
       )}
     </Seccion>
   );
@@ -240,7 +211,6 @@ export function Reuniones({
 export function Avance({
   filas,
   titulo = 'Avance de los proyectos',
-  compacta = false,
 }: {
   filas: FilaAvance[];
   titulo?: string;
@@ -249,14 +219,11 @@ export function Avance({
   return (
     <Seccion titulo={titulo}>
       {filas.length === 0 ? (
-        <Vacio titulo="No hay proyectos sin finalizar" compacta={compacta} />
+        <Vacio titulo="No hay proyectos sin finalizar" />
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ul className="divide-y divide-border">
           {filas.map((a) => (
-            <li
-              key={a.proyecto.id}
-              className={cn('space-y-1', compacta ? 'px-3 py-1.5' : 'px-4 py-2')}
-            >
+            <li key={a.proyecto.id} className="space-y-1 py-2 text-sm first:pt-0 last:pb-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <EnlaceODato ruta={a.rutaProyecto}>{a.proyecto.nombre}</EnlaceODato>
                 <span className="text-xs text-text-2 tabular-nums">{a.avanceTexto}</span>

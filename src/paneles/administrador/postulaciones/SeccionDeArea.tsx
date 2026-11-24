@@ -87,11 +87,11 @@ function Criterios({
   onGuardar: (criterios: CriterioParaGuardar[]) => Promise<Resultado<unknown>>;
 }) {
   return (
-    <details className="rounded-md border border-border bg-surface-2 p-3">
-      <summary className="cursor-pointer text-sm font-medium text-text">
+    <details className="group">
+      <summary className="cursor-pointer rounded-md py-1 text-sm font-medium text-text hover:text-link focus-visible:ring-2 focus-visible:ring-focus">
         {titulo} · suma {bloque.suma}/100
       </summary>
-      <div className="mt-3">
+      <div className="mt-2">
         <EditorBloqueCriterios
           bloque={tipoBloque}
           criterios={bloque.criterios}
@@ -113,13 +113,10 @@ function FilaDeEspecialidad({
 }) {
   const [editando, setEditando] = useState(false);
   return (
-    <section
-      aria-label={`Especialidad ${especialidad.nombre}`}
-      className="space-y-2 rounded-md border border-border p-3"
-    >
+    <section aria-label={`Especialidad ${especialidad.nombre}`} className="space-y-2 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h3 className="text-text">{especialidad.nombre}</h3>
+          <h3 className="text-sm font-semibold text-text">{especialidad.nombre}</h3>
           <Insignia tipo="catalogo" estado={especialidad.activo ? 'ACTIVO' : 'INACTIVO'} />
         </div>
         <div className="flex gap-2">
@@ -179,11 +176,11 @@ export function SeccionDeArea({
   return (
     <section
       aria-label={`Área ${area.nombre}`}
-      className="space-y-3 rounded-xl border border-border bg-surface p-4"
+      className="rounded-xl border border-border bg-surface p-3"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-text">{area.nombre}</h2>
+          <h2 className="text-base font-semibold text-text">{area.nombre}</h2>
           <Insignia tipo="catalogo" estado={area.activo ? 'ACTIVO' : 'INACTIVO'} />
         </div>
         <div className="flex flex-wrap gap-2">
@@ -215,35 +212,41 @@ export function SeccionDeArea({
         </div>
       </div>
 
-      {editando && (
-        <FormularioNombre
-          etiqueta="Nombre del área"
-          etiquetaGuardar="Guardar nombre"
-          valorInicial={area.nombre}
-          onGuardar={(nombre) => acciones.editarArea(area.id, nombre)}
-          onCancelar={() => setEditando(false)}
-        />
-      )}
-      <AvisoParaActivar activo={area.activo} bloque={area.bloque} />
-
-      <Criterios
-        titulo="Criterios generales del área"
-        bloque={area.bloque}
-        tipoBloque="AREA"
-        onGuardar={(criterios) => acciones.guardarBloque(area.id, null, criterios)}
-      />
-
-      <div className="space-y-3">
-        {agregando && (
+      <div className="mt-3 space-y-2">
+        {editando && (
           <FormularioNombre
-            etiqueta="Nombre de la nueva especialidad"
-            etiquetaGuardar="Crear especialidad"
-            onGuardar={(nombre) => acciones.crearEspecialidad(area.id, nombre)}
-            onCancelar={() => setAgregando(false)}
+            etiqueta="Nombre del área"
+            etiquetaGuardar="Guardar nombre"
+            valorInicial={area.nombre}
+            onGuardar={(nombre) => acciones.editarArea(area.id, nombre)}
+            onCancelar={() => setEditando(false)}
           />
         )}
+        <AvisoParaActivar activo={area.activo} bloque={area.bloque} />
+      </div>
+
+      <div className="mt-3 divide-y divide-border border-t border-border">
+        <div className="py-2">
+          <Criterios
+            titulo="Criterios generales del área"
+            bloque={area.bloque}
+            tipoBloque="AREA"
+            onGuardar={(criterios) => acciones.guardarBloque(area.id, null, criterios)}
+          />
+        </div>
+
+        {agregando && (
+          <div className="py-3">
+            <FormularioNombre
+              etiqueta="Nombre de la nueva especialidad"
+              etiquetaGuardar="Crear especialidad"
+              onGuardar={(nombre) => acciones.crearEspecialidad(area.id, nombre)}
+              onCancelar={() => setAgregando(false)}
+            />
+          </div>
+        )}
         {area.especialidades.length === 0 ? (
-          <p className="text-sm text-text-2">Esta área todavía no tiene especialidades.</p>
+          <p className="py-3 text-sm text-text-2">Esta área todavía no tiene especialidades.</p>
         ) : (
           area.especialidades.map((e) => (
             <FilaDeEspecialidad key={e.id} idArea={area.id} especialidad={e} acciones={acciones} />

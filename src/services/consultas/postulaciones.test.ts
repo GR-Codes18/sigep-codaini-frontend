@@ -243,6 +243,14 @@ describe('obtenerPostulacion', () => {
     }
   });
 
+  it('la evaluación trae la proporción vigente de la nota, que es la de Configuración', async () => {
+    const prueba = prepararPrueba();
+
+    const r = valor(await obtener(prueba, APROBADA));
+
+    expect(r.evaluacion!.proporcion).toEqual({ area: 40, especialidad: 60 });
+  });
+
   it('cada bloque trae solo sus criterios y su evaluación', async () => {
     const prueba = prepararPrueba();
     const datos = prueba.datos();

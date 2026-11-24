@@ -1,8 +1,10 @@
 import { useState, type SetStateAction } from 'react';
 import type { Resultado } from '@/services';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
 import {
   esquemaContrasena,
   validarCamposDelPerfil,
@@ -130,80 +132,83 @@ export function PerfilUsuario({
   }
 
   return (
-    <div className="space-y-8">
-      <section className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-text">Datos de la cuenta</h2>
-        <dl className="grid gap-3 text-sm sm:grid-cols-2">
-          {cuenta.map((c) => (
-            <div key={c.etiqueta}>
-              <dt className="text-text-2">{c.etiqueta}</dt>
-              <dd className="text-text">{c.valor}</dd>
-            </div>
-          ))}
-        </dl>
-      </section>
+    <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-5">
+      <div className="space-y-3 lg:col-span-2">
+        <PanelDeDatos titulo="Datos de la cuenta">
+          <ListaDeDefiniciones
+            disposicion="filas"
+            items={cuenta.map((c) => ({ etiqueta: c.etiqueta, valor: c.valor }))}
+          />
+        </PanelDeDatos>
 
-      <section className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-text">Datos personales</h2>
-        <form onSubmit={guardar} noValidate className="space-y-4">
-          {campos.map(({ campo, editable }) => (
-            <div key={campo} className="space-y-1.5">
-              <Label htmlFor={`perfil-${campo}`}>{ETIQUETAS[campo]}</Label>
-              <Input
-                id={`perfil-${campo}`}
-                value={datos[campo]}
-                onChange={(e) => setDatos((d) => ({ ...d, [campo]: e.target.value }))}
-                disabled={guardando || !editable}
-                aria-invalid={errores[campo] ? true : undefined}
-              />
-              {errores[campo] && <p className="text-xs text-danger-text">{errores[campo]}</p>}
+        <PanelDeDatos titulo="Seguridad">
+          <form onSubmit={cambiarClave} noValidate className="space-y-3">
+            {(
+              [
+                ['actual', 'Contraseña actual'],
+                ['nueva', 'Nueva contraseña'],
+                ['confirmacion', 'Confirmar nueva contraseña'],
+              ] as const
+            ).map(([k, etiqueta]) => (
+              <CampoDeFormulario key={k} htmlFor={`clave-${k}`} etiqueta={etiqueta}>
+                <Input
+                  id={`clave-${k}`}
+                  type="password"
+                  autoComplete={k === 'actual' ? 'current-password' : 'new-password'}
+                  value={clave[k]}
+                  onChange={(e) => setClave((c) => ({ ...c, [k]: e.target.value }))}
+                  disabled={cambiando}
+                  aria-invalid={erroresClave[k] ? true : undefined}
+                />
+                {erroresClave[k] && <p className="text-xs text-danger-text">{erroresClave[k]}</p>}
+              </CampoDeFormulario>
+            ))}
+            {errorClave && (
+              <p role="alert" className="text-sm text-danger-text">
+                {errorClave}
+              </p>
+            )}
+            <div className="flex justify-end border-t border-border pt-3">
+              <Button type="submit" disabled={cambiando}>
+                {cambiando ? 'Cambiando…' : 'Cambiar contraseña'}
+              </Button>
             </div>
-          ))}
+          </form>
+        </PanelDeDatos>
+      </div>
+
+      <PanelDeDatos titulo="Datos personales" className="lg:col-span-3">
+        <form onSubmit={guardar} noValidate className="space-y-3">
+          <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2">
+            {campos.map(({ campo, editable }) => (
+              <CampoDeFormulario
+                key={campo}
+                htmlFor={`perfil-${campo}`}
+                etiqueta={ETIQUETAS[campo]}
+              >
+                <Input
+                  id={`perfil-${campo}`}
+                  value={datos[campo]}
+                  onChange={(e) => setDatos((d) => ({ ...d, [campo]: e.target.value }))}
+                  disabled={guardando || !editable}
+                  aria-invalid={errores[campo] ? true : undefined}
+                />
+                {errores[campo] && <p className="text-xs text-danger-text">{errores[campo]}</p>}
+              </CampoDeFormulario>
+            ))}
+          </div>
           {errorPerfil && (
             <p role="alert" className="text-sm text-danger-text">
               {errorPerfil}
             </p>
           )}
-          <Button type="submit" disabled={guardando}>
-            {guardando ? 'Guardando…' : 'Guardar cambios'}
-          </Button>
+          <div className="flex justify-end border-t border-border pt-3">
+            <Button type="submit" disabled={guardando}>
+              {guardando ? 'Guardando…' : 'Guardar cambios'}
+            </Button>
+          </div>
         </form>
-      </section>
-
-      <section className="rounded-xl border border-border bg-surface p-4">
-        <h2 className="mb-3 text-text">Seguridad</h2>
-        <form onSubmit={cambiarClave} noValidate className="space-y-4">
-          {(
-            [
-              ['actual', 'Contraseña actual'],
-              ['nueva', 'Nueva contraseña'],
-              ['confirmacion', 'Confirmar nueva contraseña'],
-            ] as const
-          ).map(([k, etiqueta]) => (
-            <div key={k} className="space-y-1.5">
-              <Label htmlFor={`clave-${k}`}>{etiqueta}</Label>
-              <Input
-                id={`clave-${k}`}
-                type="password"
-                autoComplete={k === 'actual' ? 'current-password' : 'new-password'}
-                value={clave[k]}
-                onChange={(e) => setClave((c) => ({ ...c, [k]: e.target.value }))}
-                disabled={cambiando}
-                aria-invalid={erroresClave[k] ? true : undefined}
-              />
-              {erroresClave[k] && <p className="text-xs text-danger-text">{erroresClave[k]}</p>}
-            </div>
-          ))}
-          {errorClave && (
-            <p role="alert" className="text-sm text-danger-text">
-              {errorClave}
-            </p>
-          )}
-          <Button type="submit" disabled={cambiando}>
-            {cambiando ? 'Cambiando…' : 'Cambiar contraseña'}
-          </Button>
-        </form>
-      </section>
+      </PanelDeDatos>
     </div>
   );
 }

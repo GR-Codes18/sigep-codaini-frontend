@@ -1,5 +1,7 @@
 import type { TareaDePracticanteParaVista } from '@/app/adaptadores';
 import { Insignia } from '@/compartido/Insignia';
+import { FilaDeLista, ListaDeFilas } from '@/compartido/ListaDeFilas';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 
 /**
  * Las tareas de un practicante en el detalle: la usan el Administrador (§5.2) y el Supervisor (§9.1.2, solo las de sus
@@ -15,20 +17,14 @@ export function ListaDeTareasDePracticante({
   tareas: TareaDePracticanteParaVista[];
 }) {
   return (
-    <section aria-label={titulo} className="space-y-2">
-      <h2 className="text-text">{titulo}</h2>
+    <PanelDeDatos titulo={titulo}>
       {tareas.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-          {vacio}
-        </p>
+        <p className="text-sm text-text-2">{vacio}</p>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ListaDeFilas>
           {tareas.map(({ tarea, proyecto }) => (
-            <li
-              key={tarea.id}
-              className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-            >
-              <div>
+            <FilaDeLista key={tarea.id}>
+              <div className="min-w-0">
                 <p className="text-text">
                   <span className="font-medium">{tarea.idLegible}</span> · {tarea.titulo}
                 </p>
@@ -40,10 +36,10 @@ export function ListaDeTareasDePracticante({
                 </span>
                 <Insignia tipo="tarea" estado={tarea.estado} />
               </div>
-            </li>
+            </FilaDeLista>
           ))}
-        </ul>
+        </ListaDeFilas>
       )}
-    </section>
+    </PanelDeDatos>
   );
 }

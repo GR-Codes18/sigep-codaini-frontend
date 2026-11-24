@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { format, parseISO } from 'date-fns';
 import { toast } from 'sonner';
 import type { EstadoPR, EstadoTarea, Fecha, FechaHora, MotivoAtencionResponsable } from '@/domain';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { Insignia } from '@/compartido/Insignia';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { LineaTiempo, type EventoLinea } from '@/compartido/LineaTiempo';
 import { ModalConfirmacion, type OpcionMotivo } from '@/compartido/ModalConfirmacion';
 import { Button } from '@/compartido/ui/button';
@@ -52,17 +55,32 @@ export interface AccionTarea {
 
 interface Props {
   tarea: TareaDetalle;
+  /** El camino de vuelta (enlace o acción) que se muestra arriba de la cabecera. */
+  volver?: { etiqueta: string; a?: string; onClick?: () => void };
   /** Ya filtradas por permisos y estado. Vacío = solo lectura. */
   acciones: AccionTarea[];
   eventos: EventoLinea[];
   onEjecutar: (clave: string, motivo?: string) => Promise<void>;
 }
 
-export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
+/**
+ * Las acciones que avanzan la tarea por su flujo; la primera que esté disponible es la acción principal del estado y la
+ * única en primario. Editar, activar o desactivar supervisión, el PR y demás van en contorno; las destructivas, en
+ * contorno rojo. Solo cambia la variante del botón: qué acciones hay y cuándo salen lo decide la consulta.
+ */
+const ORDEN_ACCION_PRINCIPAL = ['tomar', 'aprobar', 'crear_pr', 'enviar', 'terminar', 'reabrir'];
+
+const CLASE_DESTRUCTIVA =
+  'border-danger/60 text-danger-text hover:text-danger-text dark:border-danger/60';
+
+export function DetalleTarea({ tarea, volver, acciones, eventos, onEjecutar }: Props) {
   const [pendiente, setPendiente] = useState<AccionTarea | null>(null);
   // La etiqueta de PR y su enlace llegan ya decididos por la consulta (§7.3): aquí solo se muestran.
   const estadoPrVisible = tarea.estadoPr;
   const motivosAtencion = tarea.atencionResponsable ?? [];
+  const clavePrincipal = ORDEN_ACCION_PRINCIPAL.find((c) =>
+    acciones.some((a) => a.clave === c && !a.destructivo),
+  );
 
   async function alHacerClic(accion: AccionTarea) {
     if (accion.deshabilitada) return;
@@ -93,21 +111,51 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
   }
 
   return (
-    <article className="space-y-6">
-      <header className="space-y-2">
-        <p className="text-xs text-text-2 tabular-nums">
-          {tarea.idLegible} · {tarea.proyecto}
-        </p>
-        <h1 className="text-text">{tarea.titulo}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Insignia tipo="tarea" estado={tarea.estado} />
-          {tarea.devuelta && <Insignia tipo="marca" estado="DEVUELTA" />}
-          {estadoPrVisible && <Insignia tipo="pr" estado={estadoPrVisible} />}
-        </div>
-      </header>
+    <article className="space-y-3">
+      <CabeceraDeDetalle
+        volver={volver}
+        titulo={tarea.titulo}
+        insignias={
+          <>
+            <Insignia tipo="tarea" estado={tarea.estado} />
+            {tarea.devuelta && <Insignia tipo="marca" estado="DEVUELTA" />}
+            {estadoPrVisible && <Insignia tipo="pr" estado={estadoPrVisible} />}
+          </>
+        }
+        metadatos={
+          <span className="tabular-nums">
+            {tarea.idLegible} · {tarea.proyecto}
+          </span>
+        }
+        acciones={
+          acciones.length > 0 ? (
+            <>
+              {acciones.map((a) => (
+                <div key={a.clave} className="space-y-1">
+                  <Button
+                    type="button"
+                    variant={a.clave === clavePrincipal ? 'default' : 'outline'}
+                    className={a.destructivo ? CLASE_DESTRUCTIVA : undefined}
+                    onClick={() => alHacerClic(a)}
+                    disabled={a.deshabilitada}
+                    aria-describedby={a.avisoDeshabilitacion ? `aviso-${a.clave}` : undefined}
+                  >
+                    {a.etiqueta}
+                  </Button>
+                  {a.avisoDeshabilitacion && (
+                    <p id={`aviso-${a.clave}`} className="max-w-56 text-xs text-text-2">
+                      {a.avisoDeshabilitacion}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </>
+          ) : undefined
+        }
+      />
 
       {tarea.devuelta && tarea.observacion && (
-        <section className="rounded-xl bg-state-danger-bg p-4">
+        <section className="rounded-xl bg-state-danger-bg p-3">
           <h2 className="text-sm font-semibold text-state-danger-text">
             Observaciones del supervisor
           </h2>
@@ -118,7 +166,7 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
       {motivosAtencion.length > 0 && (
         <section
           role="status"
-          className="rounded-xl bg-state-warning-bg p-4 text-state-warning-text"
+          className="rounded-xl bg-state-warning-bg p-3 text-state-warning-text"
         >
           <h2 className="text-sm font-semibold">Revisar el responsable de la tarea</h2>
           <p className="mt-1 text-sm">
@@ -128,75 +176,62 @@ export function DetalleTarea({ tarea, acciones, eventos, onEjecutar }: Props) {
         </section>
       )}
 
-      <dl className="grid gap-3 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
-        <div>
-          <dt className="text-text-2">Responsable</dt>
-          <dd className="text-text">{tarea.responsable ?? 'Sin asignar'}</dd>
-        </div>
-        <div>
-          <dt className="text-text-2">Fecha límite</dt>
-          <dd className="text-text tabular-nums">
-            {format(parseISO(tarea.fechaLimite), 'dd/MM/yyyy')}
-          </dd>
-        </div>
-        <div>
-          <dt className="text-text-2">Requiere supervisión</dt>
-          <dd className="text-text">{tarea.requiereSupervision ? 'Sí' : 'No'}</dd>
-        </div>
-        <div>
-          <dt className="text-text-2">Requiere PR</dt>
-          <dd className="text-text">{tarea.requierePr ? 'Sí' : 'No'}</dd>
-        </div>
-        {tarea.urlPr && (
-          <div className="sm:col-span-2">
-            <dt className="text-text-2">Pull Request</dt>
-            <dd>
-              <a href={tarea.urlPr} className="text-link underline underline-offset-2">
-                {tarea.urlPr}
-              </a>
-              {tarea.ramaOrigen && tarea.ramaBase && (
-                <span className="text-text-2">
-                  {' '}
-                  ({tarea.ramaOrigen} → {tarea.ramaBase})
-                </span>
-              )}
-            </dd>
-          </div>
-        )}
-      </dl>
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-5">
+        <div className="space-y-3 lg:col-span-2">
+          <PanelDeDatos titulo="Datos de la tarea">
+            <ListaDeDefiniciones
+              disposicion="filas"
+              items={[
+                { etiqueta: 'Responsable', valor: tarea.responsable ?? 'Sin asignar' },
+                {
+                  etiqueta: 'Fecha límite',
+                  valor: (
+                    <span className="tabular-nums">
+                      {format(parseISO(tarea.fechaLimite), 'dd/MM/yyyy')}
+                    </span>
+                  ),
+                },
+                {
+                  etiqueta: 'Requiere supervisión',
+                  valor: tarea.requiereSupervision ? 'Sí' : 'No',
+                },
+                { etiqueta: 'Requiere PR', valor: tarea.requierePr ? 'Sí' : 'No' },
+                ...(tarea.urlPr
+                  ? [
+                      {
+                        etiqueta: 'Pull Request',
+                        valor: (
+                          <>
+                            <a
+                              href={tarea.urlPr}
+                              className="break-all text-link underline underline-offset-2"
+                            >
+                              {tarea.urlPr}
+                            </a>
+                            {tarea.ramaOrigen && tarea.ramaBase && (
+                              <span className="text-text-2">
+                                {' '}
+                                ({tarea.ramaOrigen} → {tarea.ramaBase})
+                              </span>
+                            )}
+                          </>
+                        ),
+                      },
+                    ]
+                  : []),
+              ]}
+            />
+          </PanelDeDatos>
 
-      <section>
-        <h2 className="mb-1 text-text">Descripción</h2>
-        <p className="text-sm whitespace-pre-line text-text">{tarea.descripcion}</p>
-      </section>
-
-      {acciones.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {acciones.map((a) => (
-            <div key={a.clave} className="space-y-1">
-              <Button
-                type="button"
-                variant={a.destructivo ? 'outline' : 'default'}
-                onClick={() => alHacerClic(a)}
-                disabled={a.deshabilitada}
-                aria-describedby={a.avisoDeshabilitacion ? `aviso-${a.clave}` : undefined}
-              >
-                {a.etiqueta}
-              </Button>
-              {a.avisoDeshabilitacion && (
-                <p id={`aviso-${a.clave}`} className="max-w-56 text-xs text-text-2">
-                  {a.avisoDeshabilitacion}
-                </p>
-              )}
-            </div>
-          ))}
+          <PanelDeDatos titulo="Historial de la tarea">
+            <LineaTiempo eventos={eventos} />
+          </PanelDeDatos>
         </div>
-      )}
 
-      <section>
-        <h2 className="mb-3 text-text">Historial de la tarea</h2>
-        <LineaTiempo eventos={eventos} />
-      </section>
+        <PanelDeDatos titulo="Descripción" className="lg:col-span-3">
+          <p className="text-sm whitespace-pre-line text-text">{tarea.descripcion}</p>
+        </PanelDeDatos>
+      </div>
 
       {pendiente && (
         <ModalConfirmacion

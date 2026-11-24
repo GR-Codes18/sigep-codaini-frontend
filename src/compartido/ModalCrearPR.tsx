@@ -1,3 +1,4 @@
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import type { Resultado } from '@/services';
@@ -11,7 +12,6 @@ import {
   DialogTitle,
 } from '@/compartido/ui/dialog';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
 import { Textarea } from '@/compartido/ui/textarea';
 
 export interface DatosPR {
@@ -142,8 +142,7 @@ function Contenido({
       </DialogHeader>
 
       <div className="space-y-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="pr-titulo">Título</Label>
+        <CampoDeFormulario htmlFor="pr-titulo" etiqueta="Título">
           <Input
             id="pr-titulo"
             value={titulo}
@@ -152,10 +151,9 @@ function Contenido({
             aria-invalid={errores.titulo ? true : undefined}
           />
           {errores.titulo && <p className="text-xs text-danger-text">{errores.titulo}</p>}
-        </div>
+        </CampoDeFormulario>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="pr-descripcion">Descripción</Label>
+        <CampoDeFormulario htmlFor="pr-descripcion" etiqueta="Descripción">
           <Textarea
             id="pr-descripcion"
             rows={4}
@@ -165,10 +163,9 @@ function Contenido({
             aria-invalid={errores.descripcion ? true : undefined}
           />
           {errores.descripcion && <p className="text-xs text-danger-text">{errores.descripcion}</p>}
-        </div>
+        </CampoDeFormulario>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="pr-buscar-rama">Rama de trabajo</Label>
+        <CampoDeFormulario htmlFor="pr-buscar-rama" etiqueta="Rama de trabajo">
           <Input
             id="pr-buscar-rama"
             type="search"
@@ -226,12 +223,11 @@ function Contenido({
             </div>
           )}
           <p className="text-xs text-text-2">¿No ves tu rama? Asegúrate de haberla subido.</p>
-        </div>
+        </CampoDeFormulario>
 
-        <div className="space-y-1.5">
-          <Label htmlFor="pr-rama-base">Rama base</Label>
+        <CampoDeFormulario htmlFor="pr-rama-base" etiqueta="Rama base">
           <Input id="pr-rama-base" value={ramaBase} readOnly disabled />
-        </div>
+        </CampoDeFormulario>
       </div>
 
       {errorGeneral && (

@@ -1,3 +1,5 @@
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/compartido/ui/button';
@@ -9,7 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/compartido/ui/dialog';
-import { Label } from '@/compartido/ui/label';
 import type { Id } from '@/domain';
 import { cambiarSupervisor, ENTORNO, type Entorno, type PersonaResumen } from '@/services';
 
@@ -21,9 +22,6 @@ interface Props {
   onCerrar: () => void;
   entorno?: Entorno;
 }
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /**
  * «Cambiar supervisor» de un proyecto (§5.3 y §5.4): el mismo cuadro de la reasignación del módulo Supervisores, para un
@@ -76,13 +74,12 @@ export function CambiarSupervisorDelProyecto({
           Supervisor actual:{' '}
           <span className="font-medium text-text">{proyecto.supervisor.nombre}</span>
         </p>
-        <div className="space-y-1.5">
-          <Label htmlFor="nuevo-supervisor-proyecto">Nuevo supervisor</Label>
+        <CampoDeFormulario htmlFor="nuevo-supervisor-proyecto" etiqueta="Nuevo supervisor">
           <select
             id="nuevo-supervisor-proyecto"
             value={elegido}
             disabled={guardando}
-            className={CLASE_SELECT}
+            className={CLASE_CAMPO}
             onChange={(e) => setElegido(e.target.value)}
           >
             <option value="">Elige un supervisor</option>
@@ -92,7 +89,7 @@ export function CambiarSupervisorDelProyecto({
               </option>
             ))}
           </select>
-        </div>
+        </CampoDeFormulario>
 
         {error && (
           <p role="alert" className="text-sm text-danger-text">

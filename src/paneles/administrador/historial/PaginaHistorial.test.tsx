@@ -5,7 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
 import { useAlmacen } from '@/data';
 import { crearEntorno, listarHistorial, type FiltrosHistorial } from '@/services';
-import { PaginaHistorial } from './PaginaHistorial';
+import { FILAS_POR_PAGINA, PaginaHistorial } from './PaginaHistorial';
 
 const ADMIN = 'demo-admin';
 const entorno = crearEntorno({ demoraMs: 0 });
@@ -62,7 +62,7 @@ describe('Historial de actividad', () => {
     for (const e of ['Fecha y hora', 'Autor', 'Acción', 'Elemento', 'Cambio']) {
       expect(screen.getByRole('columnheader', { name: e })).toBeInTheDocument();
     }
-    expect(filas()).toHaveLength(todos.length);
+    expect(filas()).toHaveLength(Math.min(todos.length, FILAS_POR_PAGINA));
     // Eventos inmutables: ni editar ni borrar.
     expect(screen.queryByRole('button', { name: /editar|borrar|eliminar/i })).toBeNull();
   });
@@ -91,7 +91,7 @@ describe('Historial de actividad', () => {
 
     await usuario.selectOptions(screen.getByLabelText('Categoría'), 'TAREAS');
 
-    await waitFor(() => expect(filas()).toHaveLength(esperadas.length));
+    await waitFor(() => expect(filas()).toHaveLength(Math.min(esperadas.length, FILAS_POR_PAGINA)));
   });
 
   it('el autor «Sistema» deja solo los eventos automáticos', async () => {
@@ -101,7 +101,9 @@ describe('Historial de actividad', () => {
 
     await usuario.selectOptions(screen.getByLabelText('Autor'), 'SISTEMA');
 
-    await waitFor(() => expect(filas()).toHaveLength(del_sistema.length));
+    await waitFor(() =>
+      expect(filas()).toHaveLength(Math.min(del_sistema.length, FILAS_POR_PAGINA)),
+    );
     for (const fila of filas()) expect(within(fila).getByText('Sistema')).toBeInTheDocument();
   });
 
@@ -114,7 +116,7 @@ describe('Historial de actividad', () => {
 
     await usuario.type(screen.getByRole('searchbox'), etiqueta);
 
-    await waitFor(() => expect(filas()).toHaveLength(esperadas.length));
+    await waitFor(() => expect(filas()).toHaveLength(Math.min(esperadas.length, FILAS_POR_PAGINA)));
   });
 
   it('una fecha inicial posterior a la final muestra el error del servicio', async () => {
@@ -136,7 +138,7 @@ describe('Historial de actividad', () => {
     expect(await screen.findByText('Ningún evento coincide con los filtros')).toBeInTheDocument();
 
     await usuario.click(screen.getByRole('button', { name: 'Limpiar filtros' }));
-    await waitFor(() => expect(filas()).toHaveLength(todos.length));
+    await waitFor(() => expect(filas()).toHaveLength(Math.min(todos.length, FILAS_POR_PAGINA)));
   });
 
   it('un clic en la fila abre el detalle con el valor anterior y el nuevo de cada campo', async () => {
@@ -181,5 +183,47 @@ describe('Historial de actividad', () => {
     await usuario.click(enlace);
 
     expect(await screen.findByText('Detalle abierto')).toBeInTheDocument();
+  });
+
+  describe('paginación', () => {
+    it('muestra 25 filas por página y el rango «Mostrando 1–25 de N» al pie', async () => {
+      await mostrar();
+      const todos = await esperados();
+      expect(todos.length).toBeGreaterThan(FILAS_POR_PAGINA);
+
+      expect(filas()).toHaveLength(FILAS_POR_PAGINA);
+      expect(
+        screen.getByText(`Mostrando 1–${FILAS_POR_PAGINA} de ${todos.length}`),
+      ).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled();
+    });
+
+    it('«Siguiente» y «Anterior» cambian de página', async () => {
+      const user = userEvent.setup();
+      await mostrar();
+      const todos = await esperados();
+      const primera = filas()[0]!.textContent;
+
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+      expect(
+        screen.getByText(
+          `Mostrando ${FILAS_POR_PAGINA + 1}–${Math.min(todos.length, FILAS_POR_PAGINA * 2)} de ${todos.length}`,
+        ),
+      ).toBeInTheDocument();
+      expect(filas()[0]!.textContent).not.toBe(primera);
+
+      await user.click(screen.getByRole('button', { name: 'Anterior' }));
+      expect(filas()[0]!.textContent).toBe(primera);
+    });
+
+    it('al filtrar vuelve a la primera página', async () => {
+      const user = userEvent.setup();
+      await mostrar();
+      await user.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+      await user.selectOptions(screen.getByLabelText('Autor'), 'Sistema');
+
+      await waitFor(() => expect(screen.getByText(/^Mostrando 1–/)).toBeInTheDocument());
+    });
   });
 });

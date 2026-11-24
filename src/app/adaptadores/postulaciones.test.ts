@@ -103,6 +103,7 @@ function detalle(cambios: Partial<PostulacionDetalle> = {}): PostulacionDetalle 
       justificacion: 'Cumple 6 de 8 criterios.',
       requiere_revision_manual: false,
       fecha_evaluacion: '2026-11-08T16:00:00.000Z',
+      proporcion: { area: 40, especialidad: 60 },
       bloques: {
         AREA: [
           {
@@ -161,6 +162,34 @@ describe('aDetallePostulacion', () => {
 
     expect(vista.area).toBe('Sin área');
     expect(vista.especialidad).toBe('Sin especialidad');
+  });
+
+  it('los pesos y la fórmula con números salen de la proporción cuando reproduce la nota guardada', () => {
+    const { evaluacion } = aDetallePostulacion(detalle());
+
+    expect(evaluacion?.pesos).toEqual({
+      area: 40,
+      especialidad: 60,
+      formula: 'Nota final = 0,4 × 80 + 0,6 × 90 = 86',
+    });
+  });
+
+  it('si la proporción vigente ya no reproduce la nota guardada, no afirma ninguna fórmula', () => {
+    const base = detalle();
+    const vista = aDetallePostulacion(
+      detalle({ evaluacion: { ...base.evaluacion!, proporcion: { area: 70, especialidad: 30 } } }),
+    );
+
+    expect(vista.evaluacion?.pesos).toBeNull();
+  });
+
+  it('sin proporción (parámetro roto) tampoco hay pesos', () => {
+    const base = detalle();
+    const vista = aDetallePostulacion(
+      detalle({ evaluacion: { ...base.evaluacion!, proporcion: null } }),
+    );
+
+    expect(vista.evaluacion?.pesos).toBeNull();
   });
 
   it('la evaluación trae el puntaje final, los de cada bloque y el desglose con la observación vacía como texto vacío', () => {

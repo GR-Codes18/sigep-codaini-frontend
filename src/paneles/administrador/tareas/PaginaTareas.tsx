@@ -1,3 +1,8 @@
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { CLASE_CAMPO } from '@/compartido/estiloCampo';
+import { PieDeTabla } from '@/compartido/PieDeTabla';
 import { useCallback, useMemo, useState } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
@@ -11,7 +16,6 @@ import { Insignia } from '@/compartido/Insignia';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
 import { Button } from '@/compartido/ui/button';
-import { Label } from '@/compartido/ui/label';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { cn } from '@/compartido/utils';
 import type { Rol } from '@/domain';
@@ -31,9 +35,6 @@ import {
   type PestanaTareas,
 } from './filtros';
 import { rutaDeDetalleDeTareaGlobal } from './rutas';
-
-const CLASE_SELECT =
-  'h-8 w-full rounded-md border border-input bg-surface px-2.5 text-sm text-text outline-none focus-visible:ring-2 focus-visible:ring-focus';
 
 /** Mensaje de un listado vacío cuando no hay filtros: cada pestaña dice lo suyo. */
 const VACIO_POR_PESTANA: Record<PestanaTareas, string> = {
@@ -56,7 +57,7 @@ function columnasDe(rol: Rol, conDiasEsperando: boolean): Columna<FilaTarea>[] {
       className: 'whitespace-nowrap',
       celda: (f) => <span className="font-medium text-text tabular-nums">{f.idLegible}</span>,
     },
-    { clave: 'titulo', encabezado: 'Título', celda: (f) => f.titulo },
+    { clave: 'titulo', encabezado: 'Título', className: 'min-w-48', celda: (f) => f.titulo },
     { clave: 'proyecto', encabezado: 'Proyecto', celda: (f) => f.proyecto.nombre },
     {
       clave: 'responsable',
@@ -137,7 +138,7 @@ function Casilla({
   onCambiar: (marcada: boolean) => void;
 }) {
   return (
-    <label className="flex h-8 items-center gap-2 text-sm text-text">
+    <label className="flex h-9 items-center gap-2 text-sm text-text sm:h-8">
       <input type="checkbox" checked={marcada} onChange={(e) => onCambiar(e.target.checked)} />
       {etiqueta}
     </label>
@@ -238,15 +239,18 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
   const contadores = datos?.contadores;
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-text">Tareas</h1>
-        {datos !== null && datos.proyectosParaCrear.length > 0 && (
-          <Button type="button" onClick={() => setCreando(true)}>
-            Nueva tarea
-          </Button>
-        )}
-      </div>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Tareas"
+        subtitulo="Todas las tareas de tus proyectos, por estado."
+        acciones={
+          datos !== null && datos.proyectosParaCrear.length > 0 ? (
+            <Button type="button" onClick={() => setCreando(true)}>
+              Nueva tarea
+            </Button>
+          ) : undefined
+        }
+      />
 
       {!eligiendoPestanaInicial && (
         <>
@@ -267,19 +271,30 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
             ]}
           />
 
-          <div className="flex flex-wrap items-end gap-3">
-            <BarraBusqueda
-              valor={filtros.busqueda}
-              onCambiar={(busqueda) => cambiar({ busqueda })}
-              placeholder="Buscar por título o ID"
-            />
-            <div className="w-48 space-y-1">
-              <Label htmlFor="filtro-proyecto">Proyecto</Label>
+          <BarraDeFiltros>
+            <CampoDeFormulario
+              htmlFor="filtro-busqueda"
+              etiqueta="Buscar"
+              className="min-w-48 flex-[2]"
+            >
+              <BarraBusqueda
+                id="filtro-busqueda"
+                className="max-w-none"
+                valor={filtros.busqueda}
+                onCambiar={(busqueda) => cambiar({ busqueda })}
+                placeholder="Buscar por título o ID"
+              />
+            </CampoDeFormulario>
+            <CampoDeFormulario
+              htmlFor="filtro-proyecto"
+              etiqueta="Proyecto"
+              className="min-w-36 flex-1"
+            >
               <select
                 id="filtro-proyecto"
                 value={filtros.idProyecto}
                 onChange={(e) => cambiar({ idProyecto: e.target.value })}
-                className={CLASE_SELECT}
+                className={CLASE_CAMPO}
               >
                 <option value="">Todos</option>
                 {opcionesDeProyecto(filas).map((p) => (
@@ -288,14 +303,17 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="w-48 space-y-1">
-              <Label htmlFor="filtro-responsable">Responsable</Label>
+            </CampoDeFormulario>
+            <CampoDeFormulario
+              htmlFor="filtro-responsable"
+              etiqueta="Responsable"
+              className="min-w-36 flex-1"
+            >
               <select
                 id="filtro-responsable"
                 value={filtros.idResponsable}
                 onChange={(e) => cambiar({ idResponsable: e.target.value })}
-                className={CLASE_SELECT}
+                className={CLASE_CAMPO}
               >
                 <option value="">Todos</option>
                 {opcionesDeResponsable(filas).map((r) => (
@@ -304,14 +322,17 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
                   </option>
                 ))}
               </select>
-            </div>
-            <div className="w-44 space-y-1">
-              <Label htmlFor="filtro-pr">Pull Request</Label>
+            </CampoDeFormulario>
+            <CampoDeFormulario
+              htmlFor="filtro-pr"
+              etiqueta="Pull Request"
+              className="min-w-36 flex-1"
+            >
               <select
                 id="filtro-pr"
                 value={filtros.estadoPr}
                 onChange={(e) => cambiar({ estadoPr: e.target.value as FiltrosTareas['estadoPr'] })}
-                className={CLASE_SELECT}
+                className={CLASE_CAMPO}
               >
                 <option value="">Todos</option>
                 {OPCIONES_ESTADO_PR.map((e) => (
@@ -320,7 +341,7 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
                   </option>
                 ))}
               </select>
-            </div>
+            </CampoDeFormulario>
             <Casilla
               etiqueta="Vencidas"
               marcada={filtros.soloVencidas}
@@ -336,11 +357,18 @@ export function PaginaTareas({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
               marcada={filtros.soloRequierenSupervision}
               onCambiar={(soloRequierenSupervision) => cambiar({ soloRequierenSupervision })}
             />
-          </div>
+          </BarraDeFiltros>
         </>
       )}
 
       {contenido()}
+
+      {datos !== null && !consulta.error && visibles.length > 0 && (
+        <PieDeTabla>
+          Mostrando {visibles.length} de {datos.contadores.TODAS} tareas. Un clic en una fila abre
+          su detalle.
+        </PieDeTabla>
+      )}
 
       {creando && datos !== null && (
         <DialogoNuevaTarea

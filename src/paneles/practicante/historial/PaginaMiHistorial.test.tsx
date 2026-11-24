@@ -336,16 +336,21 @@ describe('Mi historial del Practicante (§9.2.2)', () => {
   });
 
   describe('diseño', () => {
-    it('los filtros van en una tarjeta compacta con los tokens de TarjetaDeDatos y el conteo', async () => {
+    it('los filtros van en una sola tarjeta compacta y el conteo queda al pie de la tabla', async () => {
       const esperado = await miHistorial();
       mostrar('/practicante/historial');
 
-      const tarjeta = await screen.findByRole('region', { name: 'Filtros' });
+      const campo = await screen.findByLabelText('Proyecto');
+      const tarjeta = campo.closest('div.rounded-xl')!;
       for (const c of ['border-border', 'rounded-xl', 'bg-surface', 'p-3', 'border']) {
         expect(tarjeta.className.split(' ')).toContain(c);
       }
-      expect(tarjeta).toHaveTextContent(`${esperado.tareas.length} tareas terminadas`);
-      expect(within(tarjeta).getByLabelText('Proyecto')).toBeInTheDocument();
+      expect(screen.getByLabelText('Buscar por título o ID').closest('div.rounded-xl')).toBe(
+        tarjeta,
+      );
+      expect(await screen.findByText(`${esperado.tareas.length} tareas terminadas`)).toHaveClass(
+        'text-xs',
+      );
     });
 
     it('no usa colores a mano: solo variables del tema', async () => {

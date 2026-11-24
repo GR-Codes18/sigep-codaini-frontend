@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { Button } from '@/compartido/ui/button';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { EstadoVacio } from '@/compartido/EstadoVacio';
 import { PestanasConContador } from '@/compartido/PestanasConContador';
 import { Skeleton } from '@/compartido/ui/skeleton';
@@ -26,16 +28,21 @@ export function PaginaNotificaciones() {
   }
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Notificaciones</h1>
-      <button
-        type="button"
-        onClick={marcarTodas}
-        disabled={todas.noLeidas === 0}
-        className="text-sm font-medium text-link underline underline-offset-2 disabled:opacity-50"
-      >
-        Marcar todas como leídas
-      </button>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Notificaciones"
+        subtitulo="Avisos sobre tus tareas, proyectos y postulaciones."
+        acciones={
+          <Button
+            type="button"
+            variant="outline"
+            onClick={marcarTodas}
+            disabled={todas.noLeidas === 0}
+          >
+            Marcar todas como leídas
+          </Button>
+        }
+      />
       <PestanasConContador
         valor={pestana}
         onCambiar={setPestana}
@@ -56,7 +63,7 @@ export function PaginaNotificaciones() {
       ) : vista.items.length === 0 ? (
         <EstadoVacio titulo="No tienes notificaciones" />
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-surface">
           {vista.items.map((n) => (
             <li key={n.id}>
               <button
@@ -74,7 +81,7 @@ export function PaginaNotificaciones() {
                   if (n.existe && n.ruta) navegar(n.ruta);
                 }}
                 aria-disabled={!n.existe || !n.ruta}
-                className="flex w-full justify-between gap-4 px-4 py-3 text-left hover:bg-surface-2"
+                className="flex w-full justify-between gap-4 px-3 py-2 text-left hover:bg-surface-2"
               >
                 <span className={n.leida ? 'text-sm text-text-2' : 'text-sm font-medium text-text'}>
                   {n.texto}

@@ -91,7 +91,7 @@ export function DetalleDeTarea({
     tarea.valor.proyecto.id !== idProyectoEsperado;
   if (tarea.error || ajena) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-3">
         <Button variant="outline" onClick={onVolver}>
           {etiquetaVolver}
         </Button>
@@ -114,8 +114,8 @@ export function DetalleDeTarea({
 
   if (editando) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-text">Editar {detalle.idLegible}</h2>
+      <div className="space-y-3">
+        <h2 className="text-base font-semibold text-text">Editar {detalle.idLegible}</h2>
         <FormularioTarea
           modo="editar"
           idActor={idUsuario}
@@ -135,13 +135,11 @@ export function DetalleDeTarea({
   }
 
   return (
-    <div className="space-y-4">
-      <Button variant="outline" onClick={onVolver}>
-        {etiquetaVolver}
-      </Button>
+    <div className="space-y-3">
       <DetalleTarea
         key={detalle.id}
         tarea={detalle}
+        volver={{ etiqueta: etiquetaVolver, onClick: onVolver }}
         acciones={aAccionesTarea(vista.acciones, detalle, idUsuario, entorno)}
         eventos={aEventosLinea(vista.eventos)}
         onEjecutar={async (clave) => {

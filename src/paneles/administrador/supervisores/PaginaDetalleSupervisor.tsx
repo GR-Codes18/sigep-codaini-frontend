@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import {
   aDetalleSupervisor,
@@ -7,8 +8,12 @@ import {
 } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { Insignia } from '@/compartido/Insignia';
 import { LineaTiempo } from '@/compartido/LineaTiempo';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { FilaDeLista, ListaDeFilas } from '@/compartido/ListaDeFilas';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, obtenerSupervisor, type Entorno } from '@/services';
 import { AccionesDeSupervisor } from './AccionesDeSupervisor';
@@ -18,19 +23,11 @@ function VolverAlListado() {
   return (
     <Link
       to={RUTA_SUPERVISORES}
-      className="text-sm font-medium text-link underline underline-offset-2"
+      className="inline-flex items-center gap-1 text-sm font-medium text-link hover:underline"
     >
+      <ArrowLeft className="size-4" strokeWidth={1.5} aria-hidden="true" />
       Volver a supervisores
     </Link>
-  );
-}
-
-function Dato({ etiqueta, children }: { etiqueta: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-text-2">{etiqueta}</dt>
-      <dd className="text-text">{children}</dd>
-    </div>
   );
 }
 
@@ -39,69 +36,57 @@ const plural = (n: number, singular: string, plurales: string) =>
 
 function ProyectosACargo({ proyectos }: { proyectos: ProyectoACargoParaVista[] }) {
   return (
-    <section aria-label="Proyectos a cargo" className="space-y-2">
-      <h2 className="text-text">Proyectos a cargo</h2>
+    <PanelDeDatos titulo="Proyectos a cargo">
       {proyectos.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-          No tiene proyectos a cargo.
-        </p>
+        <p className="text-sm text-text-2">No tiene proyectos a cargo.</p>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ListaDeFilas>
           {proyectos.map((p) => (
-            <li
-              key={p.proyecto.id}
-              className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-            >
+            <FilaDeLista key={p.proyecto.id}>
               <div className="flex items-center gap-2">
                 <span className="font-medium text-text">{p.proyecto.nombre}</span>
                 <span className="text-text-2">{p.proyecto.codigo}</span>
                 <Insignia tipo="proyecto" estado={p.estado} />
               </div>
-              <p className="text-text-2">
+              <p className="text-xs text-text-2">
                 Reunión semanal: {p.reunionTexto} ·{' '}
                 {plural(p.practicantesActivos, 'practicante', 'practicantes')}
               </p>
-            </li>
+            </FilaDeLista>
           ))}
-        </ul>
+        </ListaDeFilas>
       )}
-    </section>
+    </PanelDeDatos>
   );
 }
 
 function TareasPorRevisar({ tareas }: { tareas: TareaPorRevisarParaVista[] }) {
   return (
-    <section aria-label="Tareas por revisar" className="space-y-2">
-      <h2 className="text-text">Tareas por revisar</h2>
+    <PanelDeDatos titulo="Tareas por revisar">
       {tareas.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-          No tiene tareas esperando su aprobación.
-        </p>
+        <p className="text-sm text-text-2">No tiene tareas esperando su aprobación.</p>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ListaDeFilas>
           {tareas.map(({ tarea, proyecto, diasEsperando }) => (
-            <li
-              key={tarea.id}
-              className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-            >
-              <div>
+            <FilaDeLista key={tarea.id}>
+              <div className="min-w-0">
                 <p className="text-text">
                   <span className="font-medium">{tarea.idLegible}</span> · {tarea.titulo}
                 </p>
                 <p className="text-xs text-text-2">{proyecto.nombre}</p>
               </div>
-              <p className="text-text-2 tabular-nums">
+              <p className="text-xs text-text-2 tabular-nums">
                 {diasEsperando === null
                   ? 'Esperando'
                   : diasEsperando === 0
                     ? 'Esperando desde hoy'
                     : `Esperando hace ${plural(diasEsperando, 'día', 'días')}`}
               </p>
-            </li>
+            </FilaDeLista>
           ))}
-        </ul>
+        </ListaDeFilas>
       )}
-    </section>
+    </PanelDeDatos>
   );
 }
 
@@ -126,7 +111,7 @@ export function PaginaDetalleSupervisor({ entorno = ENTORNO }: { entorno?: Entor
 
   if (consulta.error) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAlListado />
         <p role="alert" className="text-sm text-danger-text">
           {consulta.error}
@@ -146,68 +131,71 @@ export function PaginaDetalleSupervisor({ entorno = ENTORNO }: { entorno?: Entor
   const detalle = aDetalleSupervisor(consulta.valor);
 
   return (
-    <article className="space-y-6">
-      <header className="space-y-2">
-        <VolverAlListado />
-        <h1 className="text-text">{detalle.nombre}</h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Insignia tipo="supervisor" estado={detalle.estado} />
+    <article className="space-y-3">
+      <CabeceraDeDetalle
+        volver={{ a: RUTA_SUPERVISORES, etiqueta: 'Volver a supervisores' }}
+        titulo={detalle.nombre}
+        avatarDe={detalle.nombre}
+        insignias={<Insignia tipo="supervisor" estado={detalle.estado} />}
+        metadatos={`${plural(detalle.proyectosACargo.length, 'proyecto a cargo', 'proyectos a cargo')} · Cuenta creada: ${detalle.altaTexto}`}
+        acciones={
+          <AccionesDeSupervisor
+            idActor={idUsuario}
+            supervisor={{ id: detalle.id, nombre: detalle.nombre, correo: detalle.correo }}
+            acciones={detalle.acciones}
+            proyectosPendientes={detalle.proyectosPendientes}
+            proyectosACargo={detalle.proyectosACargo}
+            supervisoresDestino={detalle.supervisoresDestino}
+            entorno={entorno}
+          />
+        }
+      />
+
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-5">
+        <div className="space-y-3 lg:col-span-2">
+          <PanelDeDatos titulo="Datos de contacto">
+            <ListaDeDefiniciones
+              disposicion="filas"
+              items={[
+                { etiqueta: 'Correo institucional', valor: detalle.correo },
+                { etiqueta: 'Celular', valor: detalle.celular },
+                { etiqueta: 'Discord', valor: detalle.discord ?? '—' },
+                { etiqueta: 'GitHub', valor: detalle.cuentaGithub ?? '—' },
+                { etiqueta: 'Cuenta creada', valor: detalle.altaTexto },
+              ]}
+            />
+          </PanelDeDatos>
+
+          <PanelDeDatos titulo="Línea de tiempo">
+            <LineaTiempo eventos={detalle.eventos} />
+          </PanelDeDatos>
         </div>
-        <AccionesDeSupervisor
-          idActor={idUsuario}
-          supervisor={{ id: detalle.id, nombre: detalle.nombre, correo: detalle.correo }}
-          acciones={detalle.acciones}
-          proyectosPendientes={detalle.proyectosPendientes}
-          proyectosACargo={detalle.proyectosACargo}
-          supervisoresDestino={detalle.supervisoresDestino}
-          entorno={entorno}
-        />
-      </header>
 
-      <section aria-label="Datos de contacto" className="space-y-2">
-        <h2 className="text-text">Datos de contacto</h2>
-        <dl className="grid gap-3 rounded-xl border border-border bg-surface p-4 text-sm sm:grid-cols-2">
-          <Dato etiqueta="Correo institucional">{detalle.correo}</Dato>
-          <Dato etiqueta="Celular">{detalle.celular}</Dato>
-          <Dato etiqueta="Discord">{detalle.discord ?? '—'}</Dato>
-          <Dato etiqueta="GitHub">{detalle.cuentaGithub ?? '—'}</Dato>
-          <Dato etiqueta="Cuenta creada">{detalle.altaTexto}</Dato>
-        </dl>
-      </section>
+        <div className="space-y-3 lg:col-span-3">
+          <ProyectosACargo proyectos={detalle.proyectosACargo} />
+          <TareasPorRevisar tareas={detalle.tareasPorRevisar} />
 
-      <ProyectosACargo proyectos={detalle.proyectosACargo} />
-      <TareasPorRevisar tareas={detalle.tareasPorRevisar} />
-
-      <section aria-label="Proyectos anteriores" className="space-y-2">
-        <h2 className="text-text">Proyectos anteriores</h2>
-        {detalle.proyectosAnteriores.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-            Aún no tiene proyectos anteriores.
-          </p>
-        ) : (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
-            {detalle.proyectosAnteriores.map((p) => (
-              <li
-                key={p.proyecto.id}
-                className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-text">{p.proyecto.nombre}</span>
-                  <span className="text-text-2">{p.proyecto.codigo}</span>
-                </div>
-                <p className="text-text-2 tabular-nums">
-                  Finalizado: {p.finRealTexto ?? 'sin fecha registrada'}
-                </p>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-
-      <section aria-label="Línea de tiempo" className="space-y-3">
-        <h2 className="text-text">Línea de tiempo</h2>
-        <LineaTiempo eventos={detalle.eventos} />
-      </section>
+          <PanelDeDatos titulo="Proyectos anteriores">
+            {detalle.proyectosAnteriores.length === 0 ? (
+              <p className="text-sm text-text-2">Aún no tiene proyectos anteriores.</p>
+            ) : (
+              <ListaDeFilas>
+                {detalle.proyectosAnteriores.map((p) => (
+                  <FilaDeLista key={p.proyecto.id}>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-text">{p.proyecto.nombre}</span>
+                      <span className="text-text-2">{p.proyecto.codigo}</span>
+                    </div>
+                    <p className="text-xs text-text-2 tabular-nums">
+                      Finalizado: {p.finRealTexto ?? 'sin fecha registrada'}
+                    </p>
+                  </FilaDeLista>
+                ))}
+              </ListaDeFilas>
+            )}
+          </PanelDeDatos>
+        </div>
+      </div>
     </article>
   );
 }

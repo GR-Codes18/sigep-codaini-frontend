@@ -1,3 +1,4 @@
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { useCallback, useMemo } from 'react';
 import { aMisProyectos } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
@@ -55,11 +56,9 @@ export function PaginaMisProyectosPracticante({ entorno = ENTORNO }: { entorno?:
       );
     }
     return (
-      <div className="space-y-5">
+      <div className="space-y-3">
         {datos.vigentes.length === 0 ? (
-          <p className="rounded-xl border border-border bg-surface px-3 py-2 text-sm text-text-2">
-            No tienes proyectos activos.
-          </p>
+          <EstadoVacio titulo="No tienes proyectos activos." />
         ) : (
           <ul className="grid gap-3 sm:grid-cols-2">
             {datos.vigentes.map((p) => (
@@ -80,7 +79,7 @@ export function PaginaMisProyectosPracticante({ entorno = ENTORNO }: { entorno?:
 
         {datos.anteriores.length > 0 && (
           <section aria-label="Anteriores" className="space-y-2">
-            <h2 className="text-text">Anteriores</h2>
+            <h2 className="text-base font-semibold text-text">Anteriores</h2>
             <ul className="grid gap-3 sm:grid-cols-2">
               {datos.anteriores.map((p) => (
                 <li key={p.id}>
@@ -104,8 +103,11 @@ export function PaginaMisProyectosPracticante({ entorno = ENTORNO }: { entorno?:
   }
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Mis proyectos</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Mis proyectos"
+        subtitulo="Los proyectos en los que participas ahora y los anteriores."
+      />
       {contenido()}
     </section>
   );

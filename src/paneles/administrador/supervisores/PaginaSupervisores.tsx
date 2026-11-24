@@ -1,3 +1,7 @@
+import { BarraDeFiltros } from '@/compartido/BarraDeFiltros';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
+import { PieDeTabla } from '@/compartido/PieDeTabla';
 import { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { aSupervisores, type FilaSupervisor } from '@/app/adaptadores';
@@ -166,11 +170,12 @@ export function PaginaSupervisores({ entorno = ENTORNO }: { entorno?: Entorno } 
   const contadores = datos?.contadores;
 
   return (
-    <section className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-text">Supervisores</h1>
-        <NuevoSupervisor idActor={idUsuario} entorno={entorno} />
-      </div>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Supervisores"
+        subtitulo="Responsables de proyectos y de revisar las tareas de los practicantes."
+        acciones={<NuevoSupervisor idActor={idUsuario} entorno={entorno} />}
+      />
 
       <PestanasConContador
         valor={filtros.pestana}
@@ -182,13 +187,30 @@ export function PaginaSupervisores({ entorno = ENTORNO }: { entorno?: Entorno } 
         ]}
       />
 
-      <BarraBusqueda
-        valor={filtros.busqueda}
-        onCambiar={(busqueda) => cambiar({ busqueda })}
-        placeholder="Buscar por nombre o correo"
-      />
+      <BarraDeFiltros>
+        <CampoDeFormulario
+          htmlFor="filtro-busqueda"
+          etiqueta="Buscar"
+          className="min-w-48 flex-[2]"
+        >
+          <BarraBusqueda
+            id="filtro-busqueda"
+            className="max-w-none"
+            valor={filtros.busqueda}
+            onCambiar={(busqueda) => cambiar({ busqueda })}
+            placeholder="Buscar por nombre o correo"
+          />
+        </CampoDeFormulario>
+      </BarraDeFiltros>
 
       {contenido()}
+
+      {datos !== null && !consulta.error && visibles.length > 0 && (
+        <PieDeTabla>
+          Mostrando {visibles.length} de {datos.contadores.TODOS} supervisores. Un clic en una fila
+          abre su detalle.
+        </PieDeTabla>
+      )}
     </section>
   );
 }

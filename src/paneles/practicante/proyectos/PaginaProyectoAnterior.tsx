@@ -3,8 +3,10 @@ import { Link, Navigate, useParams } from 'react-router';
 import { aResumenAnterior, claseDeProyecto } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDeDetalle } from '@/compartido/CabeceraDeDetalle';
 import { Insignia } from '@/compartido/Insignia';
-import { FilasDeDatos, TarjetaDeDatos } from '@/compartido/TarjetaDeDatos';
+import { ListaDeDefiniciones } from '@/compartido/ListaDeDefiniciones';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import {
   ENTORNO,
@@ -13,7 +15,11 @@ import {
   type Entorno,
 } from '@/services';
 import { VolverAMisProyectos } from './PaginaDetalleProyectoPracticante';
-import { rutaDeHistorialDelProyecto, rutaDeMiProyecto } from './rutas';
+import {
+  RUTA_MIS_PROYECTOS_PRACTICANTE,
+  rutaDeHistorialDelProyecto,
+  rutaDeMiProyecto,
+} from './rutas';
 
 function Cargando() {
   return (
@@ -52,7 +58,7 @@ export function PaginaProyectoAnterior({ entorno = ENTORNO }: { entorno?: Entorn
 
   if (mios.error || resumen.error) {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAMisProyectos />
         <p role="alert" className="text-sm text-danger-text">
           {mios.error ?? resumen.error}
@@ -64,7 +70,7 @@ export function PaginaProyectoAnterior({ entorno = ENTORNO }: { entorno?: Entorn
   if (clase === 'VIGENTE') return <Navigate to={rutaDeMiProyecto(idProyecto)} replace />;
   if (clase === 'AJENO') {
     return (
-      <section className="space-y-4">
+      <section className="space-y-3">
         <VolverAMisProyectos />
         <p role="alert" className="text-sm text-danger-text">
           No se encontró el proyecto.
@@ -77,56 +83,61 @@ export function PaginaProyectoAnterior({ entorno = ENTORNO }: { entorno?: Entorn
   const r = aResumenAnterior(resumen.valor);
   const motivo = mios.valor?.anteriores.find((p) => p.id === idProyecto)?.motivo ?? 'FINALIZADO';
   return (
-    <article className="space-y-4">
-      <VolverAMisProyectos />
-      <section
-        aria-label="Encabezado del proyecto"
-        className="space-y-2 rounded-xl border border-border bg-surface p-3"
-      >
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-text">{r.nombre}</h1>
-          <span className="text-sm text-text-2">{r.codigo}</span>
-          <Insignia tipo="participacion" estado={motivo} />
-        </div>
-        <p role="note" className="text-sm text-text-2">
-          Este proyecto ya no está vigente para ti: no puedes abrir su tablero ni su equipo.
-        </p>
-      </section>
+    <article className="space-y-3">
+      <CabeceraDeDetalle
+        volver={{ a: RUTA_MIS_PROYECTOS_PRACTICANTE, etiqueta: 'Volver a mis proyectos' }}
+        titulo={r.nombre}
+        insignias={
+          <>
+            <Insignia tipo="participacion" estado={motivo} />
+            <span className="text-sm text-text-2">{r.codigo}</span>
+          </>
+        }
+        metadatos={
+          <span role="note">
+            Este proyecto ya no está vigente para ti: no puedes abrir su tablero ni su equipo.
+          </span>
+        }
+      />
 
-      <div className="grid items-stretch gap-3 lg:grid-cols-2">
-        <TarjetaDeDatos titulo="Descripción">
-          <p className="text-sm whitespace-pre-line text-text">{r.descripcion}</p>
-        </TarjetaDeDatos>
-
-        <TarjetaDeDatos titulo="Datos del proyecto">
-          <FilasDeDatos
-            filas={[
-              { etiqueta: 'Supervisor', valor: r.supervisor },
-              { etiqueta: 'Fecha de inicio', valor: r.fechaInicioTexto },
-              { etiqueta: 'Fecha de fin prevista', valor: r.fechaFinPrevistaTexto },
-              ...(r.fechaFinRealTexto !== null
-                ? [{ etiqueta: 'Fecha de finalización', valor: r.fechaFinRealTexto }]
-                : []),
-            ]}
-          />
-        </TarjetaDeDatos>
-
-        {r.participacion !== null && (
-          <TarjetaDeDatos titulo="Mi participación" className="lg:col-span-2">
-            <FilasDeDatos
-              filas={[
-                { etiqueta: 'Periodo', valor: r.participacion.periodoTexto },
-                { etiqueta: 'Tareas que terminé aquí', valor: r.participacion.tareasTerminadas },
+      <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-2">
+        <div className="space-y-3">
+          <PanelDeDatos titulo="Datos del proyecto">
+            <ListaDeDefiniciones
+              disposicion="filas"
+              items={[
+                { etiqueta: 'Supervisor', valor: r.supervisor },
+                { etiqueta: 'Fecha de inicio', valor: r.fechaInicioTexto },
+                { etiqueta: 'Fecha de fin prevista', valor: r.fechaFinPrevistaTexto },
+                ...(r.fechaFinRealTexto !== null
+                  ? [{ etiqueta: 'Fecha de finalización', valor: r.fechaFinRealTexto }]
+                  : []),
               ]}
             />
-            <Link
-              to={rutaDeHistorialDelProyecto(idProyecto)}
-              className="text-sm font-medium text-link underline underline-offset-2"
-            >
-              Ver mis tareas terminadas en Mi historial
-            </Link>
-          </TarjetaDeDatos>
-        )}
+          </PanelDeDatos>
+
+          {r.participacion !== null && (
+            <PanelDeDatos titulo="Mi participación">
+              <ListaDeDefiniciones
+                disposicion="filas"
+                items={[
+                  { etiqueta: 'Periodo', valor: r.participacion.periodoTexto },
+                  { etiqueta: 'Tareas que terminé aquí', valor: r.participacion.tareasTerminadas },
+                ]}
+              />
+              <Link
+                to={rutaDeHistorialDelProyecto(idProyecto)}
+                className="text-sm font-medium text-link underline underline-offset-2"
+              >
+                Ver mis tareas terminadas en Mi historial
+              </Link>
+            </PanelDeDatos>
+          )}
+        </div>
+
+        <PanelDeDatos titulo="Descripción">
+          <p className="text-sm whitespace-pre-line text-text">{r.descripcion}</p>
+        </PanelDeDatos>
       </div>
     </article>
   );

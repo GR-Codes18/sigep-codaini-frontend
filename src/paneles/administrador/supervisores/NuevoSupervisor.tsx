@@ -52,7 +52,9 @@ function CampoDeTexto({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={`nuevo-supervisor-${campo}`}>{etiqueta}</Label>
+      <Label htmlFor={`nuevo-supervisor-${campo}`} className="text-xs font-medium text-text-2">
+        {etiqueta}
+      </Label>
       <Input
         id={`nuevo-supervisor-${campo}`}
         value={valor}

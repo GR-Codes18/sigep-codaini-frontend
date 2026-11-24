@@ -1,3 +1,4 @@
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -11,7 +12,6 @@ import {
   DialogTitle,
 } from '@/compartido/ui/dialog';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
 import type { Id } from '@/domain';
 import { editarSupervisor, ENTORNO, esquemaCorreo, type Entorno } from '@/services';
 
@@ -106,8 +106,7 @@ export function FormularioDatosSupervisor({
           aria-label="Datos del supervisor"
           className="space-y-3"
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="supervisor-nombre">Nombre</Label>
+          <CampoDeFormulario htmlFor="supervisor-nombre" etiqueta="Nombre">
             <Input
               id="supervisor-nombre"
               value={nombre}
@@ -116,9 +115,8 @@ export function FormularioDatosSupervisor({
               onChange={(e) => setNombre(e.target.value)}
             />
             {errores.nombre && <p className="text-xs text-danger-text">{errores.nombre}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="supervisor-correo">Correo institucional</Label>
+          </CampoDeFormulario>
+          <CampoDeFormulario htmlFor="supervisor-correo" etiqueta="Correo institucional">
             <Input
               id="supervisor-correo"
               value={correo}
@@ -127,7 +125,7 @@ export function FormularioDatosSupervisor({
               onChange={(e) => setCorreo(e.target.value)}
             />
             {errores.correo && <p className="text-xs text-danger-text">{errores.correo}</p>}
-          </div>
+          </CampoDeFormulario>
           {/* Si el error ya salió junto a un campo, no se repite aquí. */}
           {errorGeneral && !errores.nombre && !errores.correo && (
             <p role="alert" className="text-sm text-danger-text">

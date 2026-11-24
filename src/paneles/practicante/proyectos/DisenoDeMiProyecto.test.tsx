@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { useAlmacenSesion } from '@/auth/almacenSesion';
@@ -52,10 +52,9 @@ function mostrar(ruta: string, idUsuario: Id = PRACTICANTE) {
 }
 
 const TARJETAS_DEL_RESUMEN = [
-  'Descripción',
-  'Fechas y datos del proyecto',
-  'Enlaces y repositorio',
+  'Datos del proyecto',
   'Avance',
+  'Enlaces útiles',
   'Mis tareas',
   'Mi actividad',
 ];
@@ -69,42 +68,24 @@ describe('Diseño de Mis proyectos del Practicante: tarjetas limpias y consisten
     useAlmacen.getState().restablecer(new Date('2026-11-17T17:00:00.000Z'));
   });
 
-  describe('encabezado del proyecto', () => {
-    it('agrupa código, nombre, estado, avance y datos secundarios en una tarjeta propia, en filas', async () => {
+  describe('cabecera del proyecto', () => {
+    it('agrupa nombre, estado y código en la cabecera, con el enlace de vuelta', async () => {
       mostrar(`/practicante/proyectos/${VIGENTE}`);
 
-      const encabezado = await screen.findByRole('region', { name: 'Encabezado del proyecto' });
-      expect(within(encabezado).getByRole('heading', { level: 1 })).toBeInTheDocument();
-      expect(encabezado).toHaveTextContent('PL2D');
-      expect(encabezado).toHaveTextContent('Activo');
-      await waitFor(() =>
-        expect(
-          within(encabezado).getByRole('progressbar', { name: 'Avance del proyecto' }),
-        ).toBeInTheDocument(),
-      );
-      // Los datos secundarios van en filas «etiqueta → valor», no en una línea larga de texto.
-      const filas = within(encabezado).getAllByText(
-        /^(Supervisor|Reunión semanal|Rama base|Repositorio)$/,
-      );
-      expect(filas.map((f) => f.textContent)).toEqual([
-        'Supervisor',
-        'Reunión semanal',
-        'Rama base',
-        'Repositorio',
-      ]);
-      for (const f of filas) expect(f.tagName).toBe('DT');
-      expect(encabezado.className).toContain('rounded-xl');
-      expect(encabezado.className).toContain('border-border');
+      const titulo = await screen.findByRole('heading', { level: 1 });
+      expect(titulo.parentElement).toHaveTextContent('Activo');
+      expect(titulo.parentElement!.parentElement).toHaveTextContent('PL2D');
+      expect(screen.getByRole('link', { name: 'Volver a mis proyectos' })).toBeInTheDocument();
     });
 
     it('se ve en las tres pestañas', async () => {
       const usuario = userEvent.setup();
       mostrar(`/practicante/proyectos/${VIGENTE}`);
-      await screen.findByRole('region', { name: 'Encabezado del proyecto' });
+      await screen.findByRole('heading', { level: 1 });
 
       for (const pestana of ['Tablero', 'Equipo', 'Resumen']) {
         await usuario.click(screen.getByRole('tab', { name: pestana }));
-        expect(screen.getByRole('region', { name: 'Encabezado del proyecto' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
       }
     });
   });
@@ -120,7 +101,7 @@ describe('Diseño de Mis proyectos del Practicante: tarjetas limpias y consisten
 
     it('todas las tarjetas comparten borde, radio, fondo y relleno', async () => {
       mostrar(`/practicante/proyectos/${VIGENTE}`);
-      await screen.findByRole('region', { name: 'Descripción' });
+      await screen.findByRole('region', { name: 'Datos del proyecto' });
 
       for (const t of TARJETAS_DEL_RESUMEN) {
         const clases = screen.getByRole('region', { name: t }).className;
@@ -130,45 +111,26 @@ describe('Diseño de Mis proyectos del Practicante: tarjetas limpias y consisten
       }
     });
 
-    it('va en dos columnas independientes en pantalla ancha y en una en móvil, sin estirar las tarjetas', async () => {
+    it('va en una columna en móvil y, en pantalla ancha, en dos columnas independientes bajo los datos', async () => {
       mostrar(`/practicante/proyectos/${VIGENTE}`);
 
-      const columna = (await screen.findByRole('region', { name: 'Descripción' })).parentElement!;
-      const rejilla = columna.parentElement!;
-      expect(rejilla.className).toContain('lg:grid-cols-2');
+      const avance = await screen.findByRole('region', { name: 'Avance' });
+      const rejilla = avance.parentElement!.parentElement!;
+      expect(rejilla.className).toContain('lg:grid-cols-5');
+      expect(rejilla.className).toContain('grid-cols-1');
       expect(rejilla.className).toContain('items-start');
-      expect(rejilla.className).not.toContain('items-stretch');
-      expect(rejilla.className.split(' ')).not.toContain('grid-cols-2'); // móvil: una columna
       expect(rejilla.children).toHaveLength(2);
-      // Cada columna apila sus tarjetas con la altura de su contenido.
-      for (const c of Array.from(rejilla.children)) {
-        expect(c.className).toContain('flex-col');
-      }
-      for (const t of TARJETAS_DEL_RESUMEN) {
-        const tarjeta = screen.getByRole('region', { name: t });
-        expect(rejilla.contains(tarjeta)).toBe(true);
-        expect(tarjeta.parentElement!.parentElement).toBe(rejilla);
-      }
-    });
-
-    it('reparte las tarjetas para que las dos columnas queden parecidas', async () => {
-      mostrar(`/practicante/proyectos/${VIGENTE}`);
-
-      const rejilla = (await screen.findByRole('region', { name: 'Descripción' })).parentElement!
-        .parentElement!;
-      const nombres = Array.from(rejilla.children).map((c) =>
-        Array.from(c.children).map((t) => t.getAttribute('aria-label')),
+      const izquierda = Array.from(rejilla.children[0]!.children).map(
+        (t) => t.getAttribute('aria-label') ?? t.querySelector('h2')?.textContent,
       );
-      expect(nombres).toEqual([
-        ['Descripción', 'Enlaces y repositorio', 'Mis tareas'],
-        ['Fechas y datos del proyecto', 'Avance', 'Mi actividad'],
-      ]);
+      expect(izquierda).toEqual(['Avance', 'Enlaces útiles', 'Mis tareas']);
+      expect(screen.getByRole('region', { name: 'Mi actividad' }).parentElement).toBe(rejilla);
     });
 
     it('las fechas de Mis tareas usan el mismo formato que el resto del Resumen', async () => {
       mostrar(`/practicante/proyectos/${VIGENTE}`);
 
-      const fechas = await screen.findByRole('region', { name: 'Fechas y datos del proyecto' });
+      const fechas = await screen.findByRole('region', { name: 'Datos del proyecto' });
       const inicio = within(fechas).getByText('Fecha de inicio').nextElementSibling!.textContent!;
       const tareas = screen.getByRole('region', { name: 'Mis tareas' });
       const limites = within(tareas).queryAllByText(/Límite:/);
@@ -179,13 +141,13 @@ describe('Diseño de Mis proyectos del Practicante: tarjetas limpias y consisten
       }
     });
 
-    it('los datos van en filas «etiqueta → valor» separadas por líneas finas', async () => {
+    it('los datos van en una rejilla de «etiqueta → valor»', async () => {
       mostrar(`/practicante/proyectos/${VIGENTE}`);
 
-      const fechas = await screen.findByRole('region', { name: 'Fechas y datos del proyecto' });
-      const lista = fechas.querySelector('dl')!;
-      expect(lista.className).toContain('divide-y');
-      expect(within(fechas).getByText('Fecha de inicio').tagName).toBe('DT');
+      const datos = await screen.findByRole('region', { name: 'Datos del proyecto' });
+      const lista = datos.querySelector('dl')!;
+      expect(lista.className).toContain('lg:grid-cols-3');
+      expect(within(datos).getByText('Fecha de inicio').tagName).toBe('DT');
     });
   });
 
@@ -271,7 +233,7 @@ describe('Diseño de Mis proyectos del Practicante: tarjetas limpias y consisten
         expect(clases).toContain('border-border');
         expect(clases).toContain('p-3');
       }
-      expect(screen.getByRole('region', { name: 'Encabezado del proyecto' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
       expect(
         screen.getByRole('region', { name: 'Datos del proyecto' }).querySelector('dl')!.className,
       ).toContain('divide-y');

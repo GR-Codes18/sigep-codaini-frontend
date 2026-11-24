@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { aDashboard, type FilaPostulacionDashboard } from '@/app/adaptadores';
 import {
+  Vacio,
   Avance,
   EnlaceDeTarjeta,
   PorRevisar,
@@ -16,8 +17,8 @@ import {
 } from '@/app/insights/AccionesDeInsight';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
-import { EstadoVacio } from '@/compartido/EstadoVacio';
 import { Insignia } from '@/compartido/Insignia';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { TablaCompacta, type Columna } from '@/compartido/TablaCompacta';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, obtenerDashboardAdministrador, type Entorno } from '@/services';
@@ -96,8 +97,8 @@ export function PaginaDashboard({ entorno = ENTORNO }: { entorno?: Entorno } = {
 
   if (consulta.error) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Dashboard</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Dashboard" />
         <p role="alert" className="text-sm text-danger-text">
           {consulta.error}
         </p>
@@ -106,8 +107,8 @@ export function PaginaDashboard({ entorno = ENTORNO }: { entorno?: Entorno } = {
   }
   if (datos === null) {
     return (
-      <section className="space-y-4">
-        <h1 className="text-text">Dashboard</h1>
+      <section className="space-y-3">
+        <CabeceraDePagina titulo="Dashboard" />
         <div className="space-y-2" role="status" aria-label="Cargando el dashboard">
           <Skeleton className="h-24 w-full" />
           <Skeleton className="h-24 w-full" />
@@ -118,8 +119,11 @@ export function PaginaDashboard({ entorno = ENTORNO }: { entorno?: Entorno } = {
 
   const t = datos.tarjetas;
   return (
-    <section className="space-y-6">
-      <h1 className="text-text">Dashboard</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Dashboard"
+        subtitulo="Lo que necesita tu atención hoy: postulaciones, tareas por revisar y alertas."
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Tarjeta
@@ -169,67 +173,62 @@ export function PaginaDashboard({ entorno = ENTORNO }: { entorno?: Entorno } = {
         />
       </div>
 
-      {/* Dos columnas: a la izquierda lo que se revisa (postulaciones, tareas, reuniones) y a la derecha las alertas, que son
-          lo más alto. En pantallas angostas todo va en una columna, con las alertas justo después de las postulaciones. */}
-      <div className="grid items-start gap-6 xl:grid-cols-2">
-        <div className="xl:col-start-1">
-          <Seccion titulo="Postulaciones pendientes">
+      {/* Dos columnas independientes: a la izquierda lo que se revisa (postulaciones, tareas, reuniones) y a la derecha las
+          alertas. En pantallas angostas todo va en una columna. */}
+      <div className="grid grid-cols-1 items-start gap-3 xl:grid-cols-2">
+        <div className="space-y-3">
+          <Seccion titulo="Postulaciones pendientes" sinRelleno>
             <TablaCompacta
+              sinCaja
               columnas={COLUMNAS_POSTULACION}
               filas={datos.postulaciones}
               claveFila={(f) => f.id}
               vacio={{ titulo: 'No hay postulaciones pendientes' }}
             />
           </Seccion>
+          <PorRevisar filas={datos.porRevisar} vacio="No hay tareas esperando supervisión" />
+          <Reuniones filas={datos.reuniones} />
         </div>
 
-        <div className="xl:col-start-2 xl:row-span-3 xl:row-start-1">
+        <div className="space-y-3">
           <Seccion titulo="Alertas">
             {datos.alertas.length === 0 ? (
-              <EstadoVacio
+              <Vacio
                 titulo="No hay alertas"
                 descripcion="Las alertas aparecen solas cuando una regla se cumple."
               />
             ) : (
-              <div className="space-y-2">
+              <div className="divide-y divide-border">
                 {datos.alertas.map((i) => (
                   <TarjetaDeInsight key={i.clave} insight={i} onAccion={setAccion} compacta />
                 ))}
               </div>
             )}
           </Seccion>
-        </div>
-
-        <div className="xl:col-start-1">
-          <PorRevisar filas={datos.porRevisar} vacio="No hay tareas esperando supervisión" />
-        </div>
-        <div className="xl:col-start-1">
-          <Reuniones filas={datos.reuniones} />
+          <Avance filas={datos.avances} />
         </div>
       </div>
 
-      <div className="grid items-start gap-6 md:grid-cols-2">
-        <Seccion titulo="Practicantes por área">
-          <div className="space-y-3">
-            <GraficoPracticantesPorArea datos={datos.practicantesPorArea} />
-            <TablaCompacta
-              columnas={[
-                { clave: 'area', encabezado: 'Área', celda: (f) => f.area },
-                {
-                  clave: 'practicantes',
-                  encabezado: 'Practicantes',
-                  className: 'whitespace-nowrap tabular-nums',
-                  celda: (f) => f.practicantes,
-                },
-              ]}
-              filas={datos.practicantesPorArea}
-              claveFila={(f) => f.area}
-              vacio={{ titulo: 'No hay practicantes asignados a un área' }}
-            />
-          </div>
-        </Seccion>
-        <Avance filas={datos.avances} />
-      </div>
+      <Seccion titulo="Practicantes por área">
+        <GraficoPracticantesPorArea datos={datos.practicantesPorArea} />
+        <div className="-mx-3 -mb-3">
+          <TablaCompacta
+            sinCaja
+            columnas={[
+              { clave: 'area', encabezado: 'Área', celda: (f) => f.area },
+              {
+                clave: 'practicantes',
+                encabezado: 'Practicantes',
+                className: 'whitespace-nowrap tabular-nums',
+                celda: (f) => f.practicantes,
+              },
+            ]}
+            filas={datos.practicantesPorArea}
+            claveFila={(f) => f.area}
+            vacio={{ titulo: 'No hay practicantes asignados a un área' }}
+          />
+        </div>
+      </Seccion>
 
       <ModalesDeInsight
         accion={accion}

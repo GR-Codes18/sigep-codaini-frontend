@@ -90,10 +90,10 @@ export function MisTareasEnCurso({
 }) {
   const navegar = useNavigate();
   return (
-    <Seccion titulo="Mis tareas en curso">
+    <Seccion titulo="Mis tareas en curso" sinRelleno={filas.length > 0}>
       {filas.length === 0 ? (
         <div className="space-y-1">
-          <Vacio compacta titulo="No tienes tareas en progreso" />
+          <Vacio titulo="No tienes tareas en progreso" />
           {hayDisponibles && (
             <Link to={rutaDisponibles} className={cn('inline-block text-sm', enlace)}>
               Ver tareas disponibles
@@ -102,6 +102,7 @@ export function MisTareasEnCurso({
         </div>
       ) : (
         <TablaCompacta
+          sinCaja
           columnas={columnasDeEnCurso()}
           filas={filas}
           claveFila={(f) => f.id}
@@ -123,13 +124,13 @@ export function PullRequestsPorAtender({ filas }: { filas: FilaPullRequestPorAte
   return (
     <Seccion titulo="Pull Requests por atender">
       {filas.length === 0 ? (
-        <Vacio compacta titulo="No tienes Pull Requests pendientes" />
+        <Vacio titulo="No tienes Pull Requests pendientes" />
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ul className="divide-y divide-border">
           {filas.map((t) => (
             <li
               key={t.id}
-              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-1.5"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-2 text-sm first:pt-0 last:pb-0"
             >
               <div className="min-w-0">
                 <TituloConEnlace ruta={t.rutaDetalle}>{t.titulo}</TituloConEnlace>

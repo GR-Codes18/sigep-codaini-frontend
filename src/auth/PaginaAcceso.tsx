@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/compartido/ui/button';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
 import { accesoRapido, iniciarSesion } from '@/services';
 import { useAlmacenSesion } from './almacenSesion';
 import { esquemaAcceso, type DatosAcceso } from './esquemaAcceso';
@@ -52,13 +52,12 @@ export function PaginaAcceso() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-bg p-4">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-6">
-        <h1 className="text-text">Iniciar sesión</h1>
-        <p className="mt-1 text-sm text-text-2">Accede al sistema de gestión de practicantes.</p>
+      <div className="w-full max-w-sm rounded-xl border border-border bg-surface p-4">
+        <h1 className="text-xl font-semibold text-text">Iniciar sesión</h1>
+        <p className="mt-0.5 text-xs text-text-2">Accede al sistema de gestión de practicantes.</p>
 
-        <form onSubmit={enviar} noValidate className="mt-6 space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="correo">Correo</Label>
+        <form onSubmit={enviar} noValidate className="mt-4 space-y-3">
+          <CampoDeFormulario htmlFor="correo" etiqueta="Correo">
             <Input
               id="correo"
               type="email"
@@ -73,10 +72,9 @@ export function PaginaAcceso() {
                 {errors.correo.message}
               </p>
             )}
-          </div>
+          </CampoDeFormulario>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="contrasena">Contraseña</Label>
+          <CampoDeFormulario htmlFor="contrasena" etiqueta="Contraseña">
             <Input
               id="contrasena"
               type="password"
@@ -91,7 +89,7 @@ export function PaginaAcceso() {
                 {errors.contrasena.message}
               </p>
             )}
-          </div>
+          </CampoDeFormulario>
 
           {errorGeneral && (
             <p role="alert" className="text-sm text-danger-text">
@@ -104,7 +102,7 @@ export function PaginaAcceso() {
           </Button>
         </form>
 
-        <div className="mt-6 space-y-2 border-t border-border pt-6">
+        <div className="mt-4 space-y-2 border-t border-border pt-4">
           <p className="text-xs text-text-2">Acceso rápido para la demostración</p>
           {ACCESOS_RAPIDOS.map(({ rol, etiqueta }) => (
             <Button
@@ -120,7 +118,7 @@ export function PaginaAcceso() {
           ))}
         </div>
 
-        <p className="mt-6 text-center text-xs text-text-2">Prototipo: autenticación simulada</p>
+        <p className="mt-4 text-center text-xs text-text-2">Prototipo: autenticación simulada</p>
       </div>
     </main>
   );

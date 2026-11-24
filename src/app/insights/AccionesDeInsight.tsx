@@ -33,15 +33,16 @@ export function TarjetaDeInsight({
 }: {
   insight: FilaInsight;
   onAccion: (accion: AccionDeInsight) => void;
-  /** Menos alta, para las alertas del Dashboard: mismo contenido y mismas acciones, con menos aire. */
+  /** Fila plana, sin caja propia, para las alertas del Dashboard (van dentro de su panel): mismo contenido y acciones. */
   compacta?: boolean;
 }) {
   return (
     <article
       aria-label={insight.titulo}
       className={cn(
-        'rounded-xl border border-border bg-surface',
-        compacta ? 'space-y-1 p-3' : 'space-y-2 p-4',
+        compacta
+          ? 'space-y-1 py-3 first:pt-0 last:pb-0'
+          : 'space-y-1.5 rounded-xl border border-border bg-surface p-3',
       )}
     >
       <div className="flex flex-wrap items-center gap-2">
@@ -49,46 +50,46 @@ export function TarjetaDeInsight({
         <span className="text-xs text-text-2">{ETIQUETA_REGLA[insight.tipoRegla]}</span>
         {insight.revisado && <span className="text-xs font-medium text-text-2">Revisado</span>}
       </div>
-      <h3 className={compacta ? 'text-sm font-semibold text-text' : 'text-text'}>
-        {insight.titulo}
-      </h3>
+      <h3 className="text-sm font-semibold text-text">{insight.titulo}</h3>
       <p className={compacta ? 'text-xs text-text' : 'text-sm text-text'}>{insight.motivo}</p>
-      <p className="text-xs text-text-2">
-        Detectado el {insight.fechaDeteccionTexto}
-        {insight.proyectos.length > 0 && (
-          <> · {insight.proyectos.map((p) => p.nombre).join(', ')}</>
-        )}
-      </p>
-      <div className={cn('flex flex-wrap items-center gap-2', compacta && 'pt-1')}>
-        {insight.rutaElemento !== null && (
-          <Button asChild variant="outline" size="sm">
-            <Link to={insight.rutaElemento} aria-label={`Ver detalle: ${insight.titulo}`}>
-              Ver detalle
-            </Link>
-          </Button>
-        )}
-        {insight.puedeMarcarRevisado && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-label={`Marcar como revisado: ${insight.titulo}`}
-            onClick={() => onAccion({ tipo: 'REVISAR', insight })}
-          >
-            Marcar como revisado
-          </Button>
-        )}
-        {insight.puedeNotificar && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-label={`Notificar: ${insight.titulo}`}
-            onClick={() => onAccion({ tipo: 'NOTIFICAR', insight })}
-          >
-            Notificar
-          </Button>
-        )}
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 pt-1">
+        <p className="text-xs text-text-2">
+          Detectado el {insight.fechaDeteccionTexto}
+          {insight.proyectos.length > 0 && (
+            <> · {insight.proyectos.map((p) => p.nombre).join(', ')}</>
+          )}
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          {insight.rutaElemento !== null && (
+            <Button asChild variant="outline" size="sm">
+              <Link to={insight.rutaElemento} aria-label={`Ver detalle: ${insight.titulo}`}>
+                Ver detalle
+              </Link>
+            </Button>
+          )}
+          {insight.puedeMarcarRevisado && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`Marcar como revisado: ${insight.titulo}`}
+              onClick={() => onAccion({ tipo: 'REVISAR', insight })}
+            >
+              Marcar como revisado
+            </Button>
+          )}
+          {insight.puedeNotificar && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              aria-label={`Notificar: ${insight.titulo}`}
+              onClick={() => onAccion({ tipo: 'NOTIFICAR', insight })}
+            >
+              Notificar
+            </Button>
+          )}
+        </div>
       </div>
     </article>
   );

@@ -1,8 +1,11 @@
+import { CampoDeFormulario } from '@/compartido/CampoDeFormulario';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import type { EnlaceParaVista } from '@/app/adaptadores';
 import { ModalConfirmacion } from '@/compartido/ModalConfirmacion';
+import { FilaDeLista, ListaDeFilas } from '@/compartido/ListaDeFilas';
+import { PanelDeDatos } from '@/compartido/PanelDeDatos';
 import { Button } from '@/compartido/ui/button';
 import {
   Dialog,
@@ -13,7 +16,6 @@ import {
   DialogTitle,
 } from '@/compartido/ui/dialog';
 import { Input } from '@/compartido/ui/input';
-import { Label } from '@/compartido/ui/label';
 import type { Id } from '@/domain';
 import {
   agregarEnlace,
@@ -128,8 +130,7 @@ function FormularioEnlace({
           aria-label={enlace === null ? 'Agregar enlace' : 'Editar enlace'}
           className="space-y-3"
         >
-          <div className="space-y-1.5">
-            <Label htmlFor="enlace-nombre">Nombre</Label>
+          <CampoDeFormulario htmlFor="enlace-nombre" etiqueta="Nombre">
             <Input
               id="enlace-nombre"
               value={nombre}
@@ -138,9 +139,8 @@ function FormularioEnlace({
               onChange={(e) => setNombre(e.target.value)}
             />
             {errores.nombre && <p className="text-xs text-danger-text">{errores.nombre}</p>}
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="enlace-url">Dirección</Label>
+          </CampoDeFormulario>
+          <CampoDeFormulario htmlFor="enlace-url" etiqueta="Dirección">
             <Input
               id="enlace-url"
               value={url}
@@ -149,7 +149,7 @@ function FormularioEnlace({
               onChange={(e) => setUrl(e.target.value)}
             />
             {errores.url && <p className="text-xs text-danger-text">{errores.url}</p>}
-          </div>
+          </CampoDeFormulario>
           {errorGeneral && !errores.nombre && !errores.url && (
             <p role="alert" className="text-sm text-danger-text">
               {errorGeneral}
@@ -191,37 +191,34 @@ export function SeccionEnlaces({
   const [quitando, setQuitando] = useState<EnlaceParaVista | null>(null);
 
   return (
-    <section aria-label="Enlaces útiles" className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-text">Enlaces útiles</h2>
-        {puedeGestionar && (
+    <PanelDeDatos
+      titulo="Enlaces útiles"
+      acciones={
+        puedeGestionar ? (
           <Button type="button" variant="outline" size="sm" onClick={() => setFormulario(null)}>
             Agregar enlace
           </Button>
-        )}
-      </div>
-
+        ) : undefined
+      }
+    >
       {enlaces.length === 0 ? (
-        <p className="rounded-xl border border-border bg-surface p-4 text-sm text-text-2">
-          Aún no hay enlaces útiles.
-        </p>
+        <p className="text-sm text-text-2">Aún no hay enlaces útiles.</p>
       ) : (
-        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+        <ListaDeFilas>
           {enlaces.map((e) => (
-            <li
-              key={e.id}
-              className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm"
-            >
-              <span className="font-medium text-text">{e.nombre}</span>
-              <div className="flex flex-wrap items-center gap-2">
+            <FilaDeLista key={e.id}>
+              <div className="min-w-0">
+                <p className="font-medium text-text">{e.nombre}</p>
                 <a
                   href={e.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-link underline underline-offset-2"
+                  className="block truncate text-xs text-link underline underline-offset-2"
                 >
                   {e.url}
                 </a>
+              </div>
+              <div className="flex shrink-0 items-center gap-1">
                 {puedeGestionar && (
                   <>
                     <Button
@@ -245,9 +242,9 @@ export function SeccionEnlaces({
                   </>
                 )}
               </div>
-            </li>
+            </FilaDeLista>
           ))}
-        </ul>
+        </ListaDeFilas>
       )}
 
       {formulario !== undefined && (
@@ -276,6 +273,6 @@ export function SeccionEnlaces({
           }}
         />
       )}
-    </section>
+    </PanelDeDatos>
   );
 }

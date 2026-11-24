@@ -2,6 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { aConfiguracion } from '@/app/adaptadores';
 import { useConsulta } from '@/app/useConsulta';
 import { useSesionActiva } from '@/auth/useSesionActiva';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import { ENTORNO, obtenerConfiguracion, type Entorno } from '@/services';
 import { FormularioDeSeccion } from './FormularioDeSeccion';
@@ -30,14 +31,11 @@ export function PaginaConfiguracion({ entorno = ENTORNO }: { entorno?: Entorno }
   if (idActor === null) return null;
 
   return (
-    <section className="space-y-4">
-      <div>
-        <h1 className="text-text">Configuración</h1>
-        <p className="text-sm text-text-2">
-          Los cambios valen hacia adelante y quedan en el Historial con su valor anterior y el
-          nuevo.
-        </p>
-      </div>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Configuración"
+        subtitulo="Los cambios valen hacia adelante y quedan en el Historial con su valor anterior y el nuevo."
+      />
 
       {consulta.error ? (
         <p role="alert" className="text-sm text-danger-text">

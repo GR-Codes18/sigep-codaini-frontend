@@ -257,3 +257,64 @@ describe('DetalleTarea', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
   });
 });
+
+describe('DetalleTarea · jerarquía de las acciones', () => {
+  const variante = (nombre: string) =>
+    screen.getByRole('button', { name: nombre }).getAttribute('data-variant');
+
+  it('solo la acción principal del flujo va en primario; el resto, en contorno', () => {
+    render(
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          { clave: 'aprobar', etiqueta: 'Aprobar' },
+          { clave: 'devolver', etiqueta: 'Devolver' },
+          { clave: 'editar', etiqueta: 'Editar' },
+          { clave: 'cambiar_requiere_supervision', etiqueta: 'Desactivar supervisión' },
+        ]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+
+    expect(variante('Aprobar')).toBe('default');
+    expect(variante('Devolver')).toBe('outline');
+    expect(variante('Editar')).toBe('outline');
+    expect(variante('Desactivar supervisión')).toBe('outline');
+  });
+
+  it('una destructiva va en contorno rojo y nunca es la principal', () => {
+    render(
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          { clave: 'tomar', etiqueta: 'Tomar tarea' },
+          { clave: 'eliminar', etiqueta: 'Eliminar', destructivo: true },
+        ]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+
+    expect(variante('Tomar tarea')).toBe('default');
+    expect(variante('Eliminar')).toBe('outline');
+    expect(screen.getByRole('button', { name: 'Eliminar' })).toHaveClass('text-danger-text');
+  });
+
+  it('sin acción de flujo (solo Editar y Eliminar) ninguna queda en primario', () => {
+    render(
+      <DetalleTarea
+        tarea={tarea}
+        acciones={[
+          { clave: 'editar', etiqueta: 'Editar' },
+          { clave: 'eliminar', etiqueta: 'Eliminar', destructivo: true },
+        ]}
+        eventos={[]}
+        onEjecutar={async () => {}}
+      />,
+    );
+
+    expect(variante('Editar')).toBe('outline');
+    expect(variante('Eliminar')).toBe('outline');
+  });
+});

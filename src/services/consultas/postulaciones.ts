@@ -29,6 +29,7 @@ import {
   type ValorParametro,
 } from '@/domain';
 import { bloqueDeArea, bloqueDeEspecialidad } from '../catalogoEvaluacion/comun';
+import { leerProporcion } from '../postulaciones/comun';
 import { igualValor } from '../configuracion/comun';
 import { ENTORNO, type Entorno } from '../entorno';
 import { etiquetaParametro } from '../etiquetas';
@@ -166,6 +167,12 @@ export interface EvaluacionDetalle {
   fecha_evaluacion: FechaHora;
   /** El desglose con el que se evaluó, separado en los dos bloques (§5.1). */
   bloques: Record<BloqueCriterio, CriterioEvaluado[]>;
+  /**
+   * La proporción **vigente** de la nota (`EVALUACION_PROPORCION`, en %), para mostrar el peso de cada bloque. La
+   * evaluación no guarda la que usó al calcularse: si Configuración cambió después, puede no coincidir con su nota.
+   * `null` si el parámetro está roto.
+   */
+  proporcion: { area: number; especialidad: number } | null;
 }
 
 export interface PostulacionDetalle {
@@ -219,6 +226,8 @@ export function obtenerPostulacion(
               puntaje_obtenido: d.puntaje_obtenido,
               observacion: d.observacion,
             }));
+    const leida = leerProporcion(datos);
+    const proporcionVigente = leida.ok ? leida.valor : null;
     const practicante = datos.practicantes.find((x) => x.id_postulante === p.id);
 
     return {
@@ -246,6 +255,7 @@ export function obtenerPostulacion(
                 requiere_revision_manual: evaluacion.requiere_revision_manual,
                 fecha_evaluacion: evaluacion.fecha_evaluacion,
                 bloques: { AREA: criteriosDe('AREA'), ESPECIALIDAD: criteriosDe('ESPECIALIDAD') },
+                proporcion: proporcionVigente,
               },
         eventos: conAutor(
           datos.usuarios,

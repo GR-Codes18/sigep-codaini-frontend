@@ -107,16 +107,23 @@ export function AccionesDePostulacion({
     <>
       {decisiones.length > 0 && (
         <div role="group" aria-label="Decisiones" className="flex flex-wrap gap-2">
-          {decisiones.map((accion) => (
-            <Button
-              key={accion}
-              type="button"
-              variant={accion === 'APROBAR' ? 'default' : 'outline'}
-              onClick={() => setAbierta(accion)}
-            >
-              {ETIQUETA_DEL_BOTON[accion]}
-            </Button>
-          ))}
+          {[...decisiones]
+            .sort((a, b) => Number(a === 'APROBAR') - Number(b === 'APROBAR'))
+            .map((accion) => (
+              <Button
+                key={accion}
+                type="button"
+                variant={accion === 'APROBAR' ? 'default' : 'outline'}
+                className={
+                  accion === 'RECHAZAR'
+                    ? 'border-danger/60 text-danger-text hover:text-danger-text dark:border-danger/60'
+                    : undefined
+                }
+                onClick={() => setAbierta(accion)}
+              >
+                {ETIQUETA_DEL_BOTON[accion]}
+              </Button>
+            ))}
         </div>
       )}
 

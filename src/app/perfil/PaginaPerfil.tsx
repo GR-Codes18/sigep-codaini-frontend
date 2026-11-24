@@ -6,6 +6,7 @@ import { useAlmacenSesion } from '@/auth/almacenSesion';
 import { useSesionActiva } from '@/auth/useSesionActiva';
 import { PerfilUsuario } from '@/compartido/PerfilUsuario';
 import type { DatosContrasena, DatosPerfil } from '@/compartido/esquemasPerfil';
+import { CabeceraDePagina } from '@/compartido/CabeceraDePagina';
 import { Skeleton } from '@/compartido/ui/skeleton';
 import {
   cambiarMiContrasena,
@@ -102,8 +103,11 @@ export function PaginaPerfil({ entorno = ENTORNO }: { entorno?: Entorno } = {}) 
   }
 
   return (
-    <section className="space-y-4">
-      <h1 className="text-text">Mi perfil</h1>
+    <section className="space-y-3">
+      <CabeceraDePagina
+        titulo="Mi perfil"
+        subtitulo="Tus datos de la cuenta, tus datos personales y tu contraseña."
+      />
       {consulta.error ? (
         <p role="alert" className="text-sm text-danger-text">
           {consulta.error}
